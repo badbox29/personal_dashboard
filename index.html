@@ -1,0 +1,4732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="3600">
+<title>Personal Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS VARIABLES
+   ============================================================ */
+:root {
+  --gold:   #ddb04b;
+  --cyan:   #0fb8dd;
+  --red1:   #4D0000;
+  --red2:   #800000;
+  --red3:   #660000;
+
+  /* Dark mode (default) */
+  --bg:         #111;
+  --bg-img:     url('darkcanvas.gif');
+  --surface:    rgba(0,0,0,0.42);
+  --surface2:   rgba(20,4,4,0.55);
+  --border:     #5a1010;
+  --text:       #cccccc;
+  --text-dim:   #888888;
+  --text-head:  #f0e8d0;
+  --link:       #ddb04b;
+  --link-hover: #0fb8dd;
+  --tab-bg:     #3a0000;
+  --tab-active: #ddb04b;
+  --tab-active-txt: #1a0000;
+  --search:     #ddb04b;
+  --inp-bg:     rgba(0,0,0,0.5);
+  --inp-border: #5a1010;
+  --modal-bg:   #1c0606;
+  --weather-bg: rgba(0,0,0,0.5);
+  --del-color:  #cc3333;
+
+  /* Toggle */
+  --toggleHeight: 16em;
+  --toggleWidth:  30em;
+  --toggleBtnR:   10em;
+  --night-bg:     #2b1f4a;
+  --mooncolor:    #d9fbff;
+  --day-bg:       #9ee3fb;
+}
+
+body.light {
+  --bg:         #f2ede4;
+  --bg-img:     url('lighttile.gif');
+  --surface:    rgba(255,255,255,0.65);
+  --surface2:   rgba(245,235,215,0.75);
+  --border:     #c8a86a;
+  --text:       #3a2800;
+  --text-dim:   #8a6a30;
+  --text-head:  #2a1800;
+  --link:       #8B5000;
+  --link-hover: #0076a3;
+  --tab-bg:     #7a3500;
+  --tab-active: #ddb04b;
+  --tab-active-txt: #2a1000;
+  --search:     #8B5000;
+  --inp-bg:     rgba(255,248,235,0.9);
+  --inp-border: #c8a86a;
+  --modal-bg:   #fdf6e8;
+  --weather-bg: rgba(255,248,230,0.75);
+  --del-color:  #aa2222;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  background-color: var(--bg);
+  background-image: var(--bg-img);
+  background-repeat: repeat;
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 52px;
+  transition: background-color 0.4s, color 0.3s;
+}
+
+/* ============================================================
+   DAY/NIGHT TOGGLE  (exact style from reference)
+   ============================================================ */
+.tdnn {
+  cursor: pointer;
+  font-size: 10%;
+  position: fixed;
+  top: 4px;
+  right: 16px;
+  height: var(--toggleHeight);
+  width: var(--toggleWidth);
+  border-radius: var(--toggleHeight);
+  transition: all 500ms ease-in-out;
+  background: var(--night-bg);
+  z-index: 9000;
+}
+.tdnn.day { background: #ffbf71; }
+.moon {
+  position: absolute;
+  border-radius: 50%;
+  transition: all 400ms ease-in-out;
+  top: 3em; left: 3em;
+  transform: rotate(-75deg);
+  width: var(--toggleBtnR);
+  height: var(--toggleBtnR);
+  background: var(--night-bg);
+  box-shadow:
+    3em 2.5em 0 0em var(--mooncolor) inset,
+    rgba(255,255,255,0.1) 0em -7em 0 -4.5em,
+    rgba(255,255,255,0.1) 3em 7em 0 -4.5em,
+    rgba(255,255,255,0.1) 2em 13em 0 -4em;
+}
+.moon.sun {
+  top: 4.5em; left: 18em;
+  transform: rotate(0deg);
+  width: 7em; height: 7em;
+  background: #fff;
+  box-shadow: none;
+}
+
+/* ============================================================
+   TAB BAR
+   ============================================================ */
+.tab-bar {
+  display: flex;
+  align-items: stretch;
+  background: var(--tab-bg);
+  border-bottom: 2px solid var(--red2);
+  position: sticky;
+  top: 0;
+  z-index: 500;
+  flex-wrap: wrap;
+  padding-right: 4.5em; /* clear the toggle */
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  color: #f0e0c0;
+  padding: 7px 13px;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { background: rgba(13,184,221,0.18); color: var(--cyan); }
+.tab-btn.active { background: var(--gold); color: var(--tab-active-txt); }
+.tab-btn.dragging { opacity: 0.4; }
+.tab-btn.drop-left  { box-shadow: -3px 0 0 0 var(--cyan); }
+.tab-btn.drop-right { box-shadow:  3px 0 0 0 var(--cyan); }
+
+.toolbar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+}
+
+.tool-btn {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #d0c0a0;
+  padding: 3px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tool-btn:hover { background: rgba(221,176,75,0.18); border-color: var(--gold); color: var(--gold); }
+.tool-btn.active { background: var(--gold); border-color: var(--gold); color: #1a0a00; }
+
+.add-tab-btn {
+  display: none;
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.5);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'Outfit', sans-serif;
+  margin: 4px;
+  transition: all 0.2s;
+}
+body.edit-mode .add-tab-btn { display: inline-block; }
+.add-tab-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ============================================================
+   TAB CONTENT
+   ============================================================ */
+.tab-content { display: none; }
+.tab-content.active { display: block; position: relative; z-index: 3; }
+
+/* ============================================================
+   SEARCH BAR
+   ============================================================ */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px 12px;
+  position: relative;
+  z-index: 3;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.search-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--search);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.search-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--search);
+  color: var(--search);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  padding: 2px 4px;
+  outline: none;
+  width: 260px;
+  transition: border-color 0.2s, width 0.3s;
+  caret-color: var(--search);
+}
+.search-input::placeholder { color: var(--search); opacity: 0.35; }
+.search-input:focus { border-bottom-width: 2px; width: 340px; }
+.search-clear {
+  background: none;
+  border: none;
+  color: var(--search);
+  opacity: 0;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.search-clear.visible { opacity: 0.6; pointer-events: auto; }
+.search-clear.visible:hover { opacity: 1; }
+
+/* Dim all sections when searching */
+.searching .section-card { opacity: 0.12; transition: opacity 0.2s; }
+
+/* Pop sections that have a match */
+.searching .section-card.search-has-match { opacity: 1; }
+
+/* Dim non-matching items within a matching section */
+.searching .section-card.search-has-match li { opacity: 0.15; transition: opacity 0.2s; }
+
+/* Pop the specific matching items */
+.searching .section-card.search-has-match li.search-item-match { opacity: 1; }
+
+/* Highlight matched text */
+.search-match {
+  background: rgba(221,176,75,0.3);
+  border-radius: 2px;
+  color: var(--text-head);
+  font-weight: 600;
+}
+
+/* ============================================================
+   RECENTLY VISITED
+   ============================================================ */
+.recent-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 6px;
+  opacity: 0.6;
+}
+.recent-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+.recent-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+.recent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 10px 2px 8px;
+  font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  color: var(--link);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s, opacity 0.15s;
+  opacity: 0.85;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.recent-chip:hover { border-color: var(--link-hover); color: var(--link-hover); opacity: 1; }
+.recent-chip-favicon {
+  width: 12px; height: 12px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.recent-clear-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  opacity: 0.4;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.recent-clear-btn:hover { opacity: 0.9; }
+
+
+.columns-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 12px 14px 8px;
+}
+
+.col-wrap {
+  flex: 1 1 220px;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ============================================================
+   SECTION CARD
+   ============================================================ */
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 11px 10px;
+  backdrop-filter: blur(2px);
+  transition: background 0.3s, border-color 0.3s;
+}
+.section-card.sec-dragging { opacity: 0.35; }
+.section-card.sec-drop-above { box-shadow: 0 -3px 0 0 var(--cyan); }
+.section-card.sec-drop-below { box-shadow: 0 3px 0 0 var(--cyan); }
+
+/* Section drag handle — edit mode only */
+.sec-drag-handle {
+  display: none;
+  cursor: grab;
+  color: var(--text-dim);
+  font-size: 14px;
+  padding: 0 3px;
+  opacity: 0.4;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: opacity 0.15s;
+}
+.sec-drag-handle:hover { opacity: 1; }
+body.edit-mode .sec-drag-handle { display: block; }
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-bottom: 6px;
+  margin-bottom: 7px;
+  border-bottom: 1px solid var(--border);
+}
+.section-heading-text {
+  flex: 1;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12.5px;
+  font-weight: normal;
+  letter-spacing: 0.04em;
+  color: var(--text-head);
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   LINKS LIST
+   ============================================================ */
+.links-list { list-style: none; }
+.links-list:empty,
+.links-list li:only-child.dragging ~ :not(li) {
+  min-height: 32px;
+}
+/* Empty drop zone highlight */
+.links-list.drop-empty {
+  min-height: 32px;
+  border: 1px dashed var(--cyan);
+  border-radius: 4px;
+  background: rgba(15,184,221,0.06);
+}
+.links-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 1.5px 0;
+}
+.link-anchor {
+  color: var(--link);
+  text-decoration: none;
+  font-size: 12.5px;
+  flex: 1;
+  min-width: 0;
+  transition: color 0.15s;
+  font-weight: 400;
+}
+.link-anchor:hover { color: var(--link-hover); text-decoration: underline; }
+.link-anchor:visited { color: var(--link); }
+
+.link-dash {
+  flex-shrink: 0;
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-right: 1px;
+  user-select: none;
+}
+
+.link-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  letter-spacing: 0.02em;
+}
+
+
+
+/* group header rows (category labels within a section) */
+.links-list li.group-header { margin-top: 9px; }
+.links-list li.group-header:first-child { margin-top: 0; }
+
+/* ============================================================
+   EDIT MODE CONTROLS
+   ============================================================ */
+.ic-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, background 0.15s;
+}
+body.edit-mode .ic-btn { opacity: 0.55; pointer-events: auto; }
+body.edit-mode .ic-btn:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+
+.ic-edit { color: var(--cyan); }
+.ic-del  { color: var(--del-color); }
+
+.add-link-row {
+  display: none;
+  margin-top: 6px;
+}
+body.edit-mode .add-link-row { display: block; }
+
+.dashed-btn {
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--text-dim);
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s;
+  text-align: center;
+}
+.dashed-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+.add-section-wrap, .del-col-wrap, .add-col-wrap {
+  display: none;
+}
+body.edit-mode .add-section-wrap,
+body.edit-mode .del-col-wrap,
+body.edit-mode .add-col-wrap { display: block; }
+
+.add-col-wrap {
+  flex-shrink: 0;
+  align-self: flex-start;
+  display: none;
+}
+body.edit-mode .add-col-wrap { display: flex; align-items: flex-start; }
+
+.add-col-card {
+  background: transparent;
+  border: 1.5px dashed var(--border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.add-col-card:hover { border-color: var(--gold); color: var(--gold); }
+
+.del-col-btn {
+  color: var(--del-color) !important;
+  border-color: var(--del-color) !important;
+}
+.del-col-btn:hover { color: #fff !important; background: rgba(204,50,50,0.15) !important; }
+
+/* ============================================================
+   INLINE EDITS
+   ============================================================ */
+.inline-inp {
+  background: var(--inp-bg);
+  border: 1px solid var(--cyan);
+  color: var(--text);
+  border-radius: 3px;
+  padding: 2px 7px;
+  font-size: 12.5px;
+  font-family: 'Outfit', sans-serif;
+  width: 100%;
+  outline: none;
+}
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 8000;
+  align-items: center;
+  justify-content: center;
+}
+.overlay.open { display: flex; }
+
+.modal {
+  background: var(--modal-bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 22px 24px;
+  width: 420px;
+  max-width: 92vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.modal h3 {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.modal label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+.modal input, .modal select {
+  width: 100%;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.modal input:focus, .modal select:focus { border-color: var(--cyan); }
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+.modal-label {
+  display: block;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+.modal-input {
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.modal-input:focus { border-color: var(--cyan); }
+.mbtn[disabled] { opacity: 0.4; cursor: not-allowed; }
+.mbtn {
+  padding: 7px 18px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.mbtn-primary { background: var(--gold); color: #1a0a00; }
+.mbtn-primary:hover { background: #c9a040; }
+.mbtn-cancel { background: transparent; border: 1px solid var(--text-dim); color: var(--text); }
+.mbtn-cancel:hover { background: rgba(255,255,255,0.07); }
+
+/* ============================================================
+   WEATHER WIDGET
+   ============================================================ */
+.tab-bottom-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+}
+.weather-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px;
+  flex-shrink: 0;
+}
+.quote-in-weather {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 18px 8px 16px;
+  gap: 10px;
+}
+.quote-in-weather .quote-text {
+  text-align: right;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  white-space: normal;
+  max-width: 33vw;
+}
+.quote-in-weather .quote-text .quote-mark {
+  font-size: 18px;
+  line-height: 0;
+  vertical-align: -4px;
+  color: var(--gold);
+  opacity: 0.6;
+  font-style: normal;
+}
+.quote-in-weather .quote-author {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--gold);
+  opacity: 0.8;
+  margin-top: 4px;
+  letter-spacing: 0.03em;
+}
+.quote-in-weather .quote-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+/* Hide standalone quote bar when weather row is present on active tab */
+.quote-bar.quote-hidden-by-weather { display: none !important; }
+
+/* ============================================================
+   FOCUS MODE PANEL
+   ============================================================ */
+.focus-panel-wrap {
+  position: fixed;
+  top: 36px;
+  right: 0;
+  z-index: 8500;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.focus-panel {
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 0 8px;
+  padding: 8px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  box-shadow: -4px 4px 20px rgba(0,0,0,0.4);
+  transform: scaleY(0);
+  transform-origin: top center;
+  opacity: 0;
+  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), opacity 0.15s;
+  pointer-events: none;
+}
+.focus-panel.open {
+  transform: scaleY(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.focus-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.focus-row + .focus-row {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+/* lo-fi player */
+.lofi-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lofi-select-wrap {
+  position: relative;
+  max-width: 220px;
+  overflow: visible;
+}
+.lofi-select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  width: 220px;
+  outline: none;
+  transition: border-color 0.15s;
+  text-align: left;
+}
+.lofi-select-btn:hover { border-color: var(--cyan); }
+.lofi-select-btn span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.lofi-select-arrow { flex-shrink: 0; opacity: 0.6; font-size: 10px; }
+
+.lofi-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 100%;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  list-style: none;
+  padding: 4px 0;
+  margin: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  z-index: 9999;
+}
+.lofi-dropdown.open { display: block; }
+.lofi-dropdown li {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: 'Outfit', sans-serif;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s, color 0.1s;
+}
+.lofi-dropdown li:hover { background: rgba(13,184,221,0.1); color: var(--cyan); }
+.lofi-dropdown li.active { color: var(--gold); }
+.lofi-dropdown li.placeholder { color: var(--text-dim); opacity: 0.5; }
+
+.lofi-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.2;
+}
+.lofi-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.lofi-btn.playing { border-color: var(--gold); color: var(--gold); }
+.lofi-edit-btn { border-style: dashed; }
+body:not(.edit-mode) .lofi-edit-btn { display: none; }
+
+.lofi-status {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.lofi-status.playing { color: var(--gold); opacity: 1; }
+.lofi-edge-help {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 7px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.lofi-edge-help:hover { opacity: 1; border-color: var(--gold); color: var(--gold); }
+
+/* noise type buttons */
+.noise-group {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.noise-label {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  margin-right: 4px;
+  text-transform: uppercase;
+}
+.noise-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  padding: 3px 9px;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+.noise-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.noise-btn.active { background: rgba(15,184,221,0.15); border-color: var(--cyan); color: var(--cyan); }
+
+/* volume slider */
+.vol-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-left: 1px solid var(--border);
+  padding-left: 14px;
+}
+.vol-label {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.vol-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+.vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--cyan);
+  cursor: pointer;
+}
+.vol-slider::-moz-range-thumb {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--cyan);
+  border: none;
+  cursor: pointer;
+}
+.beat-group {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-left: 1px solid var(--border);
+  padding-left: 14px;
+}
+.beat-val {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cyan);
+  min-width: 32px;
+  text-align: right;
+}
+
+
+.w-card {
+  background: var(--weather-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 12px;
+  min-width: 140px;
+  text-align: center;
+  backdrop-filter: blur(2px);
+}
+.w-card .wloc  { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:0.1em; color:var(--gold); text-transform:uppercase; margin-bottom:1px; }
+.w-card .wtemp { font-size:22px; font-weight:700; color:var(--text-head); line-height:1; }
+.w-card .wdesc { font-size:11px; color:var(--text-dim); margin-top:1px; }
+.w-card .whilo { font-size:10.5px; color:var(--text-dim); margin-top:2px; }
+.w-card .wload { font-size:11px; color:var(--text-dim); font-style:italic; }
+
+/* Weather search results */
+.wsearch-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  margin: 3px 0;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-family: 'Outfit', sans-serif;
+  transition: border-color 0.15s;
+}
+.wsearch-row:hover { border-color: var(--cyan); }
+
+/* ============================================================
+   WEATHER LOCATION LIST (in modal)
+   ============================================================ */
+.wloc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+}
+.wloc-row span { flex:1; font-size:13px; }
+.wloc-del {
+  background: none;
+  border: none;
+  color: var(--del-color);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1;
+}
+.wloc-del:hover { background: rgba(204,50,50,0.12); }
+
+/* ============================================================
+   QUOTE BAR
+   ============================================================ */
+.quote-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px 12px;
+  border-top: 1px solid var(--border);
+  min-height: 48px;
+  transition: opacity 0.3s;
+  position: relative;
+  z-index: 3;
+}
+.quote-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.quote-bar.hidden { display: none; }
+body.edit-mode .quote-bar.hidden { display: flex; }
+body.edit-mode .quote-bar.hidden .quote-text,
+body.edit-mode .quote-bar.hidden .quote-refresh,
+body.edit-mode .quote-bar.hidden .quote-right { visibility: hidden; }
+
+.quote-text {
+  flex: 1;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.quote-text .quote-mark {
+  font-size: 18px;
+  line-height: 0;
+  vertical-align: -4px;
+  color: var(--gold);
+  opacity: 0.6;
+  font-style: normal;
+}
+.quote-author {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  margin-top: 3px;
+  text-transform: uppercase;
+  font-family: 'Share Tech Mono', monospace;
+}
+.quote-refresh {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 4px;
+  padding: 4px 9px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  transition: all 0.2s;
+}
+.quote-refresh:hover { border-color: var(--gold); color: var(--gold); }
+.quote-refresh.spinning { animation: spin 0.6s ease-in-out; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.quote-toggle-wrap { display: none; }
+body.edit-mode .quote-toggle-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.quote-toggle-lbl {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  font-family: 'Outfit', sans-serif;
+}
+.quote-toggle-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 4px;
+  padding: 3px 9px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.quote-toggle-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.quote-toggle-btn.on { border-color: var(--gold); color: var(--gold); }
+
+/* ============================================================
+   BACKGROUND PANEL
+   ============================================================ */
+.bg-panel-wrap {
+  position: fixed;
+  top: 36px;
+  right: 120px; /* offset left of focus panel */
+  z-index: 8400;
+  pointer-events: none;
+}
+.bg-panel {
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 8px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  transform: scaleY(0);
+  transform-origin: top center;
+  opacity: 0;
+  transition: transform 0.2s cubic-bezier(0.4,0,0.2,1), opacity 0.15s;
+  pointer-events: none;
+}
+.bg-panel.open {
+  transform: scaleY(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.bg-effects-row, .bg-color-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.bg-color-row {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  gap: 8px;
+}
+.bg-color-swatches {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.bg-swatch {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+.bg-swatch:hover { transform: scale(1.2); }
+.bg-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  flex-wrap: nowrap;
+}
+.bg-url-input {
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  outline: none;
+  min-width: 0;
+  transition: border-color 0.15s;
+}
+.bg-url-input:focus { border-color: var(--cyan); }
+.bg-url-input::placeholder { color: var(--text-dim); opacity: 0.5; }
+
+
+.cp-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.cp-slot:hover { border-color: var(--cyan); }
+.cp-slot.selected { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
+.cp-swatch {
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+.cp-slot-label {
+  font-size: 11.5px;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#cpDarkBtn.cp-mode-active, #cpLightBtn.cp-mode-active {
+  background: var(--gold); color: #1a0a00;
+}
+
+
+body.edit-mode .drag-handle {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: grab;
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 0 4px 0 0;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+  user-select: none;
+}
+body.edit-mode .drag-handle:hover { opacity: 1; }
+.drag-handle { display: none; }
+
+li.dragging { opacity: 0.35; }
+
+li.drop-above { box-shadow: 0 -2px 0 0 var(--cyan); }
+li.drop-below { box-shadow: 0 2px 0 0 var(--cyan); }
+li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 1px dashed var(--cyan); }
+
+/* heading items */
+.item-heading {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0 2px;
+  margin-top: 4px;
+}
+.item-heading:first-child { margin-top: 0; padding-top: 2px; }
+
+.item-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.item-heading-text {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+.heading-children { list-style: none; padding-left: 0; }
+
+/* ============================================================
+   BOTTOM BAR
+   ============================================================ */
+.bottom-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 48px;
+  background: var(--tab-bg);
+  border-top: 2px solid var(--red2);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  z-index: 4000;
+  padding: 0 12px;
+}
+
+/* ---- CLOCK ---- */
+.clock-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  position: relative;
+}
+.clock-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  line-height: 1;
+}
+.clock-toggle-btn:hover { color: var(--gold); }
+
+/* Clock display */
+.clock-display {
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  user-select: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.clock-display:hover { opacity: 0.8; }
+
+/* Nixie style */
+.clock-nixie {
+  font-family: 'Share Tech Mono', monospace;
+  color: #ff8c00;
+  text-shadow: 0 0 8px #ff6600, 0 0 16px #ff440066;
+  background: #0a0500;
+  padding: 2px 10px;
+  border-radius: 4px;
+  border: 1px solid #3a2000;
+}
+/* Flip clock */
+.clock-flip {
+  font-family: 'Share Tech Mono', monospace;
+  color: #f0f0f0;
+  background: #111;
+  padding: 3px 10px 2px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+  position: relative;
+}
+.clock-flip::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: 50%; height: 1px;
+  background: rgba(0,0,0,0.4);
+}
+/* Digital alarm */
+.clock-digital {
+  font-family: 'Share Tech Mono', monospace;
+  color: #ff3030;
+  text-shadow: 0 0 6px #ff000088;
+  background: #0a0000;
+  padding: 2px 10px;
+  border-radius: 3px;
+  border: 1px solid #330000;
+}
+/* Neon */
+.clock-neon {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  color: #fff;
+  text-shadow:
+    0 0 4px #fff,
+    0 0 10px var(--cyan),
+    0 0 20px var(--cyan),
+    0 0 40px var(--cyan);
+  letter-spacing: 0.12em;
+}
+/* Minimal */
+.clock-minimal {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  font-size: 18px;
+  letter-spacing: 0.08em;
+}
+
+/* Clock style picker popup */
+.clock-picker {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.4);
+  z-index: 5000;
+  white-space: nowrap;
+  min-width: 160px;
+}
+.clock-picker.open { display: flex; }
+.clock-style-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text);
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'Outfit', sans-serif;
+  text-align: left;
+  transition: all 0.15s;
+}
+.clock-style-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.clock-style-btn.active { border-color: var(--gold); color: var(--gold); }
+
+/* ---- NOW PLAYING ---- */
+.now-playing {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  flex-shrink: 1;
+  min-width: 0;
+}
+.np-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+  color: var(--gold);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.np-icon.active { opacity: 1; animation: npPulse 2s ease-in-out infinite; }
+@keyframes npPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+.np-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 380px;
+}
+.np-label.playing { color: var(--gold); }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 720px) {
+  .tdnn { font-size: 7%; top: 5px; right: 12px; }
+  .sections-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== DAY / NIGHT TOGGLE ===== -->
+<div class="tdnn" id="toggle" onclick="toggleTheme()" title="Toggle day / night">
+  <div class="moon" id="moonEl"></div>
+</div>
+
+<!-- ===== FOCUS PANEL ===== -->
+<div class="focus-panel-wrap" id="focusPanelWrap">
+  <div class="focus-panel" id="focusPanel">
+
+    <!-- Row 1: Noise + Volume + Binaural -->
+    <div class="focus-row">
+      <div class="noise-group">
+        <span class="noise-label">Noise</span>
+        <button class="noise-btn" onclick="setNoise('white',this)">White</button>
+        <button class="noise-btn" onclick="setNoise('pink',this)">Pink</button>
+        <button class="noise-btn" onclick="setNoise('brown',this)">Brown</button>
+        <button class="noise-btn" onclick="setNoise('off',this)">Off</button>
+      </div>
+      <div class="vol-group">
+        <span class="vol-label">Vol</span>
+        <input type="range" class="vol-slider" id="volSlider" min="0" max="100" value="40"
+               oninput="setVolume(this.value)">
+      </div>
+      <div class="beat-group">
+        <span class="vol-label">Binaural</span>
+        <input type="range" class="vol-slider" id="beatSlider" min="0" max="40" value="0"
+               oninput="setBinaural(this.value)">
+        <span class="beat-val" id="beatVal">Off</span>
+      </div>
+    </div>
+
+    <!-- Row 2: Lo-fi player -->
+    <div class="focus-row lofi-row">
+      <div class="lofi-group">
+        <span class="noise-label">Lo‑fi</span>
+        <div class="lofi-select-wrap" id="lofiSelectWrap">
+          <button class="lofi-select-btn" id="lofiSelectBtn" onclick="toggleLofiDropdown()">
+            <span id="lofiSelectLabel">— select track —</span>
+            <span class="lofi-select-arrow">▾</span>
+          </button>
+          <ul class="lofi-dropdown" id="lofiDropdown"></ul>
+        </div>
+        <button class="lofi-btn" id="lofiPlayBtn" onclick="lofiPlay()" title="Play / Pause">▶</button>
+        <button class="lofi-btn" onclick="lofiStop()" title="Stop">■</button>
+        <button class="lofi-btn" onclick="lofiShuffle()" title="Shuffle">↻</button>
+        <button class="lofi-btn lofi-edit-btn" id="lofiEditBtn" onclick="openLofiModal()" title="Edit playlist">✎</button>
+      </div>
+      <span class="lofi-status" id="lofiStatus">idle</span>
+      <button class="lofi-edge-help" onclick="openOverlay('edgeHelpOverlay')" title="Can't play in MS Edge?">⚠ Edge?</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Hidden YouTube iframe player -->
+<div id="ytWrap" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;pointer-events:none;">
+  <div id="ytPlayer"></div>
+</div>
+
+<!-- ===== ANIMATED BG CANVAS ===== -->
+<div id="bgDimOverlay" style="position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:0;transition:opacity 0.3s;"></div>
+<canvas id="bgCanvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;opacity:0;transition:opacity 0.6s;"></canvas>
+
+<!-- ===== BG PICKER PANEL ===== -->
+<div class="bg-panel-wrap" id="bgPanelWrap">
+  <div class="bg-panel" id="bgPanel">
+    <div class="bg-effects-row">
+      <span class="noise-label">Effect</span>
+      <button class="noise-btn" onclick="setBgStyle('none',this)">Off</button>
+      <button class="noise-btn" onclick="setBgStyle('starfield',this)">✦ Stars</button>
+      <button class="noise-btn" onclick="setBgStyle('aurora',this)">🌌 Aurora</button>
+      <button class="noise-btn" onclick="setBgStyle('matrix',this)">⬛ Matrix</button>
+      <button class="noise-btn" onclick="setBgStyle('pulse',this)">◎ Pulse</button>
+      <button class="noise-btn" onclick="setBgStyle('grid',this)">⊞ Grid</button>
+      <button class="noise-btn" onclick="setBgStyle('particles',this)">· Particles</button>
+      <button class="noise-btn" onclick="setBgStyle('synthwave',this)">🌅 Synthwave</button>
+    </div>
+    <div class="bg-color-row">
+      <span class="noise-label">Color</span>
+      <div class="bg-color-swatches" id="bgSwatches">
+        <button class="bg-swatch" data-color="#0fb8dd" style="background:#0fb8dd" onclick="setBgColor('#0fb8dd',this)" title="Cyan"></button>
+        <button class="bg-swatch" data-color="#ddb04b" style="background:#ddb04b" onclick="setBgColor('#ddb04b',this)" title="Gold"></button>
+        <button class="bg-swatch" data-color="#cc4444" style="background:#cc4444" onclick="setBgColor('#cc4444',this)" title="Red"></button>
+        <button class="bg-swatch" data-color="#44cc88" style="background:#44cc88" onclick="setBgColor('#44cc88',this)" title="Green"></button>
+        <button class="bg-swatch" data-color="#aa66ff" style="background:#aa66ff" onclick="setBgColor('#aa66ff',this)" title="Purple"></button>
+        <button class="bg-swatch" data-color="#ff8844" style="background:#ff8844" onclick="setBgColor('#ff8844',this)" title="Orange"></button>
+        <button class="bg-swatch" data-color="#ffffff" style="background:#ffffff" onclick="setBgColor('#ffffff',this)" title="White"></button>
+        <button class="bg-swatch" data-color="#ff66cc" style="background:#ff66cc" onclick="setBgColor('#ff66cc',this)" title="Pink"></button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="noise-label" style="margin-right:0;">Opacity</span>
+        <input type="range" class="vol-slider" id="bgOpacity" min="5" max="60" value="25"
+               oninput="setBgOpacity(this.value)" style="width:70px;">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="noise-label" style="margin-right:0;">Dim</span>
+        <input type="range" class="vol-slider" id="bgDim" min="0" max="90" value="0"
+               oninput="setBgDim(this.value)" style="width:70px;">
+      </div>
+    </div>
+    <div class="bg-url-row">
+      <span class="noise-label">Custom URL</span>
+      <input type="text" class="bg-url-input" id="bgUrlInput" placeholder="https://…  image or GIF URL"
+             oninput="bgUrlPreview(this.value)">
+      <button class="noise-btn" onclick="setBgUrl()">Apply</button>
+      <button class="noise-btn" onclick="clearBgUrl()" title="Clear custom URL">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB BAR ===== -->
+<div class="tab-bar" id="tabBar">
+  <!-- tab buttons injected -->
+  <div class="toolbar" id="toolbar">
+    <button class="add-tab-btn" onclick="promptAddTab()">＋ Tab</button>
+    <button class="tool-btn" id="editBtn" onclick="toggleEditMode()">✏ Edit</button>
+    <button class="tool-btn" id="colorsBtn" onclick="openColorsModal()" title="Customize colors" style="display:none;">🎨 Colors</button>
+    <button class="tool-btn" onclick="openWeatherModal()" title="Configure weather locations">⛅ Weather</button>
+    <button class="tool-btn" id="bgBtn" onclick="toggleBgPanel()" title="Animated background">🖼 BG</button>
+    <button class="tool-btn" id="focusToolBtn" onclick="toggleFocusPanel()" title="Focus mode sounds">◈ Focus</button>
+    <button class="tool-btn" onclick="exportJSON()" title="Save bookmarks as JSON backup">⬇ Save</button>
+    <button class="tool-btn" onclick="triggerImport()" title="Load a previously exported JSON backup">⬆ Load</button>
+    <button class="tool-btn" onclick="openBookmarkImport()" title="Import bookmarks from browser export file">📑 Bookmarks</button>
+    <button class="tool-btn" style="color:#cc6666;" onclick="resetToDefaults()" title="Reset to defaults">↺ Reset</button>
+</div>
+</div>
+
+<!-- ===== SEARCH BAR ===== -->
+<div class="search-bar" id="searchBar">
+  <span class="search-label">Search:</span>
+  <input type="text" id="searchInput" class="search-input" placeholder="type to filter…"
+         oninput="doSearch(this.value)" autocomplete="off" spellcheck="false">
+  <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Clear search">✕</button>
+  <div class="recent-divider" id="recentDivider" style="display:none;"></div>
+  <span class="recent-label" id="recentLabelEl" style="display:none;">Recent:</span>
+  <div class="recent-chips" id="recentChips"></div>
+  <button class="recent-clear-btn" id="recentClearBtn" onclick="clearRecent()" title="Clear history" style="display:none;">✕</button>
+</div>
+
+<!-- ===== TAB CONTENTS ===== -->
+<div id="tabContents"></div>
+
+<!-- ===== FOOTER ===== -->
+<!-- ===== QUOTE BAR ===== -->
+<div id="quoteBarAnchor">
+<div class="quote-bar" id="quoteBar">
+  <div class="quote-text" id="quoteText"><em style="color:var(--text-dim);font-size:12px;">Loading quote…</em></div>
+  <div class="quote-right">
+    <button class="quote-refresh" id="quoteRefresh" onclick="fetchQuote()" title="New quote">↻</button>
+    <div class="quote-toggle-wrap">
+      <span class="quote-toggle-lbl">Quotes:</span>
+      <button class="quote-toggle-btn" id="quoteToggleBtn" onclick="toggleQuotes()">On</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== BOTTOM BAR ===== -->
+<div class="bottom-bar" id="bottomBar">
+
+  <!-- Clock -->
+  <div class="clock-wrap" id="clockWrap">
+    <button class="clock-toggle-btn" id="clockToggleBtn" onclick="toggleClock()" title="Toggle clock">🕐</button>
+    <div class="clock-display clock-nixie" id="clockDisplay" onclick="toggleClockPicker()" title="Change clock style" style="display:none;">00:00:00</div>
+    <div class="clock-picker" id="clockPicker">
+      <button class="clock-style-btn" data-style="nixie"   onclick="setClockStyle('nixie')">🔆 Nixie Tube</button>
+      <button class="clock-style-btn" data-style="flip"    onclick="setClockStyle('flip')">🃏 Flip Clock</button>
+      <button class="clock-style-btn" data-style="digital" onclick="setClockStyle('digital')">📟 Digital Alarm</button>
+      <button class="clock-style-btn" data-style="neon"    onclick="setClockStyle('neon')">💡 Neon Sign</button>
+      <button class="clock-style-btn" data-style="minimal" onclick="setClockStyle('minimal')">⬜ Minimal</button>
+    </div>
+  </div>
+
+  <!-- Now Playing -->
+  <div class="now-playing">
+    <span class="np-icon" id="npIcon">♫</span>
+    <span class="np-label" id="npLabel">No track selected</span>
+  </div>
+
+</div>
+
+<!-- ===== HIDDEN FILE INPUT ===== -->
+<input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<!-- ===== LINK MODAL ===== -->
+<div class="overlay" id="linkOverlay">
+  <div class="modal">
+    <h3 id="linkModalTitle">Link</h3>
+    <label>Label</label>
+    <input type="text" id="lmLabel" placeholder="Link label">
+    <label>URL</label>
+    <input type="text" id="lmUrl" placeholder="https://...">
+    <label>Open in</label>
+    <select id="lmTarget">
+      <option value="_blank">New tab</option>
+      <option value="_self">Same tab</option>
+    </select>
+    <div id="lmError" style="display:none;margin-top:10px;padding:7px 10px;background:rgba(204,50,50,0.15);border:1px solid #cc3333;border-radius:4px;color:#ff8888;font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('linkOverlay')">Cancel</button>
+      <button class="mbtn mbtn-primary" onclick="saveLink()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== COLORS MODAL ===== -->
+<div class="overlay" id="colorsOverlay">
+  <div class="modal" style="width:560px;max-height:90vh;overflow-y:auto;">
+    <h3>🎨 Color Palette</h3>
+
+    <!-- Mode toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="mbtn" id="cpDarkBtn"  onclick="cpSetMode('dark')"  style="flex:1;padding:6px;">🌙 Dark Mode</button>
+      <button class="mbtn" id="cpLightBtn" onclick="cpSetMode('light')" style="flex:1;padding:6px;">☀️ Light Mode</button>
+    </div>
+
+    <!-- Color wheel -->
+    <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px;">
+      <div style="flex-shrink:0;position:relative;">
+        <canvas id="cpWheel" width="200" height="200" style="border-radius:50%;cursor:crosshair;display:block;"></canvas>
+        <div id="cpWheelDot" style="position:absolute;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.8);pointer-events:none;transform:translate(-50%,-50%);top:50%;left:50%;"></div>
+      </div>
+      <div style="flex:1;position:relative;">
+        <canvas id="cpSL" width="220" height="200" style="border-radius:6px;cursor:crosshair;display:block;width:100%;height:200px;"></canvas>
+        <div id="cpSLDot" style="position:absolute;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 3px rgba(0,0,0,0.8);pointer-events:none;transform:translate(-50%,-50%);top:50%;left:50%;"></div>
+      </div>
+    </div>
+
+    <!-- Hex + preview -->
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+      <div id="cpPreview" style="width:44px;height:44px;border-radius:6px;border:1px solid var(--border);flex-shrink:0;"></div>
+      <input type="text" id="cpHex" placeholder="#rrggbb" maxlength="7"
+             style="flex:1;font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:0.1em;"
+             oninput="cpHexInput(this.value)">
+      <button class="mbtn mbtn-primary" onclick="cpApplyToSlot()" style="padding:7px 14px;flex-shrink:0;">Apply</button>
+    </div>
+
+    <!-- Color slots -->
+    <div id="cpSlots" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;"></div>
+
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="cpResetTheme()">Reset Theme</button>
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('colorsOverlay')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BOOKMARK IMPORT MODAL ===== -->
+<div class="overlay" id="bookmarkOverlay">
+  <div class="modal" style="width:480px;">
+    <h3>📑 Import Browser Bookmarks</h3>
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">
+      Export your bookmarks from your browser first:<br>
+      <strong style="color:var(--text);">Chrome/Edge:</strong> Bookmarks menu → Bookmark manager → ⋮ → Export bookmarks<br>
+      <strong style="color:var(--text);">Firefox:</strong> Bookmarks → Manage bookmarks → Import and Backup → Export to HTML
+    </p>
+
+    <!-- File picker -->
+    <div style="margin-bottom:14px;">
+      <label class="modal-label">Bookmark file (.html)</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="file" id="bmFileInput" accept=".html,.htm"
+               style="display:none" onchange="bmFileSelected(event)">
+        <button class="mbtn mbtn-cancel" onclick="document.getElementById('bmFileInput').click()"
+                style="padding:6px 14px;">Choose File</button>
+        <span id="bmFileName" style="font-size:12px;color:var(--text-dim);font-style:italic;">No file chosen</span>
+      </div>
+    </div>
+
+    <!-- Tab picker -->
+    <div style="margin-bottom:10px;">
+      <label class="modal-label">Import into tab</label>
+      <select id="bmTabSelect" class="modal-input" onchange="bmTabSelectChange()"
+              style="width:100%;padding:6px 8px;">
+        <option value="__new__">＋ New tab</option>
+      </select>
+    </div>
+
+    <!-- New tab name (shown when "new tab" selected) -->
+    <div id="bmNewTabWrap" style="margin-bottom:14px;">
+      <label class="modal-label">New tab name</label>
+      <input type="text" id="bmNewTabName" class="modal-input" placeholder="e.g. My Bookmarks"
+             style="width:100%;box-sizing:border-box;">
+    </div>
+
+    <!-- Preview area -->
+    <div id="bmPreview" style="display:none;margin-bottom:14px;">
+      <label class="modal-label">Preview</label>
+      <div id="bmPreviewContent" style="background:var(--surface);border:1px solid var(--border);
+           border-radius:5px;padding:10px;font-size:11px;color:var(--text-dim);
+           max-height:160px;overflow-y:auto;line-height:1.7;"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('bookmarkOverlay')">Cancel</button>
+      <button class="mbtn mbtn-primary" onclick="bmDoImport()" id="bmImportBtn" disabled>Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EDGE HELP MODAL ===== -->
+<div class="overlay" id="edgeHelpOverlay">
+  <div class="modal" style="width:480px;">
+    <h3>⚠ Lo‑fi Audio in Microsoft Edge</h3>
+    <p style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:12px;">
+      Edge blocks audio from YouTube iframes by default due to its strict autoplay policy.
+      Firefox and Chrome don't have this restriction. To fix it in Edge:
+    </p>
+    <ol style="font-size:13px;color:var(--text);line-height:2;padding-left:20px;margin-bottom:16px;">
+      <li>Click the link below to open Edge's Media Autoplay settings</li>
+      <li>Under <strong style="color:var(--gold);">Allow</strong>, click <strong style="color:var(--gold);">Add</strong></li>
+      <li>Enter your page's address — e.g. <code style="background:var(--surface);padding:1px 6px;border-radius:3px;font-size:12px;">http://localhost:8080</code> or your NAS IP such as <code style="background:var(--surface);padding:1px 6px;border-radius:3px;font-size:12px;">http://10.163.1.236</code></li>
+      <li>Click <strong style="color:var(--gold);">Add</strong>, then reload this page</li>
+    </ol>
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">
+      Note: <code style="background:var(--surface);padding:1px 6px;border-radius:3px;">edge://</code> links must be opened directly in Edge's address bar — they cannot be clicked from within a web page.
+      Copy the address below and paste it into Edge's address bar.
+    </p>
+    <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:8px 12px;margin-bottom:16px;">
+      <code style="flex:1;font-size:12px;color:var(--gold);font-family:'Share Tech Mono',monospace;">edge://settings/content/mediaAutoplay</code>
+      <button class="mbtn mbtn-primary" onclick="copyEdgeUrl()" id="edgeCopyBtn" style="padding:4px 12px;font-size:12px;">Copy</button>
+    </div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('edgeHelpOverlay')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LOFI MODAL ===== -->
+<div class="overlay" id="lofiOverlay">
+  <div class="modal" style="width:500px">
+    <h3>Lo‑fi Playlist</h3>
+    <div id="lofiList" style="min-height:30px;margin-bottom:14px;max-height:260px;overflow-y:auto;"></div>
+    <label>Add Track</label>
+    <div style="display:flex;gap:7px;margin-bottom:6px;">
+      <input type="text" id="lofiAddLabel" placeholder="Track label…" style="flex:1">
+    </div>
+    <div style="display:flex;gap:7px;">
+      <input type="text" id="lofiAddVid" placeholder="YouTube URL or video ID…" style="flex:1">
+      <button class="mbtn mbtn-primary" onclick="lofiAddTrack()" style="flex-shrink:0;">Add</button>
+    </div>
+    <div id="lofiAddError" style="display:none;margin-top:8px;padding:6px 10px;background:rgba(204,50,50,0.15);border:1px solid #cc3333;border-radius:4px;color:#ff8888;font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('lofiOverlay')">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB MODAL ===== -->
+<div class="overlay" id="tabOverlay">
+  <div class="modal">
+    <h3 id="tabModalTitle">Tab</h3>
+    <label>Tab Name</label>
+    <input type="text" id="tmName" placeholder="Tab name">
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('tabOverlay')">Cancel</button>
+      <button class="mbtn mbtn-primary" onclick="saveTab()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== WEATHER MODAL ===== -->
+<div class="overlay" id="weatherOverlay">
+  <div class="modal" style="width:500px">
+    <h3>Weather Locations</h3>
+    <div id="wLocList" style="min-height:30px;margin-bottom:14px;"></div>
+    <label>Search &amp; Add Location</label>
+    <div style="display:flex;gap:7px;">
+      <input type="text" id="wSearch" placeholder="City name…" style="flex:1"
+             onkeydown="if(event.key==='Enter') doWeatherSearch()">
+      <button class="mbtn mbtn-primary" onclick="doWeatherSearch()" style="padding:7px 14px;flex-shrink:0;">Search</button>
+    </div>
+    <div id="wSearchResults" style="margin-top:8px;max-height:180px;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('weatherOverlay')">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   DEFAULT DATA  —  mirrors original salty_start.html
+   tabs → columns → sections → links
+   ================================================================ */
+const DEFAULTS = {
+  theme: 'dark',
+  showQuotes: true,
+  showClock: true,
+  clockStyle: 'nixie',
+  bgStyle: 'none',
+  bgColor: '#0fb8dd',
+  bgOpacity: 25,
+  bgDim: 0,
+  bgUrl: '',
+  bgUrlActive: false,
+  recentVisited: [],
+  colors: {
+    dark: {
+      '--tab-bg':        '#3a0000',
+      '--tab-active':    '#ddb04b',
+      '--tab-active-txt':'#1a0000',
+      '--red2':          '#800000',
+      '--border':        '#5a1010',
+      '--text-head':     '#f0e8d0',
+      '--text':          '#cccccc',
+      '--text-dim':      '#888888',
+      '--link':          '#ddb04b',
+      '--link-hover':    '#0fb8dd',
+      '--search':        '#ddb04b',
+      '--surface':       '#00000060',
+      '--modal-bg':      '#1c0606',
+    },
+    light: {
+      '--tab-bg':        '#7a3500',
+      '--tab-active':    '#ddb04b',
+      '--tab-active-txt':'#2a1000',
+      '--red2':          '#a05020',
+      '--border':        '#c8a86a',
+      '--text-head':     '#2a1800',
+      '--text':          '#3a2800',
+      '--text-dim':      '#8a6a30',
+      '--link':          '#8B5000',
+      '--link-hover':    '#0076a3',
+      '--search':        '#8B5000',
+      '--surface':       '#ffffffa0',
+      '--modal-bg':      '#fdf6e8',
+    }
+  },
+  tabs: [
+    {
+      id:'t_work', name:'Work',
+      columns:[
+        { id:'col_w1', sections:[
+          { id:'s_workspaces', heading:'Cloud Workspaces', items:[
+            { type:'heading', id:'h_google', label:'Google Workspace', children:[
+              {type:'link', id:'l_gmail',      label:'Gmail',              url:'https://mail.google.com',              target:'_blank'},
+              {type:'link', id:'l_gdrive',     label:'Google Drive',       url:'https://drive.google.com',             target:'_blank'},
+              {type:'link', id:'l_gcal',       label:'Google Calendar',    url:'https://calendar.google.com',          target:'_blank'},
+              {type:'link', id:'l_gmeet',      label:'Google Meet',        url:'https://meet.google.com',              target:'_blank'},
+              {type:'link', id:'l_gdocs',      label:'Docs / Sheets / Slides', url:'https://docs.google.com',          target:'_blank'},
+            ]},
+            { type:'heading', id:'h_ms365', label:'Microsoft 365', children:[
+              {type:'link', id:'l_outlook',    label:'Outlook Web',        url:'https://outlook.office.com',           target:'_blank'},
+              {type:'link', id:'l_teams',      label:'Microsoft Teams',    url:'https://teams.microsoft.com',          target:'_blank'},
+              {type:'link', id:'l_onedrive',   label:'OneDrive',           url:'https://onedrive.live.com',            target:'_blank'},
+              {type:'link', id:'l_sharepoint', label:'SharePoint',         url:'https://www.office.com/launch/sharepoint', target:'_blank'},
+              {type:'link', id:'l_o365admin',  label:'M365 Admin Center',  url:'https://admin.microsoft.com',          target:'_blank'},
+            ]},
+          ]},
+        ]},
+        { id:'col_w2', sections:[
+          { id:'s_aidev', heading:'AI & Developer Tools', items:[
+            { type:'heading', id:'h_ai', label:'AI Assistants', children:[
+              {type:'link', id:'l_claude',     label:'Claude (Anthropic)', url:'https://claude.ai',                    target:'_blank'},
+              {type:'link', id:'l_chatgpt',    label:'ChatGPT (OpenAI)',   url:'https://chatgpt.com',                  target:'_blank'},
+              {type:'link', id:'l_gemini',     label:'Gemini (Google)',    url:'https://gemini.google.com',            target:'_blank'},
+              {type:'link', id:'l_copilot',    label:'Copilot (Microsoft)',url:'https://copilot.microsoft.com',        target:'_blank'},
+              {type:'link', id:'l_notebooklm', label:'NotebookLM',         url:'https://notebooklm.google.com',        target:'_blank'},
+            ]},
+            { type:'heading', id:'h_dev', label:'Developer Resources', children:[
+              {type:'link', id:'l_github',     label:'GitHub',             url:'https://github.com',                   target:'_blank'},
+              {type:'link', id:'l_stackoverflow',label:'Stack Overflow',   url:'https://stackoverflow.com',            target:'_blank'},
+              {type:'link', id:'l_anthropicapi',label:'Anthropic API Docs',url:'https://docs.anthropic.com',           target:'_blank'},
+              {type:'link', id:'l_openaiapi',  label:'OpenAI API Docs',    url:'https://platform.openai.com/docs',     target:'_blank'},
+              {type:'link', id:'l_azureport',  label:'Azure Portal',       url:'https://portal.azure.com',             target:'_blank'},
+            ]},
+          ]},
+        ]},
+        { id:'col_w3', sections:[
+          { id:'s_collab', heading:'Collaboration & Project Management', items:[
+            { type:'heading', id:'h_comms', label:'Communication', children:[
+              {type:'link', id:'l_slack',      label:'Slack',              url:'https://slack.com',                    target:'_blank'},
+              {type:'link', id:'l_zoom',       label:'Zoom',               url:'https://zoom.us',                      target:'_blank'},
+              {type:'link', id:'l_webex',      label:'WebEx',              url:'https://webex.com',                    target:'_blank'},
+              {type:'link', id:'l_notion',     label:'Notion',             url:'https://www.notion.so',                target:'_blank'},
+            ]},
+            { type:'heading', id:'h_pm', label:'Project Management', children:[
+              {type:'link', id:'l_jira',       label:'Jira',               url:'https://www.atlassian.com/software/jira', target:'_blank'},
+              {type:'link', id:'l_confluence', label:'Confluence',         url:'https://www.atlassian.com/software/confluence', target:'_blank'},
+              {type:'link', id:'l_asana',      label:'Asana',              url:'https://asana.com',                    target:'_blank'},
+              {type:'link', id:'l_trello',     label:'Trello',             url:'https://trello.com',                   target:'_blank'},
+              {type:'link', id:'l_monday',     label:'Monday.com',         url:'https://monday.com',                   target:'_blank'},
+            ]},
+          ]},
+        ]},
+        { id:'col_w4', sections:[
+          { id:'s_infosec', heading:'Infrastructure & Security', weather:true, items:[
+            { type:'heading', id:'h_cloud', label:'Cloud Platforms', children:[
+              {type:'link', id:'l_gcpcon',     label:'Google Cloud Console',url:'https://console.cloud.google.com',    target:'_blank'},
+              {type:'link', id:'l_awscon',     label:'AWS Console',         url:'https://console.aws.amazon.com',      target:'_blank'},
+              {type:'link', id:'l_azure2',     label:'Azure Portal',        url:'https://portal.azure.com',            target:'_blank'},
+              {type:'link', id:'l_cloudflare', label:'Cloudflare',          url:'https://dash.cloudflare.com',         target:'_blank'},
+            ]},
+            { type:'heading', id:'h_sec', label:'Security Tools', children:[
+              {type:'link', id:'l_bitwarden',  label:'Bitwarden',           url:'https://vault.bitwarden.com',         target:'_blank'},
+              {type:'link', id:'l_haveibeenpwned',label:'Have I Been Pwned',url:'https://haveibeenpwned.com',          target:'_blank'},
+              {type:'link', id:'l_virustotal', label:'VirusTotal',          url:'https://www.virustotal.com',          target:'_blank'},
+              {type:'link', id:'l_cve',        label:'CVE Database (NIST)', url:'https://nvd.nist.gov/vuln/search',    target:'_blank'},
+            ]},
+          ]},
+        ]},
+      ]
+    },
+    {
+      id:'t_home', name:'Home',
+      columns:[
+        { id:'col_h1', sections:[
+          { id:'s_social', heading:'Social & News', items:[
+            { type:'heading', id:'h_social', label:'Social Media', children:[
+              {type:'link', id:'l_facebook',   label:'Facebook',           url:'https://www.facebook.com',             target:'_blank'},
+              {type:'link', id:'l_instagram',  label:'Instagram',          url:'https://www.instagram.com',            target:'_blank'},
+              {type:'link', id:'l_reddit',     label:'Reddit',             url:'https://www.reddit.com',               target:'_blank'},
+              {type:'link', id:'l_twitter',    label:'X / Twitter',        url:'https://x.com',                        target:'_blank'},
+              {type:'link', id:'l_linkedin',   label:'LinkedIn',           url:'https://www.linkedin.com',             target:'_blank'},
+            ]},
+            { type:'heading', id:'h_news', label:'News', children:[
+              {type:'link', id:'l_apnews',     label:'AP News',            url:'https://apnews.com',                   target:'_blank'},
+              {type:'link', id:'l_reuters',    label:'Reuters',            url:'https://www.reuters.com',              target:'_blank'},
+              {type:'link', id:'l_npr',        label:'NPR',                url:'https://www.npr.org',                  target:'_blank'},
+              {type:'link', id:'l_bbc',        label:'BBC News',           url:'https://www.bbc.com/news',             target:'_blank'},
+              {type:'link', id:'l_hn',         label:'Hacker News',        url:'https://news.ycombinator.com',         target:'_blank'},
+            ]},
+          ]},
+        ]},
+        { id:'col_h2', sections:[
+          { id:'s_money', heading:'Finance & Shopping', items:[
+            { type:'heading', id:'h_finance', label:'Bills & Finance', children:[
+              {type:'link', id:'l_creditkarma',label:'Credit Karma',       url:'https://www.creditkarma.com',          target:'_blank'},
+              {type:'link', id:'l_paypal',     label:'PayPal',             url:'https://www.paypal.com',               target:'_blank'},
+              {type:'link', id:'l_venmo',      label:'Venmo',              url:'https://venmo.com',                    target:'_blank'},
+              {type:'link', id:'l_irs',        label:'IRS Online',         url:'https://www.irs.gov',                  target:'_blank'},
+            ]},
+            { type:'heading', id:'h_shopping', label:'Shopping', children:[
+              {type:'link', id:'l_amazon',     label:'Amazon',             url:'https://www.amazon.com',               target:'_blank'},
+              {type:'link', id:'l_ebay',       label:'eBay',               url:'https://www.ebay.com',                 target:'_blank'},
+              {type:'link', id:'l_walmart',    label:'Walmart',            url:'https://www.walmart.com',              target:'_blank'},
+              {type:'link', id:'l_target',     label:'Target',             url:'https://www.target.com',               target:'_blank'},
+              {type:'link', id:'l_etsy',       label:'Etsy',               url:'https://www.etsy.com',                 target:'_blank'},
+            ]},
+          ]},
+        ]},
+        { id:'col_h3', sections:[
+          { id:'s_entertain', heading:'Entertainment & Health', items:[
+            { type:'heading', id:'h_media', label:'Streaming & Media', children:[
+              {type:'link', id:'l_youtube',    label:'YouTube',            url:'https://www.youtube.com',              target:'_blank'},
+              {type:'link', id:'l_netflix',    label:'Netflix',            url:'https://www.netflix.com',              target:'_blank'},
+              {type:'link', id:'l_hulu',       label:'Hulu',               url:'https://www.hulu.com',                 target:'_blank'},
+              {type:'link', id:'l_disney',     label:'Disney+',            url:'https://www.disneyplus.com',           target:'_blank'},
+              {type:'link', id:'l_spotify',    label:'Spotify',            url:'https://open.spotify.com',             target:'_blank'},
+            ]},
+            { type:'heading', id:'h_health', label:'Health & Wellness', children:[
+              {type:'link', id:'l_webmd',      label:'WebMD',              url:'https://www.webmd.com',                target:'_blank'},
+              {type:'link', id:'l_mychart',    label:'MyChart',            url:'https://mychart.com',                  target:'_blank'},
+              {type:'link', id:'l_goodrx',     label:'GoodRx',             url:'https://www.goodrx.com',               target:'_blank'},
+              {type:'link', id:'l_zocdoc',     label:'Zocdoc',             url:'https://www.zocdoc.com',               target:'_blank'},
+            ]},
+          ]},
+        ]},
+        { id:'col_h4', sections:[
+          { id:'s_homelocal', heading:'Home & Local', weather:true, items:[
+            { type:'heading', id:'h_local', label:'Local Resources', children:[
+              {type:'link', id:'l_weather',    label:'Weather.gov',        url:'https://www.weather.gov',              target:'_blank'},
+              {type:'link', id:'l_nextdoor',   label:'Nextdoor',           url:'https://nextdoor.com',                 target:'_blank'},
+              {type:'link', id:'l_yelp',       label:'Yelp',               url:'https://www.yelp.com',                 target:'_blank'},
+              {type:'link', id:'l_gmaps',      label:'Google Maps',        url:'https://maps.google.com',              target:'_blank'},
+              {type:'link', id:'l_311',        label:'Atlanta 311 Services',url:'https://311.atlantaga.gov',           target:'_blank'},
+            ]},
+            { type:'heading', id:'h_homefam', label:'Home & Family', children:[
+              {type:'link', id:'l_zillow',     label:'Zillow',             url:'https://www.zillow.com',               target:'_blank'},
+              {type:'link', id:'l_angi',       label:'Angi (Home Services)',url:'https://www.angi.com',                target:'_blank'},
+              {type:'link', id:'l_recipes',    label:'AllRecipes',         url:'https://www.allrecipes.com',           target:'_blank'},
+              {type:'link', id:'l_duolingo',   label:'Duolingo',           url:'https://www.duolingo.com',             target:'_blank'},
+            ]},
+          ]},
+        ]},
+      ]
+    }
+  ],
+  weather:[
+    {id:'w_atlanta', label:'Atlanta, GA', lat:33.749, lon:-84.388}
+  ],
+  lofi:[
+    {id:'lf1',  label:'Lofi Girl — beats to relax/study',                         vid:'jfKfPfyJRdk'},
+    {id:'lf2',  label:'Chillhop Music — Jazz Vibes',                               vid:'5yx6BWlEVcY'},
+    {id:'lf3',  label:'The Jazz Hop Café — Smooth Blend',                          vid:'Dx5qFachd3A'},
+    {id:'lf4',  label:'Chillhop — Autumn Essentials',                              vid:'f02mOEt11OQ'},
+    {id:'lf5',  label:"90's Chill Lofi — Study Music Lofi Rain Chillhop",          vid:'sF80I-TQiW0'},
+    {id:'lf6',  label:'Yellow Brick Cinema — Relaxing Music',                      vid:'WPni755-Krg'},
+    {id:'lf7',  label:'Lofi Coffee — Study/Relax',                                 vid:'OO2kPK5-qno'},
+    {id:'lf8',  label:'Seaside Coffee — Feel your peace & Relax',                  vid:'gUbNlN_SqpE'},
+    {id:'lf9',  label:'The Best of Essentials Spring — chill lofi beats',          vid:'P2DubjKBRLE'},
+    {id:'lf10', label:'The Chillest Lofi in the Universe',                         vid:'V-b9MirVx2w'},
+    {id:'lf11', label:'Lofi Girl — Bedtime Lofi — 8 hours of relaxing beats to sleep to', vid:'UJs6__K7gSY'},
+    {id:'lf12', label:'BADLANDS — A Synthwave Mix for Galactic Explorers | Vol. 1',vid:'6aouLxiL4Cw'},
+  ]
+};
+
+/* WMO weather codes */
+const WMO = {
+  0:'Clear',1:'Mainly Clear',2:'Partly Cloudy',3:'Overcast',
+  45:'Fog',48:'Icy Fog',51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',
+  61:'Light Rain',63:'Rain',65:'Heavy Rain',71:'Light Snow',73:'Snow',75:'Heavy Snow',
+  77:'Snow Grains',80:'Light Showers',81:'Showers',82:'Heavy Showers',
+  85:'Snow Showers',86:'Heavy Snow Showers',95:'Thunderstorm',96:'Tstorm + Hail',99:'Severe Tstorm'
+};
+
+/* ================================================================
+   STATE
+   ================================================================ */
+const QUOTES = [
+  // Stoics
+  {q:"You have power over your mind, not outside events. Realize this, and you will find strength.", a:"Marcus Aurelius"},
+  {q:"The happiness of your life depends upon the quality of your thoughts.", a:"Marcus Aurelius"},
+  {q:"Waste no more time arguing about what a good man should be. Be one.", a:"Marcus Aurelius"},
+  {q:"The obstacle is the way.", a:"Marcus Aurelius"},
+  {q:"It is not death that a man should fear, but he should fear never beginning to live.", a:"Marcus Aurelius"},
+  {q:"Very little is needed to make a happy life; it is all within yourself, in your way of thinking.", a:"Marcus Aurelius"},
+  {q:"He who fears death will never do anything worthy of a living man.", a:"Seneca"},
+  {q:"Luck is what happens when preparation meets opportunity.", a:"Seneca"},
+  {q:"Begin at once to live, and count each separate day as a separate life.", a:"Seneca"},
+  {q:"We suffer more in imagination than in reality.", a:"Seneca"},
+  {q:"Difficulties strengthen the mind, as labor does the body.", a:"Seneca"},
+  {q:"Make the best use of what is in your power, and take the rest as it happens.", a:"Epictetus"},
+  {q:"He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.", a:"Epictetus"},
+  {q:"First say to yourself what you would be; and then do what you have to do.", a:"Epictetus"},
+  // Ancient philosophy
+  {q:"The unexamined life is not worth living.", a:"Socrates"},
+  {q:"Wonder is the beginning of wisdom.", a:"Socrates"},
+  {q:"Knowing yourself is the beginning of all wisdom.", a:"Aristotle"},
+  {q:"We are what we repeatedly do. Excellence, then, is not an act, but a habit.", a:"Aristotle"},
+  {q:"It is the mark of an educated mind to be able to entertain a thought without accepting it.", a:"Aristotle"},
+  {q:"Happiness depends upon ourselves.", a:"Aristotle"},
+  {q:"No man ever steps in the same river twice, for it is not the same river and he is not the same man.", a:"Heraclitus"},
+  {q:"Much learning does not teach understanding.", a:"Heraclitus"},
+  // Eastern philosophy
+  {q:"The journey of a thousand miles begins with a single step.", a:"Lao Tzu"},
+  {q:"Knowing others is wisdom. Knowing yourself is enlightenment.", a:"Lao Tzu"},
+  {q:"Nature does not hurry, yet everything is accomplished.", a:"Lao Tzu"},
+  {q:"Life is really simple, but we insist on making it complicated.", a:"Confucius"},
+  {q:"It does not matter how slowly you go as long as you do not stop.", a:"Confucius"},
+  {q:"Everything has beauty, but not everyone sees it.", a:"Confucius"},
+  {q:"The mind is everything. What you think, you become.", a:"Buddha"},
+  {q:"Three things cannot be long hidden: the sun, the moon, and the truth.", a:"Buddha"},
+  {q:"In the middle of difficulty lies opportunity.", a:"Seneca"},
+  {q:"Peace comes from within. Do not seek it without.", a:"Buddha"},
+  // Science & reason
+  {q:"Imagination is more important than knowledge.", a:"Albert Einstein"},
+  {q:"Logic will get you from A to B. Imagination will take you everywhere.", a:"Albert Einstein"},
+  {q:"The true sign of intelligence is not knowledge but imagination.", a:"Albert Einstein"},
+  {q:"If you can't explain it simply, you don't understand it well enough.", a:"Albert Einstein"},
+  {q:"Two things are infinite: the universe and human stupidity; and I'm not sure about the universe.", a:"Albert Einstein"},
+  {q:"The most beautiful thing we can experience is the mysterious.", a:"Albert Einstein"},
+  {q:"The universe is under no obligation to make sense to you.", a:"Neil deGrasse Tyson"},
+  {q:"Somewhere, something incredible is waiting to be known.", a:"Carl Sagan"},
+  {q:"We are made of star stuff.", a:"Carl Sagan"},
+  {q:"An unexamined faith is not worth having.", a:"Carl Sagan"},
+  // Writers & thinkers
+  {q:"In three words I can sum up everything I've learned about life: it goes on.", a:"Robert Frost"},
+  {q:"The only way out of the labyrinth of suffering is to forgive.", a:"John Green"},
+  {q:"Not all those who wander are lost.", a:"J.R.R. Tolkien"},
+  {q:"All we have to decide is what to do with the time that is given us.", a:"J.R.R. Tolkien"},
+  {q:"It does not do to dwell on dreams and forget to live.", a:"J.K. Rowling"},
+  {q:"We know what we are, but know not what we may be.", a:"William Shakespeare"},
+  {q:"To thine own self be true.", a:"William Shakespeare"},
+  {q:"Our doubts are traitors, and make us lose the good we oft might win by fearing to attempt.", a:"William Shakespeare"},
+  {q:"Be yourself; everyone else is already taken.", a:"Oscar Wilde"},
+  {q:"To live is the rarest thing in the world. Most people exist, that is all.", a:"Oscar Wilde"},
+  {q:"Always forgive your enemies; nothing annoys them so much.", a:"Oscar Wilde"},
+  {q:"I am not afraid of storms, for I am learning how to sail my ship.", a:"Louisa May Alcott"},
+  {q:"It is never too late to be what you might have been.", a:"George Eliot"},
+  {q:"The secret of getting ahead is getting started.", a:"Mark Twain"},
+  {q:"Courage is resistance to fear, mastery of fear — not absence of fear.", a:"Mark Twain"},
+  {q:"Keep away from people who try to belittle your ambitions.", a:"Mark Twain"},
+  // Modern minds
+  {q:"In the long run, we shape our lives, and we shape ourselves.", a:"Eleanor Roosevelt"},
+  {q:"No one can make you feel inferior without your consent.", a:"Eleanor Roosevelt"},
+  {q:"You must do the thing you think you cannot do.", a:"Eleanor Roosevelt"},
+  {q:"The future belongs to those who believe in the beauty of their dreams.", a:"Eleanor Roosevelt"},
+  {q:"Stay hungry, stay foolish.", a:"Steve Jobs"},
+  {q:"Your time is limited, so don't waste it living someone else's life.", a:"Steve Jobs"},
+  {q:"Simplicity is the ultimate sophistication.", a:"Leonardo da Vinci"},
+  {q:"Learning never exhausts the mind.", a:"Leonardo da Vinci"},
+  {q:"It had long since come to my attention that people of accomplishment rarely sat back and let things happen to them.", a:"Leonardo da Vinci"},
+  {q:"The secret of change is to focus all your energy not on fighting the old, but on building the new.", a:"Socrates"},
+  {q:"Intelligence is the ability to adapt to change.", a:"Stephen Hawking"},
+  {q:"However difficult life may seem, there is always something you can do and succeed at.", a:"Stephen Hawking"},
+  {q:"Do what you can, with what you have, where you are.", a:"Theodore Roosevelt"},
+  {q:"Believe you can and you're halfway there.", a:"Theodore Roosevelt"},
+  {q:"Darkness cannot drive out darkness; only light can do that.", a:"Martin Luther King Jr."},
+  {q:"The time is always right to do what is right.", a:"Martin Luther King Jr."},
+  {q:"If you want to go fast, go alone. If you want to go far, go together.", a:"African Proverb"},
+  {q:"A smooth sea never made a skilled sailor.", a:"English Proverb"},
+  {q:"Fall seven times, stand up eight.", a:"Japanese Proverb"},
+];
+
+let D          = null;
+let activeTab  = null;
+let editMode   = false;
+let editLink   = null;
+let editTab    = null;
+let clockInterval = null;
+let bgAnimFrame   = null;
+let bgCtx         = null;
+
+/* ================================================================
+   BOOT
+   ================================================================ */
+(function init(){
+  try {
+  const raw = localStorage.getItem('salty_v2');
+  D = raw ? tryParse(raw) || deepClone(DEFAULTS) : deepClone(DEFAULTS);
+
+  // Migrate: fill lofi if missing (don't overwrite user's saved list)
+  if(!D.lofi || !D.lofi.length) D.lofi = deepClone(DEFAULTS.lofi);
+  D.tabs.forEach(tab => {
+    if(tab.sections && !tab.columns){
+      tab.columns = tab.sections.map((sec,i) => ({
+        id: 'col_'+tab.id+'_'+i,
+        sections: [sec]
+      }));
+      delete tab.sections;
+    }
+  });
+
+  // Migrate old flat links[] to new nested items[] model
+  D.tabs.forEach(tab => {
+    (tab.columns||[]).forEach(col => {
+      (col.sections||[]).forEach(sec => {
+        if(sec.links && !sec.items){
+          sec.items = migrateLinks(sec.links);
+          delete sec.links;
+        }
+      });
+    });
+  });
+
+  // Migrate: add bg settings if missing
+  if(!D.bgStyle)   D.bgStyle   = 'none';
+  if(!D.bgColor)   D.bgColor   = '#0fb8dd';
+  if(D.bgOpacity === undefined) D.bgOpacity = 25;
+  if(D.bgDim     === undefined) D.bgDim     = 0;
+  if(D.bgUrl     === undefined) D.bgUrl      = '';
+  if(D.bgUrlActive === undefined) D.bgUrlActive = false;
+  if(!D.recentVisited) D.recentVisited = [];
+
+  // Migrate: add clock settings if missing
+  if(D.showClock === undefined) D.showClock = true;
+  if(!D.clockStyle) D.clockStyle = 'nixie';
+
+  // Migrate: add colors if missing
+  if(!D.colors) D.colors = deepClone(DEFAULTS.colors);
+  if(!D.colors.dark)  D.colors.dark  = deepClone(DEFAULTS.colors.dark);
+  if(!D.colors.light) D.colors.light = deepClone(DEFAULTS.colors.light);
+
+  activeTab = D.tabs[0]?.id || null;
+
+  if(D.theme === 'light'){
+    document.body.classList.add('light');
+    document.getElementById('moonEl').classList.add('sun');
+    document.getElementById('toggle').classList.add('day');
+  }
+
+  applyColors();
+  applyClock();
+  applyBg();
+  renderAll();
+  renderRecent();
+  updateQuoteBarVisibility();
+  applyQuoteState();
+  fetchQuote(); // run before fetchAllWeather so quote is ready when weather placeholder renders
+  fetchAllWeather();
+  } catch(err) {
+    console.error('INIT ERROR:', err);
+    document.getElementById('tabContents').innerHTML =
+      `<div style="color:#ff6666;padding:20px;font-family:monospace;">Init error: ${err.message}<br><pre>${err.stack}</pre></div>`;
+  }
+})();
+
+function tryParse(s){ try{ return JSON.parse(s); } catch(e){ return null; } }
+function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+function persist(){ localStorage.setItem('salty_v2', JSON.stringify(D)); }
+
+/* ================================================================
+   RENDER ALL
+   ================================================================ */
+function renderAll(){
+  renderTabBar();
+  renderContents();
+  lofiPopulateSelect();
+}
+
+/* ---- TAB BAR ---- */
+function renderTabBar(){
+  const bar     = document.getElementById('tabBar');
+  const toolbar = document.getElementById('toolbar');
+
+  // Remove old tab btns
+  [...bar.children].forEach(c => { if(c !== toolbar) c.remove(); });
+
+  let dragSrcId = null;
+
+  D.tabs.forEach(tab => {
+    const btn = el('button','tab-btn' + (tab.id===activeTab?' active':''));
+    btn.dataset.tabId = tab.id;
+    btn.setAttribute('draggable','true');
+
+    const name = el('span'); name.textContent = tab.name;
+    btn.append(name);
+
+    const eBtn = icBtn('✎','Edit tab name', ()=>{ openEditTab(tab.id); });
+    const dBtn = icBtn('✕','Delete tab',    ()=>{ deleteTab(tab.id); });
+    dBtn.classList.add('ic-del');
+    btn.append(eBtn, dBtn);
+
+    btn.onclick = ev => {
+      if(ev.target===eBtn||ev.target===dBtn) return;
+      switchTab(tab.id);
+    };
+
+    // Tab drag-to-reorder
+    btn.addEventListener('dragstart', e => {
+      dragSrcId = tab.id;
+      btn.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.stopPropagation();
+    });
+    btn.addEventListener('dragend', () => {
+      btn.classList.remove('dragging');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('drop-left','drop-right'));
+    });
+    btn.addEventListener('dragover', e => {
+      if(!dragSrcId || dragSrcId===tab.id) return;
+      e.preventDefault(); e.stopPropagation();
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('drop-left','drop-right'));
+      const r = btn.getBoundingClientRect();
+      btn.classList.add(e.clientX < r.left + r.width/2 ? 'drop-left' : 'drop-right');
+    });
+    btn.addEventListener('dragleave', () => {
+      btn.classList.remove('drop-left','drop-right');
+    });
+    btn.addEventListener('drop', e => {
+      e.preventDefault(); e.stopPropagation();
+      if(!dragSrcId || dragSrcId===tab.id) return;
+      const r   = btn.getBoundingClientRect();
+      const before = e.clientX < r.left + r.width/2;
+      const srcIdx  = D.tabs.findIndex(t=>t.id===dragSrcId);
+      const destIdx = D.tabs.findIndex(t=>t.id===tab.id);
+      const [moved] = D.tabs.splice(srcIdx,1);
+      const newDest = D.tabs.findIndex(t=>t.id===tab.id);
+      D.tabs.splice(before ? newDest : newDest+1, 0, moved);
+      dragSrcId = null;
+      persist();
+      renderAll();
+    });
+
+    bar.insertBefore(btn, toolbar);
+  });
+
+  // add-tab btn
+  const atb = el('button','add-tab-btn');
+  atb.textContent = '＋ Tab';
+  atb.onclick = promptAddTab;
+  bar.insertBefore(atb, toolbar);
+}
+
+/* ---- TAB CONTENTS ---- */
+function renderContents(){
+  const root = document.getElementById('tabContents');
+  root.innerHTML = '';
+
+  D.tabs.forEach(tab => {
+    const div = el('div','tab-content' + (tab.id===activeTab?' active':''));
+    div.id = 'tc_'+tab.id;
+
+    // Columns row
+    const colsRow = el('div','columns-grid');
+
+    (tab.columns||[]).forEach(col => {
+      const colWrap = el('div','col-wrap');
+      colWrap.id = 'col_'+col.id;
+      colWrap.dataset.colId = col.id;
+      colWrap.dataset.tabId = tab.id;
+
+      // Section drop zone — dragover
+      colWrap.addEventListener('dragover', e => {
+        if(!editMode) return;
+        const secId = e.dataTransfer.types.includes('text/sec-id');
+        if(!secId) return;
+        e.preventDefault(); e.stopPropagation();
+        // Clear indicators
+        document.querySelectorAll('.sec-drop-above,.sec-drop-below')
+          .forEach(el => el.classList.remove('sec-drop-above','sec-drop-below'));
+        // Find nearest card
+        const card = e.target.closest('.section-card');
+        if(!card || card.classList.contains('sec-dragging')) return;
+        const r = card.getBoundingClientRect();
+        card.classList.add(e.clientY < r.top + r.height/2 ? 'sec-drop-above' : 'sec-drop-below');
+      });
+
+      colWrap.addEventListener('dragleave', e => {
+        if(!e.currentTarget.contains(e.relatedTarget)){
+          document.querySelectorAll('.sec-drop-above,.sec-drop-below')
+            .forEach(el => el.classList.remove('sec-drop-above','sec-drop-below'));
+        }
+      });
+
+      colWrap.addEventListener('drop', e => {
+        if(!editMode) return;
+        const srcSecId = e.dataTransfer.getData('text/sec-id');
+        if(!srcSecId) return;
+        e.preventDefault(); e.stopPropagation();
+
+        const targetCard = e.target.closest('.section-card');
+        const before = targetCard?.classList.contains('sec-drop-above');
+        document.querySelectorAll('.sec-drop-above,.sec-drop-below')
+          .forEach(el => el.classList.remove('sec-drop-above','sec-drop-below'));
+
+        performSectionDrop(srcSecId, tab.id, col.id, targetCard?.dataset.secId || null, before);
+      });
+
+      // Sections within this column
+      (col.sections||[]).forEach(sec => colWrap.appendChild(buildSection(tab.id, col.id, sec)));
+
+      // Add Section button (edit mode only)
+      const asw = el('div','add-section-wrap');
+      const asb = el('button','dashed-btn');
+      asb.textContent = '＋ Add Section';
+      asb.onclick = ()=>promptAddSection(tab.id, col.id);
+      asw.appendChild(asb);
+      colWrap.appendChild(asw);
+
+      // Delete column button (edit mode only)
+      const dcw = el('div','del-col-wrap');
+      const dcb = el('button','dashed-btn del-col-btn');
+      dcb.textContent = '✕ Remove Column';
+      dcb.onclick = ()=>deleteColumn(tab.id, col.id);
+      dcw.appendChild(dcb);
+      colWrap.appendChild(dcw);
+
+      colsRow.appendChild(colWrap);
+    });
+
+    // Add Column button (edit mode only)
+    const acw = el('div','add-col-wrap');
+    const acb = el('button','add-col-card');
+    acb.textContent = '＋ Add Column';
+    acb.onclick = ()=>addColumn(tab.id);
+    acw.appendChild(acb);
+    colsRow.appendChild(acw);
+
+    div.appendChild(colsRow);
+
+    // Weather strip + inline quote
+    const allSections = (tab.columns||[]).flatMap(c=>c.sections||[]);
+    if(allSections.some(s=>s.weather)){
+      const bottomRow = el('div','tab-bottom-row');
+      bottomRow.id = 'tbr_'+tab.id;
+      const ws = el('div','weather-strip');
+      ws.id = 'ws_'+tab.id;
+      bottomRow.appendChild(ws);
+      // Quote placeholder — actual quoteBar stays in anchor, we clone display here
+      const qp = el('div','quote-in-weather');
+      qp.id = 'qiw_'+tab.id;
+      bottomRow.appendChild(qp);
+      div.appendChild(bottomRow);
+    }
+
+    root.appendChild(div);
+  });
+
+  paintAllWeather();
+}
+
+/* ---- SECTION CARD ---- */
+/* ================================================================
+   DATA MIGRATION — flat links[] → nested items[]
+   ================================================================ */
+function migrateLinks(links){
+  const items = [];
+  let curHeading = null;
+  links.forEach(lnk => {
+    const isHeading = !lnk.url || lnk.url === '#';
+    if(isHeading){
+      curHeading = { type:'heading', id:'h_'+Date.now()+'_'+Math.random().toString(36).slice(2), label:lnk.label, children:[] };
+      items.push(curHeading);
+    } else {
+      const link = { type:'link', id:'l_'+Date.now()+'_'+Math.random().toString(36).slice(2), label:lnk.label, url:lnk.url, target:lnk.target||'_blank' };
+      if(curHeading && (lnk.indent||0) > 0) curHeading.children.push(link);
+      else { curHeading = null; items.push(link); }
+    }
+  });
+  return items;
+}
+
+/* ================================================================
+   DRAG STATE
+   ================================================================ */
+let drag = null;
+// drag = { tabId, colId, secId, itemId, parentId|null, el }
+
+/* ================================================================
+   RENDER — SECTION + ITEMS
+   ================================================================ */
+function buildSection(tabId, colId, sec){
+  const card = el('div','section-card');
+  card.id = 'sc_'+sec.id;
+  card.dataset.secId = sec.id;
+  card.dataset.colId = colId;
+  card.dataset.tabId = tabId;
+  card.setAttribute('draggable','true');
+
+  // Section drag events (edit mode only — draggable attr is always set,
+  // but the handle is only visible in edit mode so it feels natural)
+  card.addEventListener('dragstart', e => {
+    if(!editMode){ e.preventDefault(); return; }
+    e.stopPropagation();
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/sec-id', sec.id);
+    setTimeout(()=> card.classList.add('sec-dragging'), 0);
+  });
+  card.addEventListener('dragend', ()=>{
+    card.classList.remove('sec-dragging');
+    document.querySelectorAll('.sec-drop-above,.sec-drop-below')
+      .forEach(el => el.classList.remove('sec-drop-above','sec-drop-below'));
+  });
+
+  // Section heading bar
+  const hd = el('div','section-heading');
+  const handle = el('span','sec-drag-handle'); handle.textContent = '⠿';
+  handle.title = 'Drag to reorder section';
+  const ht = el('span','section-heading-text');
+  ht.textContent = sec.heading;
+  const hedit = icBtn('✎','Edit heading', ()=>inlineEditHeading(tabId, colId, sec.id, ht));
+  const hdel  = icBtn('✕','Delete section', ()=>deleteSection(tabId, colId, sec.id));
+  hdel.classList.add('ic-del');
+  hd.append(handle, ht, hedit, hdel);
+  card.appendChild(hd);
+
+  // Items list
+  const ul = el('ul','links-list');
+  ul.dataset.tabId = tabId;
+  ul.dataset.colId = colId;
+  ul.dataset.secId = sec.id;
+  (sec.items||[]).forEach(item => ul.appendChild(buildItem(tabId, colId, sec.id, item, null)));
+  setupListDropZone(ul);
+  card.appendChild(ul);
+
+  // Edit-mode buttons
+  const alr = el('div','add-link-row');
+  const ahb = el('button','dashed-btn'); ahb.textContent='＋ Add Heading'; ahb.style.marginBottom='4px';
+  ahb.onclick = ()=>promptAddHeading(tabId, colId, sec.id);
+  const alb = el('button','dashed-btn'); alb.textContent='＋ Add Link';
+  alb.onclick = ()=>openAddLink(tabId, colId, sec.id, null);
+  alr.append(ahb, alb);
+  card.appendChild(alr);
+
+  return card;
+}
+
+function buildItem(tabId, colId, secId, item, parentId){
+  if(item.type === 'heading') return buildHeadingItem(tabId, colId, secId, item);
+  return buildLinkItem(tabId, colId, secId, item, parentId);
+}
+
+function buildHeadingItem(tabId, colId, secId, item){
+  const li = el('li','item-heading group-header');
+  li.dataset.id = item.id;
+  li.dataset.type = 'heading';
+
+  // Top row: handle + label + edit/delete buttons
+  const row = el('div','item-heading-row');
+  const handle = el('span','drag-handle'); handle.textContent='⠿';
+  const txt    = el('span','item-heading-text'); txt.textContent = item.label;
+  const eb     = icBtn('✎','Edit heading', ()=>promptEditHeading(tabId, colId, secId, item.id));
+  const db     = icBtn('✕','Delete heading', ()=>deleteHeading(tabId, colId, secId, item.id));
+  db.classList.add('ic-del');
+  row.append(handle, txt, eb, db);
+  li.appendChild(row);
+
+  // Children
+  if(item.children?.length){
+    const cl = el('ul','heading-children links-list');
+    cl.dataset.tabId  = tabId;
+    cl.dataset.colId  = colId;
+    cl.dataset.secId  = secId;
+    cl.dataset.parent = item.id;
+    item.children.forEach(child => cl.appendChild(buildLinkItem(tabId, colId, secId, child, item.id)));
+    setupListDropZone(cl);
+    li.appendChild(cl);
+  } else {
+    // empty child zone so you can drop into it
+    const cl = el('ul','heading-children links-list');
+    cl.dataset.tabId  = tabId;
+    cl.dataset.colId  = colId;
+    cl.dataset.secId  = secId;
+    cl.dataset.parent = item.id;
+    setupListDropZone(cl);
+    li.appendChild(cl);
+  }
+
+  setupItemDrag(li, tabId, colId, secId, item.id, null);
+  return li;
+}
+
+function buildLinkItem(tabId, colId, secId, item, parentId){
+  const li = el('li');
+  li.dataset.id   = item.id;
+  li.dataset.type = 'link';
+
+  const handle = el('span','drag-handle'); handle.textContent='⠿';
+  const dash   = el('span','link-dash'); dash.textContent='-';
+  const a      = el('a','link-anchor');
+  a.href = item.url; a.target = item.target||'_blank';
+  a.rel  = 'noopener noreferrer';
+  a.textContent = item.label; a.title = item.url;
+  a.addEventListener('click', ()=> trackVisit(item.label, item.url));
+  const eb = icBtn('✎','Edit', ()=>openEditLink(tabId, colId, secId, item.id, parentId));
+  const db = icBtn('✕','Delete', ()=>deleteLink(tabId, colId, secId, item.id, parentId));
+  db.classList.add('ic-del');
+  li.append(handle, dash, a, eb, db);
+
+  setupItemDrag(li, tabId, colId, secId, item.id, parentId);
+  return li;
+}
+
+/* ================================================================
+   DRAG AND DROP
+   ================================================================ */
+function setupItemDrag(li, tabId, colId, secId, itemId, parentId){
+  li.setAttribute('draggable','false'); // only active in edit mode
+  li.addEventListener('mousedown', ()=>{
+    if(editMode) li.setAttribute('draggable','true');
+  });
+  li.addEventListener('dragstart', e=>{
+    if(!editMode){ e.preventDefault(); return; }
+    drag = {tabId, colId, secId, itemId, parentId, el:li};
+    li.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', itemId);
+    e.stopPropagation();
+  });
+  li.addEventListener('dragend', ()=>{
+    li.classList.remove('dragging');
+    clearDropIndicators();
+    drag = null;
+  });
+}
+
+function setupListDropZone(ul){
+  ul.addEventListener('dragover', e=>{
+    if(!drag) return;
+    e.preventDefault(); e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+
+    clearDropIndicators();
+    const target = e.target.closest('li[data-id]');
+
+    // Empty list — highlight the whole ul as a drop zone
+    const visibleItems = [...ul.querySelectorAll('li[data-id]')].filter(li => li !== drag.el);
+    if(!target || target === drag.el){
+      if(visibleItems.length === 0) ul.classList.add('drop-empty');
+      return;
+    }
+
+    // If dragging over a heading's middle third — offer "drop into"
+    if(target.dataset.type === 'heading' && drag.el.dataset.type === 'link'){
+      const r = target.getBoundingClientRect();
+      const relY = (e.clientY - r.top) / r.height;
+      if(relY > 0.25 && relY < 0.75){ target.classList.add('drop-into'); return; }
+    }
+    // Otherwise top/bottom half = above/below
+    const r = target.getBoundingClientRect();
+    if(e.clientY < r.top + r.height/2) target.classList.add('drop-above');
+    else target.classList.add('drop-below');
+  });
+
+  ul.addEventListener('dragleave', e=>{
+    if(!e.currentTarget.contains(e.relatedTarget)){
+      ul.classList.remove('drop-empty');
+      clearDropIndicators();
+    }
+  });
+
+  ul.addEventListener('drop', e=>{
+    e.preventDefault(); e.stopPropagation();
+    if(!drag) return;
+
+    ul.classList.remove('drop-empty');
+
+    const destTabId   = ul.dataset.tabId;
+    const destColId   = ul.dataset.colId;
+    const destSecId   = ul.dataset.secId;
+    const destParentId = ul.dataset.parent || null;
+
+    const target = e.target.closest('li[data-id]');
+    let dropInto = false, dropBefore = false, targetId = null;
+
+    if(target && target !== drag.el){
+      if(target.classList.contains('drop-into')){
+        dropInto = true; targetId = target.dataset.id;
+      } else {
+        dropBefore = target.classList.contains('drop-above');
+        targetId = target.dataset.id;
+      }
+    }
+    // targetId stays null for empty list → item appends to end
+
+    clearDropIndicators();
+    performDrop(destTabId, destColId, destSecId, destParentId, targetId, dropBefore, dropInto);
+  });
+}
+
+function clearDropIndicators(){
+  document.querySelectorAll('.drop-above,.drop-below,.drop-into')
+    .forEach(e=>e.classList.remove('drop-above','drop-below','drop-into'));
+}
+
+function performSectionDrop(srcSecId, destTabId, destColId, targetSecId, before){
+  // Find source section and remove it
+  let srcSec = null;
+  let srcTab = null, srcCol = null;
+  D.tabs.forEach(t => {
+    (t.columns||[]).forEach(c => {
+      const idx = (c.sections||[]).findIndex(s => s.id === srcSecId);
+      if(idx !== -1){
+        srcSec = c.sections.splice(idx, 1)[0];
+        srcTab = t; srcCol = c;
+      }
+    });
+  });
+  if(!srcSec) return;
+
+  // Find destination column
+  const destTab = D.tabs.find(t => t.id === destTabId);
+  const destCol = destTab?.columns?.find(c => c.id === destColId);
+  if(!destCol){ // rollback
+    srcCol.sections.push(srcSec); persist(); renderAll(); return;
+  }
+
+  if(!destCol.sections) destCol.sections = [];
+
+  if(!targetSecId){
+    // Dropped on empty column — append
+    destCol.sections.push(srcSec);
+  } else {
+    const targetIdx = destCol.sections.findIndex(s => s.id === targetSecId);
+    const insertAt = before ? targetIdx : targetIdx + 1;
+    destCol.sections.splice(Math.max(0, insertAt), 0, srcSec);
+  }
+
+  persist();
+  renderAll();
+}
+
+function performDrop(destTabId, destColId, destSecId, destParentId, targetId, dropBefore, dropInto){
+  if(!drag) return;
+  const {tabId:srcTabId, colId:srcColId, secId:srcSecId, itemId, parentId:srcParentId} = drag;
+
+  // Extract item from source
+  const srcSec = findSec(srcTabId, srcColId, srcSecId);
+  if(!srcSec) return;
+
+  let item = null;
+  if(srcParentId){
+    const srcHeading = srcSec.items.find(i=>i.id===srcParentId);
+    if(!srcHeading) return;
+    const idx = srcHeading.children.findIndex(c=>c.id===itemId);
+    if(idx===-1) return;
+    [item] = srcHeading.children.splice(idx,1);
+  } else {
+    const idx = srcSec.items.findIndex(i=>i.id===itemId);
+    if(idx===-1) return;
+    [item] = srcSec.items.splice(idx,1);
+  }
+
+  // Insert into destination
+  const destSec = findSec(destTabId, destColId, destSecId);
+  if(!destSec){ srcSec.items.push(item); persist(); renderAll(); return; } // safety
+
+  if(dropInto){
+    // Drop onto heading — add as child
+    const heading = destSec.items.find(i=>i.id===targetId);
+    if(heading && item.type==='link'){
+      heading.children = heading.children||[];
+      heading.children.push(item);
+    } else {
+      destSec.items.push(item);
+    }
+  } else if(destParentId){
+    // Drop into a heading's child list
+    const heading = destSec.items.find(i=>i.id===destParentId);
+    if(!heading){ destSec.items.push(item); }
+    else {
+      heading.children = heading.children||[];
+      if(targetId){
+        const tIdx = heading.children.findIndex(c=>c.id===targetId);
+        if(tIdx===-1) heading.children.push(item);
+        else heading.children.splice(dropBefore ? tIdx : tIdx+1, 0, item);
+      } else {
+        heading.children.push(item);
+      }
+    }
+  } else {
+    // Drop into section top-level
+    if(targetId){
+      const tIdx = destSec.items.findIndex(i=>i.id===targetId);
+      if(tIdx===-1) destSec.items.push(item);
+      else destSec.items.splice(dropBefore ? tIdx : tIdx+1, 0, item);
+    } else {
+      destSec.items.push(item);
+    }
+  }
+
+  persist();
+  renderAll();
+}
+
+/* ================================================================
+   TAB OPERATIONS
+   ================================================================ */
+function switchTab(id){
+  activeTab = id;
+  clearSearch();
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('searching'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tabId===id));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id==='tc_'+id));
+  updateQuoteBarVisibility();
+}
+
+function updateQuoteBarVisibility(){
+  const tab = D.tabs.find(t => t.id === activeTab);
+  const allSections = (tab?.columns||[]).flatMap(c=>c.sections||[]);
+  const hasWeather  = allSections.some(s=>s.weather);
+  const bar = document.getElementById('quoteBar');
+  if(bar) bar.classList.toggle('quote-hidden-by-weather', hasWeather);
+}
+
+function promptAddTab(){
+  editTab = null;
+  document.getElementById('tabModalTitle').textContent = 'New Tab';
+  document.getElementById('tmName').value = '';
+  openOverlay('tabOverlay');
+  setTimeout(()=>document.getElementById('tmName').focus(),50);
+}
+
+function openEditTab(tabId){
+  editTab = {tabId};
+  const tab = D.tabs.find(t=>t.id===tabId);
+  document.getElementById('tabModalTitle').textContent = 'Rename Tab';
+  document.getElementById('tmName').value = tab?.name||'';
+  openOverlay('tabOverlay');
+  setTimeout(()=>document.getElementById('tmName').focus(),50);
+}
+
+function saveTab(){
+  const name = document.getElementById('tmName').value.trim();
+  if(!name) return;
+  if(editTab){
+    const tab = D.tabs.find(t=>t.id===editTab.tabId);
+    if(tab){ tab.name=name; }
+  } else {
+    const newTab = { id:'t_'+Date.now(), name, columns:[] };
+    D.tabs.push(newTab);
+    activeTab = newTab.id;
+  }
+  persist();
+  closeOverlay('tabOverlay');
+  renderAll();
+}
+
+function deleteTab(tabId){
+  if(D.tabs.length<=1){ alert('Cannot delete the last tab.'); return; }
+  if(!confirm('Delete this tab and all its content?')) return;
+  D.tabs = D.tabs.filter(t=>t.id!==tabId);
+  if(activeTab===tabId) activeTab = D.tabs[0]?.id;
+  persist();
+  renderAll();
+}
+
+/* ================================================================
+   COLUMN OPERATIONS
+   ================================================================ */
+function addColumn(tabId){
+  const tab = D.tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  tab.columns.push({ id:'col_'+Date.now(), sections:[] });
+  persist();
+  renderAll();
+}
+
+function deleteColumn(tabId, colId){
+  const tab = D.tabs.find(t=>t.id===tabId);
+  if(!tab) return;
+  if(tab.columns.length<=1){ alert('Cannot delete the last column.'); return; }
+  if(!confirm('Delete this column and all its sections?')) return;
+  tab.columns = tab.columns.filter(c=>c.id!==colId);
+  persist();
+  renderAll();
+}
+
+/* ================================================================
+   SECTION OPERATIONS
+   ================================================================ */
+function findCol(tabId, colId){
+  return D.tabs.find(t=>t.id===tabId)?.columns?.find(c=>c.id===colId);
+}
+function findSec(tabId, colId, secId){
+  return findCol(tabId, colId)?.sections?.find(s=>s.id===secId);
+}
+
+function promptAddSection(tabId, colId){
+  const heading = prompt('Section heading:');
+  if(!heading?.trim()) return;
+  const col = findCol(tabId, colId);
+  if(!col) return;
+  col.sections.push({ id:'s_'+Date.now(), heading:heading.trim(), items:[] });
+  persist(); renderAll();
+}
+
+function inlineEditHeading(tabId, colId, secId, spanEl){
+  const inp = el('input','inline-inp');
+  inp.value = spanEl.textContent;
+  spanEl.after(inp); spanEl.style.display='none'; inp.focus();
+  const done = ()=>{
+    const v = inp.value.trim();
+    if(v){ const sec=findSec(tabId,colId,secId); if(sec){ sec.heading=v; spanEl.textContent=v; persist(); } }
+    spanEl.style.display=''; inp.remove();
+  };
+  inp.onblur = done;
+  inp.onkeydown = e=>{ if(e.key==='Enter') done(); if(e.key==='Escape'){ spanEl.style.display=''; inp.remove(); } };
+}
+
+function deleteSection(tabId, colId, secId){
+  if(!confirm('Delete this section and all its content?')) return;
+  const col = findCol(tabId, colId);
+  if(!col) return;
+  col.sections = col.sections.filter(s=>s.id!==secId);
+  persist(); renderAll();
+}
+
+/* ================================================================
+   HEADING ITEM OPERATIONS
+   ================================================================ */
+function promptAddHeading(tabId, colId, secId){
+  const label = prompt('Heading text:');
+  if(!label?.trim()) return;
+  const sec = findSec(tabId, colId, secId);
+  if(!sec) return;
+  sec.items.push({ type:'heading', id:'h_'+Date.now(), label:label.trim(), children:[] });
+  persist(); renderAll();
+}
+
+function promptEditHeading(tabId, colId, secId, itemId){
+  const sec = findSec(tabId, colId, secId);
+  const item = sec?.items.find(i=>i.id===itemId);
+  if(!item) return;
+  const label = prompt('Heading text:', item.label);
+  if(!label?.trim()) return;
+  item.label = label.trim();
+  persist(); renderAll();
+}
+
+function deleteHeading(tabId, colId, secId, itemId){
+  const sec = findSec(tabId, colId, secId);
+  if(!sec) return;
+  const item = sec.items.find(i=>i.id===itemId);
+  if(!item) return;
+  if((item.children?.length)>0 && !confirm('Delete this heading and all its links?')) return;
+  sec.items = sec.items.filter(i=>i.id!==itemId);
+  persist(); renderAll();
+}
+
+/* ================================================================
+   LINK ITEM OPERATIONS
+   ================================================================ */
+function openAddLink(tabId, colId, secId, parentId){
+  editLink = {tabId, colId, secId, parentId, itemId:null};
+  document.getElementById('linkModalTitle').textContent = 'Add Link';
+  document.getElementById('lmLabel').value  = '';
+  document.getElementById('lmUrl').value    = '';
+  document.getElementById('lmTarget').value = '_blank';
+  document.getElementById('lmError').style.display = 'none';
+  openOverlay('linkOverlay');
+  setTimeout(()=>document.getElementById('lmLabel').focus(),50);
+}
+
+function openEditLink(tabId, colId, secId, itemId, parentId){
+  const sec = findSec(tabId, colId, secId);
+  let item = parentId
+    ? sec?.items.find(i=>i.id===parentId)?.children.find(c=>c.id===itemId)
+    : sec?.items.find(i=>i.id===itemId);
+  if(!item) return;
+  editLink = {tabId, colId, secId, itemId, parentId};
+  document.getElementById('linkModalTitle').textContent = 'Edit Link';
+  document.getElementById('lmLabel').value  = item.label;
+  document.getElementById('lmUrl').value    = item.url||'';
+  document.getElementById('lmTarget').value = item.target||'_blank';
+  document.getElementById('lmError').style.display = 'none';
+  openOverlay('linkOverlay');
+  setTimeout(()=>document.getElementById('lmLabel').focus(),50);
+}
+
+function saveLink(){
+  const lmError = document.getElementById('lmError');
+  lmError.style.display = 'none';
+  const label  = document.getElementById('lmLabel').value.trim();
+  const url    = document.getElementById('lmUrl').value.trim();
+  const target = document.getElementById('lmTarget').value;
+  if(!label){ lmError.textContent='Please enter a label.'; lmError.style.display='block'; return; }
+  if(!url||url==='#'){
+    lmError.textContent='A URL is required. To add a heading instead, use the "+ Add Heading" button.';
+    lmError.style.display='block'; return;
+  }
+  const {tabId, colId, secId, itemId, parentId} = editLink;
+  const sec = findSec(tabId, colId, secId);
+  if(!sec) return;
+  if(itemId){
+    let item = parentId
+      ? sec.items.find(i=>i.id===parentId)?.children.find(c=>c.id===itemId)
+      : sec.items.find(i=>i.id===itemId);
+    if(item){ item.label=label; item.url=url; item.target=target; }
+  } else {
+    const obj = {type:'link', id:'l_'+Date.now(), label, url, target};
+    if(parentId){
+      const heading = sec.items.find(i=>i.id===parentId);
+      if(heading){ heading.children=heading.children||[]; heading.children.push(obj); }
+    } else { sec.items.push(obj); }
+  }
+  persist(); closeOverlay('linkOverlay'); renderAll();
+}
+
+function deleteLink(tabId, colId, secId, itemId, parentId){
+  const sec = findSec(tabId, colId, secId);
+  if(!sec) return;
+  if(parentId){
+    const heading = sec.items.find(i=>i.id===parentId);
+    if(heading) heading.children = heading.children.filter(c=>c.id!==itemId);
+  } else {
+    sec.items = sec.items.filter(i=>i.id!==itemId);
+  }
+  persist(); renderAll();
+}
+
+/* ================================================================
+   EDIT MODE
+   ================================================================ */
+function toggleEditMode(){
+  editMode = !editMode;
+  document.body.classList.toggle('edit-mode', editMode);
+  const btn = document.getElementById('editBtn');
+  btn.classList.toggle('active', editMode);
+  btn.textContent = editMode ? '✓ Done' : '✏ Edit';
+  document.getElementById('colorsBtn').style.display = editMode ? 'inline-block' : 'none';
+}
+
+/* ================================================================
+   THEME
+   ================================================================ */
+function toggleTheme(){
+  const moon   = document.getElementById('moonEl');
+  const toggle = document.getElementById('toggle');
+  moon.classList.toggle('sun');
+  toggle.classList.toggle('day');
+  document.body.classList.toggle('light');
+  D.theme = document.body.classList.contains('light') ? 'light' : 'dark';
+  persist();
+}
+
+/* ================================================================
+   WEATHER  (Open-Meteo — no API key required)
+   ================================================================ */
+async function fetchAllWeather(){
+  for(const loc of D.weather) await fetchWeather(loc);
+}
+
+async function fetchWeather(loc){
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,apparent_temperature,weather_code&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`;
+    const r = await fetch(url);
+    const j = await r.json();
+    loc._wx = j;
+    paintWeather(loc);
+  } catch(e){ /* offline — silent */ }
+}
+
+function paintAllWeather(){
+  D.tabs.forEach(tab => {
+    const allSections = (tab.columns||[]).flatMap(c=>c.sections||[]);
+    if(!allSections.some(s=>s.weather)) return;
+    const strip = document.getElementById('ws_'+tab.id);
+    if(!strip) return;
+    strip.innerHTML = '';
+    D.weather.forEach(loc => {
+      const card = buildWeatherCard(loc);
+      strip.appendChild(card);
+    });
+    // Populate the quote-in-weather placeholder
+    const qiw = document.getElementById('qiw_'+tab.id);
+    if(qiw) populateQuoteInWeather(qiw);
+  });
+  // Re-run fetchQuote so inline placeholder gets current quote text
+  fetchQuote();
+}
+
+function populateQuoteInWeather(container){
+  if(!container) return;
+  const quoteText = document.getElementById('quoteText');
+  const on = D.showQuotes !== false;
+
+  // Build the inline quote HTML directly
+  container.innerHTML = `
+    <div class="quote-text" style="text-align:right;font-style:italic;font-size:13px;color:var(--text-dim);line-height:1.55;width:100%;">
+      ${quoteText ? quoteText.innerHTML : '<em style="color:var(--text-dim);font-size:12px;">Loading quote…</em>'}
+    </div>
+    <div class="quote-right">
+      <button class="quote-refresh" onclick="fetchQuote()" title="New quote">↻</button>
+      <div class="quote-toggle-wrap">
+        <span class="quote-toggle-lbl">Quotes:</span>
+        <button class="quote-toggle-btn ${on?'on':''}" onclick="toggleQuotes()">${on?'On':'Off'}</button>
+      </div>
+    </div>
+  `;
+}
+
+
+function buildWeatherCard(loc){
+  const card = el('div','w-card');
+  card.id = 'wc_'+loc.id;
+  card.innerHTML = `<div class="wloc">${loc.label}</div><div class="wload">Loading…</div>`;
+  return card;
+}
+
+function paintWeather(loc){
+  document.querySelectorAll('#wc_'+loc.id).forEach(card => {
+    if(!loc._wx){ return; }
+    const c  = loc._wx.current;
+    const d  = loc._wx.daily;
+    const t  = Math.round(c.temperature_2m);
+    const fl = Math.round(c.apparent_temperature);
+    const cd = WMO[c.weather_code] || 'Unknown';
+    const hi = d ? Math.round(d.temperature_2m_max[0]) : '--';
+    const lo = d ? Math.round(d.temperature_2m_min[0]) : '--';
+    card.innerHTML = `
+      <div class="wloc">${loc.label}</div>
+      <div class="wtemp">${t}°<span style="font-size:14px;font-weight:400">F</span></div>
+      <div class="wdesc">${cd}</div>
+      <div class="whilo">H ${hi}° / L ${lo}° &nbsp;·&nbsp; Feels ${fl}°</div>
+    `;
+  });
+}
+
+/* Weather settings modal */
+function openWeatherModal(){
+  renderWLocList();
+  document.getElementById('wSearch').value='';
+  document.getElementById('wSearchResults').innerHTML='';
+  openOverlay('weatherOverlay');
+}
+
+function renderWLocList(){
+  const el_ = document.getElementById('wLocList');
+  el_.innerHTML = '';
+  if(!D.weather.length){
+    el_.innerHTML='<p style="color:var(--text-dim);font-size:13px;">No locations yet.</p>';
+    return;
+  }
+  D.weather.forEach((loc,i)=>{
+    const row = el('div','wloc-row');
+    row.innerHTML = `<span>${loc.label} <span style="color:var(--text-dim);font-size:11px;">(${loc.lat.toFixed(2)}, ${loc.lon.toFixed(2)})</span></span>`;
+    const db = el('button','wloc-del');
+    db.textContent='✕';
+    db.title='Remove';
+    db.onclick = ()=>{ D.weather.splice(i,1); persist(); renderWLocList(); paintAllWeather(); };
+    row.appendChild(db);
+    el_.appendChild(row);
+  });
+}
+
+async function doWeatherSearch(){
+  const q = document.getElementById('wSearch').value.trim();
+  if(!q) return;
+  const res = document.getElementById('wSearchResults');
+  res.innerHTML='<p style="color:var(--text-dim);font-size:13px;">Searching…</p>';
+  try{
+    const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=en&format=json`);
+    const j = await r.json();
+    res.innerHTML='';
+    if(!j.results?.length){ res.innerHTML='<p style="color:var(--text-dim);font-size:13px;">No results.</p>'; return; }
+    j.results.forEach(r2 => {
+      const btn = el('button','wsearch-row');
+      btn.textContent = [r2.name, r2.admin1, r2.country_code].filter(Boolean).join(', ')
+                        + ` (${r2.latitude.toFixed(2)}, ${r2.longitude.toFixed(2)})`;
+      btn.onclick = async ()=>{
+        const lbl = [r2.name, r2.admin1, r2.country_code].filter(Boolean).join(', ');
+        const loc = {id:'w_'+Date.now(), label:lbl, lat:r2.latitude, lon:r2.longitude};
+        D.weather.push(loc);
+        persist();
+        document.getElementById('wSearch').value='';
+        res.innerHTML='';
+        renderWLocList();
+        paintAllWeather();
+        await fetchWeather(loc);
+      };
+      res.appendChild(btn);
+    });
+  } catch(e){
+    res.innerHTML='<p style="color:#cc3333;font-size:13px;">Search failed — check connection.</p>';
+  }
+}
+
+/* ================================================================
+   RECENTLY VISITED
+   ================================================================ */
+const RECENT_MAX = 6;
+
+function trackVisit(label, url){
+  if(!url || url === '#') return;
+  D.recentVisited = D.recentVisited.filter(r => r.url !== url);
+  D.recentVisited.unshift({ label, url, ts: Date.now() });
+  if(D.recentVisited.length > RECENT_MAX) D.recentVisited = D.recentVisited.slice(0, RECENT_MAX);
+  persist();
+  renderRecent();
+}
+
+function renderRecent(){
+  const chips     = document.getElementById('recentChips');
+  const divider   = document.getElementById('recentDivider');
+  const label     = document.getElementById('recentLabelEl');
+  const clearBtn  = document.getElementById('recentClearBtn');
+  if(!chips) return;
+
+  const hasItems = D.recentVisited?.length > 0;
+  const show = (el, visible) => { if(el) el.style.display = visible ? '' : 'none'; };
+  show(divider,  hasItems);
+  show(label,    hasItems);
+  show(clearBtn, hasItems);
+
+  chips.innerHTML = '';
+  if(!hasItems) return;
+
+  D.recentVisited.forEach(item => {
+    const chip = document.createElement('a');
+    chip.className = 'recent-chip';
+    chip.href = item.url;
+    chip.target = '_blank';
+    chip.rel = 'noopener noreferrer';
+    chip.title = item.url;
+
+    try {
+      const host = new URL(item.url).hostname;
+      const img = document.createElement('img');
+      img.className = 'recent-chip-favicon';
+      img.src = `https://www.google.com/s2/favicons?domain=${host}&sz=16`;
+      img.onerror = ()=>{ img.style.display='none'; };
+      chip.appendChild(img);
+    } catch(e){}
+
+    const txt = document.createElement('span');
+    txt.textContent = item.label;
+    txt.style.overflow = 'hidden';
+    txt.style.textOverflow = 'ellipsis';
+    chip.appendChild(txt);
+
+    chip.addEventListener('click', ()=> trackVisit(item.label, item.url));
+    chips.appendChild(chip);
+  });
+}
+
+function clearRecent(){
+  D.recentVisited = [];
+  persist();
+  renderRecent();
+}
+
+/* ================================================================
+   SEARCH / FILTER
+   ================================================================ */
+function doSearch(query){
+  const q = query.trim().toLowerCase();
+  const clearBtn = document.getElementById('searchClear');
+  clearBtn.classList.toggle('visible', q.length > 0);
+
+  // Remove all previous state
+  document.querySelectorAll('.search-match').forEach(el => {
+    el.outerHTML = el.textContent;
+  });
+  document.querySelectorAll('.section-card').forEach(c => {
+    c.classList.remove('search-has-match','search-no-match');
+  });
+  document.querySelectorAll('li.search-item-match').forEach(li => {
+    li.classList.remove('search-item-match');
+  });
+
+  // Remove searching class from all tab contents
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('searching'));
+
+  if(!q) return;
+
+  // Add searching class to active tab content only
+  const activeContent = document.querySelector('.tab-content.active');
+  if(activeContent) activeContent.classList.add('searching');
+
+  document.querySelectorAll('.section-card').forEach(card => {
+    let hasMatch = false;
+
+    card.querySelectorAll('li').forEach(li => {
+      let liMatch = false;
+      li.querySelectorAll('.link-anchor, .item-heading-text, .link-label').forEach(node => {
+        const text = node.textContent;
+        const lower = text.toLowerCase();
+        const idx = lower.indexOf(q);
+        if(idx !== -1){
+          liMatch = true;
+          hasMatch = true;
+          const before = text.slice(0, idx);
+          const match  = text.slice(idx, idx + q.length);
+          const after  = text.slice(idx + q.length);
+          node.innerHTML = `${escHtml(before)}<span class="search-match">${escHtml(match)}</span>${escHtml(after)}`;
+        }
+      });
+      if(liMatch) li.classList.add('search-item-match');
+    });
+
+    card.classList.add(hasMatch ? 'search-has-match' : 'search-no-match');
+  });
+}
+
+function clearSearch(){
+  const inp = document.getElementById('searchInput');
+  inp.value = '';
+  doSearch('');
+  inp.focus();
+}
+
+function escHtml(str){
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ================================================================
+   BROWSER BOOKMARK IMPORT
+   ================================================================ */
+let bmParsed = null; // parsed bookmark tree
+
+function openBookmarkImport(){
+  bmParsed = null;
+  document.getElementById('bmFileName').textContent = 'No file chosen';
+  document.getElementById('bmImportBtn').disabled = true;
+  document.getElementById('bmPreview').style.display = 'none';
+  document.getElementById('bmNewTabWrap').style.display = '';
+  document.getElementById('bmNewTabName').value = 'Imported Bookmarks';
+
+  // Populate tab picker
+  const sel = document.getElementById('bmTabSelect');
+  sel.innerHTML = '<option value="__new__">＋ New tab</option>';
+  D.tabs.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id; opt.textContent = t.name;
+    sel.appendChild(opt);
+  });
+  sel.value = '__new__';
+
+  openOverlay('bookmarkOverlay');
+}
+
+function bmTabSelectChange(){
+  const isNew = document.getElementById('bmTabSelect').value === '__new__';
+  document.getElementById('bmNewTabWrap').style.display = isNew ? '' : 'none';
+}
+
+function bmFileSelected(ev){
+  const file = ev.target.files?.[0];
+  if(!file) return;
+  document.getElementById('bmFileName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    bmParsed = bmParseHtml(e.target.result);
+    bmShowPreview(bmParsed);
+    document.getElementById('bmImportBtn').disabled = false;
+  };
+  reader.readAsText(file);
+}
+
+/* Parse Netscape bookmark HTML into our data model tree */
+function bmParseHtml(html){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  // Find the top-level DL
+  const rootDl = doc.querySelector('dl');
+  if(!rootDl) return [];
+  return bmParseDl(rootDl);
+}
+
+/* Recursively parse a <DL> into columns/sections/items */
+function bmParseDl(dl){
+  const items = [];
+  [...dl.children].forEach(node => {
+    if(node.tagName === 'DT'){
+      const a = node.querySelector(':scope > a');
+      const h3 = node.querySelector(':scope > h3');
+      const subDl = node.querySelector(':scope > dl');
+      if(h3){
+        // Folder
+        const folder = {
+          type: 'folder',
+          label: h3.textContent.trim(),
+          children: subDl ? bmParseDl(subDl) : []
+        };
+        items.push(folder);
+      } else if(a){
+        // Link
+        items.push({
+          type: 'link',
+          label: a.textContent.trim(),
+          url: a.href || '#',
+          target: '_blank'
+        });
+      }
+    }
+  });
+  return items;
+}
+
+/* Show a text preview of what will be imported */
+function bmShowPreview(tree){
+  const wrap = document.getElementById('bmPreview');
+  const content = document.getElementById('bmPreviewContent');
+  wrap.style.display = '';
+  let lines = [];
+  tree.forEach(col => {
+    if(col.type === 'folder'){
+      lines.push(`📁 ${col.label} (${bmCountLinks(col)} links)`);
+    } else {
+      lines.push(`🔗 ${col.label}`);
+    }
+  });
+  content.innerHTML = lines.map(l => `<div>${escHtml(l)}</div>`).join('');
+}
+
+function bmCountLinks(folder){
+  let n = 0;
+  folder.children?.forEach(c => {
+    if(c.type === 'link') n++;
+    else if(c.type === 'folder') n += bmCountLinks(c);
+  });
+  return n;
+}
+
+/* Convert parsed tree to our column/section/items model and insert */
+function bmDoImport(){
+  if(!bmParsed) return;
+
+  const tabSel    = document.getElementById('bmTabSelect').value;
+  const isNewTab  = tabSel === '__new__';
+  const newName   = document.getElementById('bmNewTabName').value.trim() || 'Imported Bookmarks';
+
+  // Build columns from top-level folders (or a single column for top-level links)
+  const columns = [];
+  const topLinks = bmParsed.filter(i => i.type === 'link');
+  const topFolders = bmParsed.filter(i => i.type === 'folder');
+
+  // Top-level links get their own column called "General"
+  if(topLinks.length){
+    columns.push(bmBuildColumn('general', 'General', topLinks, []));
+  }
+
+  topFolders.forEach((folder, fi) => {
+    columns.push(bmBuildColumn('bm_col_'+fi+'_'+Date.now(), folder.label, [], folder.children));
+  });
+
+  if(!columns.length){ alert('No bookmarks found in file.'); return; }
+
+  if(isNewTab){
+    const tabId = 'bm_tab_' + Date.now();
+    D.tabs.push({ id: tabId, name: newName, columns });
+    activeTab = tabId;
+  } else {
+    const tab = D.tabs.find(t => t.id === tabSel);
+    if(!tab){ alert('Tab not found.'); return; }
+    tab.columns.push(...columns);
+  }
+
+  persist();
+  renderAll();
+  closeOverlay('bookmarkOverlay');
+}
+
+function bmBuildColumn(colId, heading, topLinks, children){
+  // Each sub-folder becomes a section with a heading item
+  const sections = [];
+
+  // A section for top-level links in this column
+  if(topLinks.length){
+    sections.push({
+      id: colId + '_s0',
+      heading: heading,
+      items: topLinks.map((l,i) => ({
+        type: 'link', id: colId+'_l'+i,
+        label: l.label, url: l.url, target: '_blank'
+      }))
+    });
+  } else {
+    // Build section items from children — subfolders become heading groups
+    const items = [];
+    children.forEach((child, ci) => {
+      if(child.type === 'folder'){
+        // Heading with children
+        const headingItem = {
+          type: 'heading',
+          id: colId + '_h' + ci,
+          label: child.label,
+          children: child.children
+            .filter(c => c.type === 'link')
+            .map((l, li) => ({
+              type: 'link', id: colId+'_h'+ci+'_l'+li,
+              label: l.label, url: l.url, target: '_blank'
+            }))
+        };
+        // Recurse one level for nested subfolders as extra flat links
+        child.children.filter(c => c.type === 'folder').forEach((sf, si) => {
+          sf.children.filter(c => c.type === 'link').forEach((l, li) => {
+            headingItem.children.push({
+              type: 'link', id: colId+'_h'+ci+'_sf'+si+'_l'+li,
+              label: `${sf.label}: ${l.label}`, url: l.url, target: '_blank'
+            });
+          });
+        });
+        items.push(headingItem);
+      } else if(child.type === 'link'){
+        items.push({
+          type: 'link', id: colId+'_fl'+ci,
+          label: child.label, url: child.url, target: '_blank'
+        });
+      }
+    });
+    sections.push({ id: colId+'_s0', heading, items });
+  }
+
+  return { id: colId, sections };
+}
+
+/* ================================================================
+   EXPORT / IMPORT
+   ================================================================ */
+function exportJSON(){
+  const copy = deepClone(D);
+  copy.weather.forEach(w=>delete w._wx);
+  const blob = new Blob([JSON.stringify(copy,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'salty_bookmarks.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function triggerImport(){ document.getElementById('importFileInput').click(); }
+
+function resetToDefaults(){
+  if(!confirm('Reset everything to defaults? All your customizations will be lost.')) return;
+  localStorage.removeItem('salty_v2');
+  location.reload();
+}
+
+function resetToDefaults(){
+  if(!confirm('Reset everything to defaults? This will wipe all your tabs, links, and settings. This cannot be undone.')) return;
+  localStorage.removeItem('salty_v2');
+  location.reload();
+}
+
+function handleImport(ev){
+  const file = ev.target.files[0];
+  if(!file) return;
+  const fr = new FileReader();
+  fr.onload = e => {
+    const imported = tryParse(e.target.result);
+    if(!imported?.tabs){ alert('Invalid bookmark file.'); return; }
+    D = imported;
+    activeTab = D.tabs[0]?.id;
+    persist();
+    renderAll();
+    fetchAllWeather();
+    alert('Bookmarks imported successfully!');
+  };
+  fr.readAsText(file);
+  ev.target.value='';
+}
+
+/* ================================================================
+   QUOTES  (ZenQuotes API)
+   ================================================================ */
+
+function fetchQuote(){
+  const btn = document.getElementById('quoteRefresh');
+  const box = document.getElementById('quoteText');
+  if(!box) return;
+
+  // Pick a random quote, avoiding the last one shown
+  const last = box.dataset.lastIdx;
+  let idx;
+  do { idx = Math.floor(Math.random() * QUOTES.length); } while(QUOTES.length > 1 && String(idx) === last);
+  box.dataset.lastIdx = idx;
+
+  const pick = QUOTES[idx];
+  box.innerHTML = `<span class="quote-mark">\u201c</span>${pick.q}<span class="quote-mark">\u201d</span><span class="quote-author">\u2014 ${pick.a}</span>`;
+
+  // Mirror to any inline weather placeholders immediately
+  document.querySelectorAll('[id^="qiw_"] .quote-text').forEach(el => {
+    el.innerHTML = box.innerHTML;
+  });
+
+  // Brief spin animation for the button
+  if(btn){ btn.classList.remove('spinning'); void btn.offsetWidth; btn.classList.add('spinning'); setTimeout(()=>btn.classList.remove('spinning'), 400); }
+}
+
+function applyQuoteState(){
+  const bar  = document.getElementById('quoteBar');
+  const tbtn = document.getElementById('quoteToggleBtn');
+  const on   = D.showQuotes !== false;
+  bar.classList.toggle('hidden', !on);
+  if(tbtn){ tbtn.textContent = on ? 'On' : 'Off'; tbtn.classList.toggle('on', on); }
+}
+
+function toggleQuotes(){
+  D.showQuotes = D.showQuotes === false ? true : false;
+  persist();
+  applyQuoteState();
+  if(D.showQuotes) fetchQuote();
+}
+
+/* ================================================================
+   FOCUS MODE — WEB AUDIO ENGINE
+   ================================================================ */
+let audioCtx     = null;
+let noiseNode    = null;
+let noiseGain    = null;
+let binL         = null;   // left osc
+let binR         = null;   // right osc
+let binGainL     = null;
+let binGainR     = null;
+let merger       = null;
+let currentNoise = 'off';
+let currentVol   = 0.4;
+let currentBeat  = 0;      // Hz offset (0 = off)
+
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if(audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+/* --- Noise generators --- */
+function makeWhiteBuffer(ctx){
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const d   = buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+  return buf;
+}
+
+function makePinkBuffer(ctx){
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const d   = buf.getChannelData(0);
+  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+  for(let i=0;i<d.length;i++){
+    const w = Math.random()*2-1;
+    b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
+    b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
+    b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+    d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;
+    b6=w*0.115926;
+  }
+  return buf;
+}
+
+function makeBrownBuffer(ctx){
+  const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const d   = buf.getChannelData(0);
+  let last=0;
+  for(let i=0;i<d.length;i++){
+    const w = Math.random()*2-1;
+    last = (last + 0.02*w) / 1.02;
+    d[i] = last * 3.5;
+  }
+  return buf;
+}
+
+function startNoise(type){
+  stopNoise();
+  if(type==='off') return;
+  const ctx = getAudioCtx();
+  const buf = type==='white' ? makeWhiteBuffer(ctx)
+            : type==='pink'  ? makePinkBuffer(ctx)
+            :                  makeBrownBuffer(ctx);
+  noiseGain = ctx.createGain();
+  noiseGain.gain.value = currentVol;
+  noiseNode = ctx.createBufferSource();
+  noiseNode.buffer = buf;
+  noiseNode.loop = true;
+  noiseNode.connect(noiseGain);
+  noiseGain.connect(ctx.destination);
+  noiseNode.start();
+}
+
+function stopNoise(){
+  try{ noiseNode?.stop(); } catch(e){}
+  noiseNode = null;
+  noiseGain = null;
+}
+
+/* --- Binaural beats --- */
+function startBinaural(hz){
+  stopBinaural();
+  if(!hz) return;
+  const ctx  = getAudioCtx();
+  const base = 200; // carrier frequency
+  merger    = ctx.createChannelMerger(2);
+  binGainL  = ctx.createGain(); binGainL.gain.value = Math.min(currentVol, 0.3);
+  binGainR  = ctx.createGain(); binGainR.gain.value = Math.min(currentVol, 0.3);
+  binL = ctx.createOscillator(); binL.frequency.value = base;
+  binR = ctx.createOscillator(); binR.frequency.value = base + hz;
+  binL.connect(binGainL); binGainL.connect(merger, 0, 0);
+  binR.connect(binGainR); binGainR.connect(merger, 0, 1);
+  merger.connect(ctx.destination);
+  binL.start(); binR.start();
+}
+
+function stopBinaural(){
+  try{ binL?.stop(); binR?.stop(); } catch(e){}
+  binL=binR=binGainL=binGainR=merger=null;
+}
+
+/* --- UI handlers --- */
+function setNoise(type, btn){
+  currentNoise = type;
+  document.querySelectorAll('.noise-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  startNoise(type);
+  // Restart binaural at new audio context if needed
+  if(currentBeat) startBinaural(currentBeat);
+}
+
+function setVolume(val){
+  currentVol = val/100;
+  if(noiseGain) noiseGain.gain.setTargetAtTime(currentVol, audioCtx.currentTime, 0.05);
+  if(binGainL){
+    const bv = Math.min(currentVol, 0.3);
+    binGainL.gain.setTargetAtTime(bv, audioCtx.currentTime, 0.05);
+    binGainR.gain.setTargetAtTime(bv, audioCtx.currentTime, 0.05);
+  }
+}
+
+function setBinaural(val){
+  currentBeat = parseFloat(val);
+  const bv = document.getElementById('beatVal');
+  if(bv) bv.textContent = currentBeat===0 ? 'Off' : currentBeat.toFixed(1)+'Hz';
+  if(currentBeat===0) stopBinaural();
+  else startBinaural(currentBeat);
+}
+
+function toggleFocusPanel(){
+  const panel = document.getElementById('focusPanel');
+  const btn   = document.getElementById('focusToolBtn');
+  if(!panel) return;
+  // Close BG panel if open
+  document.getElementById('bgPanel')?.classList.remove('open');
+  document.getElementById('bgBtn')?.classList.remove('active');
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  if(!isOpen){
+    stopNoise(); stopBinaural(); currentNoise='off';
+    document.querySelectorAll('.noise-btn').forEach(b=>b.classList.remove('active'));
+  }
+}
+
+/* ================================================================
+   LO-FI YOUTUBE PLAYER
+   ================================================================ */
+let ytPlayer      = null;
+let ytReady       = false;
+let ytPendingVid  = null;   // vid to load once API ready
+let lofiPlaying   = false;
+let lofiCurrentId = null;   // track id in D.lofi
+
+// Load YouTube IFrame API once
+(function loadYTApi(){
+  if(window.YT) return;
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+})();
+
+// Called by YouTube API when ready
+window.onYouTubeIframeAPIReady = function(){
+  ytReady = true;
+  ytPlayer = new YT.Player('ytPlayer', {
+    height:'1', width:'1',
+    playerVars:{ autoplay:0, controls:0, rel:0, fs:0, modestbranding:1 },
+    events:{
+      onReady: ()=>{
+        if(ytPendingVid){ ytPlayer.loadVideoById(ytPendingVid); ytPendingVid=null; }
+      },
+      onStateChange: e=>{
+        if(e.data === YT.PlayerState.PLAYING){
+          lofiPlaying = true;
+          lofiSetStatus('playing');
+          document.getElementById('lofiPlayBtn').textContent = '⏸';
+          document.getElementById('lofiPlayBtn').classList.add('playing');
+        } else if(e.data === YT.PlayerState.PAUSED){
+          lofiPlaying = false;
+          lofiSetStatus('paused');
+          document.getElementById('lofiPlayBtn').textContent = '▶';
+          document.getElementById('lofiPlayBtn').classList.remove('playing');
+        } else if(e.data === YT.PlayerState.ENDED){
+          lofiStop();
+        }
+      }
+    }
+  });
+};
+
+function lofiCueTrack(vid){
+  if(!ytReady || !ytPlayer){
+    ytPendingVid = vid; return;
+  }
+  ytPlayer.cueVideoById(vid);
+}
+
+function lofiCurrentVid(){
+  const active = document.querySelector('.lofi-dropdown li.active');
+  return active?.dataset.vid || null;
+}
+
+function lofiPlay(){
+  const vid = lofiCurrentVid();
+  if(!vid) return;
+  if(lofiPlaying){
+    ytPlayer?.pauseVideo();
+  } else {
+    if(!ytReady || !ytPlayer){ lofiSetStatus('loading…'); ytPendingVid=vid; return; }
+    try{
+      const cur = ytPlayer.getVideoData()?.video_id;
+      if(cur === vid){ ytPlayer.playVideo(); }
+      else { ytPlayer.loadVideoById(vid); }
+    } catch(e){ ytPlayer.loadVideoById(vid); }
+  }
+}
+
+function lofiStop(){
+  ytPlayer?.stopVideo();
+  lofiPlaying = false;
+  lofiSetStatus('idle');
+  document.getElementById('lofiPlayBtn').textContent = '▶';
+  document.getElementById('lofiPlayBtn').classList.remove('playing');
+}
+
+function lofiShuffle(){
+  if(!D.lofi?.length) return;
+  const pool = D.lofi.filter(t => t.id !== lofiCurrentId);
+  const pick = pool.length ? pool[Math.floor(Math.random()*pool.length)] : D.lofi[0];
+  lofiSelectTrack(pick.vid, pick.label);
+}
+
+function toggleLofiDropdown(){
+  document.getElementById('lofiDropdown').classList.toggle('open');
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('lofiSelectWrap');
+  if(wrap && !wrap.contains(e.target)){
+    document.getElementById('lofiDropdown')?.classList.remove('open');
+  }
+});
+
+function lofiSelectTrack(vid, label){
+  document.getElementById('lofiDropdown').classList.remove('open');
+  document.getElementById('lofiSelectLabel').textContent = label;
+  // Mark active
+  document.querySelectorAll('.lofi-dropdown li').forEach(li => {
+    li.classList.toggle('active', li.dataset.vid === vid);
+  });
+  const track = D.lofi.find(t => t.vid === vid);
+  lofiCurrentId = track?.id || null;
+  lofiSetStatus('loading…');
+  if(!ytReady || !ytPlayer){ ytPendingVid = vid; return; }
+  ytPlayer.loadVideoById(vid);
+}
+
+function lofiSetStatus(state){
+  const s = document.getElementById('lofiStatus');
+  if(s){
+    const labels = { idle:'idle', cued:'cued', paused:'paused', playing:'▶ playing', 'loading…':'loading…' };
+    s.textContent = labels[state] || state;
+    s.className = 'lofi-status' + (state==='playing' ? ' playing' : '');
+  }
+  // Mirror to bottom bar
+  const trackLabel = document.getElementById('lofiSelectLabel')?.textContent || '';
+  if(state === 'playing')       npUpdate('playing', trackLabel);
+  else if(state === 'paused')   npUpdate('paused',  trackLabel);
+  else                          npUpdate('idle',    '');
+}
+
+function lofiPopulateSelect(){
+  const ul = document.getElementById('lofiDropdown');
+  if(!ul) return;
+  const curVid = lofiCurrentVid();
+  ul.innerHTML = '';
+  // Placeholder
+  const ph = document.createElement('li');
+  ph.className = 'placeholder';
+  ph.textContent = '— select track —';
+  ph.onclick = ()=>{ ul.classList.remove('open'); };
+  ul.appendChild(ph);
+  (D.lofi||[]).forEach(t => {
+    const li = document.createElement('li');
+    li.textContent = t.label;
+    li.dataset.vid = t.vid;
+    if(t.vid === curVid) li.classList.add('active');
+    li.onclick = ()=> lofiSelectTrack(t.vid, t.label);
+    ul.appendChild(li);
+  });
+}
+
+/* Playlist modal */
+function openLofiModal(){
+  renderLofiList();
+  document.getElementById('lofiAddLabel').value='';
+  document.getElementById('lofiAddVid').value='';
+  document.getElementById('lofiAddError').style.display='none';
+  openOverlay('lofiOverlay');
+}
+
+function renderLofiList(){
+  const wrap = document.getElementById('lofiList');
+  wrap.innerHTML = '';
+  if(!D.lofi?.length){
+    wrap.innerHTML='<p style="color:var(--text-dim);font-size:13px;">No tracks yet.</p>';
+    return;
+  }
+  D.lofi.forEach((t,i)=>{
+    const row = document.createElement('div');
+    row.className = 'wloc-row';
+    row.innerHTML = `<span style="font-size:12px;">${t.label} <span style="color:var(--text-dim);font-size:10px;font-family:Share Tech Mono,monospace;">${t.vid}</span></span>`;
+    const db = document.createElement('button');
+    db.className='wloc-del'; db.textContent='✕'; db.title='Remove';
+    db.onclick=()=>{ D.lofi.splice(i,1); persist(); renderLofiList(); lofiPopulateSelect(); };
+    row.appendChild(db);
+    wrap.appendChild(row);
+  });
+}
+
+function lofiExtractVid(input){
+  input = input.trim();
+  // Full URL patterns
+  const m = input.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+  if(m) return m[1];
+  // Raw 11-char ID
+  if(/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
+  return null;
+}
+
+function lofiAddTrack(){
+  const label = document.getElementById('lofiAddLabel').value.trim();
+  const raw   = document.getElementById('lofiAddVid').value.trim();
+  const err   = document.getElementById('lofiAddError');
+  err.style.display='none';
+  if(!label){ err.textContent='Please enter a label.'; err.style.display='block'; return; }
+  const vid = lofiExtractVid(raw);
+  if(!vid){ err.textContent='Could not find a valid YouTube video ID in that URL.'; err.style.display='block'; return; }
+  if(D.lofi.find(t=>t.vid===vid)){ err.textContent='That video is already in the playlist.'; err.style.display='block'; return; }
+  D.lofi.push({ id:'lf_'+Date.now(), label, vid });
+  persist();
+  renderLofiList();
+  lofiPopulateSelect();
+  document.getElementById('lofiAddLabel').value='';
+  document.getElementById('lofiAddVid').value='';
+}
+
+/* ================================================================
+   COLOR PICKER ENGINE
+   ================================================================ */
+
+/* The slots we expose per theme */
+const CP_SLOTS = [
+  { key:'--tab-bg',         label:'Tab bar background' },
+  { key:'--tab-active',     label:'Active tab color' },
+  { key:'--tab-active-txt', label:'Active tab text' },
+  { key:'--red2',           label:'Tab bar bottom border' },
+  { key:'--border',         label:'Border / outline color' },
+  { key:'--text-head',      label:'Section heading text' },
+  { key:'--text',           label:'Body text' },
+  { key:'--text-dim',       label:'Dimmed text / labels' },
+  { key:'--link',           label:'Link color' },
+  { key:'--link-hover',     label:'Link hover color' },
+  { key:'--search',         label:'Search box color' },
+  { key:'--surface',        label:'Card surface color' },
+  { key:'--modal-bg',       label:'Modal background' },
+];
+
+let cpMode        = 'dark';   // 'dark' | 'light'
+let cpSelectedKey = null;
+let cpH = 0, cpS = 1, cpL = 0.5;  // current HSL (0-1 range except H 0-360)
+
+/* Apply saved colors to :root via injected <style> */
+function applyColors(){
+  let tag = document.getElementById('cp-style');
+  if(!tag){ tag = document.createElement('style'); tag.id='cp-style'; document.head.appendChild(tag); }
+  const dk = D.colors?.dark  || {};
+  const lk = D.colors?.light || {};
+  let css = ':root {\n';
+  for(const [k,v] of Object.entries(dk)) css += `  ${k}: ${v};\n`;
+  css += '}\nbody.light {\n';
+  for(const [k,v] of Object.entries(lk)) css += `  ${k}: ${v};\n`;
+  css += '}\n';
+  tag.textContent = css;
+}
+
+/* Open modal */
+function openColorsModal(){
+  cpMode = document.body.classList.contains('light') ? 'light' : 'dark';
+  cpSelectedKey = CP_SLOTS[0].key;
+  cpUpdateModeButtons();
+  cpBuildSlots();
+  const curHex = D.colors[cpMode][cpSelectedKey] || '#888888';
+  cpSetFromHex(curHex);
+  openOverlay('colorsOverlay');
+  cpWireCanvases();
+  // defer canvas draw until overlay is visible
+  requestAnimationFrame(()=>{ cpDrawWheel(); cpDrawSL(); cpPositionDots(); });
+}
+
+function cpSetMode(mode){
+  cpMode = mode;
+  cpUpdateModeButtons();
+  cpBuildSlots();
+  const curHex = D.colors[cpMode][cpSelectedKey] || '#888888';
+  cpSetFromHex(curHex);
+  cpDrawSL();
+  cpPositionDots();
+}
+
+function cpUpdateModeButtons(){
+  document.getElementById('cpDarkBtn').className  = 'mbtn' + (cpMode==='dark'  ? ' mbtn-primary' : ' mbtn-cancel');
+  document.getElementById('cpLightBtn').className = 'mbtn' + (cpMode==='light' ? ' mbtn-primary' : ' mbtn-cancel');
+}
+
+/* Build slot grid */
+function cpBuildSlots(){
+  const grid = document.getElementById('cpSlots');
+  grid.innerHTML = '';
+  CP_SLOTS.forEach(slot => {
+    const val = D.colors[cpMode][slot.key] || '#888888';
+    const div = document.createElement('div');
+    div.className = 'cp-slot' + (slot.key===cpSelectedKey ? ' selected' : '');
+    div.innerHTML = `<div class="cp-swatch" style="background:${val}"></div><span class="cp-slot-label">${slot.label}</span>`;
+    div.onclick = () => cpSelectSlot(slot.key);
+    grid.appendChild(div);
+  });
+}
+
+function cpSelectSlot(key){
+  cpSelectedKey = key;
+  const hex = D.colors[cpMode][key] || '#888888';
+  cpSetFromHex(hex);
+  cpBuildSlots();
+  cpDrawSL();
+  cpPositionDots();
+}
+
+/* Apply current color to selected slot */
+function cpApplyToSlot(){
+  if(!cpSelectedKey) return;
+  const hex = cpHSLtoHex(cpH, cpS, cpL);
+  D.colors[cpMode][cpSelectedKey] = hex;
+  persist();
+  applyColors();
+  cpBuildSlots();
+}
+
+/* Reset current theme to DEFAULTS */
+function cpResetTheme(){
+  if(!confirm(`Reset ${cpMode} mode colors to defaults?`)) return;
+  D.colors[cpMode] = deepClone(DEFAULTS.colors[cpMode]);
+  persist();
+  applyColors();
+  const hex = D.colors[cpMode][cpSelectedKey] || '#888888';
+  cpSetFromHex(hex);
+  cpBuildSlots();
+  cpDrawSL();
+  cpPositionDots();
+}
+
+/* ---- Color wheel canvas ---- */
+function cpDrawWheel(){
+  const canvas = document.getElementById('cpWheel');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = canvas.width/2, cy = canvas.height/2;
+  const outerR = cx, innerR = cx * 0.65;
+
+  // Hue ring
+  for(let angle=0; angle<360; angle++){
+    const startA = (angle-1) * Math.PI/180;
+    const endA   = (angle+1) * Math.PI/180;
+    const grad = ctx.createRadialGradient(cx,cy,innerR,cx,cy,outerR);
+    grad.addColorStop(0, `hsla(${angle},100%,50%,0)`);
+    grad.addColorStop(1, `hsla(${angle},100%,50%,1)`);
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,outerR,startA,endA);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(${angle},100%,50%)`;
+    ctx.fill();
+  }
+  // Punch out centre
+  ctx.globalCompositeOperation='destination-out';
+  ctx.beginPath(); ctx.arc(cx,cy,innerR,0,Math.PI*2); ctx.fill();
+  ctx.globalCompositeOperation='source-over';
+}
+
+function cpDrawSL(){
+  const canvas = document.getElementById('cpSL');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  // Base hue
+  ctx.fillStyle = `hsl(${cpH},100%,50%)`;
+  ctx.fillRect(0,0,w,h);
+  // White left-to-right
+  const gW = ctx.createLinearGradient(0,0,w,0);
+  gW.addColorStop(0,'rgba(255,255,255,1)');
+  gW.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle = gW; ctx.fillRect(0,0,w,h);
+  // Black top-to-bottom
+  const gB = ctx.createLinearGradient(0,0,0,h);
+  gB.addColorStop(0,'rgba(0,0,0,0)');
+  gB.addColorStop(1,'rgba(0,0,0,1)');
+  ctx.fillStyle = gB; ctx.fillRect(0,0,w,h);
+}
+
+function cpPositionDots(){
+  // Hue ring dot — positioned relative to the wheel canvas (its parent is position:relative)
+  const wheel = document.getElementById('cpWheel');
+  const dot   = document.getElementById('cpWheelDot');
+  if(wheel && dot){
+    const cx = wheel.offsetWidth/2, cy = wheel.offsetHeight/2;
+    const r  = cx * 0.825;
+    const angle = cpH * Math.PI/180;
+    dot.style.left = (cx + r*Math.cos(angle)) + 'px';
+    dot.style.top  = (cy + r*Math.sin(angle)) + 'px';
+  }
+
+  // SL square dot — positioned relative to its parent div (position:relative)
+  const sl    = document.getElementById('cpSL');
+  const sldot = document.getElementById('cpSLDot');
+  if(sl && sldot){
+    const w = sl.offsetWidth, h = sl.offsetHeight;
+    sldot.style.left = (cpS * w) + 'px';
+    sldot.style.top  = ((1 - cpL) * h) + 'px';
+  }
+}
+
+/* ---- Wheel interaction ---- */
+function cpWheelPointer(e){
+  const canvas = document.getElementById('cpWheel');
+  const rect   = canvas.getBoundingClientRect();
+  const cx = canvas.width/2, cy = canvas.height/2;
+  const scaleX = canvas.width  / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX - cx;
+  const y = (e.clientY - rect.top)  * scaleY - cy;
+  const dist = Math.sqrt(x*x + y*y);
+  const innerR = cx * 0.65, outerR = cx;
+  if(dist < innerR || dist > outerR) return;
+  cpH = ((Math.atan2(y,x) * 180/Math.PI) + 360) % 360;
+  cpUpdatePreview();
+  cpDrawSL();
+  cpPositionDots();
+}
+
+/* ---- SL interaction ---- */
+function cpSLPointer(e){
+  const canvas = document.getElementById('cpSL');
+  const rect   = canvas.getBoundingClientRect();
+  const x = Math.max(0, Math.min(rect.width,  e.clientX - rect.left));
+  const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
+  cpS = x / rect.width;
+  cpL = 1 - (y / rect.height);
+  cpUpdatePreview();
+  cpPositionDots();
+}
+
+/* ---- Wire up events ---- */
+(function cpWireEvents(){
+  let wheelDown=false, slDown=false;
+  let wired = false;
+  window.cpWireCanvases = function(){
+    if(wired) return;
+    wired = true;
+    const wheel = document.getElementById('cpWheel');
+    const sl    = document.getElementById('cpSL');
+    if(!wheel||!sl) return;
+    wheel.addEventListener('mousedown', e=>{ wheelDown=true; cpWheelPointer(e); });
+    sl.addEventListener('mousedown',    e=>{ slDown=true;    cpSLPointer(e); });
+    document.addEventListener('mousemove', e=>{
+      if(wheelDown) cpWheelPointer(e);
+      if(slDown)    cpSLPointer(e);
+    });
+    document.addEventListener('mouseup', ()=>{ wheelDown=false; slDown=false; });
+    wheel.addEventListener('touchstart', e=>{ wheelDown=true; cpWheelPointer(e.touches[0]); e.preventDefault(); },{passive:false});
+    sl.addEventListener('touchstart',    e=>{ slDown=true;    cpSLPointer(e.touches[0]);    e.preventDefault(); },{passive:false});
+    document.addEventListener('touchmove', e=>{
+      if(wheelDown) cpWheelPointer(e.touches[0]);
+      if(slDown)    cpSLPointer(e.touches[0]);
+    });
+    document.addEventListener('touchend', ()=>{ wheelDown=false; slDown=false; });
+  };
+})();
+
+/* ---- Hex input ---- */
+function cpHexInput(val){
+  if(/^#[0-9a-fA-F]{6}$/.test(val)){
+    const [h,s,l] = cpHexToHSL(val);
+    cpH=h; cpS=s; cpL=l;
+    cpUpdatePreview();
+    cpDrawSL();
+    cpPositionDots();
+  }
+}
+
+function cpSetFromHex(hex){
+  const clean = hex.replace(/[^#0-9a-fA-F]/g,'');
+  const h6 = clean.length===7 ? clean : '#888888';
+  const [h,s,l] = cpHexToHSL(h6);
+  cpH=h; cpS=s; cpL=l;
+  cpUpdatePreview();
+}
+
+function cpUpdatePreview(){
+  const hex = cpHSLtoHex(cpH, cpS, cpL);
+  const prev = document.getElementById('cpPreview');
+  const inp  = document.getElementById('cpHex');
+  if(prev) prev.style.background = hex;
+  if(inp)  inp.value = hex;
+}
+
+/* ---- Color conversion ---- */
+function cpHSLtoHex(h,s,l){
+  h = ((h%360)+360)%360;
+  const a = s*(l<0.5?l:1-l);
+  const f = n => {
+    const k = (n+h/30)%12;
+    const c = l - a*Math.max(-1,Math.min(k-3,Math.min(9-k,1)));
+    return Math.round(255*Math.max(0,Math.min(1,c))).toString(16).padStart(2,'0');
+  };
+  return '#'+f(0)+f(8)+f(4);
+}
+
+function cpHexToHSL(hex){
+  const r=parseInt(hex.slice(1,3),16)/255;
+  const g=parseInt(hex.slice(3,5),16)/255;
+  const b=parseInt(hex.slice(5,7),16)/255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h,s; const l=(max+min)/2;
+  if(max===min){ h=0; s=0; }
+  else {
+    const d=max-min;
+    s=l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h=((g-b)/d+(g<b?6:0))/6; break;
+      case g: h=((b-r)/d+2)/6; break;
+      default:h=((r-g)/d+4)/6;
+    }
+  }
+  return [h*360, s, l];
+}
+
+/* ================================================================
+   ANIMATED BACKGROUNDS
+   ================================================================ */
+
+function toggleBgPanel(){
+  const panel = document.getElementById('bgPanel');
+  const btn   = document.getElementById('bgBtn');
+  // Close Focus panel if open
+  document.getElementById('focusPanel')?.classList.remove('open');
+  document.getElementById('focusToolBtn')?.classList.remove('active');
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('active', isOpen);
+  if(isOpen) syncBgUI();
+}
+
+function syncBgUI(){
+  // Highlight active effect button
+  document.querySelectorAll('.bg-effects-row .noise-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(D.bgStyle) ||
+      (D.bgStyle==='none' && b.textContent==='Off'));
+  });
+  // Highlight active swatch
+  document.querySelectorAll('.bg-swatch').forEach(b => {
+    b.classList.toggle('active', b.dataset.color === D.bgColor);
+  });
+  const opSlider = document.getElementById('bgOpacity');
+  if(opSlider) opSlider.value = D.bgOpacity;
+  const dimSlider = document.getElementById('bgDim');
+  if(dimSlider) dimSlider.value = D.bgDim;
+  const urlInput = document.getElementById('bgUrlInput');
+  if(urlInput) urlInput.value = D.bgUrl || '';
+  // Highlight Apply button when URL is active
+  const applyBtn = urlInput?.closest('.bg-url-row')?.querySelector('.noise-btn');
+  if(applyBtn) applyBtn.classList.toggle('active', !!D.bgUrlActive);
+}
+
+function setBgUrl(){
+  const val = document.getElementById('bgUrlInput').value.trim();
+  if(!val) return;
+  D.bgUrl = val;
+  D.bgUrlActive = true;
+  D.bgStyle = 'none';  // turn off animation but don't clear URL
+  persist();
+  applyBg();
+  syncBgUI();
+}
+
+function clearBgUrl(){
+  D.bgUrlActive = false;
+  persist();
+  applyBg();
+  syncBgUI();
+}
+
+function bgUrlPreview(val){
+  // Just live-update the input — apply on button press
+}
+
+function setBgStyle(style, btn){
+  D.bgStyle = style;
+  if(style !== 'none') D.bgUrlActive = false;  // deactivate URL but keep it saved
+  persist();
+  applyBg();
+  document.querySelectorAll('.bg-effects-row .noise-btn').forEach(b=>b.classList.remove('active'));
+  btn?.classList.add('active');
+}
+
+function setBgColor(color, btn){
+  D.bgColor = color;
+  persist();
+  document.querySelectorAll('.bg-swatch').forEach(b=>b.classList.remove('active'));
+  btn?.classList.add('active');
+  // restart animation with new color
+  if(D.bgStyle !== 'none') applyBg();
+}
+
+function setBgDim(val){
+  D.bgDim = parseInt(val);
+  persist();
+  document.getElementById('bgDimOverlay').style.opacity = D.bgDim / 100;
+}
+
+function setBgOpacity(val){
+  D.bgOpacity = parseInt(val);
+  persist();
+  const canvas = document.getElementById('bgCanvas');
+  if(canvas) canvas.style.opacity = D.bgOpacity / 100;
+}
+
+function applyBg(){
+  const canvas = document.getElementById('bgCanvas');
+  if(!canvas) return;
+
+  // Stop any running animation
+  if(bgAnimFrame){ cancelAnimationFrame(bgAnimFrame); bgAnimFrame=null; }
+
+  // Custom URL mode — apply as body background, hide canvas
+  if(D.bgUrlActive && D.bgUrl){
+    canvas.style.opacity = '0';
+    document.getElementById('bgDimOverlay').style.opacity = D.bgDim / 100;
+    document.body.style.backgroundImage = `url('${D.bgUrl}')`;
+    document.body.style.backgroundRepeat = 'repeat';
+    document.body.style.backgroundSize = 'auto';
+    return;
+  }
+
+  // Restore default background texture when no custom URL active
+  document.body.style.backgroundImage = 'var(--bg-img)';
+
+  if(D.bgStyle === 'none'){
+    canvas.style.opacity = '0';
+    document.getElementById('bgDimOverlay').style.opacity = '0';
+    return;
+  }
+
+  bgCtx = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.opacity = D.bgOpacity / 100;
+  document.getElementById('bgDimOverlay').style.opacity = D.bgDim / 100;
+
+  const fns = {
+    starfield:  bgStarfield,
+    aurora:     bgAurora,
+    matrix:     bgMatrix,
+    pulse:      bgPulse,
+    grid:       bgGrid,
+    particles:  bgParticles,
+    synthwave:  bgSynthwave,
+  };
+  fns[D.bgStyle]?.();
+}
+
+// Resize canvas when window resizes
+window.addEventListener('resize', ()=>{
+  if(D?.bgStyle && D.bgStyle !== 'none') applyBg();
+});
+
+/* Helper: parse hex to rgb */
+function hexRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+
+/* ---- STARFIELD ---- */
+function bgStarfield(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  const stars = Array.from({length:200},()=>({
+    x:Math.random()*w, y:Math.random()*h,
+    size:Math.random()*2+0.3,
+    speed:Math.random()*0.4+0.1,
+    opacity:Math.random()
+  }));
+  function draw(){
+    c.clearRect(0,0,w,h);
+    stars.forEach(s=>{
+      s.opacity += (Math.random()-0.5)*0.03;
+      s.opacity = Math.max(0.1, Math.min(1, s.opacity));
+      s.y += s.speed;
+      if(s.y > h){ s.y=0; s.x=Math.random()*w; }
+      c.beginPath();
+      c.arc(s.x,s.y,s.size,0,Math.PI*2);
+      c.fillStyle=`rgba(${r},${g},${b},${s.opacity})`;
+      c.fill();
+    });
+    bgAnimFrame = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- AURORA ---- */
+function bgAurora(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  let t=0;
+  function draw(){
+    c.clearRect(0,0,w,h);
+    for(let i=0;i<4;i++){
+      const y  = h*(0.2+i*0.18) + Math.sin(t*0.4+i*1.2)*60;
+      const amp = 80+Math.sin(t*0.3+i)*40;
+      const grad = c.createLinearGradient(0,y-amp,0,y+amp);
+      grad.addColorStop(0,`rgba(${r},${g},${b},0)`);
+      grad.addColorStop(0.5,`rgba(${r},${g},${b},${0.45+Math.sin(t+i)*0.1})`);
+      grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
+      c.beginPath();
+      c.moveTo(0,y);
+      for(let x=0;x<=w;x+=20){
+        c.lineTo(x, y + Math.sin(x*0.01+t*0.5+i)*amp*0.5);
+      }
+      c.lineTo(w,h); c.lineTo(0,h); c.closePath();
+      c.fillStyle = grad;
+      c.fill();
+    }
+    t+=0.02;
+    bgAnimFrame = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- MATRIX RAIN ---- */
+function bgMatrix(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  const cols = Math.floor(w/16);
+  const drops = Array.from({length:cols},()=>Math.random()*-50);
+  const chars = 'ｦｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃ01アイウエオカキクケコ';
+  function draw(){
+    // Semi-transparent black over canvas only — creates the trail fade
+    c.fillStyle='rgba(0,0,0,0.08)';
+    c.fillRect(0,0,w,h);
+    c.font='14px Share Tech Mono, monospace';
+    drops.forEach((y,i)=>{
+      const ch = chars[Math.floor(Math.random()*chars.length)];
+      c.fillStyle=`rgba(${r},${g},${b},0.9)`;
+      c.fillText(ch, i*16, y*16);
+      if(y*16>h && Math.random()>0.975) drops[i]=0;
+      drops[i]+=0.5;
+    });
+    bgAnimFrame = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- GRADIENT PULSE ---- */
+function bgPulse(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  let t=0;
+  function draw(){
+    const cx=w/2+Math.sin(t*0.3)*w*0.15, cy=h/2+Math.cos(t*0.2)*h*0.15;
+    const radius = (Math.min(w,h)*0.8)*(0.8+Math.sin(t*0.5)*0.2);
+    const grad = c.createRadialGradient(cx,cy,0,cx,cy,radius);
+    grad.addColorStop(0,`rgba(${r},${g},${b},0.55)`);
+    grad.addColorStop(0.5,`rgba(${r},${g},${b},0.18)`);
+    grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
+    c.clearRect(0,0,w,h);
+    c.fillStyle=grad;
+    c.fillRect(0,0,w,h);
+    t+=0.015;
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- GEOMETRIC GRID ---- */
+function bgGrid(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  const size=60; let t=0;
+  function draw(){
+    c.clearRect(0,0,w,h);
+    c.strokeStyle=`rgba(${r},${g},${b},0.5)`;
+    c.lineWidth=1;
+    const offset = (t*20)%size;
+    for(let x=-size+offset;x<w+size;x+=size){
+      c.beginPath(); c.moveTo(x,0); c.lineTo(x,h); c.stroke();
+    }
+    for(let y=-size+offset;y<h+size;y+=size){
+      c.beginPath(); c.moveTo(0,y); c.lineTo(w,y); c.stroke();
+    }
+    // Pulsing intersection dots
+    for(let x=-size+offset;x<w+size;x+=size){
+      for(let y=-size+offset;y<h+size;y+=size){
+        const pulse = 0.5+Math.sin(t*2+(x+y)*0.01)*0.5;
+        c.beginPath();
+        c.arc(x,y,2.5*pulse,0,Math.PI*2);
+        c.fillStyle=`rgba(${r},${g},${b},${0.7*pulse})`;
+        c.fill();
+      }
+    }
+    t+=0.008;
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- PARTICLES ---- */
+function bgParticles(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  const pts = Array.from({length:80},()=>({
+    x:Math.random()*w, y:Math.random()*h,
+    vx:(Math.random()-0.5)*0.6, vy:(Math.random()-0.5)*0.6,
+  }));
+  const maxDist=120;
+  function draw(){
+    c.clearRect(0,0,w,h);
+    pts.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>w) p.vx*=-1;
+      if(p.y<0||p.y>h) p.vy*=-1;
+      c.beginPath(); c.arc(p.x,p.y,2.5,0,Math.PI*2);
+      c.fillStyle=`rgba(${r},${g},${b},0.9)`; c.fill();
+    });
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<maxDist){
+          c.beginPath();
+          c.moveTo(pts[i].x,pts[i].y); c.lineTo(pts[j].x,pts[j].y);
+          c.strokeStyle=`rgba(${r},${g},${b},${(1-dist/maxDist)*0.65})`;
+          c.lineWidth=1; c.stroke();
+        }
+      }
+    }
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- SYNTHWAVE ---- */
+function bgSynthwave(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  let t=0;
+  function draw(){
+    c.clearRect(0,0,w,h);
+    const horizon = h*0.55;
+    // Horizon glow
+    const hg = c.createRadialGradient(w/2,horizon,0,w/2,horizon,w*0.5);
+    hg.addColorStop(0,`rgba(${r},${g},${b},0.45)`);
+    hg.addColorStop(1,`rgba(${r},${g},${b},0)`);
+    c.fillStyle=hg; c.fillRect(0,0,w,h);
+    // Grid lines going to horizon (perspective)
+    c.strokeStyle=`rgba(${r},${g},${b},0.65)`;
+    c.lineWidth=1;
+    // Vertical lines
+    for(let i=-10;i<=10;i++){
+      c.beginPath();
+      c.moveTo(w/2+i*(w*0.06),horizon);
+      c.lineTo(w/2+i*(w*0.5),h+100);
+      c.stroke();
+    }
+    // Horizontal lines (scrolling)
+    for(let i=0;i<12;i++){
+      const p  = (i/12+t*0.3)%1;
+      const y  = horizon + (h-horizon)*p*p;
+      const xw = (w*0.5)*p;
+      c.beginPath();
+      c.moveTo(w/2-xw,y); c.lineTo(w/2+xw,y);
+      c.globalAlpha = p*0.9;
+      c.stroke();
+      c.globalAlpha = 1;
+    }
+    t+=0.01;
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ================================================================
+   CLOCK
+   ================================================================ */
+function applyClock(){
+  const display = document.getElementById('clockDisplay');
+  const toggleBtn = document.getElementById('clockToggleBtn');
+  if(!display) return;
+
+  const on = D.showClock !== false;
+  display.style.display = on ? '' : 'none';
+  toggleBtn.title = on ? 'Hide clock' : 'Show clock';
+  toggleBtn.style.color = on ? 'var(--gold)' : 'var(--text-dim)';
+
+  // Apply style class
+  display.className = 'clock-display clock-' + (D.clockStyle||'nixie');
+
+  // Mark active style button
+  document.querySelectorAll('.clock-style-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.style === D.clockStyle);
+  });
+
+  if(on && !clockInterval){
+    clockTick();
+    clockInterval = setInterval(clockTick, 1000);
+  } else if(!on && clockInterval){
+    clearInterval(clockInterval);
+    clockInterval = null;
+  }
+}
+
+function clockTick(){
+  const display = document.getElementById('clockDisplay');
+  if(!display) return;
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  display.textContent = `${h}:${m}:${s}`;
+}
+
+function toggleClock(){
+  D.showClock = !D.showClock;
+  persist();
+  applyClock();
+}
+
+function toggleClockPicker(){
+  document.getElementById('clockPicker').classList.toggle('open');
+}
+
+function setClockStyle(style){
+  D.clockStyle = style;
+  persist();
+  applyClock();
+  document.getElementById('clockPicker').classList.remove('open');
+}
+
+// Close clock picker, focus panel, and bg panel on outside click
+document.addEventListener('click', e => {
+  const clockPicker = document.getElementById('clockPicker');
+  const clockWrap   = document.getElementById('clockWrap');
+  if(clockPicker && clockWrap && !clockWrap.contains(e.target)) clockPicker.classList.remove('open');
+
+  const focusPanel = document.getElementById('focusPanel');
+  const focusBtn   = document.getElementById('focusToolBtn');
+  if(focusPanel?.classList.contains('open') &&
+     !focusPanel.contains(e.target) && !focusBtn.contains(e.target)){
+    focusPanel.classList.remove('open');
+    focusBtn.classList.remove('active');
+  }
+
+  const bgPanel = document.getElementById('bgPanel');
+  const bgBtn   = document.getElementById('bgBtn');
+  if(bgPanel?.classList.contains('open') &&
+     !bgPanel.contains(e.target) && !bgBtn.contains(e.target)){
+    bgPanel.classList.remove('open');
+    bgBtn.classList.remove('active');
+  }
+});
+
+/* ================================================================
+   NOW PLAYING STATUS (bottom bar)
+   ================================================================ */
+function npUpdate(state, trackLabel){
+  const icon  = document.getElementById('npIcon');
+  const label = document.getElementById('npLabel');
+  if(!icon||!label) return;
+
+  if(state === 'playing'){
+    icon.classList.add('active');
+    label.classList.add('playing');
+    label.textContent = trackLabel || 'Playing';
+  } else if(state === 'paused'){
+    icon.classList.remove('active');
+    label.classList.remove('playing');
+    label.textContent = (trackLabel ? trackLabel + ' — ' : '') + 'paused';
+  } else {
+    icon.classList.remove('active');
+    label.classList.remove('playing');
+    label.textContent = 'No track selected';
+  }
+}
+
+function copyEdgeUrl(){
+  navigator.clipboard.writeText('edge://settings/content/mediaAutoplay').then(()=>{
+    const btn = document.getElementById('edgeCopyBtn');
+    if(btn){ btn.textContent='Copied!'; setTimeout(()=>{ btn.textContent='Copy'; },2000); }
+  });
+}
+
+/* ================================================================
+   MODAL HELPERS
+   ================================================================ */
+function openOverlay(id){ document.getElementById(id).classList.add('open'); }
+function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
+
+// Close on backdrop click
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+// Close modals on Escape
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));
+});
+
+/* ================================================================
+   DOM HELPERS
+   ================================================================ */
+function el(tag, cls=''){
+  const e = document.createElement(tag);
+  if(cls) e.className=cls;
+  return e;
+}
+
+function icBtn(symbol, title, onclick){
+  const b = el('button','ic-btn ic-edit');
+  b.textContent = symbol;
+  b.title = title;
+  b.onclick = onclick;
+  return b;
+}
+</script>
+</body>
+</html>
