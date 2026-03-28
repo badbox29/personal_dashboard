@@ -187,6 +187,13 @@ body {
 }
 .tool-btn:hover { background: rgba(221,176,75,0.18); border-color: var(--gold); color: var(--gold); }
 .tool-btn.active { background: var(--gold); border-color: var(--gold); color: #1a0a00; }
+.tool-btn.pomo-alerting {
+  animation: pomoGlow 0.7s ease-in-out infinite alternate;
+}
+@keyframes pomoGlow {
+  from { background: rgba(255,85,85,0.15); border-color: #ff5555; color: #ff5555; box-shadow: 0 0 6px rgba(255,85,85,0.4); }
+  to   { background: rgba(255,85,85,0.35); border-color: #ff8888; color: #fff;    box-shadow: 0 0 14px rgba(255,85,85,0.7); }
+}
 
 .add-tab-btn {
   display: none;
@@ -1454,6 +1461,1088 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
   .tdnn { font-size: 7%; top: 5px; right: 12px; }
   .sections-grid { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   HIDDEN TAB INDICATOR (edit mode only)
+   ============================================================ */
+.tab-btn.tab-hidden { opacity: 0.45; font-style: italic; }
+.tab-hidden-badge {
+  font-size: 9px;
+  background: rgba(255,255,255,0.14);
+  border-radius: 3px;
+  padding: 1px 4px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  font-style: normal;
+  font-weight: 400;
+}
+
+/* ============================================================
+   TAB TYPE SELECTOR (in new-tab modal)
+   ============================================================ */
+.tab-type-row {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 2px;
+}
+.tab-type-card {
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 10px 8px;
+  cursor: pointer;
+  text-align: center;
+  color: var(--text-dim);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1.2;
+}
+.tab-type-card span {
+  font-size: 11px;
+  font-weight: 400;
+  opacity: 0.65;
+}
+.tab-type-card:hover  { border-color: var(--cyan); color: var(--cyan); }
+.tab-type-card.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
+.tab-type-card:disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
+
+/* Section type picker reuses the same card style */
+.sec-type-card {
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 10px 8px;
+  cursor: pointer;
+  text-align: center;
+  color: var(--text-dim);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1.2;
+}
+.sec-type-card span { font-size: 11px; font-weight: 400; opacity: 0.65; }
+.sec-type-card:hover  { border-color: var(--cyan); color: var(--cyan); }
+.sec-type-card.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
+.sec-type-card:disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
+
+/* ============================================================
+   MONITOR SECTION (inline within section-card)
+   ============================================================ */
+.monitor-subtitle {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  flex: 1;
+  letter-spacing: 0.03em;
+}
+.monitor-check-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 3px;
+  padding: 1px 7px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.monitor-check-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+.proxy-row {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--border);
+}
+body.edit-mode .proxy-row { display: flex; }
+.proxy-row label {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin: 0;
+}
+.proxy-row input {
+  flex: 1;
+  font-size: 11px;
+  padding: 3px 7px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  min-width: 0;
+}
+.proxy-row input::placeholder { opacity: 0.35; }
+.proxy-save-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 3px;
+  padding: 3px 9px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.proxy-save-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+.status-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  align-content: flex-start;
+}
+
+.status-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 13px 9px;
+  width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  backdrop-filter: blur(2px);
+  transition: border-color 0.35s, border-left-color 0.35s;
+}
+.status-tile:hover { border-color: var(--text-dim); }
+.status-tile.st-green  { border-left-color: #3aaa5e; }
+.status-tile.st-yellow { border-left-color: #c8a020; }
+.status-tile.st-red    { border-left-color: #cc3333; }
+
+.status-tile-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #c8a020;
+  transition: background 0.4s;
+  margin-top: 1px;
+}
+.status-dot.sd-green   { background: #3aaa5e; }
+.status-dot.sd-yellow  { background: #c8a020; animation: sdpulse 1.8s ease-in-out infinite; }
+.status-dot.sd-red     { background: #cc3333; }
+.status-dot.sd-blocked {
+  background: transparent;
+  border: 2px solid #666;
+  width: 7px; height: 7px; /* compensate for border */
+  box-sizing: content-box;
+}
+
+.status-tile.st-blocked { border-left-color: #555; opacity: 0.7; }
+
+.status-blocked-badge {
+  display: inline-block;
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(100,100,100,0.18);
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: #888;
+  letter-spacing: 0.04em;
+  margin-left: 4px;
+  flex-shrink: 0;
+  cursor: help;
+  vertical-align: middle;
+}
+
+@keyframes sdpulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.status-tile-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-head);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-tile-name a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.status-tile-name a:hover { color: var(--link-hover); }
+
+.status-tile-desc {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status-tile-meta {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  opacity: 0.55;
+  margin-top: 2px;
+}
+.status-tile-btns {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: flex;
+  gap: 2px;
+}
+/* add-service row */
+.add-service-wrap {
+  display: none;
+  padding: 0 20px 16px;
+}
+body.edit-mode .add-service-wrap { display: block; }
+
+/* ============================================================
+   WIDGETS — shared
+   ============================================================ */
+.widget-body {
+  padding: 8px 2px 4px;
+}
+
+/* ============================================================
+   WIDGET — Search Engine Shortcuts
+   ============================================================ */
+.search-widget {}
+.search-engine-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.search-engine-tab {
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.search-engine-tab:hover  { border-color: var(--cyan); color: var(--cyan); }
+.search-engine-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.1); }
+.search-widget-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.search-widget-input {
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  padding: 5px 9px;
+  outline: none;
+  transition: border-color 0.2s;
+  min-width: 0;
+}
+.search-widget-input:focus { border-color: var(--gold); }
+.search-widget-go {
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.search-widget-go:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ============================================================
+   WIDGET — Quick Note
+   ============================================================ */
+.note-widget-area {
+  width: 100%;
+  min-height: 100px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.6;
+  padding: 8px 10px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.note-widget-area:focus { border-color: var(--gold); }
+.note-widget-area::placeholder { color: var(--text-dim); opacity: 0.5; }
+.note-widget-meta {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  opacity: 0.5;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* ============================================================
+   WIDGET — Countdown Timer
+   ============================================================ */
+.countdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.countdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  position: relative;
+}
+.countdown-emoji {
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.countdown-info { flex: 1; min-width: 0; }
+.countdown-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-head);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.countdown-time {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11.5px;
+  color: var(--gold);
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+}
+.countdown-time.past { color: var(--text-dim); }
+.countdown-del {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--del-color);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.countdown-del:hover { opacity: 1; background: rgba(204,50,50,0.12); }
+body.edit-mode .countdown-del { display: block; }
+
+.countdown-add-row {
+  display: none;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+body.edit-mode .countdown-add-row { display: flex; }
+.countdown-add-inp {
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  padding: 4px 7px;
+  outline: none;
+}
+.countdown-add-inp:focus { border-color: var(--gold); }
+.countdown-add-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-family: 'Outfit', sans-serif;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.countdown-add-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+
+/* ============================================================
+   WIDGET — Polyhedral Dice Roller
+   ============================================================ */
+.dice-widget {}
+.dice-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.die-btn {
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  padding: 4px 9px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.die-btn:hover  { border-color: var(--cyan); color: var(--cyan); }
+.die-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.1); }
+.die-count {
+  position: absolute;
+  top: -6px; right: -6px;
+  background: var(--gold);
+  color: #1a0a00;
+  border-radius: 9px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  min-width: 14px;
+  text-align: center;
+  display: none;
+  line-height: 1.4;
+}
+.die-btn.active .die-count { display: block; }
+.dice-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.dice-modifier-inp {
+  width: 56px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  padding: 4px 7px;
+  outline: none;
+  text-align: center;
+}
+.dice-modifier-inp:focus { border-color: var(--gold); }
+.dice-roll-btn {
+  flex: 1;
+  background: rgba(221,176,75,0.12);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  color: var(--gold);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+}
+.dice-roll-btn:hover { background: rgba(221,176,75,0.25); }
+.dice-roll-btn:active { transform: scale(0.97); }
+.dice-clear-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dice-clear-btn:hover { border-color: var(--del-color); color: var(--del-color); }
+.dice-result {
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px 10px;
+  min-height: 42px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.dice-result-total {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 22px;
+  color: var(--gold);
+  font-weight: bold;
+  line-height: 1;
+}
+.dice-result-breakdown {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  word-break: break-all;
+}
+@keyframes diceRoll {
+  0%   { transform: rotate(0deg)   scale(1);    }
+  25%  { transform: rotate(15deg)  scale(1.08); }
+  50%  { transform: rotate(-10deg) scale(1.05); }
+  75%  { transform: rotate(5deg)   scale(1.02); }
+  100% { transform: rotate(0deg)   scale(1);    }
+}
+.dice-result.rolling { animation: diceRoll 0.35s ease-out; }
+
+/* ============================================================
+   WIDGET — Unit Converter
+   ============================================================ */
+.unit-category-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.unit-cat-tab {
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.unit-cat-tab:hover  { border-color: var(--cyan); color: var(--cyan); }
+.unit-cat-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.1); }
+.unit-converter-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.unit-inp {
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  padding: 5px 8px;
+  outline: none;
+  min-width: 0;
+  transition: border-color 0.2s;
+}
+.unit-inp:focus { border-color: var(--gold); }
+.unit-sel {
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  padding: 5px 6px;
+  outline: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  max-width: 130px;
+}
+.unit-swap-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 15px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.unit-swap-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ============================================================
+   WIDGET — World Clocks
+   ============================================================ */
+.world-clocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.world-clock-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.world-clock-city {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-head);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.world-clock-time {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+.world-clock-date {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.world-clock-del {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--del-color);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.world-clock-del:hover { opacity: 1; background: rgba(204,50,50,0.12); }
+body.edit-mode .world-clock-del { display: block; }
+.world-clock-add-row {
+  display: none;
+  gap: 5px;
+  margin-top: 6px;
+  align-items: center;
+}
+body.edit-mode .world-clock-add-row { display: flex; }
+.world-clock-add-row input, .world-clock-add-row select {
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  padding: 4px 7px;
+  outline: none;
+}
+.world-clock-add-row input { flex: 1; min-width: 80px; }
+.world-clock-add-row select { flex: 2; }
+
+/* ============================================================
+   WIDGET — Clipboard History
+   ============================================================ */
+.clip-paste-zone {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.clip-paste-inp {
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  padding: 5px 9px;
+  outline: none;
+  min-width: 0;
+  transition: border-color 0.2s;
+}
+.clip-paste-inp:focus { border-color: var(--gold); }
+.clip-paste-btn {
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.clip-paste-btn:hover { border-color: var(--gold); color: var(--gold); }
+.clip-list { display: flex; flex-direction: column; gap: 4px; }
+.clip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  position: relative;
+}
+.clip-item:hover { border-color: var(--cyan); }
+.clip-item-text {
+  flex: 1;
+  font-size: 11.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  min-width: 0;
+}
+.clip-item-meta {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  opacity: 0.6;
+  padding-top: 2px;
+}
+.clip-copy-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.clip-copy-btn:hover { color: var(--cyan); background: rgba(15,184,221,0.1); }
+.clip-empty {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  opacity: 0.55;
+  padding: 4px 0;
+  font-style: italic;
+}
+
+/* ============================================================
+   WIDGET — To-Do List
+   ============================================================ */
+.todo-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; }
+.todo-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.todo-item:hover { background: rgba(255,255,255,0.04); }
+.todo-check {
+  width: 15px; height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--gold);
+  margin-top: 2px;
+}
+.todo-label {
+  flex: 1;
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.5;
+  word-break: break-word;
+  cursor: pointer;
+  transition: opacity 0.2s, text-decoration 0.2s;
+}
+.todo-item.done .todo-label {
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+.todo-del {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--del-color);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.todo-del:hover { opacity: 1; background: rgba(204,50,50,0.12); }
+body.edit-mode .todo-del { display: block; }
+.todo-add-row {
+  display: flex;
+  gap: 5px;
+}
+.todo-add-inp {
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12.5px;
+  padding: 5px 8px;
+  outline: none;
+  min-width: 0;
+  transition: border-color 0.2s;
+}
+.todo-add-inp:focus { border-color: var(--gold); }
+.todo-add-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-family: 'Outfit', sans-serif;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.todo-add-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.todo-clear-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  padding: 4px 0 0;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+.todo-clear-btn:hover { color: var(--del-color); }
+body.edit-mode .todo-clear-btn { display: block; }
+
+/* ============================================================
+   FOCUS PANEL — Pomodoro Timer (Row 3)
+   ============================================================ */
+.pomo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pomo-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  min-width: 38px;
+}
+.pomo-display {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  min-width: 58px;
+  text-align: center;
+  flex-shrink: 0;
+  transition: color 0.3s;
+}
+.pomo-display.alerting { color: #ff5555; animation: pomoAlert 0.6s ease-in-out infinite alternate; }
+@keyframes pomoAlert { from { opacity: 1; } to { opacity: 0.3; } }
+.pomo-phase {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  min-width: 46px;
+}
+.pomo-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pomo-btn:hover     { border-color: var(--gold); color: var(--gold); }
+.pomo-btn.running   { border-color: var(--cyan); color: var(--cyan); }
+.pomo-btn.alerting  { border-color: #ff5555; color: #ff5555; animation: pomoAlert 0.6s ease-in-out infinite alternate; }
+.pomo-presets {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.pomo-preset {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pomo-preset:hover  { border-color: var(--cyan); color: var(--cyan); }
+.pomo-preset.active { border-color: var(--gold); color: var(--gold); }
+.pomo-custom-inp {
+  width: 52px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  padding: 2px 6px;
+  outline: none;
+  text-align: center;
+  transition: border-color 0.15s;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.pomo-custom-inp:focus { border-color: var(--gold); }
+.pomo-custom-inp::-webkit-inner-spin-button,
+.pomo-custom-inp::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.pomo-reset-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.pomo-reset-btn:hover { border-color: var(--del-color); color: var(--del-color); }
+.pomo-count {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+/* ============================================================
+   WIDGET — Anniversary & Birthday Reminders
+   ============================================================ */
+.remind-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+.remind-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: 5px;
+  transition: border-left-color 0.3s;
+}
+.remind-item.soon-7  { border-left-color: var(--gold); }
+.remind-item.soon-30 { border-left-color: var(--cyan); }
+.remind-item.today   { border-left-color: #3aaa5e; }
+.remind-emoji { font-size: 16px; flex-shrink: 0; line-height: 1; }
+.remind-info  { flex: 1; min-width: 0; }
+.remind-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-head);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.remind-date {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.remind-countdown {
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+.remind-countdown.today   { color: #3aaa5e; font-weight: 700; }
+.remind-countdown.soon-7  { color: var(--gold); }
+.remind-del {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--del-color);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.remind-del:hover { opacity: 1; background: rgba(204,50,50,0.12); }
+body.edit-mode .remind-del { display: block; }
+.remind-add-row {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+}
+body.edit-mode .remind-add-row { display: flex; }
+.remind-add-fields {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.remind-add-inp, .remind-add-sel {
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  padding: 4px 7px;
+  outline: none;
+}
+.remind-add-inp:focus, .remind-add-sel:focus { border-color: var(--gold); }
 </style>
 </head>
 <body>
@@ -1507,6 +2596,27 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
       </div>
       <span class="lofi-status" id="lofiStatus">idle</span>
       <button class="lofi-edge-help" onclick="openOverlay('edgeHelpOverlay')" title="Can't play in MS Edge?">⚠ Edge?</button>
+    </div>
+
+    <!-- Row 3: Pomodoro Timer -->
+    <div class="focus-row pomo-row">
+      <span class="pomo-label">Pomo</span>
+      <div class="pomo-display" id="pomoDisplay">25:00</div>
+      <span class="pomo-phase" id="pomoPhase">work</span>
+      <div class="pomo-presets">
+        <button class="pomo-preset active" data-min="25" onclick="pomoSetDuration(25,this)" title="25 min work">25</button>
+        <button class="pomo-preset" data-min="50" onclick="pomoSetDuration(50,this)" title="50 min work">50</button>
+        <button class="pomo-preset" data-min="5"  onclick="pomoSetDuration(5,this)"  title="5 min break">5</button>
+        <button class="pomo-preset" data-min="15" onclick="pomoSetDuration(15,this)" title="15 min break">15</button>
+        <input class="pomo-custom-inp" id="pomoCustomInp" type="number" min="1" max="999"
+               placeholder="min" title="Custom duration in minutes"
+               oninput="pomoSetCustom(this.value)"
+               onblur="pomoSetCustom(this.value)"
+               onkeydown="if(event.key==='Enter'){ pomoSetCustom(this.value); this.blur(); }">
+      </div>
+      <button class="pomo-btn" id="pomoBtn" onclick="pomoToggle()">Start</button>
+      <button class="pomo-reset-btn" id="pomoResetBtn" onclick="pomoReset()" title="Reset timer" style="display:none">↺</button>
+      <span class="pomo-count" id="pomoCount">0 🍅</span>
     </div>
 
   </div>
@@ -1811,10 +2921,98 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
   <div class="modal">
     <h3 id="tabModalTitle">Tab</h3>
     <label>Tab Name</label>
-    <input type="text" id="tmName" placeholder="Tab name">
+    <input type="text" id="tmName" placeholder="Tab name"
+           onkeydown="if(event.key==='Enter') saveTab()">
+    <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+      <input type="checkbox" id="tmHidden" style="width:auto;margin:0;cursor:pointer;">
+      <label for="tmHidden" style="margin:0;font-size:12.5px;color:var(--text-dim);cursor:pointer;">
+        Hidden — only visible in edit mode
+      </label>
+    </div>
     <div class="modal-actions">
       <button class="mbtn mbtn-cancel" onclick="closeOverlay('tabOverlay')">Cancel</button>
       <button class="mbtn mbtn-primary" onclick="saveTab()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECTION TYPE MODAL ===== -->
+<div class="overlay" id="secTypeOverlay">
+  <div class="modal" style="width:460px;">
+    <h3>New Section</h3>
+    <label>Heading</label>
+    <input type="text" id="stName" placeholder="Section heading"
+           onkeydown="if(event.key==='Enter') saveNewSection()">
+    <div style="margin-top:12px;">
+      <label>Section Type</label>
+      <div class="tab-type-row">
+        <button class="sec-type-card active" id="stTypeLinks" onclick="selectSecType('links')">
+          📑 Links<span>Headings &amp; links</span>
+        </button>
+        <button class="sec-type-card" id="stTypeMonitor" onclick="selectSecType('monitor')">
+          🟢 App Monitor<span>Service status tiles</span>
+        </button>
+        <button class="sec-type-card" id="stTypeWidget" onclick="selectSecType('widget')">
+          🧩 Widget<span>Interactive tools</span>
+        </button>
+      </div>
+    </div>
+    <!-- Widget picker (shown when widget type selected) -->
+    <div id="stWidgetPicker" style="display:none;margin-top:12px;">
+      <label>Widget Type</label>
+      <div class="tab-type-row" style="flex-wrap:wrap;">
+        <button class="sec-type-card" id="swSearch"    onclick="selectWidgetType('search')">
+          🔍 Search<span>Multi-engine search</span>
+        </button>
+        <button class="sec-type-card" id="swNote"      onclick="selectWidgetType('note')">
+          📝 Quick Note<span>Scratch pad</span>
+        </button>
+        <button class="sec-type-card" id="swCountdown" onclick="selectWidgetType('countdown')">
+          ⏳ Countdown<span>Event timers</span>
+        </button>
+        <button class="sec-type-card" id="swDice"      onclick="selectWidgetType('dice')">
+          🎲 Dice Roller<span>Polyhedral dice</span>
+        </button>
+        <button class="sec-type-card" id="swConverter" onclick="selectWidgetType('converter')">
+          📐 Unit Converter<span>Length, weight, temp…</span>
+        </button>
+        <button class="sec-type-card" id="swClocks"    onclick="selectWidgetType('clocks')">
+          🌍 World Clocks<span>Multiple timezones</span>
+        </button>
+        <button class="sec-type-card" id="swReminders" onclick="selectWidgetType('reminders')">
+          🎂 Reminders<span>Birthdays &amp; anniversaries</span>
+        </button>
+        <button class="sec-type-card" id="swTodo"      onclick="selectWidgetType('todo')">
+          ✅ To-Do List<span>Checklist</span>
+        </button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('secTypeOverlay')">Cancel</button>
+      <button class="mbtn mbtn-primary" onclick="saveNewSection()">Add Section</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SERVICE MODAL ===== -->
+<div class="overlay" id="serviceOverlay">
+  <div class="modal">
+    <h3 id="serviceModalTitle">Service</h3>
+    <label>Name</label>
+    <input type="text" id="smName" placeholder="My App">
+    <label>URL to check</label>
+    <input type="text" id="smUrl" placeholder="https://...">
+    <label>Description <span style="font-size:11px;opacity:0.6;">(optional)</span></label>
+    <input type="text" id="smDesc" placeholder="Short description">
+    <label>Check interval (seconds, min 15)</label>
+    <input type="number" id="smInterval" value="60" min="15" max="3600"
+           style="width:110px;">
+    <div id="smError" style="display:none;margin-top:10px;padding:7px 10px;
+         background:rgba(204,50,50,0.15);border:1px solid #cc3333;border-radius:4px;
+         color:#ff8888;font-size:12px;"></div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('serviceOverlay')">Cancel</button>
+      <button class="mbtn mbtn-primary" onclick="saveService()">Save</button>
     </div>
   </div>
 </div>
@@ -1854,6 +3052,7 @@ const DEFAULTS = {
   bgUrl: '',
   bgUrlActive: false,
   recentVisited: [],
+  proxyUrl: '',
   colors: {
     dark: {
       '--tab-bg':        '#3a0000',
@@ -2158,9 +3357,46 @@ let activeTab  = null;
 let editMode   = false;
 let editLink   = null;
 let editTab    = null;
+let editService = null;  // {tabId, colId, secId, serviceId} or serviceId null for new
+let newSecType  = 'links'; // tracks type selection in new-section modal
+let newWidgetType = 'search'; // tracks widget subtype selection
 let clockInterval = null;
 let bgAnimFrame   = null;
 let bgCtx         = null;
+
+// Status state: serviceId → {status, successes, failures, lastCheck, timerId, blocked}
+const statusState = {};
+
+// Widget constants — must be declared before init IIFE runs renderAll
+const SEARCH_ENGINES = [
+  { id:'google',  label:'Google',     url:'https://www.google.com/search?q=' },
+  { id:'bing',    label:'Bing',       url:'https://www.bing.com/search?q=' },
+  { id:'ddg',     label:'DuckDuckGo', url:'https://duckduckgo.com/?q=' },
+  { id:'youtube', label:'YouTube',    url:'https://www.youtube.com/results?search_query=' },
+  { id:'reddit',  label:'Reddit',     url:'https://www.reddit.com/search/?q=' },
+];
+
+const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo'];
+
+const UNIT_CATS = {
+  Length:      { units:['mm','cm','m','km','in','ft','yd','mi'],                       toBase:{ mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344 } },
+  Weight:      { units:['mg','g','kg','t','oz','lb','st'],                              toBase:{ mg:0.000001,g:0.001,kg:1,t:1000,oz:0.0283495,lb:0.453592,st:6.35029 } },
+  Temperature: { units:['°C','°F','K'],                                                 toBase:null },
+  Volume:      { units:['ml','l','tsp','tbsp','fl oz','cup','pt','qt','gal'],           toBase:{ ml:0.001,l:1,tsp:0.00492892,tbsp:0.0147868,'fl oz':0.0295735,cup:0.236588,pt:0.473176,qt:0.946353,gal:3.78541 } },
+  Speed:       { units:['m/s','km/h','mph','knot'],                                    toBase:{ 'm/s':1,'km/h':0.277778,mph:0.44704,knot:0.514444 } },
+  Area:        { units:['mm²','cm²','m²','km²','in²','ft²','ac','mi²'],                toBase:{ 'mm²':0.000001,'cm²':0.0001,'m²':1,'km²':1e6,'in²':0.00064516,'ft²':0.092903,ac:4046.86,'mi²':2.59e6 } },
+};
+
+const TZ_OPTIONS = (() => {
+  try { return Intl.supportedValuesOf('timeZone'); }
+  catch(e){
+    // Fallback for older browsers
+    return ['UTC','Etc/UTC','Etc/Zulu','Pacific/Honolulu','America/Anchorage',
+      'America/Los_Angeles','America/Denver','America/Chicago','America/New_York',
+      'America/Sao_Paulo','Europe/London','Europe/Paris','Europe/Moscow',
+      'Asia/Dubai','Asia/Kolkata','Asia/Shanghai','Asia/Tokyo','Australia/Sydney'];
+  }
+})();
 
 /* ================================================================
    BOOT
@@ -2202,6 +3438,22 @@ let bgCtx         = null;
   if(D.bgUrl     === undefined) D.bgUrl      = '';
   if(D.bgUrlActive === undefined) D.bgUrlActive = false;
   if(!D.recentVisited) D.recentVisited = [];
+  if(D.proxyUrl === undefined) D.proxyUrl = '';
+
+  // Migrate: type:'status' tabs → standard tab with a monitor section in col 0
+  D.tabs.forEach(tab => {
+    if(tab.type === 'status'){
+      const secId  = 's_'+tab.id+'_mon';
+      const colId  = 'col_'+tab.id+'_0';
+      const monSec = {
+        id: secId, heading: tab.name, type: 'monitor',
+        services: tab.services || []
+      };
+      tab.type    = 'standard';
+      tab.columns = [{ id: colId, sections: [monSec] }];
+      delete tab.services;
+    }
+  });
 
   // Migrate: add clock settings if missing
   if(D.showClock === undefined) D.showClock = true;
@@ -2212,7 +3464,8 @@ let bgCtx         = null;
   if(!D.colors.dark)  D.colors.dark  = deepClone(DEFAULTS.colors.dark);
   if(!D.colors.light) D.colors.light = deepClone(DEFAULTS.colors.light);
 
-  activeTab = D.tabs[0]?.id || null;
+  // Pick first non-hidden tab as default; fall back to first tab if all are hidden
+  activeTab = (D.tabs.find(t => !t.hidden) || D.tabs[0])?.id || null;
 
   if(D.theme === 'light'){
     document.body.classList.add('light');
@@ -2260,15 +3513,28 @@ function renderTabBar(){
   let dragSrcId = null;
 
   D.tabs.forEach(tab => {
-    const btn = el('button','tab-btn' + (tab.id===activeTab?' active':''));
+    // Hidden tabs only appear in edit mode
+    if(tab.hidden && !editMode) return;
+
+    const classes = ['tab-btn'];
+    if(tab.id === activeTab) classes.push('active');
+    if(tab.hidden) classes.push('tab-hidden');
+
+    const btn = el('button', classes.join(' '));
     btn.dataset.tabId = tab.id;
     btn.setAttribute('draggable','true');
 
     const name = el('span'); name.textContent = tab.name;
     btn.append(name);
 
-    const eBtn = icBtn('✎','Edit tab name', ()=>{ openEditTab(tab.id); });
-    const dBtn = icBtn('✕','Delete tab',    ()=>{ deleteTab(tab.id); });
+    // Hidden badge (edit mode only)
+    if(tab.hidden && editMode){
+      const hbadge = el('span','tab-hidden-badge'); hbadge.textContent = 'HIDDEN';
+      btn.append(hbadge);
+    }
+
+    const eBtn = icBtn('✎','Edit tab', ()=>{ openEditTab(tab.id); });
+    const dBtn = icBtn('✕','Delete tab', ()=>{ deleteTab(tab.id); });
     dBtn.classList.add('ic-del');
     btn.append(eBtn, dBtn);
 
@@ -2328,11 +3594,13 @@ function renderContents(){
   const root = document.getElementById('tabContents');
   root.innerHTML = '';
 
+  // Stop all existing status polls before rebuilding
+  Object.values(statusState).forEach(s => { if(s.timerId) clearTimeout(s.timerId); });
+
   D.tabs.forEach(tab => {
     const div = el('div','tab-content' + (tab.id===activeTab?' active':''));
     div.id = 'tc_'+tab.id;
 
-    // Columns row
     const colsRow = el('div','columns-grid');
 
     (tab.columns||[]).forEach(col => {
@@ -2341,16 +3609,12 @@ function renderContents(){
       colWrap.dataset.colId = col.id;
       colWrap.dataset.tabId = tab.id;
 
-      // Section drop zone — dragover
       colWrap.addEventListener('dragover', e => {
         if(!editMode) return;
-        const secId = e.dataTransfer.types.includes('text/sec-id');
-        if(!secId) return;
+        if(!e.dataTransfer.types.includes('text/sec-id')) return;
         e.preventDefault(); e.stopPropagation();
-        // Clear indicators
         document.querySelectorAll('.sec-drop-above,.sec-drop-below')
           .forEach(el => el.classList.remove('sec-drop-above','sec-drop-below'));
-        // Find nearest card
         const card = e.target.closest('.section-card');
         if(!card || card.classList.contains('sec-dragging')) return;
         const r = card.getBoundingClientRect();
@@ -2358,10 +3622,9 @@ function renderContents(){
       });
 
       colWrap.addEventListener('dragleave', e => {
-        if(!e.currentTarget.contains(e.relatedTarget)){
+        if(!e.currentTarget.contains(e.relatedTarget))
           document.querySelectorAll('.sec-drop-above,.sec-drop-below')
             .forEach(el => el.classList.remove('sec-drop-above','sec-drop-below'));
-        }
       });
 
       colWrap.addEventListener('drop', e => {
@@ -2369,27 +3632,22 @@ function renderContents(){
         const srcSecId = e.dataTransfer.getData('text/sec-id');
         if(!srcSecId) return;
         e.preventDefault(); e.stopPropagation();
-
         const targetCard = e.target.closest('.section-card');
         const before = targetCard?.classList.contains('sec-drop-above');
         document.querySelectorAll('.sec-drop-above,.sec-drop-below')
           .forEach(el => el.classList.remove('sec-drop-above','sec-drop-below'));
-
-        performSectionDrop(srcSecId, tab.id, col.id, targetCard?.dataset.secId || null, before);
+        performSectionDrop(srcSecId, tab.id, col.id, targetCard?.dataset.secId||null, before);
       });
 
-      // Sections within this column
       (col.sections||[]).forEach(sec => colWrap.appendChild(buildSection(tab.id, col.id, sec)));
 
-      // Add Section button (edit mode only)
       const asw = el('div','add-section-wrap');
       const asb = el('button','dashed-btn');
       asb.textContent = '＋ Add Section';
-      asb.onclick = ()=>promptAddSection(tab.id, col.id);
+      asb.onclick = ()=> openAddSection(tab.id, col.id);
       asw.appendChild(asb);
       colWrap.appendChild(asw);
 
-      // Delete column button (edit mode only)
       const dcw = el('div','del-col-wrap');
       const dcb = el('button','dashed-btn del-col-btn');
       dcb.textContent = '✕ Remove Column';
@@ -2400,7 +3658,6 @@ function renderContents(){
       colsRow.appendChild(colWrap);
     });
 
-    // Add Column button (edit mode only)
     const acw = el('div','add-col-wrap');
     const acb = el('button','add-col-card');
     acb.textContent = '＋ Add Column';
@@ -2410,17 +3667,13 @@ function renderContents(){
 
     div.appendChild(colsRow);
 
-    // Weather strip + inline quote
     const allSections = (tab.columns||[]).flatMap(c=>c.sections||[]);
     if(allSections.some(s=>s.weather)){
       const bottomRow = el('div','tab-bottom-row');
       bottomRow.id = 'tbr_'+tab.id;
-      const ws = el('div','weather-strip');
-      ws.id = 'ws_'+tab.id;
+      const ws = el('div','weather-strip'); ws.id = 'ws_'+tab.id;
       bottomRow.appendChild(ws);
-      // Quote placeholder — actual quoteBar stays in anchor, we clone display here
-      const qp = el('div','quote-in-weather');
-      qp.id = 'qiw_'+tab.id;
+      const qp = el('div','quote-in-weather'); qp.id = 'qiw_'+tab.id;
       bottomRow.appendChild(qp);
       div.appendChild(bottomRow);
     }
@@ -2429,7 +3682,18 @@ function renderContents(){
   });
 
   paintAllWeather();
+
+  // Kick off polling for all monitor sections
+  D.tabs.forEach(tab => {
+    (tab.columns||[]).forEach(col => {
+      (col.sections||[]).forEach(sec => {
+        if(sec.type === 'monitor')
+          (sec.services||[]).forEach(svc => statusSchedule(tab.id, col.id, sec.id, svc));
+      });
+    });
+  });
 }
+
 
 /* ---- SECTION CARD ---- */
 /* ================================================================
@@ -2469,8 +3733,6 @@ function buildSection(tabId, colId, sec){
   card.dataset.tabId = tabId;
   card.setAttribute('draggable','true');
 
-  // Section drag events (edit mode only — draggable attr is always set,
-  // but the handle is only visible in edit mode so it feels natural)
   card.addEventListener('dragstart', e => {
     if(!editMode){ e.preventDefault(); return; }
     e.stopPropagation();
@@ -2493,29 +3755,772 @@ function buildSection(tabId, colId, sec){
   const hedit = icBtn('✎','Edit heading', ()=>inlineEditHeading(tabId, colId, sec.id, ht));
   const hdel  = icBtn('✕','Delete section', ()=>deleteSection(tabId, colId, sec.id));
   hdel.classList.add('ic-del');
-  hd.append(handle, ht, hedit, hdel);
-  card.appendChild(hd);
 
-  // Items list
-  const ul = el('ul','links-list');
-  ul.dataset.tabId = tabId;
-  ul.dataset.colId = colId;
-  ul.dataset.secId = sec.id;
-  (sec.items||[]).forEach(item => ul.appendChild(buildItem(tabId, colId, sec.id, item, null)));
-  setupListDropZone(ul);
-  card.appendChild(ul);
+  if(sec.type === 'monitor'){
+    // Monitor section: subtitle + check-now in heading bar
+    const sub = el('span','monitor-subtitle');
+    sub.id = 'sb_sub_'+sec.id;
+    sub.textContent = 'initialising…';
+    const chkBtn = el('button','monitor-check-btn');
+    chkBtn.textContent = '↺';
+    chkBtn.title = 'Check all now';
+    chkBtn.onclick = ()=> statusCheckAll(tabId, colId, sec.id);
+    hd.append(handle, ht, sub, chkBtn, hedit, hdel);
+    card.appendChild(hd);
+    card.appendChild(buildMonitorBody(tabId, colId, sec));
+  } else if(sec.type === 'widget'){
+    hd.append(handle, ht, hedit, hdel);
+    card.appendChild(hd);
+    const wb = el('div','widget-body');
+    wb.appendChild(buildWidgetBody(sec));
+    card.appendChild(wb);
+  } else {
+    // Standard links section
+    hd.append(handle, ht, hedit, hdel);
+    card.appendChild(hd);
 
-  // Edit-mode buttons
-  const alr = el('div','add-link-row');
-  const ahb = el('button','dashed-btn'); ahb.textContent='＋ Add Heading'; ahb.style.marginBottom='4px';
-  ahb.onclick = ()=>promptAddHeading(tabId, colId, sec.id);
-  const alb = el('button','dashed-btn'); alb.textContent='＋ Add Link';
-  alb.onclick = ()=>openAddLink(tabId, colId, sec.id, null);
-  alr.append(ahb, alb);
-  card.appendChild(alr);
+    const ul = el('ul','links-list');
+    ul.dataset.tabId = tabId;
+    ul.dataset.colId = colId;
+    ul.dataset.secId = sec.id;
+    (sec.items||[]).forEach(item => ul.appendChild(buildItem(tabId, colId, sec.id, item, null)));
+    setupListDropZone(ul);
+    card.appendChild(ul);
+
+    const alr = el('div','add-link-row');
+    const ahb = el('button','dashed-btn'); ahb.textContent='＋ Add Heading'; ahb.style.marginBottom='4px';
+    ahb.onclick = ()=>promptAddHeading(tabId, colId, sec.id);
+    const alb = el('button','dashed-btn'); alb.textContent='＋ Add Link';
+    alb.onclick = ()=>openAddLink(tabId, colId, sec.id, null);
+    alr.append(ahb, alb);
+    card.appendChild(alr);
+  }
 
   return card;
 }
+
+function buildMonitorBody(tabId, colId, sec){
+  const wrap = el('div');
+
+  // Tile grid
+  const grid = el('div','status-grid');
+  grid.id = 'sb_grid_'+sec.id;
+  grid.style.padding = '10px 0 4px';
+  (sec.services||[]).forEach(svc => grid.appendChild(buildServiceTile(tabId, colId, sec.id, svc)));
+  wrap.appendChild(grid);
+
+  // Proxy row (edit mode only)
+  const proxyRow = el('div','proxy-row');
+  const proxyLbl = el('label'); proxyLbl.textContent = 'HTTP Proxy:';
+  const proxyInp = el('input');
+  proxyInp.type = 'text';
+  proxyInp.placeholder = 'https://corsproxy.io/?url= (optional)';
+  proxyInp.value = D.proxyUrl || '';
+  proxyInp.title = 'Proxy used to check HTTP services when page is served over HTTPS. The service URL will be appended to this prefix.';
+  const proxySave = el('button','proxy-save-btn');
+  proxySave.textContent = 'Save';
+  proxySave.onclick = ()=>{
+    D.proxyUrl = proxyInp.value.trim();
+    persist();
+    proxySave.textContent = '✓';
+    setTimeout(()=>{ proxySave.textContent = 'Save'; }, 1500);
+    // Re-run blocked checks with new proxy
+    statusCheckAll(tabId, colId, sec.id);
+  };
+  proxyRow.append(proxyLbl, proxyInp, proxySave);
+  wrap.appendChild(proxyRow);
+
+  // Add service button (edit mode only)
+  const asw = el('div','add-service-wrap');
+  asw.style.padding = '0 0 4px';
+  const asb = el('button','dashed-btn');
+  asb.textContent = '＋ Add Service';
+  asb.onclick = ()=> openAddService(tabId, colId, sec.id);
+  asw.appendChild(asb);
+  wrap.appendChild(asw);
+
+  setTimeout(()=> statusUpdateSubtitle(sec.id), 100);
+  return wrap;
+}
+
+/* ================================================================
+   WIDGETS — DISPATCHER + BUILDERS
+   ================================================================ */
+function buildWidgetBody(sec){
+  switch(sec.widgetType){
+    case 'search':    return buildSearchWidget(sec);
+    case 'note':      return buildNoteWidget(sec);
+    case 'countdown': return buildCountdownWidget(sec);
+    case 'dice':      return buildDiceWidget(sec);
+    case 'converter': return buildConverterWidget(sec);
+    case 'clocks':    return buildClocksWidget(sec);
+    case 'reminders': return buildRemindersWidget(sec);
+    case 'todo':      return buildTodoWidget(sec);
+    default:
+      const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
+      msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
+      return msg;
+  }
+}
+
+/* ---- UNIT CONVERTER ---- */
+function convertTemp(val, from, to){
+  let c;
+  if(from==='°C')      c = val;
+  else if(from==='°F') c = (val-32)*5/9;
+  else                  c = val-273.15;
+  if(to==='°C')      return c;
+  if(to==='°F')      return c*9/5+32;
+  return c+273.15;
+}
+
+function buildConverterWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  let activeCat = cfg.cat || 'Length';
+
+  const wrap = el('div','unit-converter');
+
+  // Category tabs
+  const catTabs = el('div','unit-category-tabs');
+  Object.keys(UNIT_CATS).forEach(cat => {
+    const btn = el('button','unit-cat-tab'+(cat===activeCat?' active':''));
+    btn.textContent = cat;
+    btn.onclick = ()=>{
+      activeCat = cat;
+      cfg.cat = cat;
+      persist();
+      catTabs.querySelectorAll('.unit-cat-tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      rebuildRows();
+    };
+    catTabs.appendChild(btn);
+  });
+  wrap.appendChild(catTabs);
+
+  const rowsWrap = el('div');
+  wrap.appendChild(rowsWrap);
+
+  function rebuildRows(){
+    rowsWrap.innerHTML = '';
+    const cat = UNIT_CATS[activeCat];
+
+    // From row
+    const fromRow = el('div','unit-converter-row');
+    const fromInp = el('input','unit-inp');
+    fromInp.type = 'number'; fromInp.placeholder = '0'; fromInp.value = '';
+    const fromSel = el('select','unit-sel');
+    cat.units.forEach(u => {
+      const o = document.createElement('option');
+      o.value = u; o.textContent = u; fromSel.appendChild(o);
+    });
+    fromSel.value = cfg.fromUnit && cat.units.includes(cfg.fromUnit) ? cfg.fromUnit : cat.units[0];
+    fromRow.append(fromInp, fromSel);
+
+    // Swap + To row
+    const toRow = el('div','unit-converter-row');
+    const toInp = el('input','unit-inp');
+    toInp.type = 'number'; toInp.placeholder = '—'; toInp.readOnly = true;
+    toInp.style.opacity = '0.7';
+    const toSel = el('select','unit-sel');
+    cat.units.forEach(u => {
+      const o = document.createElement('option');
+      o.value = u; o.textContent = u; toSel.appendChild(o);
+    });
+    toSel.value = cfg.toUnit && cat.units.includes(cfg.toUnit) ? cfg.toUnit : (cat.units[1]||cat.units[0]);
+    const swapBtn = el('button','unit-swap-btn'); swapBtn.textContent = '⇅'; swapBtn.title = 'Swap units';
+
+    toRow.append(swapBtn, toInp, toSel);
+
+    const doConvert = ()=>{
+      const val = parseFloat(fromInp.value);
+      if(isNaN(val)){ toInp.value=''; return; }
+      let result;
+      if(activeCat === 'Temperature'){
+        result = convertTemp(val, fromSel.value, toSel.value);
+      } else {
+        const base = val * cat.toBase[fromSel.value];
+        result = base / cat.toBase[toSel.value];
+      }
+      toInp.value = parseFloat(result.toPrecision(7));
+    };
+
+    fromInp.addEventListener('input', doConvert);
+    fromSel.addEventListener('change', ()=>{ cfg.fromUnit=fromSel.value; persist(); doConvert(); });
+    toSel.addEventListener('change',   ()=>{ cfg.toUnit=toSel.value;     persist(); doConvert(); });
+    swapBtn.onclick = ()=>{
+      const tmp = fromSel.value; fromSel.value = toSel.value; toSel.value = tmp;
+      cfg.fromUnit = fromSel.value; cfg.toUnit = toSel.value; persist();
+      doConvert();
+    };
+
+    rowsWrap.append(fromRow, toRow);
+  }
+
+  rebuildRows();
+  return wrap;
+}
+
+/* ---- WORLD CLOCKS ---- */
+function buildClocksWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.clocks) cfg.clocks = [];
+
+  const wrap = el('div','world-clocks');
+  const list = el('div','world-clocks-list');
+  list.id = 'wclist_'+sec.id;
+  wrap.appendChild(list);
+
+  function renderClocks(){
+    list.innerHTML = '';
+    if(!cfg.clocks.length){
+      const empty = el('div');
+      empty.style.cssText = 'font-size:12px;color:var(--text-dim);padding:4px 0;opacity:0.6;font-style:italic;';
+      empty.textContent = 'No clocks added. Add one below in edit mode.';
+      list.appendChild(empty);
+      return;
+    }
+    cfg.clocks.forEach((ck, idx) => {
+      const item = el('div','world-clock-item');
+      const city = el('div','world-clock-city'); city.textContent = ck.label || ck.tz;
+      const timeEl = el('div','world-clock-time'); timeEl.id = 'wct_'+sec.id+'_'+idx;
+      const dateEl = el('div','world-clock-date'); dateEl.id = 'wcd_'+sec.id+'_'+idx;
+      const delBtn = el('button','world-clock-del');
+      delBtn.textContent = '✕'; delBtn.title = 'Remove';
+      delBtn.onclick = ()=>{ cfg.clocks.splice(idx,1); persist(); renderClocks(); };
+      item.append(city, timeEl, dateEl, delBtn);
+      list.appendChild(item);
+    });
+  }
+
+  function tickClocks(){
+    const now = new Date();
+    cfg.clocks.forEach((ck, idx) => {
+      const timeEl = document.getElementById('wct_'+sec.id+'_'+idx);
+      const dateEl = document.getElementById('wcd_'+sec.id+'_'+idx);
+      if(!timeEl) return;
+      try {
+        const t = new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:ck.tz,hour12:false}).format(now);
+        const d = new Intl.DateTimeFormat('en-GB',{weekday:'short',month:'short',day:'numeric',timeZone:ck.tz}).format(now);
+        timeEl.textContent = t;
+        dateEl.textContent = d;
+      } catch(e){ timeEl.textContent = 'Invalid TZ'; }
+    });
+  }
+
+  renderClocks();
+  const ticker = setInterval(tickClocks, 1000);
+  tickClocks();
+  const obs = new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(ticker); obs.disconnect(); } });
+  obs.observe(document.body, {childList:true, subtree:true});
+
+  // Add row (edit mode)
+  const addRow = el('div','world-clock-add-row');
+  const labelInp = el('input'); labelInp.placeholder = 'Label (e.g. Tokyo)'; labelInp.style.flex='1';
+
+  // Searchable timezone selector
+  const tzWrap = el('div'); tzWrap.style.cssText='display:flex;flex-direction:column;gap:3px;flex:2;';
+  const tzFilter = el('input'); tzFilter.placeholder='Filter timezone…'; tzFilter.style.cssText='font-size:11px;padding:3px 6px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;';
+  const tzSel = el('select'); tzSel.style.cssText='font-size:11px;padding:3px 6px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);';
+
+  function populateTzSel(filter=''){
+    const f = filter.toLowerCase();
+    const filtered = TZ_OPTIONS.filter(tz=>!f||tz.toLowerCase().includes(f));
+    tzSel.innerHTML='';
+    filtered.forEach(tz=>{ const o=document.createElement('option'); o.value=tz; o.textContent=tz; tzSel.appendChild(o); });
+  }
+  populateTzSel();
+  tzFilter.addEventListener('input', ()=>populateTzSel(tzFilter.value));
+  tzWrap.append(tzFilter, tzSel);
+
+  const addBtn = el('button','countdown-add-btn'); addBtn.textContent = '＋ Add';
+  addBtn.onclick = ()=>{
+    const label = labelInp.value.trim();
+    if(!label){ return; }
+    cfg.clocks.push({ label, tz: tzSel.value });
+    persist(); labelInp.value=''; renderClocks();
+  };
+  addRow.append(labelInp, tzWrap, addBtn);
+  wrap.appendChild(addRow);
+
+  return wrap;
+}
+
+/* ---- ANNIVERSARY & BIRTHDAY REMINDERS ---- */
+function buildRemindersWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.reminders) cfg.reminders = [];
+
+  const wrap = el('div','remind-widget');
+  const list = el('div','remind-list');
+  wrap.appendChild(list);
+
+  function daysUntilNextOccurrence(monthDay){
+    // monthDay = "MM-DD"
+    const now   = new Date();
+    const year  = now.getFullYear();
+    const [mo, day] = monthDay.split('-').map(Number);
+    let next = new Date(year, mo-1, day);
+    if(next < new Date(now.getFullYear(), now.getMonth(), now.getDate())) next.setFullYear(year+1);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((next - today) / 86400000);
+  }
+
+  function renderReminders(){
+    list.innerHTML = '';
+    if(!cfg.reminders.length){
+      const empty = el('div');
+      empty.style.cssText = 'font-size:12px;color:var(--text-dim);padding:4px 0;opacity:0.6;font-style:italic;';
+      empty.textContent = 'No reminders yet. Add one below in edit mode.';
+      list.appendChild(empty); return;
+    }
+
+    // Sort by days until next occurrence
+    const sorted = cfg.reminders.map((r,i)=>({...r, idx:i, days:daysUntilNextOccurrence(r.date)}))
+      .sort((a,b)=>a.days-b.days);
+
+    sorted.forEach(r => {
+      const item = el('div','remind-item');
+      if(r.days === 0)       item.classList.add('today');
+      else if(r.days <= 7)   item.classList.add('soon-7');
+      else if(r.days <= 30)  item.classList.add('soon-30');
+
+      const emoji = el('span','remind-emoji');
+      emoji.textContent = r.type === 'birthday' ? '🎂' : '💍';
+
+      const info = el('div','remind-info');
+      const name = el('div','remind-name'); name.textContent = r.name;
+      const [mo, day] = r.date.split('-').map(Number);
+      const dateStr = new Date(2000, mo-1, day).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      const year = r.year ? ` (${new Date().getFullYear()-r.year} yrs)` : '';
+      const dateLbl = el('div','remind-date'); dateLbl.textContent = dateStr + year;
+      info.append(name, dateLbl);
+
+      const cdEl = el('div','remind-countdown');
+      if(r.days === 0){
+        cdEl.textContent = 'Today! 🎉';
+        cdEl.classList.add('today');
+      } else if(r.days <= 7){
+        cdEl.textContent = r.days+'d';
+        cdEl.classList.add('soon-7');
+      } else {
+        cdEl.textContent = r.days+'d';
+      }
+
+      const delBtn = el('button','remind-del'); delBtn.textContent='✕'; delBtn.title='Remove';
+      delBtn.onclick = ()=>{ cfg.reminders.splice(r.idx,1); persist(); renderReminders(); };
+
+      item.append(emoji, info, cdEl, delBtn);
+      list.appendChild(item);
+    });
+  }
+
+  // Add row (edit mode)
+  const addRow = el('div','remind-add-row');
+  const fields = el('div','remind-add-fields');
+
+  const nameInp = el('input','remind-add-inp'); nameInp.placeholder='Name'; nameInp.style.flex='1'; nameInp.style.minWidth='90px';
+  const typeSel = el('select','remind-add-sel');
+  [['birthday','🎂 Birthday'],['anniversary','💍 Anniversary']].forEach(([v,l])=>{
+    const o=document.createElement('option'); o.value=v; o.textContent=l; typeSel.appendChild(o);
+  });
+  const dateInp = el('input','remind-add-inp'); dateInp.type='date'; dateInp.style.flex='1';
+  const yearInp = el('input','remind-add-inp'); yearInp.type='number'; yearInp.placeholder='Year (opt)';
+  yearInp.style.width='110px'; yearInp.min='1900'; yearInp.max=new Date().getFullYear();
+
+  const addBtn = el('button','countdown-add-btn'); addBtn.textContent='＋ Add';
+  addBtn.onclick = ()=>{
+    const name = nameInp.value.trim();
+    const date = dateInp.value; // YYYY-MM-DD
+    if(!name||!date) return;
+    const [,mo,day] = date.split('-');
+    const year = yearInp.value ? parseInt(yearInp.value) : null;
+    cfg.reminders.push({ name, date: mo+'-'+day, year, type: typeSel.value });
+    persist(); nameInp.value=''; dateInp.value=''; yearInp.value='';
+    renderReminders();
+  };
+
+  fields.append(nameInp, typeSel, dateInp, yearInp, addBtn);
+  addRow.appendChild(fields);
+  wrap.appendChild(addRow);
+
+  renderReminders();
+  return wrap;
+}
+
+/* ---- TO-DO LIST ---- */
+function buildTodoWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.todos) cfg.todos = [];
+
+  const wrap = el('div','todo-widget');
+  const list = el('div','todo-list');
+  wrap.appendChild(list);
+
+  function renderTodos(){
+    list.innerHTML = '';
+    cfg.todos.forEach((todo, idx) => {
+      const item = el('div','todo-item'+(todo.done?' done':''));
+      const chk = el('input','todo-check'); chk.type='checkbox'; chk.checked=!!todo.done;
+      chk.onchange = ()=>{
+        todo.done = chk.checked;
+        item.classList.toggle('done', todo.done);
+        lbl.style.textDecoration = todo.done ? 'line-through' : '';
+        persist();
+      };
+      const lbl = el('div','todo-label'); lbl.textContent = todo.text;
+      lbl.onclick = ()=>{ chk.checked=!chk.checked; chk.onchange(); };
+      const del = el('button','todo-del'); del.textContent='✕'; del.title='Remove';
+      del.onclick = ()=>{ cfg.todos.splice(idx,1); persist(); renderTodos(); };
+      item.append(chk, lbl, del);
+      list.appendChild(item);
+    });
+  }
+
+  // Clear completed button (edit mode)
+  const clearBtn = el('button','todo-clear-btn'); clearBtn.textContent='Clear completed';
+  clearBtn.onclick = ()=>{
+    cfg.todos = cfg.todos.filter(t=>!t.done);
+    persist(); renderTodos();
+  };
+  wrap.appendChild(clearBtn);
+
+  // Add row
+  const addRow = el('div','todo-add-row');
+  const addInp = el('input','todo-add-inp'); addInp.placeholder='New task…';
+  const addBtn = el('button','todo-add-btn'); addBtn.textContent='＋ Add';
+  const doAdd = ()=>{
+    const text = addInp.value.trim();
+    if(!text) return;
+    cfg.todos.push({ text, done:false });
+    persist(); addInp.value=''; renderTodos();
+    addInp.focus();
+  };
+  addInp.addEventListener('keydown', e=>{ if(e.key==='Enter') doAdd(); });
+  addBtn.onclick = doAdd;
+  addRow.append(addInp, addBtn);
+  wrap.appendChild(addRow);
+
+  renderTodos();
+  return wrap;
+}
+
+/* ---- SEARCH ENGINE SHORTCUTS ---- */
+function buildSearchWidget(sec){
+  const cfg = sec.widgetConfig || {};
+  let activeEngine = cfg.defaultEngine || 'google';
+
+  const wrap = el('div','search-widget');
+
+  // Engine tabs
+  const tabs = el('div','search-engine-tabs');
+  SEARCH_ENGINES.forEach(eng => {
+    const btn = el('button','search-engine-tab' + (eng.id===activeEngine?' active':''));
+    btn.textContent = eng.label;
+    btn.onclick = ()=>{
+      activeEngine = eng.id;
+      tabs.querySelectorAll('.search-engine-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      inp.placeholder = 'Search ' + eng.label + '…';
+      inp.focus();
+    };
+    tabs.appendChild(btn);
+  });
+  wrap.appendChild(tabs);
+
+  // Input row
+  const row = el('div','search-widget-row');
+  const inp = el('input','search-widget-input');
+  inp.type = 'text';
+  inp.placeholder = 'Search ' + (SEARCH_ENGINES.find(e=>e.id===activeEngine)?.label||'') + '…';
+  inp.autocomplete = 'off';
+
+  const goBtn = el('button','search-widget-go');
+  goBtn.textContent = 'Go →';
+
+  const doSearch = ()=>{
+    const q = inp.value.trim();
+    if(!q) return;
+    const eng = SEARCH_ENGINES.find(e=>e.id===activeEngine) || SEARCH_ENGINES[0];
+    window.open(eng.url + encodeURIComponent(q), '_blank');
+    inp.select();
+  };
+
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+  goBtn.onclick = doSearch;
+
+  row.append(inp, goBtn);
+  wrap.appendChild(row);
+
+  return wrap;
+}
+
+/* ---- QUICK NOTE ---- */
+function buildNoteWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+
+  const wrap = el('div','note-widget');
+  const area = el('textarea','note-widget-area');
+  area.placeholder = 'Start typing… changes save automatically.';
+  area.value = cfg.note || '';
+  area.spellcheck = true;
+
+  // Restore saved height
+  if(cfg.noteHeight) area.style.height = cfg.noteHeight;
+
+  const meta = el('div','note-widget-meta');
+  meta.textContent = cfg.note ? 'saved' : '';
+
+  let saveTimer = null;
+  area.addEventListener('input', ()=>{
+    meta.textContent = 'saving…';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>{
+      cfg.note = area.value;
+      persist();
+      meta.textContent = 'saved · ' + new Date().toLocaleTimeString();
+    }, 600);
+  });
+
+  // Save height when user resizes the textarea
+  let resizeTimer = null;
+  const ro = new ResizeObserver(entries => {
+    const h = entries[0]?.contentRect.height;
+    if(!h) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(()=>{
+      cfg.noteHeight = Math.round(h) + 'px';
+      persist();
+    }, 400);
+  });
+  // Observe after append so it has dimensions
+  requestAnimationFrame(()=> ro.observe(area));
+
+  wrap.append(area, meta);
+  return wrap;
+}
+
+/* ---- COUNTDOWN TIMER ---- */
+function buildCountdownWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.countdowns) cfg.countdowns = [];
+
+  const wrap = el('div','countdown-widget');
+  const list = el('div','countdown-list');
+  list.id = 'cdlist_'+sec.id;
+  wrap.appendChild(list);
+
+  function renderCountdowns(){
+    list.innerHTML = '';
+    if(!cfg.countdowns.length){
+      const empty = el('div');
+      empty.style.cssText = 'font-size:12px;color:var(--text-dim);padding:4px 0;opacity:0.6;';
+      empty.textContent = 'No countdowns yet. Add one below in edit mode.';
+      list.appendChild(empty);
+      return;
+    }
+    cfg.countdowns.forEach((cd, idx) => {
+      const item = el('div','countdown-item');
+
+      const emoji = el('span','countdown-emoji');
+      emoji.textContent = cd.emoji || '📅';
+
+      const info = el('div','countdown-info');
+      const lbl  = el('div','countdown-label'); lbl.textContent = cd.label;
+      const time = el('div','countdown-time');
+      time.id = 'cdt_'+sec.id+'_'+idx;
+      info.append(lbl, time);
+
+      const delBtn = el('button','countdown-del');
+      delBtn.textContent = '✕';
+      delBtn.title = 'Remove countdown';
+      delBtn.onclick = ()=>{
+        cfg.countdowns.splice(idx,1);
+        persist(); renderCountdowns();
+      };
+
+      item.append(emoji, info, delBtn);
+      list.appendChild(item);
+    });
+  }
+
+  // Live tick
+  function tickCountdowns(){
+    const now = Date.now();
+    cfg.countdowns.forEach((cd, idx) => {
+      const el2 = document.getElementById('cdt_'+sec.id+'_'+idx);
+      if(!el2) return;
+      const target = new Date(cd.date).getTime();
+      const diff   = target - now;
+      if(diff <= 0){
+        el2.textContent = cd.label.toLowerCase().includes('since') ? 
+          formatElapsed(-diff) + ' ago' : 'Today! 🎉';
+        el2.classList.add('past');
+      } else {
+        el2.textContent = formatElapsed(diff);
+        el2.classList.remove('past');
+      }
+    });
+  }
+
+  function formatElapsed(ms){
+    const s  = Math.floor(ms/1000);
+    const m  = Math.floor(s/60);
+    const h  = Math.floor(m/60);
+    const d  = Math.floor(h/24);
+    if(d > 0)      return d+'d ' +(h%24)+'h '+(m%60)+'m';
+    if(h > 0)      return h+'h '+(m%60)+'m '+(s%60)+'s';
+    if(m > 0)      return m+'m '+(s%60)+'s';
+    return s+'s';
+  }
+
+  renderCountdowns();
+
+  // Interval — store on element to allow cleanup on re-render
+  const ticker = setInterval(tickCountdowns, 1000);
+  tickCountdowns();
+  wrap._cdTicker = ticker;
+  // Clean up when card is removed from DOM
+  const obs = new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(ticker); obs.disconnect(); } });
+  obs.observe(document.body, {childList:true, subtree:true});
+
+  // Add row (edit mode only)
+  const addRow = el('div','countdown-add-row');
+
+  const emojiInp = el('input','countdown-add-inp');
+  emojiInp.placeholder = '📅'; emojiInp.style.width='48px'; emojiInp.maxLength=4;
+
+  const labelInp = el('input','countdown-add-inp');
+  labelInp.placeholder = 'Label'; labelInp.style.flex='1'; labelInp.style.minWidth='80px';
+
+  const dateInp = el('input','countdown-add-inp');
+  dateInp.type = 'date'; dateInp.style.flex='1';
+
+  const addBtn = el('button','countdown-add-btn');
+  addBtn.textContent = '＋ Add';
+  addBtn.onclick = ()=>{
+    const label = labelInp.value.trim();
+    const date  = dateInp.value;
+    if(!label || !date){ return; }
+    cfg.countdowns.push({ label, date, emoji: emojiInp.value.trim()||'📅' });
+    persist();
+    labelInp.value = ''; dateInp.value = ''; emojiInp.value='';
+    renderCountdowns();
+  };
+
+  addRow.append(emojiInp, labelInp, dateInp, addBtn);
+  wrap.appendChild(addRow);
+
+  return wrap;
+}
+
+/* ---- POLYHEDRAL DICE ROLLER ---- */
+function buildDiceWidget(sec){
+  const DICE = [4, 6, 8, 10, 12, 20, 100];
+  // counts[die] = how many of that die are selected
+  const counts = {};
+  DICE.forEach(d => counts[d] = 0);
+
+  const wrap = el('div','dice-widget');
+
+  // Die buttons
+  const btnRow = el('div','dice-buttons');
+  const dieBtns = {};
+  DICE.forEach(d => {
+    const btn = el('button','die-btn');
+    const lbl = el('span'); lbl.textContent = 'd'+d;
+    const cnt = el('span','die-count'); cnt.textContent = '0';
+    btn.append(lbl, cnt);
+    btn.title = 'Left-click to add, right-click to remove';
+
+    btn.addEventListener('click', ()=>{
+      counts[d] = Math.min(counts[d]+1, 20);
+      updateDieBtn(d);
+    });
+    btn.addEventListener('contextmenu', e=>{
+      e.preventDefault();
+      counts[d] = Math.max(counts[d]-1, 0);
+      updateDieBtn(d);
+    });
+
+    dieBtns[d] = btn;
+    btnRow.appendChild(btn);
+  });
+  wrap.appendChild(btnRow);
+
+  function updateDieBtn(d){
+    const btn = dieBtns[d];
+    const cnt = btn.querySelector('.die-count');
+    cnt.textContent = counts[d];
+    btn.classList.toggle('active', counts[d]>0);
+  }
+
+  // Controls row: modifier + roll + clear
+  const controls = el('div','dice-controls');
+
+  const modLbl = el('span');
+  modLbl.style.cssText = 'font-size:12px;color:var(--text-dim);white-space:nowrap;';
+  modLbl.textContent = '+/− mod:';
+
+  const modInp = el('input','dice-modifier-inp');
+  modInp.type = 'number'; modInp.value = '0'; modInp.placeholder = '0';
+
+  const rollBtn = el('button','dice-roll-btn');
+  rollBtn.textContent = '🎲 Roll';
+
+  const clearBtn = el('button','dice-clear-btn');
+  clearBtn.textContent = 'Clear';
+  clearBtn.onclick = ()=>{
+    DICE.forEach(d=>{ counts[d]=0; updateDieBtn(d); });
+    modInp.value = '0';
+    resultTotal.textContent = '—';
+    resultBreak.textContent = '';
+    resultBox.classList.remove('rolling');
+  };
+
+  controls.append(modLbl, modInp, rollBtn, clearBtn);
+  wrap.appendChild(controls);
+
+  // Result box
+  const resultBox   = el('div','dice-result');
+  const resultTotal = el('div','dice-result-total'); resultTotal.textContent = '—';
+  const resultBreak = el('div','dice-result-breakdown');
+  resultBox.append(resultTotal, resultBreak);
+  wrap.appendChild(resultBox);
+
+  rollBtn.onclick = ()=>{
+    const selected = DICE.filter(d => counts[d]>0);
+    if(!selected.length){ resultTotal.textContent='Pick some dice first'; resultBreak.textContent=''; return; }
+
+    // Roll
+    const rolls = {};
+    let total = 0;
+    const parts = [];
+    selected.forEach(d => {
+      rolls[d] = [];
+      for(let i=0;i<counts[d];i++){
+        const r = Math.floor(Math.random()*d)+1;
+        rolls[d].push(r);
+        total += r;
+      }
+      parts.push(counts[d]+'d'+d+': ['+rolls[d].join(', ')+']');
+    });
+
+    const mod = parseInt(modInp.value)||0;
+    total += mod;
+    if(mod!==0) parts.push((mod>0?'+':'')+mod+' mod');
+
+    // Animate
+    resultBox.classList.remove('rolling');
+    void resultBox.offsetWidth; // force reflow
+    resultBox.classList.add('rolling');
+
+    resultTotal.textContent = total;
+    resultBreak.textContent = parts.join('  ·  ');
+  };
+
+  return wrap;
+}
+
 
 function buildItem(tabId, colId, secId, item, parentId){
   if(item.type === 'heading') return buildHeadingItem(tabId, colId, secId, item);
@@ -2789,16 +4794,25 @@ function switchTab(id){
 
 function updateQuoteBarVisibility(){
   const tab = D.tabs.find(t => t.id === activeTab);
+  // Status boards don't have a weather strip — never hide quote bar for them
+  if(tab?.type === 'status'){
+    const bar = document.getElementById('quoteBar');
+    if(bar) bar.classList.remove('quote-hidden-by-weather');
+    return;
+  }
   const allSections = (tab?.columns||[]).flatMap(c=>c.sections||[]);
   const hasWeather  = allSections.some(s=>s.weather);
   const bar = document.getElementById('quoteBar');
   if(bar) bar.classList.toggle('quote-hidden-by-weather', hasWeather);
 }
 
+function selectTabType(type){} // kept as no-op in case anything calls it
+
 function promptAddTab(){
   editTab = null;
   document.getElementById('tabModalTitle').textContent = 'New Tab';
   document.getElementById('tmName').value = '';
+  document.getElementById('tmHidden').checked = false;
   openOverlay('tabOverlay');
   setTimeout(()=>document.getElementById('tmName').focus(),50);
 }
@@ -2806,20 +4820,22 @@ function promptAddTab(){
 function openEditTab(tabId){
   editTab = {tabId};
   const tab = D.tabs.find(t=>t.id===tabId);
-  document.getElementById('tabModalTitle').textContent = 'Rename Tab';
+  document.getElementById('tabModalTitle').textContent = 'Edit Tab';
   document.getElementById('tmName').value = tab?.name||'';
+  document.getElementById('tmHidden').checked = !!tab?.hidden;
   openOverlay('tabOverlay');
   setTimeout(()=>document.getElementById('tmName').focus(),50);
 }
 
 function saveTab(){
-  const name = document.getElementById('tmName').value.trim();
+  const name   = document.getElementById('tmName').value.trim();
   if(!name) return;
+  const hidden = document.getElementById('tmHidden').checked;
   if(editTab){
     const tab = D.tabs.find(t=>t.id===editTab.tabId);
-    if(tab){ tab.name=name; }
+    if(tab){ tab.name = name; tab.hidden = hidden; }
   } else {
-    const newTab = { id:'t_'+Date.now(), name, columns:[] };
+    const newTab = { id:'t_'+Date.now(), name, hidden, columns:[] };
     D.tabs.push(newTab);
     activeTab = newTab.id;
   }
@@ -2831,15 +4847,366 @@ function saveTab(){
 function deleteTab(tabId){
   if(D.tabs.length<=1){ alert('Cannot delete the last tab.'); return; }
   if(!confirm('Delete this tab and all its content?')) return;
+  // Stop any running polls in monitor sections on this tab
+  const tab = D.tabs.find(t=>t.id===tabId);
+  (tab?.columns||[]).forEach(col =>
+    (col.sections||[]).forEach(sec => {
+      if(sec.type === 'monitor')
+        (sec.services||[]).forEach(svc => {
+          const st = statusState[svc.id];
+          if(st?.timerId) clearTimeout(st.timerId);
+          delete statusState[svc.id];
+        });
+    })
+  );
   D.tabs = D.tabs.filter(t=>t.id!==tabId);
-  if(activeTab===tabId) activeTab = D.tabs[0]?.id;
+  if(activeTab===tabId) activeTab = (D.tabs.find(t=>!t.hidden)||D.tabs[0])?.id;
   persist();
   renderAll();
 }
 
 /* ================================================================
-   COLUMN OPERATIONS
+   SECTION TYPE MODAL
    ================================================================ */
+let addSecCtx = null; // {tabId, colId}
+
+function openAddSection(tabId, colId){
+  addSecCtx = {tabId, colId};
+  newSecType    = 'links';
+  newWidgetType = 'search';
+  document.getElementById('stName').value = '';
+  selectSecType('links');
+  WIDGET_TYPES.forEach(t => {
+    const id = 'sw' + t.charAt(0).toUpperCase() + t.slice(1);
+    document.getElementById(id)?.classList.toggle('active', t === 'search');
+  });
+  openOverlay('secTypeOverlay');
+  setTimeout(()=>document.getElementById('stName').focus(),50);
+}
+
+function selectWidgetType(type){
+  newWidgetType = type;
+  WIDGET_TYPES.forEach(t => {
+    const id = 'sw' + t.charAt(0).toUpperCase() + t.slice(1);
+    document.getElementById(id)?.classList.toggle('active', t === type);
+  });
+}
+
+function selectSecType(type){
+  newSecType = type;
+  document.getElementById('stTypeLinks').classList.toggle('active',   type==='links');
+  document.getElementById('stTypeMonitor').classList.toggle('active', type==='monitor');
+  document.getElementById('stTypeWidget').classList.toggle('active',  type==='widget');
+  const picker = document.getElementById('stWidgetPicker');
+  picker.style.display = type === 'widget' ? '' : 'none';
+}
+
+function saveNewSection(){
+  const heading = document.getElementById('stName').value.trim();
+  if(!heading) return;
+  if(newSecType === 'widget' && !newWidgetType){ alert('Please select a widget type.'); return; }
+  const col = findCol(addSecCtx.tabId, addSecCtx.colId);
+  if(!col) return;
+  let sec;
+  if(newSecType === 'monitor'){
+    sec = { id:'s_'+Date.now(), heading, type:'monitor', services:[] };
+  } else if(newSecType === 'widget'){
+    sec = { id:'s_'+Date.now(), heading, type:'widget', widgetType: newWidgetType, widgetConfig: {} };
+  } else {
+    sec = { id:'s_'+Date.now(), heading, type:'links', items:[] };
+  }
+  col.sections.push(sec);
+  persist();
+  closeOverlay('secTypeOverlay');
+  renderAll();
+}
+
+/* ================================================================
+   SERVICE CRUD  (scoped to tabId + colId + secId)
+   ================================================================ */
+function openAddService(tabId, colId, secId){
+  editService = { tabId, colId, secId, serviceId: null };
+  document.getElementById('serviceModalTitle').textContent = 'Add Service';
+  document.getElementById('smName').value     = '';
+  document.getElementById('smUrl').value      = '';
+  document.getElementById('smDesc').value     = '';
+  document.getElementById('smInterval').value = '60';
+  document.getElementById('smError').style.display = 'none';
+  openOverlay('serviceOverlay');
+  setTimeout(()=>document.getElementById('smName').focus(), 50);
+}
+
+function openEditService(tabId, colId, secId, serviceId){
+  editService = { tabId, colId, secId, serviceId };
+  const sec = findSec(tabId, colId, secId);
+  const svc = (sec?.services||[]).find(s=>s.id===serviceId);
+  if(!svc) return;
+  document.getElementById('serviceModalTitle').textContent = 'Edit Service';
+  document.getElementById('smName').value     = svc.name||'';
+  document.getElementById('smUrl').value      = svc.url||'';
+  document.getElementById('smDesc').value     = svc.desc||'';
+  document.getElementById('smInterval').value = svc.interval||60;
+  document.getElementById('smError').style.display = 'none';
+  openOverlay('serviceOverlay');
+  setTimeout(()=>document.getElementById('smName').focus(), 50);
+}
+
+function saveService(){
+  const name     = document.getElementById('smName').value.trim();
+  const url      = document.getElementById('smUrl').value.trim();
+  const desc     = document.getElementById('smDesc').value.trim();
+  const interval = Math.max(15, parseInt(document.getElementById('smInterval').value)||60);
+  const errDiv   = document.getElementById('smError');
+
+  if(!name){ errDiv.textContent='Name is required.'; errDiv.style.display='block'; return; }
+  if(!url) { errDiv.textContent='URL is required.';  errDiv.style.display='block'; return; }
+
+  const {tabId, colId, secId} = editService;
+  const sec = findSec(tabId, colId, secId);
+  if(!sec) return;
+
+  if(editService.serviceId){
+    const svc = (sec.services||[]).find(s=>s.id===editService.serviceId);
+    if(svc){
+      if(svc.interval !== interval){
+        const st = statusState[svc.id];
+        if(st?.timerId) clearTimeout(st.timerId);
+        delete statusState[svc.id];
+      }
+      svc.name = name; svc.url = url; svc.desc = desc; svc.interval = interval;
+    }
+  } else {
+    if(!sec.services) sec.services = [];
+    sec.services.push({ id:'svc_'+Date.now(), name, url, desc, interval });
+  }
+
+  persist();
+  closeOverlay('serviceOverlay');
+  renderAll();
+}
+
+function deleteService(tabId, colId, secId, serviceId){
+  if(!confirm('Remove this service?')) return;
+  const sec = findSec(tabId, colId, secId);
+  if(!sec) return;
+  const st = statusState[serviceId];
+  if(st?.timerId) clearTimeout(st.timerId);
+  delete statusState[serviceId];
+  sec.services = (sec.services||[]).filter(s=>s.id!==serviceId);
+  persist();
+  renderAll();
+}
+
+/* Also update deleteSection to clear monitor polls */
+
+function buildServiceTile(tabId, colId, secId, svc){
+  const st = statusState[svc.id] || { status:'pending' };
+  const tile = el('div','status-tile');
+  tile.id = 'st_'+svc.id;
+  statusApplyClasses(tile, st.status||'pending');
+
+  const header = el('div','status-tile-header');
+  const dot = el('span','status-dot');
+  dot.id = 'sd_'+svc.id;
+  statusApplyDotClass(dot, st.status||'pending');
+
+  const nameWrap = el('div','status-tile-name');
+  if(svc.url){
+    const a = document.createElement('a');
+    a.href = svc.url; a.target='_blank'; a.rel='noopener noreferrer';
+    a.textContent = svc.name;
+    nameWrap.appendChild(a);
+  } else {
+    nameWrap.textContent = svc.name;
+  }
+  header.append(dot, nameWrap);
+
+  const btns = el('div','status-tile-btns');
+  const eb = icBtn('✎','Edit service', ()=> openEditService(tabId, colId, secId, svc.id));
+  const db = icBtn('✕','Delete service', ()=> deleteService(tabId, colId, secId, svc.id));
+  db.classList.add('ic-del');
+  btns.append(eb, db);
+
+  tile.append(header, btns);
+
+  if(svc.desc){
+    const desc = el('div','status-tile-desc');
+    desc.textContent = svc.desc;
+    tile.appendChild(desc);
+  }
+
+  const meta = el('div','status-tile-meta');
+  meta.id = 'sm_'+svc.id;
+  meta.textContent = 'pending…';
+  tile.appendChild(meta);
+
+  return tile;
+}
+
+function statusApplyClasses(tile, status){
+  tile.classList.remove('st-green','st-yellow','st-red','st-blocked');
+  if(status==='green')        tile.classList.add('st-green');
+  else if(status==='red')     tile.classList.add('st-red');
+  else if(status==='blocked') tile.classList.add('st-blocked');
+  else                        tile.classList.add('st-yellow');
+}
+function statusApplyDotClass(dot, status){
+  dot.classList.remove('sd-green','sd-yellow','sd-red','sd-blocked');
+  if(status==='green')        dot.classList.add('sd-green');
+  else if(status==='red')     dot.classList.add('sd-red');
+  else if(status==='blocked') dot.classList.add('sd-blocked');
+  else                        dot.classList.add('sd-yellow');
+}
+
+/* ================================================================
+   MONITOR — POLLING ENGINE
+   ================================================================ */
+
+function statusSchedule(tabId, colId, secId, svc){
+  if(!statusState[svc.id]){
+    statusState[svc.id] = { status:'pending', successes:0, failures:0, lastCheck:null, timerId:null };
+  }
+  statusPoll(tabId, colId, secId, svc);
+}
+
+function statusIsMixedContent(url){
+  try {
+    return window.location.protocol === 'https:' && new URL(url).protocol === 'http:';
+  } catch(e){ return false; }
+}
+
+/** Build the fetch URL — route through proxy if HTTP and proxy is configured. */
+function statusBuildUrl(url){
+  if(statusIsMixedContent(url) && D.proxyUrl){
+    return D.proxyUrl.replace(/\/?$/, '') + '/' + encodeURIComponent(url);
+  }
+  return url;
+}
+
+function statusPoll(tabId, colId, secId, svc){
+  const st = statusState[svc.id];
+  if(!st) return;
+  if(st.timerId) clearTimeout(st.timerId);
+
+  // If HTTP with no proxy configured, mark blocked immediately
+  if(statusIsMixedContent(svc.url) && !D.proxyUrl){
+    st.status = 'blocked'; st.lastCheck = new Date();
+    statusUpdateTile(secId, svc.id, st);
+    statusUpdateSubtitle(secId);
+    return;
+  }
+
+  const fetchUrl = statusBuildUrl(svc.url);
+
+  const doFetch = (method) => {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(()=> ctrl.abort(), 10000);
+    return fetch(fetchUrl, {
+      method, mode:'no-cors', signal: ctrl.signal, cache:'no-store'
+    }).finally(()=> clearTimeout(tid));
+  };
+
+  doFetch('HEAD')
+    .then(()=> statusApplyResult(tabId, colId, secId, svc, true))
+    .catch(err => {
+      if(err.name === 'AbortError'){
+        statusApplyResult(tabId, colId, secId, svc, false);
+        return;
+      }
+      doFetch('GET')
+        .then(()=> statusApplyResult(tabId, colId, secId, svc, true))
+        .catch(()=> statusApplyResult(tabId, colId, secId, svc, false));
+    })
+    .finally(()=>{
+      const interval = (svc.interval||60) * 1000;
+      st.timerId = setTimeout(()=> statusPoll(tabId, colId, secId, svc), interval);
+    });
+}
+
+function statusApplyResult(tabId, colId, secId, svc, success){
+  const st = statusState[svc.id];
+  if(!st) return;
+  st.lastCheck = new Date();
+  if(success){
+    st.successes++; st.failures = 0;
+    st.status = st.successes >= 2 ? 'green' : 'yellow';
+  } else {
+    st.failures++; st.successes = 0;
+    st.status = st.failures >= 2 ? 'red' : 'yellow';
+  }
+  statusUpdateTile(secId, svc.id, st);
+  statusUpdateSubtitle(secId);
+}
+
+function statusUpdateTile(secId, svcId, st){
+  const tile = document.getElementById('st_'+svcId);
+  const dot  = document.getElementById('sd_'+svcId);
+  const meta = document.getElementById('sm_'+svcId);
+  if(!tile) return;
+
+  statusApplyClasses(tile, st.status);
+  if(dot) statusApplyDotClass(dot, st.status);
+
+  if(meta){
+    if(st.status === 'blocked'){
+      meta.textContent = 'HTTP blocked — add a proxy URL to monitor this service';
+    } else if(st.lastCheck){
+      const t = st.lastCheck;
+      const ts = [t.getHours(),t.getMinutes(),t.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
+      const label = st.status==='green'?'up':st.status==='red'?'down':'checking';
+      meta.textContent = `${label} · checked ${ts}`;
+    }
+  }
+
+  // HTTP badge — shown when blocked (no proxy), hidden when proxy resolves it
+  const nameWrap = tile.querySelector('.status-tile-name');
+  if(nameWrap){
+    let badge = tile.querySelector('.status-blocked-badge');
+    if(st.status === 'blocked' && !badge){
+      badge = el('span','status-blocked-badge');
+      badge.textContent = 'HTTP';
+      badge.title = 'HTTP service blocked by browser mixed-content policy. Set a proxy URL in this section (edit mode) to enable monitoring.';
+      nameWrap.after(badge);
+    } else if(st.status !== 'blocked' && badge){
+      badge.remove();
+    }
+  }
+}
+
+function statusUpdateSubtitle(secId){
+  const sub = document.getElementById('sb_sub_'+secId);
+  if(!sub) return;
+  // Find section by id across all tabs/cols
+  let services = [];
+  D.tabs.forEach(t=>(t.columns||[]).forEach(c=>(c.sections||[]).forEach(s=>{
+    if(s.id===secId) services = s.services||[];
+  })));
+  if(!services.length){ sub.textContent = 'no services'; return; }
+  const green   = services.filter(s=>(statusState[s.id]?.status)==='green').length;
+  const red     = services.filter(s=>(statusState[s.id]?.status)==='red').length;
+  const blocked = services.filter(s=>(statusState[s.id]?.status)==='blocked').length;
+  const yellow  = services.length - green - red - blocked;
+  const parts   = [];
+  if(green)   parts.push(`${green} up`);
+  if(red)     parts.push(`${red} down`);
+  if(yellow)  parts.push(`${yellow} checking`);
+  if(blocked) parts.push(`${blocked} blocked`);
+  sub.textContent = parts.join(' · ');
+}
+
+function statusCheckAll(tabId, colId, secId){
+  const sec = findSec(tabId, colId, secId);
+  (sec?.services||[]).forEach(svc => {
+    const st = statusState[svc.id];
+    if(st?.timerId) clearTimeout(st.timerId);
+    if(st){ st.successes=0; st.failures=0; st.status='yellow'; }
+    statusUpdateTile(secId, svc.id, statusState[svc.id]||{});
+    statusPoll(tabId, colId, secId, svc);
+  });
+  statusUpdateSubtitle(secId);
+}
+
+
 function addColumn(tabId){
   const tab = D.tabs.find(t=>t.id===tabId);
   if(!tab) return;
@@ -2868,14 +5235,6 @@ function findSec(tabId, colId, secId){
   return findCol(tabId, colId)?.sections?.find(s=>s.id===secId);
 }
 
-function promptAddSection(tabId, colId){
-  const heading = prompt('Section heading:');
-  if(!heading?.trim()) return;
-  const col = findCol(tabId, colId);
-  if(!col) return;
-  col.sections.push({ id:'s_'+Date.now(), heading:heading.trim(), items:[] });
-  persist(); renderAll();
-}
 
 function inlineEditHeading(tabId, colId, secId, spanEl){
   const inp = el('input','inline-inp');
@@ -2894,6 +5253,15 @@ function deleteSection(tabId, colId, secId){
   if(!confirm('Delete this section and all its content?')) return;
   const col = findCol(tabId, colId);
   if(!col) return;
+  // Stop any monitor polls in this section
+  const sec = col.sections.find(s=>s.id===secId);
+  if(sec?.type === 'monitor'){
+    (sec.services||[]).forEach(svc => {
+      const st = statusState[svc.id];
+      if(st?.timerId) clearTimeout(st.timerId);
+      delete statusState[svc.id];
+    });
+  }
   col.sections = col.sections.filter(s=>s.id!==secId);
   persist(); renderAll();
 }
@@ -3515,12 +5883,6 @@ function exportJSON(){
 function triggerImport(){ document.getElementById('importFileInput').click(); }
 
 function resetToDefaults(){
-  if(!confirm('Reset everything to defaults? All your customizations will be lost.')) return;
-  localStorage.removeItem('salty_v2');
-  location.reload();
-}
-
-function resetToDefaults(){
   if(!confirm('Reset everything to defaults? This will wipe all your tabs, links, and settings. This cannot be undone.')) return;
   localStorage.removeItem('salty_v2');
   location.reload();
@@ -3600,6 +5962,178 @@ let merger       = null;
 let currentNoise = 'off';
 let currentVol   = 0.4;
 let currentBeat  = 0;      // Hz offset (0 = off)
+
+/* ================================================================
+   POMODORO TIMER
+   ================================================================ */
+let pomoState = {
+  duration:  25 * 60,  // seconds
+  remaining: 25 * 60,
+  running:   false,
+  alerting:  false,
+  count:     0,        // completed pomodoros this session
+  timerId:   null,
+  chimeId:   null,     // setInterval for repeating chime
+};
+
+function pomoSetDuration(mins, btn){
+  if(pomoState.running || pomoState.alerting) return;
+  pomoState.duration  = mins * 60;
+  pomoState.remaining = mins * 60;
+  document.querySelectorAll('.pomo-preset').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  // Clear custom input when a preset is chosen
+  const customInp = document.getElementById('pomoCustomInp');
+  if(customInp){ customInp.value = ''; customInp.style.borderColor = ''; }
+  pomoRender();
+}
+
+function pomoSetCustom(val){
+  const mins = parseInt(val);
+  if(!mins || mins < 1 || mins > 999) return;
+  if(pomoState.running || pomoState.alerting) return;
+  pomoState.duration  = mins * 60;
+  pomoState.remaining = mins * 60;
+  // Deactivate all presets — custom is now active
+  document.querySelectorAll('.pomo-preset').forEach(b=>b.classList.remove('active'));
+  // Highlight the input itself to show it's set
+  const inp = document.getElementById('pomoCustomInp');
+  if(inp) inp.style.borderColor = 'var(--gold)';
+  pomoRender();
+}
+
+function pomoReset(){
+  // Stop everything and return to the current duration's start
+  clearInterval(pomoState.timerId);
+  pomoStopChime();
+  clearInterval(pomoTitleFlash);
+  document.title = pomoOrigTitle;
+  pomoState.running   = false;
+  pomoState.alerting  = false;
+  pomoState.remaining = pomoState.duration;
+  pomoRender();
+}
+
+function pomoToggle(){
+  if(pomoState.alerting){
+    pomoStopChime();
+    clearInterval(pomoTitleFlash);
+    document.title = pomoOrigTitle;
+    pomoState.alerting  = false;
+    pomoState.remaining = pomoState.duration;
+    pomoRender();
+    return;
+  }
+  if(pomoState.running){
+    clearInterval(pomoState.timerId);
+    pomoState.timerId = null;
+    pomoState.running = false;
+  } else {
+    getAudioCtx();
+    pomoState.running = true;
+    pomoState.timerId = setInterval(pomoTick, 1000);
+  }
+  pomoRender();
+}
+
+function pomoTick(){
+  pomoState.remaining--;
+  if(pomoState.remaining <= 0){
+    clearInterval(pomoState.timerId);
+    pomoState.timerId  = null;
+    pomoState.running  = false;
+    pomoState.alerting = true;
+    pomoState.count++;
+    pomoState.remaining = 0;
+    pomoStartChime();
+    pomoFlashTitle();
+  }
+  pomoRender();
+}
+
+function pomoRender(){
+  const display   = document.getElementById('pomoDisplay');
+  const btn       = document.getElementById('pomoBtn');
+  const phase     = document.getElementById('pomoPhase');
+  const count     = document.getElementById('pomoCount');
+  const resetBtn  = document.getElementById('pomoResetBtn');
+  if(!display) return;
+
+  const m = String(Math.floor(pomoState.remaining/60)).padStart(2,'0');
+  const s = String(pomoState.remaining%60).padStart(2,'0');
+  display.textContent = m+':'+s;
+
+  display.classList.toggle('alerting', pomoState.alerting);
+  btn.classList.remove('running','alerting');
+
+  if(pomoState.alerting){
+    btn.textContent = 'Dismiss';
+    btn.classList.add('alerting');
+    phase.textContent = 'done!';
+  } else if(pomoState.running){
+    btn.textContent = 'Pause';
+    btn.classList.add('running');
+    phase.textContent = pomoState.duration <= 15*60 ? 'break' : 'work';
+  } else {
+    btn.textContent = pomoState.remaining < pomoState.duration ? 'Resume' : 'Start';
+    phase.textContent = pomoState.duration <= 15*60 ? 'break' : 'work';
+  }
+
+  // Show reset button whenever timer has been touched (running, paused mid-way, or alerting)
+  if(resetBtn){
+    const touched = pomoState.running || pomoState.alerting ||
+                    pomoState.remaining < pomoState.duration;
+    resetBtn.style.display = touched ? '' : 'none';
+  }
+
+  // Glow the Focus toolbar button when alerting so user knows to open the panel
+  document.getElementById('focusToolBtn')
+    ?.classList.toggle('pomo-alerting', pomoState.alerting);
+
+  count.textContent = pomoState.count + ' 🍅';
+}
+
+function pomoStartChime(){
+  // Play immediately then repeat every 8s until dismissed
+  pomoChime();
+  pomoState.chimeId = setInterval(pomoChime, 8000);
+}
+
+function pomoStopChime(){
+  clearInterval(pomoState.chimeId);
+  pomoState.chimeId = null;
+}
+
+function pomoChime(){
+  try {
+    const ctx  = getAudioCtx();
+    const now  = ctx.currentTime;
+    // Three-note ascending chime: C5, E5, G5
+    [[523.25, 0], [659.25, 0.22], [783.99, 0.44]].forEach(([freq, offset]) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + offset);
+      gain.gain.setValueAtTime(0, now + offset);
+      gain.gain.linearRampToValueAtTime(0.28, now + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.9);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.95);
+    });
+  } catch(e){ /* audio ctx not ready */ }
+}
+
+let pomoTitleFlash = null;
+const pomoOrigTitle = document.title;
+function pomoFlashTitle(){
+  let on = true;
+  pomoTitleFlash = setInterval(()=>{
+    if(!pomoState.alerting){ clearInterval(pomoTitleFlash); document.title = pomoOrigTitle; return; }
+    document.title = on ? '⏰ Time\'s up! — ' + pomoOrigTitle : pomoOrigTitle;
+    on = !on;
+  }, 1000);
+}
 
 function getAudioCtx(){
   if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
