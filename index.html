@@ -20,7 +20,7 @@
 
   /* Dark mode (default) */
   --bg:         #111;
-  --bg-img:     url('darkcanvas.gif');
+  --bg-img:     none;
   --surface:    rgba(0,0,0,0.42);
   --surface2:   rgba(20,4,4,0.55);
   --border:     #5a1010;
@@ -673,7 +673,7 @@ body.edit-mode .add-col-wrap { display: flex; align-items: flex-start; }
    ============================================================ */
 .tab-bottom-row {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 0;
   border-top: 1px solid var(--border);
   margin-top: 6px;
@@ -681,9 +681,9 @@ body.edit-mode .add-col-wrap { display: flex; align-items: flex-start; }
 .weather-strip {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px 10px;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px 14px 6px;
   flex-shrink: 0;
 }
 .quote-in-weather {
@@ -691,9 +691,9 @@ body.edit-mode .add-col-wrap { display: flex; align-items: flex-start; }
   min-width: 0;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: flex-end;
   justify-content: flex-end;
-  padding: 8px 18px 8px 16px;
+  padding: 6px 18px 6px 16px;
   gap: 10px;
 }
 .quote-in-weather .quote-text {
@@ -724,13 +724,59 @@ body.edit-mode .add-col-wrap { display: flex; align-items: flex-start; }
 }
 .quote-in-weather .quote-right {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
+  gap: 8px;
   flex-shrink: 0;
 }
 /* Hide standalone quote bar when weather row is present on active tab */
 .quote-bar.quote-hidden-by-weather { display: none !important; }
+
+/* ---- PINNED WEATHER/QUOTE BAR ---- */
+body.weather-pinned .tab-bottom-row {
+  position: fixed;
+  bottom: 48px;          /* sit just above the bottom bar */
+  left: 0; right: 0;
+  z-index: 3900;
+  background: var(--modal-bg);
+  border-top: 2px solid var(--red2);
+  border-bottom: none;
+  margin-top: 0;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 -4px 18px rgba(0,0,0,0.35);
+}
+/* Invisible spacer so content doesn't vanish behind the pinned bar */
+body.weather-pinned .tab-bottom-row-spacer {
+  display: block;
+}
+.tab-bottom-row-spacer { display: none; }
+
+/* Pin toggle button — visible in edit mode only */
+.weather-pin-wrap {
+  display: none;
+  align-items: center;
+  padding: 0 10px 0 4px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  margin-left: auto;
+}
+body.edit-mode .weather-pin-wrap { display: flex; }
+.weather-pin-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  padding: 3px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.weather-pin-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.weather-pin-btn.pinned { border-color: var(--gold); color: var(--gold); }
 
 /* ============================================================
    FOCUS MODE PANEL
@@ -981,16 +1027,179 @@ body:not(.edit-mode) .lofi-edit-btn { display: none; }
   background: var(--weather-bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 5px 12px;
-  min-width: 140px;
-  text-align: center;
+  padding: 4px 8px 4px 12px;
+  min-width: 170px;
   backdrop-filter: blur(2px);
+  display: flex;
+  align-items: stretch;
+  gap: 0;
 }
+/* Forecast tooltip on wx side */
+.w-card-wx {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  position: relative;
+  cursor: default;
+}
+.w-forecast-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 10px;
+  white-space: nowrap;
+  z-index: 500;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  pointer-events: none;
+  min-width: 200px;
+}
+.w-card-wx:hover .w-forecast-tooltip { display: block; }
+.w-forecast-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  line-height: 1.9;
+}
+.w-forecast-day  { min-width: 28px; color: var(--text-dim); }
+.w-forecast-desc { flex: 1; color: var(--text); font-size: 10.5px; }
+.w-forecast-hi   { color: var(--text-head); min-width: 30px; text-align: right; }
+.w-forecast-lo   { color: var(--text-dim);  min-width: 30px; text-align: right; }
+.w-forecast-pop  { color: #60aaff; min-width: 30px; text-align: right; font-size: 10px; }
 .w-card .wloc  { font-family:'Share Tech Mono',monospace; font-size:10px; letter-spacing:0.1em; color:var(--gold); text-transform:uppercase; margin-bottom:1px; }
 .w-card .wtemp { font-size:22px; font-weight:700; color:var(--text-head); line-height:1; }
 .w-card .wdesc { font-size:11px; color:var(--text-dim); margin-top:1px; }
 .w-card .whilo { font-size:10.5px; color:var(--text-dim); margin-top:2px; }
 .w-card .wload { font-size:11px; color:var(--text-dim); font-style:italic; }
+
+/* AQI panel */
+.w-aqi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0 4px 10px;
+  margin-left: 10px;
+  border-left: 1px solid var(--border);
+  min-width: 52px;
+  flex-shrink: 0;
+  cursor: default;
+  position: relative;
+}
+.w-aqi-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+.w-aqi-label {
+  font-size: 9px;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+  opacity: 0.85;
+}
+.w-aqi-tag {
+  font-size: 9px;
+  color: var(--text-dim);
+  opacity: 0.6;
+  letter-spacing: 0.04em;
+  margin-top: 1px;
+}
+/* Tooltip */
+.w-aqi-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 10px;
+  white-space: nowrap;
+  z-index: 500;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+.w-aqi:hover .w-aqi-tooltip { display: block; }
+.w-aqi-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+.w-aqi-tooltip-row span:last-child { color: var(--text); text-align: right; }
+
+/* Pollen panel */
+.w-pollen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 0 4px 10px;
+  margin-left: 10px;
+  border-left: 1px solid var(--border);
+  min-width: 52px;
+  flex-shrink: 0;
+  cursor: default;
+  position: relative;
+}
+.w-pollen-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+.w-pollen-label {
+  font-size: 9px;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+  opacity: 0.85;
+}
+.w-pollen-tag {
+  font-size: 9px;
+  color: var(--text-dim);
+  opacity: 0.6;
+  letter-spacing: 0.04em;
+  margin-top: 1px;
+}
+.w-pollen-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 10px;
+  white-space: nowrap;
+  z-index: 500;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+.w-pollen:hover .w-pollen-tooltip { display: block; }
+.w-pollen-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  line-height: 1.8;
+}
+.w-pollen-tooltip-row span:last-child { color: var(--text); text-align: right; }
 
 /* Weather search results */
 .wsearch-row {
@@ -1455,11 +1664,178 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
 .np-label.playing { color: var(--gold); }
 
 /* ============================================================
-   RESPONSIVE
+   MOBILE OVERFLOW MENU  (hidden everywhere by default,
+   revealed only on mobile via the @media block below)
    ============================================================ */
-@media (max-width: 720px) {
-  .tdnn { font-size: 7%; top: 5px; right: 12px; }
-  .sections-grid { grid-template-columns: 1fr; }
+#mobileMoreBtn        { display: none; }   /* hidden on desktop */
+.mobile-overflow-menu {
+  display: none;                           /* hidden unless .open on mobile */
+  position: fixed;
+  top: 36px;
+  right: 0;
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 0 8px;
+  padding: 6px 0;
+  z-index: 8900;
+  box-shadow: -4px 4px 16px rgba(0,0,0,0.5);
+  flex-direction: column;
+  min-width: 160px;
+}
+.mob-menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.mob-menu-btn:hover { background: rgba(221,176,75,0.1); color: var(--gold); }
+.mob-menu-btn.danger { color: #cc6666; }
+.mob-menu-btn.danger:hover { background: rgba(204,50,50,0.1); color: #ff8888; }
+.mob-menu-divider { height: 1px; background: var(--border); margin: 4px 12px; }
+
+/* ============================================================
+   RESPONSIVE — Mobile (≤ 640px)
+   ============================================================ */
+@media (max-width: 640px) {
+
+  /* --- Day/night toggle --- */
+  .tdnn {
+    font-size: 6%;
+    top: 3px;
+    right: 6px;
+  }
+
+  /* --- Tab bar --- */
+  .tab-bar {
+    flex-wrap: nowrap;          /* single row, scrollable */
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;      /* Firefox */
+    padding-right: 3em;         /* clear toggle */
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+    flex-shrink: 0;             /* don't squish */
+  }
+
+  /* --- Toolbar --- */
+  .toolbar {
+    flex-shrink: 0;
+    gap: 3px;
+    padding: 3px 4px;
+  }
+  .tool-btn {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  /* Hide lower-priority toolbar buttons on mobile — keep Edit, Weather, Focus */
+  #saveBtn, #loadBtn, #bookmarksBtn, #resetBtn, #bgBtn, #colorsBtn { display: none !important; }
+
+  /* Show the overflow trigger on mobile */
+  #mobileMoreBtn { display: inline-flex !important; }
+  .mobile-overflow-menu.open { display: flex; }
+
+  /* --- Search bar --- */
+  .search-bar { padding: 10px 12px 8px; }
+  .search-input { width: 180px; }
+  .search-input:focus { width: 220px; }
+
+  /* --- Columns --- */
+  .columns-grid {
+    gap: 10px;
+    padding: 8px 8px 6px;
+  }
+  .col-wrap {
+    flex: 1 1 100%;             /* each column full width */
+    min-width: 0;
+  }
+
+  /* --- Weather + quote bottom row --- */
+  .tab-bottom-row {
+    flex-direction: column;     /* stack weather above quote */
+    gap: 0;
+  }
+  .weather-strip {
+    gap: 7px;
+    padding: 8px 10px;
+    flex-wrap: wrap;
+  }
+  .w-card {
+    min-width: 110px;
+    padding: 4px 9px;
+    flex: 1 1 110px;
+  }
+  .w-card .wtemp { font-size: 18px; }
+
+  /* Quote in weather — move below weather, left-align */
+  .quote-in-weather {
+    justify-content: flex-start;
+    padding: 6px 12px 10px;
+    border-top: 1px solid var(--border);
+  }
+  .quote-in-weather .quote-text {
+    text-align: left;
+    max-width: 100%;
+    font-size: 12px;
+  }
+
+  /* --- Standalone quote bar --- */
+  .quote-bar {
+    padding: 8px 12px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .quote-right { flex-wrap: wrap; }
+
+  /* --- Bottom bar (clock + now playing) --- */
+  .bottom-bar { padding: 0 8px; gap: 0; }
+  .clock-display { font-size: 16px; }
+  .np-label { max-width: 160px; }
+
+  /* --- Focus panel --- */
+  .focus-panel {
+    border-radius: 0 0 0 6px;
+    max-width: calc(100vw - 20px);
+  }
+  .focus-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .vol-slider { width: 60px; }
+
+  /* --- Modals --- */
+  .modal {
+    width: calc(100vw - 32px) !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* --- Status tiles --- */
+  .status-tile { width: 100%; }
+
+  /* --- Section card padding --- */
+  .section-card { padding: 7px 9px 8px; }
+}
+
+/* ============================================================
+   RESPONSIVE — Tablet (641px – 900px)
+   ============================================================ */
+@media (min-width: 641px) and (max-width: 900px) {
+  .col-wrap { flex: 1 1 280px; min-width: 280px; }
+  .tab-bar { padding-right: 4em; }
+  .quote-in-weather .quote-text { max-width: 45vw; }
 }
 
 /* ============================================================
@@ -1535,6 +1911,34 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
 .sec-type-card:hover  { border-color: var(--cyan); color: var(--cyan); }
 .sec-type-card.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
 .sec-type-card:disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
+
+/* Widget category tabs (inside widget picker) */
+.widget-cat-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+.widget-cat-tab {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.widget-cat-tab:hover  { border-color: var(--cyan); color: var(--cyan); }
+.widget-cat-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
+
+/* Widget grid panels — only active one shown */
+.widget-cat-panel { display: none; }
+.widget-cat-panel.active { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ============================================================
    MONITOR SECTION (inline within section-card)
@@ -2543,6 +2947,325 @@ body.edit-mode .remind-add-row { display: flex; }
   outline: none;
 }
 .remind-add-inp:focus, .remind-add-sel:focus { border-color: var(--gold); }
+
+/* ============================================================
+   WIDGET — CVE Watchlist
+   ============================================================ */
+.cve-alert-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255,68,68,0.12);
+  border: 1px solid #ff4444;
+  border-radius: 5px;
+  margin-bottom: 8px;
+  animation: cveAlertPulse 1.8s ease-in-out infinite alternate;
+}
+@keyframes cveAlertPulse {
+  from { border-color: #ff4444; box-shadow: 0 0 4px rgba(255,68,68,0.3); }
+  to   { border-color: #ff8888; box-shadow: 0 0 12px rgba(255,68,68,0.6); }
+}
+.cve-alert-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
+.cve-alert-body { flex: 1; min-width: 0; }
+.cve-alert-title {
+  font-size: 12px; font-weight: 700; color: #ff8888;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.04em; margin-bottom: 3px;
+}
+.cve-alert-items { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+.cve-alert-dismiss {
+  background: none; border: 1px solid #ff4444; border-radius: 3px;
+  color: #ff8888; font-size: 11px; font-family: 'Outfit', sans-serif;
+  padding: 2px 8px; cursor: pointer; flex-shrink: 0;
+  transition: all 0.15s; white-space: nowrap;
+}
+.cve-alert-dismiss:hover { background: rgba(255,68,68,0.15); }
+.cve-watch-section { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+.cve-watch-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.cve-watch-title {
+  font-size: 10.5px; color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.04em; text-transform: uppercase; flex: 1;
+}
+.cve-watch-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 4px; }
+.cve-watch-item { display: flex; align-items: center; gap: 6px; padding: 3px 5px; border-radius: 3px; }
+.cve-watch-item:hover { background: rgba(255,255,255,0.04); }
+.cve-watch-term { flex: 1; font-size: 12px; font-family: 'Share Tech Mono', monospace; color: var(--text); }
+.cve-watch-status { font-size: 10px; color: var(--text-dim); opacity: 0.6; white-space: nowrap; }
+.cve-watch-add-row { display: none; gap: 5px; margin-top: 5px; flex-wrap: wrap; align-items: center; }
+body.edit-mode .cve-watch-add-row { display: flex; }
+.cve-watch-options { display: none; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+body.edit-mode .cve-watch-options { display: flex; }
+.cve-watch-opt-label { font-size: 11.5px; color: var(--text-dim); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.cve-watch-opt-label input[type=checkbox] { width: auto; margin: 0; accent-color: var(--gold); cursor: pointer; }
+.cve-interval-inp {
+  width: 52px; background: var(--inp-bg); border: 1px solid var(--inp-border);
+  border-radius: 3px; color: var(--text); font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; padding: 2px 5px; outline: none; text-align: center;
+}
+.cve-interval-inp:focus { border-color: var(--gold); }
+
+/* ============================================================
+   WIDGET — Port Reference popover & combo select
+   ============================================================ */
+.port-combo-sel {
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  padding: 4px 6px;
+  outline: none;
+  cursor: pointer;
+}
+.port-combo-sel:focus { border-color: var(--gold); }
+
+.port-row-wrap { position: relative; }
+.port-popover {
+  position: fixed;
+  background: var(--modal-bg);
+  border: 1px solid var(--cyan);
+  border-radius: 6px;
+  padding: 10px 12px;
+  z-index: 9000;
+  width: 300px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+  animation: popoverIn 0.12s ease-out;
+}
+@keyframes popoverIn {
+  from { opacity:0; transform:translateY(-4px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.port-popover-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.port-popover-port {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  color: var(--gold);
+  font-weight: 700;
+}
+.port-popover-proto {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+.port-popover-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-head);
+  flex: 1;
+}
+.port-popover-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.port-popover-close:hover { color: var(--del-color); }
+.port-popover-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.port-popover-link {
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cyan);
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.port-popover-link:hover { opacity: 1; }
+.port-row-active { background: rgba(15,184,221,0.08) !important; }
+
+/* ============================================================
+   WIDGET — BGP / ASN Lookup
+   ============================================================ */
+.bgp-mode-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.bgp-mode-tab {
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.bgp-mode-tab:hover  { border-color: var(--cyan); color: var(--cyan); }
+.bgp-mode-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
+
+.bgp-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.bgp-card {
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px 10px;
+}
+.bgp-card-title {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.bgp-asn-main {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.bgp-asn-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 18px;
+  color: var(--gold);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.bgp-asn-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-head);
+}
+.bgp-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.bgp-badge {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 6px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.bgp-badge.highlight { border-color: var(--cyan); color: var(--cyan); background: rgba(15,184,221,0.08); }
+
+.bgp-prefix-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.bgp-prefix-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.bgp-prefix-item:hover { background: rgba(255,255,255,0.05); }
+.bgp-prefix-cidr {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11.5px;
+  color: var(--gold);
+  flex: 1;
+}
+.bgp-prefix-desc {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.bgp-upstream-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.bgp-upstream-item:hover { background: rgba(255,255,255,0.05); }
+.bgp-upstream-asn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--cyan);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+.bgp-upstream-name {
+  font-size: 11.5px;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bgp-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.bgp-ext-link {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cyan);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 7px;
+  opacity: 0.75;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.bgp-ext-link:hover { opacity: 1; border-color: var(--cyan); }
+
+.bgp-error {
+  font-size: 12px;
+  color: var(--del-color);
+  padding: 4px 0;
+  font-style: italic;
+}
+.bgp-loading {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 4px 0;
+}
 </style>
 </head>
 <body>
@@ -2688,11 +3411,24 @@ body.edit-mode .remind-add-row { display: flex; }
     <button class="tool-btn" onclick="openWeatherModal()" title="Configure weather locations">⛅ Weather</button>
     <button class="tool-btn" id="bgBtn" onclick="toggleBgPanel()" title="Animated background">🖼 BG</button>
     <button class="tool-btn" id="focusToolBtn" onclick="toggleFocusPanel()" title="Focus mode sounds">◈ Focus</button>
-    <button class="tool-btn" onclick="exportJSON()" title="Save bookmarks as JSON backup">⬇ Save</button>
-    <button class="tool-btn" onclick="triggerImport()" title="Load a previously exported JSON backup">⬆ Load</button>
-    <button class="tool-btn" onclick="openBookmarkImport()" title="Import bookmarks from browser export file">📑 Bookmarks</button>
-    <button class="tool-btn" style="color:#cc6666;" onclick="resetToDefaults()" title="Reset to defaults">↺ Reset</button>
+    <button class="tool-btn" id="saveBtn" onclick="exportJSON()" title="Save bookmarks as JSON backup">⬇ Save</button>
+    <button class="tool-btn" id="loadBtn" onclick="triggerImport()" title="Load a previously exported JSON backup">⬆ Load</button>
+    <button class="tool-btn" id="bookmarksBtn" onclick="openBookmarkImport()" title="Import bookmarks from browser export file">📑 Bookmarks</button>
+    <button class="tool-btn" id="resetBtn" style="color:#cc6666;" onclick="resetToDefaults()" title="Reset to defaults">↺ Reset</button>
+    <!-- Mobile overflow trigger — hidden on desktop, shown on mobile via CSS -->
+    <button class="tool-btn" id="mobileMoreBtn" onclick="toggleMobileMenu()"
+            title="More options" style="display:none;">⋯</button>
+  </div>
 </div>
+
+<!-- ===== MOBILE OVERFLOW MENU ===== -->
+<div class="mobile-overflow-menu" id="mobileOverflowMenu">
+  <button class="mob-menu-btn" onclick="toggleBgPanel();   closeMobileMenu()">🖼 Background</button>
+  <button class="mob-menu-btn" onclick="exportJSON();      closeMobileMenu()">⬇ Save settings</button>
+  <button class="mob-menu-btn" onclick="triggerImport();   closeMobileMenu()">⬆ Load settings</button>
+  <button class="mob-menu-btn" onclick="openBookmarkImport(); closeMobileMenu()">📑 Import bookmarks</button>
+  <div class="mob-menu-divider"></div>
+  <button class="mob-menu-btn danger" onclick="resetToDefaults(); closeMobileMenu()">↺ Reset to defaults</button>
 </div>
 
 <!-- ===== SEARCH BAR ===== -->
@@ -2929,6 +3665,12 @@ body.edit-mode .remind-add-row { display: flex; }
         Hidden — only visible in edit mode
       </label>
     </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+      <input type="checkbox" id="tmWeather" style="width:auto;margin:0;cursor:pointer;">
+      <label for="tmWeather" style="margin:0;font-size:12.5px;color:var(--text-dim);cursor:pointer;">
+        Show weather &amp; quote bar
+      </label>
+    </div>
     <div class="modal-actions">
       <button class="mbtn mbtn-cancel" onclick="closeOverlay('tabOverlay')">Cancel</button>
       <button class="mbtn mbtn-primary" onclick="saveTab()">Save</button>
@@ -2960,7 +3702,13 @@ body.edit-mode .remind-add-row { display: flex; }
     <!-- Widget picker (shown when widget type selected) -->
     <div id="stWidgetPicker" style="display:none;margin-top:12px;">
       <label>Widget Type</label>
-      <div class="tab-type-row" style="flex-wrap:wrap;">
+      <!-- Category tabs -->
+      <div class="widget-cat-tabs" style="margin-top:6px;">
+        <button class="widget-cat-tab active" id="wcTabGeneral" onclick="selectWidgetCat('general')">🧩 General</button>
+        <button class="widget-cat-tab" id="wcTabNetwork" onclick="selectWidgetCat('network')">🌐 Network Engineering</button>
+      </div>
+      <!-- General widgets -->
+      <div class="widget-cat-panel active" id="wcPanelGeneral">
         <button class="sec-type-card" id="swSearch"    onclick="selectWidgetType('search')">
           🔍 Search<span>Multi-engine search</span>
         </button>
@@ -2984,6 +3732,24 @@ body.edit-mode .remind-add-row { display: flex; }
         </button>
         <button class="sec-type-card" id="swTodo"      onclick="selectWidgetType('todo')">
           ✅ To-Do List<span>Checklist</span>
+        </button>
+      </div>
+      <!-- Network Engineering widgets -->
+      <div class="widget-cat-panel" id="wcPanelNetwork">
+        <button class="sec-type-card" id="swPorts"     onclick="selectWidgetType('ports')">
+          🔌 Port Reference<span>Well-known ports</span>
+        </button>
+        <button class="sec-type-card" id="swMyip"      onclick="selectWidgetType('myip')">
+          🌐 My Public IP<span>Egress IP &amp; ASN</span>
+        </button>
+        <button class="sec-type-card" id="swRfc"       onclick="selectWidgetType('rfc')">
+          📄 RFC Lookup<span>Jump to IETF docs</span>
+        </button>
+        <button class="sec-type-card" id="swCve"       onclick="selectWidgetType('cve')">
+          🛡 CVE Bulletin<span>Latest CVEs &amp; search</span>
+        </button>
+        <button class="sec-type-card" id="swBgp"       onclick="selectWidgetType('bgp')">
+          🔭 BGP / ASN<span>ASN &amp; IP prefix lookup</span>
         </button>
       </div>
     </div>
@@ -3029,6 +3795,55 @@ body.edit-mode .remind-add-row { display: flex; }
       <button class="mbtn mbtn-primary" onclick="doWeatherSearch()" style="padding:7px 14px;flex-shrink:0;">Search</button>
     </div>
     <div id="wSearchResults" style="margin-top:8px;max-height:180px;overflow-y:auto;"></div>
+
+    <!-- Pollen API settings -->
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <input type="checkbox" id="wPollenEnabled" style="width:14px;height:14px;cursor:pointer;">
+        <label for="wPollenEnabled" style="font-size:13px;font-weight:600;cursor:pointer;margin:0;">Enable Pollen Data</label>
+      </div>
+
+      <p style="font-size:11.5px;color:var(--text-dim);margin:0 0 10px 0;line-height:1.6;">
+        Tree, grass, and weed pollen levels can be shown on each weather tile. Pollen data requires
+        a paid third-party API subscription — pricing varies by provider. Your key is stored locally
+        and included in exported settings files. Note that some providers may also require a CORS proxy
+        to work from a browser — use the HTTP Proxy setting in the App Monitor section if needed.
+      </p>
+
+      <label style="font-size:11.5px;font-weight:600;display:block;margin-bottom:5px;">Pollen Data Provider</label>
+      <select id="wPollenService" onchange="updatePollenServiceInfo()"
+              style="width:100%;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;padding:6px 8px;margin-bottom:10px;">
+        <option value="weatherapi">WeatherAPI.com</option>
+        <option value="tomorrow">Tomorrow.io</option>
+        <option value="ambee">Ambee</option>
+        <option value="google">Google Pollen API</option>
+      </select>
+
+      <!-- Per-service info box -->
+      <div id="wPollenServiceInfo" style="font-size:11px;color:var(--text-dim);background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:10px;line-height:1.7;"></div>
+
+      <div style="display:flex;gap:7px;align-items:center;">
+        <input type="text" id="wPollenKey" placeholder="API key…"
+               style="flex:1;font-family:'Share Tech Mono',monospace;font-size:12px;">
+        <button class="mbtn mbtn-primary" onclick="savePollenSettings()" style="padding:7px 14px;flex-shrink:0;">Save</button>
+      </div>
+      <div style="margin-top:8px;">
+        <label style="font-size:11.5px;font-weight:600;display:block;margin-bottom:4px;">
+          CORS Proxy URL
+          <span style="font-weight:400;color:var(--text-dim);"> — required if pollen provider blocks browser requests</span>
+        </label>
+        <input type="text" id="wPollenProxy" placeholder="https://your-worker.your-subdomain.workers.dev"
+               style="width:100%;font-family:'Share Tech Mono',monospace;font-size:11.5px;box-sizing:border-box;">
+        <div style="font-size:10.5px;color:var(--text-dim);margin-top:4px;line-height:1.6;">
+          A free Cloudflare Worker can act as a CORS proxy for pollen requests.
+          Deploy the worker script from the
+          <a href="https://workers.cloudflare.com" target="_blank" rel="noopener" style="color:var(--cyan);">Cloudflare Workers dashboard</a>
+          and paste your worker URL above. Worker script available in your settings export.
+        </div>
+      </div>
+      <div id="wPollenStatus" style="font-size:11px;color:var(--text-dim);margin-top:5px;min-height:16px;"></div>
+    </div>
+
     <div class="modal-actions">
       <button class="mbtn mbtn-cancel" onclick="closeOverlay('weatherOverlay')">Done</button>
     </div>
@@ -3053,6 +3868,10 @@ const DEFAULTS = {
   bgUrlActive: false,
   recentVisited: [],
   proxyUrl: '',
+  pollenKey: '',
+  pollenEnabled: false,
+  pollenService: 'weatherapi',
+  pollenProxy: '',
   colors: {
     dark: {
       '--tab-bg':        '#3a0000',
@@ -3366,6 +4185,7 @@ let bgCtx         = null;
 
 // Status state: serviceId → {status, successes, failures, lastCheck, timerId, blocked}
 const statusState = {};
+const cveWatchTimers = {}; // secId → intervalId for CVE watchlist polling
 
 // Widget constants — must be declared before init IIFE runs renderAll
 const SEARCH_ENGINES = [
@@ -3376,7 +4196,8 @@ const SEARCH_ENGINES = [
   { id:'reddit',  label:'Reddit',     url:'https://www.reddit.com/search/?q=' },
 ];
 
-const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo'];
+const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo',
+                      'ports','myip','rfc','cve','bgp'];
 
 const UNIT_CATS = {
   Length:      { units:['mm','cm','m','km','in','ft','yd','mi'],                       toBase:{ mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344 } },
@@ -3397,6 +4218,76 @@ const TZ_OPTIONS = (() => {
       'Asia/Dubai','Asia/Kolkata','Asia/Shanghai','Asia/Tokyo','Australia/Sydney'];
   }
 })();
+
+// PORT_DATA: [port, protocol, name, description]
+const PORT_DATA = [
+  [20,'TCP','FTP Data','File Transfer Protocol — data channel. Transfers file content between client and server.'],
+  [21,'TCP','FTP Control','File Transfer Protocol — command channel. Sends commands like login, directory listing, and file operations.'],
+  [22,'TCP','SSH','Secure Shell. Encrypted remote login, command execution, and tunneling. Also used by SFTP and SCP.'],
+  [23,'TCP','Telnet','Unencrypted remote terminal access. Largely replaced by SSH due to lack of encryption.'],
+  [25,'TCP','SMTP','Simple Mail Transfer Protocol. Used by mail servers to send and relay email between servers.'],
+  [53,'TCP/UDP','DNS','Domain Name System. Translates domain names to IP addresses. UDP for queries, TCP for zone transfers.'],
+  [67,'UDP','DHCP Server','Dynamic Host Configuration Protocol — server port. Assigns IP addresses and network config to clients.'],
+  [68,'UDP','DHCP Client','DHCP client port. Listens for address assignments from a DHCP server.'],
+  [69,'UDP','TFTP','Trivial File Transfer Protocol. Lightweight, unauthenticated file transfer. Common for PXE booting and firmware updates.'],
+  [80,'TCP','HTTP','Hypertext Transfer Protocol. Unencrypted web traffic. Increasingly redirected to HTTPS.'],
+  [110,'TCP','POP3','Post Office Protocol v3. Downloads email from a mail server; typically deletes from server after retrieval.'],
+  [119,'TCP','NNTP','Network News Transfer Protocol. Used for Usenet newsgroup distribution and reading.'],
+  [123,'UDP','NTP','Network Time Protocol. Synchronises clocks across network devices to a reference time source.'],
+  [143,'TCP','IMAP','Internet Message Access Protocol. Access email on a server, keeping messages stored remotely.'],
+  [161,'UDP','SNMP','Simple Network Management Protocol. Polls network devices for status, counters, and configuration.'],
+  [162,'UDP','SNMP Trap','SNMP trap receiver. Devices send unsolicited alerts here when threshold events occur.'],
+  [179,'TCP','BGP','Border Gateway Protocol. The routing protocol of the internet; exchanges routing information between autonomous systems.'],
+  [194,'TCP','IRC','Internet Relay Chat. Real-time text messaging protocol used by chat networks.'],
+  [389,'TCP','LDAP','Lightweight Directory Access Protocol. Queries and modifies directory services such as Active Directory.'],
+  [443,'TCP','HTTPS','HTTP Secure. TLS-encrypted web traffic. The standard for all modern web communication.'],
+  [445,'TCP','SMB','Server Message Block. Windows file and printer sharing. Also used by Samba on Linux/macOS.'],
+  [465,'TCP','SMTPS','SMTP over implicit TLS. Sends email with encryption from the start of the connection.'],
+  [514,'UDP','Syslog','System logging protocol. Network devices and servers forward log messages to a central syslog server.'],
+  [515,'TCP','LPD/LPR','Line Printer Daemon. Legacy Unix print spooling protocol.'],
+  [520,'UDP','RIP','Routing Information Protocol. Distance-vector routing protocol for small networks; largely superseded by OSPF.'],
+  [554,'TCP','RTSP','Real Time Streaming Protocol. Controls streaming media servers; used for IP cameras and media players.'],
+  [587,'TCP','SMTP Submission','Email submission port. Mail clients submit outgoing email to their mail server with authentication.'],
+  [636,'TCP','LDAPS','LDAP over TLS. Encrypted directory service queries.'],
+  [993,'TCP','IMAPS','IMAP over TLS. Encrypted remote email access.'],
+  [995,'TCP','POP3S','POP3 over TLS. Encrypted email retrieval.'],
+  [1080,'TCP','SOCKS Proxy','SOCKS protocol. Generic TCP/UDP proxy used by applications to route traffic through a proxy server.'],
+  [1194,'UDP','OpenVPN','OpenVPN default port. Open-source VPN tunneling over UDP for performance.'],
+  [1433,'TCP','MSSQL','Microsoft SQL Server. Default port for SQL Server database connections.'],
+  [1521,'TCP','Oracle DB','Oracle Database listener. Default port for Oracle database client connections.'],
+  [1723,'TCP','PPTP','Point-to-Point Tunneling Protocol. Legacy VPN protocol; considered insecure, largely replaced by IKEv2/OpenVPN.'],
+  [3306,'TCP','MySQL','MySQL and MariaDB database server. Default port for database client connections.'],
+  [3389,'TCP','RDP','Remote Desktop Protocol. Microsoft remote desktop and RemoteApp sessions.'],
+  [3690,'TCP','SVN','Subversion (SVN) version control server. Serves repository data over the svn:// protocol.'],
+  [4500,'UDP','IKEv2/IPSec NAT','IKEv2 NAT traversal port. Used when IPSec VPN traffic passes through NAT devices.'],
+  [5060,'TCP/UDP','SIP','Session Initiation Protocol. Sets up and tears down VoIP and video calls.'],
+  [5432,'TCP','PostgreSQL','PostgreSQL database server. Default port for database client connections.'],
+  [5900,'TCP','VNC','Virtual Network Computing. Remote desktop access; unencrypted unless tunnelled through SSH.'],
+  [6379,'TCP','Redis','Redis in-memory data store. Default port; should not be exposed publicly without authentication.'],
+  [6443,'TCP','Kubernetes API','Kubernetes API server. Kubectl and controllers communicate with the cluster through this port.'],
+  [6514,'TCP','Syslog TLS','Syslog over TLS. Encrypted log forwarding to a central server.'],
+  [8080,'TCP','HTTP Alt','Alternate HTTP port. Commonly used for development servers, proxies, and web management interfaces.'],
+  [8443,'TCP','HTTPS Alt','Alternate HTTPS port. Used when 443 is unavailable or for secondary HTTPS services.'],
+  [8883,'TCP','MQTT TLS','MQTT over TLS. Encrypted IoT messaging protocol.'],
+  [9200,'TCP','Elasticsearch','Elasticsearch REST API. Exposes the search and indexing API; should not be publicly accessible.'],
+  [27017,'TCP','MongoDB','MongoDB database server. Default port; must be secured — historically targeted in mass scans.'],
+];
+
+// Combo filter groups
+const PORT_COMBOS = {
+  'All ports':      null,
+  'Web':            [80,443,8080,8443],
+  'Email':          [25,110,143,465,587,993,995],
+  'File Transfer':  [20,21,22,69,445,3690],
+  'Database':       [1433,1521,3306,5432,6379,9200,27017],
+  'Remote Access':  [22,23,3389,5900,1080],
+  'VPN & Tunnels':  [500,1194,1723,4500],
+  'DNS & DHCP':     [53,67,68],
+  'Monitoring':     [161,162,514,6514,123],
+  'Directory':      [389,636],
+  'VoIP':           [5060,554],
+  'Infrastructure': [179,520,6443],
+};
 
 /* ================================================================
    BOOT
@@ -3439,6 +4330,11 @@ const TZ_OPTIONS = (() => {
   if(D.bgUrlActive === undefined) D.bgUrlActive = false;
   if(!D.recentVisited) D.recentVisited = [];
   if(D.proxyUrl === undefined) D.proxyUrl = '';
+  if(D.pinWeather === undefined) D.pinWeather = false;
+  if(D.pollenKey === undefined) D.pollenKey = '';
+  if(D.pollenEnabled === undefined) D.pollenEnabled = false;
+  if(D.pollenService === undefined) D.pollenService = 'weatherapi';
+  if(D.pollenProxy === undefined) D.pollenProxy = '';
 
   // Migrate: type:'status' tabs → standard tab with a monitor section in col 0
   D.tabs.forEach(tab => {
@@ -3480,7 +4376,8 @@ const TZ_OPTIONS = (() => {
   renderRecent();
   updateQuoteBarVisibility();
   applyQuoteState();
-  fetchQuote(); // run before fetchAllWeather so quote is ready when weather placeholder renders
+  applyWeatherPin();
+  fetchQuote();
   fetchAllWeather();
   } catch(err) {
     console.error('INIT ERROR:', err);
@@ -3500,6 +4397,8 @@ function renderAll(){
   renderTabBar();
   renderContents();
   lofiPopulateSelect();
+  updateQuoteBarVisibility();
+  applyWeatherPin();
 }
 
 /* ---- TAB BAR ---- */
@@ -3668,14 +4567,31 @@ function renderContents(){
     div.appendChild(colsRow);
 
     const allSections = (tab.columns||[]).flatMap(c=>c.sections||[]);
-    if(allSections.some(s=>s.weather)){
+    const hasWeatherBar = tab.showWeather || allSections.some(s=>s.weather);
+    if(hasWeatherBar){
       const bottomRow = el('div','tab-bottom-row');
       bottomRow.id = 'tbr_'+tab.id;
       const ws = el('div','weather-strip'); ws.id = 'ws_'+tab.id;
       bottomRow.appendChild(ws);
       const qp = el('div','quote-in-weather'); qp.id = 'qiw_'+tab.id;
       bottomRow.appendChild(qp);
+
+      // Pin toggle (edit mode only)
+      const pinWrap = el('div','weather-pin-wrap');
+      const pinBtn  = el('button','weather-pin-btn'+(D.pinWeather?' pinned':''));
+      pinBtn.id = 'weatherPinBtn';
+      pinBtn.textContent = D.pinWeather ? '📌 Pinned' : '📌 Pin bar';
+      pinBtn.title = 'Pin weather/quote bar above the bottom bar';
+      pinBtn.onclick = toggleWeatherPin;
+      pinWrap.appendChild(pinBtn);
+      bottomRow.appendChild(pinWrap);
+
       div.appendChild(bottomRow);
+
+      // Spacer — fills the gap left by the pinned bar
+      const spacer = el('div','tab-bottom-row-spacer');
+      spacer.id = 'tbrSpacer_'+tab.id;
+      div.appendChild(spacer);
     }
 
     root.appendChild(div);
@@ -3856,6 +4772,11 @@ function buildWidgetBody(sec){
     case 'clocks':    return buildClocksWidget(sec);
     case 'reminders': return buildRemindersWidget(sec);
     case 'todo':      return buildTodoWidget(sec);
+    case 'ports':     return buildPortsWidget(sec);
+    case 'myip':      return buildMyIpWidget(sec);
+    case 'rfc':       return buildRfcWidget(sec);
+    case 'cve':       return buildCveWidget(sec);
+    case 'bgp':       return buildBgpWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -4202,6 +5123,961 @@ function buildTodoWidget(sec){
 
   renderTodos();
   return wrap;
+}
+
+/* ================================================================
+   NETWORK ENGINEERING WIDGETS
+   ================================================================ */
+
+/* ---- PORT / PROTOCOL REFERENCE ---- */
+function buildPortsWidget(sec){
+  const wrap = el('div','ports-widget');
+  let activePopover = null;
+  let activeRow = null;
+
+  // ── Controls row: search + combo ───────────────────────────
+  const ctrlRow = el('div'); ctrlRow.style.cssText='display:flex;gap:6px;margin-bottom:8px;';
+
+  const inp = el('input','search-widget-input');
+  inp.placeholder = 'Port or service…';
+  inp.autocomplete = 'off';
+  inp.style.flex = '1';
+
+  const combo = el('select','port-combo-sel');
+  Object.keys(PORT_COMBOS).forEach(label=>{
+    const o = document.createElement('option');
+    o.value = label; o.textContent = label;
+    combo.appendChild(o);
+  });
+
+  ctrlRow.append(inp, combo);
+  wrap.appendChild(ctrlRow);
+
+  // ── Port list ───────────────────────────────────────────────
+  const tbl = el('div');
+  tbl.style.cssText = 'display:flex;flex-direction:column;gap:1px;max-height:260px;overflow-y:auto;position:relative;';
+  tbl.id = 'portTable_'+sec.id;
+
+  function closePopover(){
+    if(activePopover){ activePopover.remove(); activePopover=null; }
+    if(activeRow){ activeRow.classList.remove('port-row-active'); activeRow=null; }
+  }
+
+  function showPopover(rowEl, port, proto, name, desc, evt){
+    closePopover();
+    const pv = el('div','port-popover');
+
+    const titleRow = el('div','port-popover-title');
+    const portEl   = el('span','port-popover-port'); portEl.textContent = port;
+    const protoEl  = el('span','port-popover-proto'); protoEl.textContent = proto;
+    const nameEl   = el('span','port-popover-name'); nameEl.textContent = name;
+    const closeBtn = el('button','port-popover-close'); closeBtn.textContent = '✕';
+    closeBtn.onclick = e=>{ e.stopPropagation(); closePopover(); };
+    titleRow.append(portEl, protoEl, nameEl, closeBtn);
+
+    const descEl = el('div','port-popover-desc'); descEl.textContent = desc || 'No description available.';
+
+    const link = el('a','port-popover-link');
+    link.href = 'https://www.speedguide.net/port.php?port='+port;
+    link.target = '_blank'; link.rel = 'noopener noreferrer';
+    link.textContent = '↗ speedguide.net/port/'+port;
+
+    // Copy button
+    const copyRow = el('div'); copyRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-top:6px;';
+    const copyBtn = el('button','countdown-add-btn');
+    copyBtn.style.cssText='padding:3px 10px;font-size:11px;';
+    copyBtn.textContent = '⎘ Copy port';
+    copyBtn.onclick = e=>{
+      e.stopPropagation();
+      navigator.clipboard?.writeText(String(port)).then(()=>{
+        copyBtn.textContent='✓ Copied!';
+        setTimeout(()=>{ copyBtn.textContent='⎘ Copy port'; },1500);
+      });
+    };
+    copyRow.append(link, copyBtn);
+
+    pv.append(titleRow, descEl, copyRow);
+
+    // Append to body so it's not clipped by the scrollable list
+    document.body.appendChild(pv);
+    activePopover = pv;
+    activeRow = rowEl;
+    rowEl.classList.add('port-row-active');
+
+    // Position near the clicked row, clamped to viewport
+    requestAnimationFrame(()=>{
+      const pvW = pv.offsetWidth  || 300;
+      const pvH = pv.offsetHeight || 120;
+      const rowRect = rowEl.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const margin = 8;
+
+      // Default: just below the row, aligned to its left
+      let top  = rowRect.bottom + 4;
+      let left = rowRect.left;
+
+      // If it would go off the bottom, flip above the row
+      if(top + pvH + margin > vh) top = rowRect.top - pvH - 4;
+      // Clamp horizontally
+      if(left + pvW + margin > vw) left = vw - pvW - margin;
+      if(left < margin) left = margin;
+      // Clamp vertically in case flip also goes off top
+      if(top < margin) top = margin;
+
+      pv.style.left = left + 'px';
+      pv.style.top  = top  + 'px';
+    });
+  }
+
+  function renderPorts(){
+    closePopover();
+    tbl.innerHTML = '';
+    const f    = inp.value.toLowerCase();
+    const sel  = combo.value;
+    const ports = PORT_COMBOS[sel]; // null = all
+
+    const rows = PORT_DATA.filter(([p,t,n])=>{
+      if(ports && !ports.includes(p)) return false;
+      if(!f) return true;
+      return String(p).includes(f) || n.toLowerCase().includes(f) || t.toLowerCase().includes(f);
+    });
+
+    if(!rows.length){
+      const empty = el('div'); empty.style.cssText='font-size:11.5px;color:var(--text-dim);padding:4px;font-style:italic;';
+      empty.textContent = 'No matches'; tbl.appendChild(empty); return;
+    }
+
+    rows.forEach(([port, proto, name, desc]) => {
+      const rowWrap = el('div','port-row-wrap');
+
+      const row = el('div');
+      row.style.cssText='display:flex;gap:8px;align-items:center;padding:4px 5px;border-radius:3px;transition:background 0.1s;cursor:pointer;';
+      row.title = 'Click for details';
+      row.onmouseenter=()=>{ if(row!==activeRow) row.style.background='rgba(255,255,255,0.05)'; };
+      row.onmouseleave=()=>{ if(row!==activeRow) row.style.background=''; };
+
+      const portEl  = el('span'); portEl.style.cssText='font-family:Share Tech Mono,monospace;font-size:12px;color:var(--gold);min-width:42px;flex-shrink:0;';
+      portEl.textContent = port;
+      const protoEl = el('span'); protoEl.style.cssText='font-size:10px;color:var(--text-dim);min-width:54px;flex-shrink:0;font-family:Share Tech Mono,monospace;';
+      protoEl.textContent = proto;
+      const nameEl  = el('span'); nameEl.style.cssText='font-size:12px;color:var(--text);flex:1;';
+      nameEl.textContent = name;
+      const chevron = el('span'); chevron.style.cssText='font-size:10px;color:var(--text-dim);opacity:0.4;flex-shrink:0;';
+      chevron.textContent = '›';
+
+      row.append(portEl, protoEl, nameEl, chevron);
+      row.onclick = (e)=>{
+        e.stopPropagation();
+        if(activeRow === row){ closePopover(); return; }
+        showPopover(row, port, proto, name, desc, e);
+      };
+
+      rowWrap.appendChild(row);
+      tbl.appendChild(rowWrap);
+    });
+  }
+
+  inp.addEventListener('input', renderPorts);
+  combo.addEventListener('change', renderPorts);
+
+  // Close popover on outside click (but not clicks on the popover itself)
+  document.addEventListener('click', (e)=>{
+    if(activePopover && !activePopover.contains(e.target)) closePopover();
+  }, {capture:false});
+  tbl.addEventListener('click', e=>e.stopPropagation());
+
+  wrap.appendChild(tbl);
+  renderPorts();
+  return wrap;
+}
+
+/* ---- MY PUBLIC IP ---- */
+function buildMyIpWidget(sec){
+  const wrap = el('div','myip-widget');
+  const display = el('div'); display.style.cssText='display:flex;flex-direction:column;gap:6px;';
+
+  const ipRow = el('div'); ipRow.style.cssText='display:flex;align-items:center;gap:8px;';
+  const ipVal = el('div'); ipVal.style.cssText='font-family:Share Tech Mono,monospace;font-size:20px;color:var(--gold);letter-spacing:0.05em;flex:1;';
+  ipVal.textContent = 'Loading…';
+  const refreshBtn = el('button','monitor-check-btn'); refreshBtn.textContent='↺'; refreshBtn.title='Refresh';
+  ipRow.append(ipVal, refreshBtn);
+
+  const meta = el('div'); meta.style.cssText='display:flex;flex-direction:column;gap:3px;';
+  const asnEl  = el('div'); asnEl.style.cssText='font-size:11.5px;color:var(--text-dim);';
+  const orgEl  = el('div'); orgEl.style.cssText='font-size:11.5px;color:var(--text-dim);';
+  const geoEl  = el('div'); geoEl.style.cssText='font-size:11.5px;color:var(--text-dim);';
+  const hostEl = el('div'); hostEl.style.cssText='font-size:11px;color:var(--text-dim);opacity:0.6;font-family:Share Tech Mono,monospace;word-break:break-all;';
+  meta.append(asnEl, orgEl, geoEl, hostEl);
+
+  display.append(ipRow, meta);
+  wrap.appendChild(display);
+
+  async function fetchIp(){
+    ipVal.textContent = 'Loading…';
+    asnEl.textContent = orgEl.textContent = geoEl.textContent = hostEl.textContent = '';
+    try {
+      // Step 1: get our public IP from ipify (reliable, no rate limit, CORS-safe)
+      const r1 = await fetch('https://api.ipify.org?format=json');
+      const j1 = await r1.json();
+      const ip = j1.ip;
+      if(!ip) throw new Error('No IP returned');
+      ipVal.textContent = ip;
+
+      // Step 2: geo + ASN from RIPEstat in parallel (CORS-safe, no rate limit)
+      const q = encodeURIComponent(ip)+'&sourceapp=salty-dashboard';
+      const [pfxRes, geoRes, whoisRes] = await Promise.all([
+        fetch('https://stat.ripe.net/data/prefix-overview/data.json?resource='+q),
+        fetch('https://stat.ripe.net/data/geoloc/data.json?resource='+q),
+        fetch('https://stat.ripe.net/data/whois/data.json?resource='+q),
+      ]);
+      const [pfx, geo, whois] = await Promise.all([pfxRes.json(), geoRes.json(), whoisRes.json()]);
+
+      // ASN from prefix-overview
+      const asns = pfx.data?.asns || [];
+      if(asns.length) asnEl.textContent = 'ASN: AS'+asns[0].asn+(asns[0].holder?' — '+asns[0].holder:'');
+
+      // Org from whois records
+      const records = whois.data?.records || [];
+      let org = '';
+      records.flat().forEach(r => {
+        if(!org && ['org-name','organization','OrgName','descr'].includes(r.key)) org = r.value;
+      });
+      if(org) orgEl.textContent = 'Org: '+org;
+
+      // Geo from geoloc
+      const locs = geo.data?.locations || [];
+      if(locs.length){
+        const loc = locs[0];
+        geoEl.textContent = [loc.city, loc.country].filter(Boolean).join(', ');
+      }
+
+    } catch(e){
+      if(ipVal.textContent === 'Loading…') ipVal.textContent = 'Error';
+      hostEl.textContent = e.message || 'Lookup failed';
+    }
+  }
+
+  refreshBtn.onclick = fetchIp;
+  fetchIp();
+  return wrap;
+}
+
+/* ---- RFC QUICK LOOKUP ---- */
+function buildRfcWidget(sec){
+  const wrap = el('div','rfc-widget');
+
+  const row = el('div'); row.style.cssText='display:flex;gap:6px;margin-bottom:8px;';
+  const inp = el('input','search-widget-input');
+  inp.type='number'; inp.min='1'; inp.placeholder='RFC number…'; inp.style.width='130px';
+  // Remove spinners
+  inp.style.cssText+=';-moz-appearance:textfield;';
+  const goBtn = el('button','search-widget-go'); goBtn.textContent='Open →';
+
+  const doLookup = ()=>{
+    const n = inp.value.trim();
+    if(!n) return;
+    window.open('https://www.rfc-editor.org/rfc/rfc'+n, '_blank');
+  };
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') doLookup(); });
+  goBtn.onclick = doLookup;
+  row.append(inp, goBtn);
+  wrap.appendChild(row);
+
+  // Quick links to common RFCs
+  const label = el('div'); label.style.cssText='font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;letter-spacing:0.04em;margin-bottom:5px;text-transform:uppercase;';
+  label.textContent = 'Common RFCs';
+  wrap.appendChild(label);
+
+  const common = [
+    [791,'IPv4'],[793,'TCP'],[768,'UDP'],[826,'ARP'],[1918,'Private IPs'],
+    [2460,'IPv6'],[4271,'BGP-4'],[5321,'SMTP'],[7230,'HTTP/1.1'],[9114,'HTTP/3'],
+  ];
+  const grid = el('div'); grid.style.cssText='display:flex;flex-wrap:wrap;gap:4px;';
+  common.forEach(([n, name]) => {
+    const btn = el('button'); btn.style.cssText='background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:11px;font-family:Share Tech Mono,monospace;padding:3px 8px;cursor:pointer;transition:all 0.15s;white-space:nowrap;';
+    btn.textContent = n+' '+name;
+    btn.onmouseenter=()=>{ btn.style.borderColor='var(--cyan)'; btn.style.color='var(--cyan)'; };
+    btn.onmouseleave=()=>{ btn.style.borderColor='var(--border)'; btn.style.color='var(--text-dim)'; };
+    btn.onclick=()=> window.open('https://www.rfc-editor.org/rfc/rfc'+n, '_blank');
+    grid.appendChild(btn);
+  });
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+/* ---- BGP / ASN LOOKUP ---- */
+function buildBgpWidget(sec){
+  const wrap = el('div');
+
+  // Mode tabs
+  const modeTabs = el('div','bgp-mode-tabs');
+  const asnTab = el('button','bgp-mode-tab active'); asnTab.textContent = '🔭 ASN Lookup';
+  const ipTab  = el('button','bgp-mode-tab');        ipTab.textContent  = '🌐 IP Lookup';
+  modeTabs.append(asnTab, ipTab);
+  wrap.appendChild(modeTabs);
+
+  // Input row
+  const inputRow = el('div'); inputRow.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;';
+  const inp = el('input','search-widget-input');
+  inp.placeholder = 'AS number… (e.g. 15169 or AS15169)';
+  inp.autocomplete = 'off'; inp.style.flex = '1';
+  const goBtn = el('button','search-widget-go'); goBtn.textContent = 'Lookup →';
+  const clearBtn = el('button','search-widget-go');
+  clearBtn.textContent = '✕ Clear';
+  clearBtn.style.cssText = 'display:none;border-color:var(--border);color:var(--text-dim);';
+  clearBtn.onmouseenter = ()=>{ clearBtn.style.borderColor='var(--del-color)'; clearBtn.style.color='var(--del-color)'; };
+  clearBtn.onmouseleave = ()=>{ clearBtn.style.borderColor='var(--border)'; clearBtn.style.color='var(--text-dim)'; };
+  clearBtn.onclick = ()=>{
+    inp.value = '';
+    resultArea.innerHTML = '';
+    clearBtn.style.display = 'none';
+    inp.focus();
+  };
+  inputRow.append(inp, goBtn, clearBtn);
+  wrap.appendChild(inputRow);
+
+  const resultArea = el('div','bgp-result');
+  wrap.appendChild(resultArea);
+
+  let mode = 'asn';
+
+  function setMode(m){
+    mode = m;
+    asnTab.classList.toggle('active', m==='asn');
+    ipTab.classList.toggle('active',  m==='ip');
+    inp.placeholder = m==='asn' ? 'AS number… (e.g. 15169 or AS15169)' : 'IP address… (e.g. 8.8.8.8)';
+    resultArea.innerHTML = ''; inp.value = ''; inp.focus();
+  }
+  asnTab.onclick = ()=> setMode('asn');
+  ipTab.onclick  = ()=> setMode('ip');
+
+  // ── Helpers ────────────────────────────────────────────────
+  function makeLink(label, url){
+    const a = el('a','bgp-ext-link');
+    a.href=url; a.target='_blank'; a.rel='noopener noreferrer';
+    a.textContent=label; return a;
+  }
+  function badge(text, highlight){
+    const b = el('span','bgp-badge'+(highlight?' highlight':''));
+    b.textContent=text; return b;
+  }
+  function showLoading(msg){ resultArea.innerHTML=''; const d=el('div','bgp-loading'); d.textContent=msg||'Looking up…'; resultArea.appendChild(d); clearBtn.style.display=''; }
+  function showError(msg){   resultArea.innerHTML=''; const d=el('div','bgp-error');   d.textContent=msg; resultArea.appendChild(d); clearBtn.style.display=''; }
+
+  function rirWhoisUrl(country, asn){
+    // Guess RIR from country as fallback; use generic RDAP
+    return 'https://rdap.arin.net/registry/autnum/'+asn;
+  }
+
+  // ── ASN Lookup via RIPEstat ─────────────────────────────────
+  // RIPEstat is a public API with explicit CORS support
+  async function lookupAsn(rawInput){
+    const asnNum = parseInt(rawInput.toString().replace(/[^0-9]/g,''));
+    if(!asnNum){ showError('Enter a valid AS number.'); return; }
+    showLoading('Fetching AS'+asnNum+'…');
+
+    const base = 'https://stat.ripe.net/data/';
+    const sfx  = '/data.json?resource=AS'+asnNum+'&sourceapp=salty-dashboard';
+    try {
+      const [overRes, pfxRes, nbrRes] = await Promise.all([
+        fetch(base+'as-overview'+sfx),
+        fetch(base+'announced-prefixes'+sfx),
+        fetch(base+'asn-neighbours'+sfx),
+      ]);
+      const [ov, pfx, nbr] = await Promise.all([
+        overRes.json(), pfxRes.json(), nbrRes.json()
+      ]);
+
+      resultArea.innerHTML = '';
+      clearBtn.style.display = '';
+
+      const d   = ov.data || {};
+      const holder = d.holder || '—';
+      const type   = d.type   || '';
+
+      // ── Card 1: Identity ───────────────────────────────────
+      const idCard = el('div','bgp-card');
+      const idTitle = el('div','bgp-card-title'); idTitle.textContent = 'Autonomous System';
+      const mainRow = el('div','bgp-asn-main');
+      const asnEl  = el('span','bgp-asn-num');  asnEl.textContent  = 'AS'+asnNum;
+      const nameEl = el('span','bgp-asn-name'); nameEl.textContent = holder;
+      mainRow.append(asnEl, nameEl);
+
+      const metaRow = el('div','bgp-meta-row');
+      if(type) metaRow.appendChild(badge(type));
+
+      // Count prefixes
+      const prefixes = pfx.data?.prefixes || [];
+      const v4 = prefixes.filter(p=>!p.prefix.includes(':')).length;
+      const v6 = prefixes.filter(p=> p.prefix.includes(':')).length;
+      if(v4||v6) metaRow.appendChild(badge('IPv4: '+v4+'  IPv6: '+v6, true));
+
+      idCard.append(idTitle, mainRow, metaRow);
+
+      // External links
+      const linksRow = el('div','bgp-links-row');
+      linksRow.append(
+        makeLink('↗ RIPEstat',  'https://stat.ripe.net/AS'+asnNum),
+        makeLink('↗ BGPView',   'https://bgpview.io/asn/'+asnNum),
+        makeLink('↗ PeeringDB', 'https://www.peeringdb.com/asn/'+asnNum),
+        makeLink('↗ HE BGP',    'https://bgp.he.net/AS'+asnNum),
+        makeLink('↗ RDAP',      'https://rdap.arin.net/registry/autnum/'+asnNum),
+      );
+      idCard.appendChild(linksRow);
+      resultArea.appendChild(idCard);
+
+      // ── Card 2: Neighbours (upstreams first) ───────────────
+      const neighbours = nbr.data?.neighbours || [];
+      const upstreams  = neighbours.filter(n=>n.type==='left');
+      const peers      = neighbours.filter(n=>n.type==='uncertain');
+      const allNbrs    = [...upstreams, ...peers].slice(0,10);
+      if(allNbrs.length){
+        const nbrCard  = el('div','bgp-card');
+        const nbrTitle = el('div','bgp-card-title');
+        nbrTitle.textContent = 'Upstreams & Peers ('+(upstreams.length)+' upstream'+(peers.length?' · '+peers.length+' peer':'') +')';
+        const nbrList = el('div');
+        allNbrs.forEach(n=>{
+          const row = el('div','bgp-upstream-item');
+          row.title = 'Look up AS'+n.asn;
+          row.onclick = ()=>{ inp.value=String(n.asn); lookupAsn(n.asn); };
+          const asnSpan  = el('span','bgp-upstream-asn');
+          asnSpan.textContent = 'AS'+n.asn;
+          asnSpan.style.color = n.type==='left' ? 'var(--gold)' : 'var(--cyan)';
+          const typeTag = el('span','bgp-badge'); typeTag.textContent = n.type==='left'?'upstream':'peer';
+          typeTag.style.cssText='font-size:9px;padding:1px 4px;margin:0;';
+          const peerCount = el('span','bgp-upstream-name');
+          peerCount.textContent = (n.v4_peers||0)+' v4 · '+(n.v6_peers||0)+' v6 peers';
+          row.append(asnSpan, typeTag, peerCount);
+          nbrList.appendChild(row);
+        });
+        if(neighbours.length>10){
+          const more=el('div'); more.style.cssText='font-size:10.5px;color:var(--text-dim);padding:3px 4px;font-style:italic;';
+          more.textContent='+'+(neighbours.length-10)+' more — see RIPEstat';
+          nbrList.appendChild(more);
+        }
+        nbrCard.append(nbrTitle, nbrList);
+        resultArea.appendChild(nbrCard);
+      }
+
+      // ── Card 3: IPv4 Prefixes ──────────────────────────────
+      const v4pfx = prefixes.filter(p=>!p.prefix.includes(':'));
+      if(v4pfx.length){
+        const pfxCard = el('div','bgp-card');
+        const pfxTitle = el('div','bgp-card-title'); pfxTitle.textContent='IPv4 Prefixes ('+v4pfx.length+')';
+        const pfxList = el('div','bgp-prefix-list');
+        v4pfx.slice(0,12).forEach(p=>{
+          const row=el('div','bgp-prefix-item'); row.title='Click to copy';
+          const cidr=el('span','bgp-prefix-cidr'); cidr.textContent=p.prefix;
+          row.append(cidr);
+          row.onclick=()=>navigator.clipboard?.writeText(p.prefix).then(()=>{
+            cidr.textContent='✓ copied'; setTimeout(()=>{ cidr.textContent=p.prefix; },1500);
+          });
+          pfxList.appendChild(row);
+        });
+        if(v4pfx.length>12){ const m=el('div'); m.style.cssText='font-size:10.5px;color:var(--text-dim);padding:3px 4px;font-style:italic;'; m.textContent='+'+(v4pfx.length-12)+' more — see RIPEstat'; pfxList.appendChild(m); }
+        pfxCard.append(pfxTitle, pfxList);
+        resultArea.appendChild(pfxCard);
+      }
+
+      // ── Card 4: IPv6 Prefixes ──────────────────────────────
+      const v6pfx = prefixes.filter(p=>p.prefix.includes(':'));
+      if(v6pfx.length){
+        const pfxCard6=el('div','bgp-card');
+        const pfxTitle6=el('div','bgp-card-title'); pfxTitle6.textContent='IPv6 Prefixes ('+v6pfx.length+')';
+        const pfxList6=el('div','bgp-prefix-list');
+        v6pfx.slice(0,8).forEach(p=>{
+          const row=el('div','bgp-prefix-item'); row.title='Click to copy';
+          const cidr=el('span','bgp-prefix-cidr'); cidr.textContent=p.prefix;
+          row.append(cidr);
+          row.onclick=()=>navigator.clipboard?.writeText(p.prefix).then(()=>{
+            cidr.textContent='✓ copied'; setTimeout(()=>{ cidr.textContent=p.prefix; },1500);
+          });
+          pfxList6.appendChild(row);
+        });
+        if(v6pfx.length>8){ const m=el('div'); m.style.cssText='font-size:10.5px;color:var(--text-dim);padding:3px 4px;font-style:italic;'; m.textContent='+'+(v6pfx.length-8)+' more — see RIPEstat'; pfxList6.appendChild(m); }
+        pfxCard6.append(pfxTitle6, pfxList6);
+        resultArea.appendChild(pfxCard6);
+      }
+
+      if(!neighbours.length && !prefixes.length){
+        const empty=el('div','bgp-card');
+        empty.innerHTML='<div class="bgp-loading">No routing data found for AS'+asnNum+'. It may be unallocated or not yet announced.</div>';
+        resultArea.appendChild(empty);
+      }
+
+    } catch(e){ showError('Lookup failed: '+(e.message||e)); }
+  }
+
+  // ── IP Lookup via RIPEstat only (CORS-safe, no rate limits) ─
+  async function lookupIp(ip){
+    if(!ip.trim().match(/^[\d.a-fA-F:]+$/)){
+      showError('Enter a valid IPv4 or IPv6 address.'); return;
+    }
+    showLoading('Looking up '+ip+'…');
+    try {
+      const q = encodeURIComponent(ip)+'&sourceapp=salty-dashboard';
+      const [pfxRes, geoRes, whoisRes] = await Promise.all([
+        fetch('https://stat.ripe.net/data/prefix-overview/data.json?resource='+q),
+        fetch('https://stat.ripe.net/data/geoloc/data.json?resource='+q),
+        fetch('https://stat.ripe.net/data/whois/data.json?resource='+q),
+      ]);
+      const [pfx, geo, whois] = await Promise.all([pfxRes.json(), geoRes.json(), whoisRes.json()]);
+
+      resultArea.innerHTML = '';
+      clearBtn.style.display = '';
+
+      // ── Card 1: IP identity ────────────────────────────────
+      const ipCard = el('div','bgp-card');
+      const ipTitle = el('div','bgp-card-title'); ipTitle.textContent='IP Address';
+      const ipMain = el('div','bgp-asn-main');
+      const ipNum = el('span','bgp-asn-num'); ipNum.style.fontSize='15px'; ipNum.textContent=ip;
+      ipMain.appendChild(ipNum);
+
+      const ipMeta = el('div','bgp-meta-row');
+
+      // Geo from RIPEstat geoloc
+      const locs = geo.data?.locations || [];
+      if(locs.length){
+        const loc = locs[0];
+        const parts = [loc.city, loc.country].filter(Boolean);
+        if(parts.length) ipMeta.appendChild(badge('🌍 '+parts.join(', ')));
+      }
+
+      // Org/descr from whois records
+      const records = whois.data?.records || [];
+      let org = '', netname = '';
+      records.flat().forEach(r => {
+        if(!org     && ['org-name','organization','OrgName'].includes(r.key)) org = r.value;
+        if(!netname && r.key === 'netname') netname = r.value;
+        if(!org     && r.key === 'descr')   org = r.value;
+      });
+      if(org)     ipMeta.appendChild(badge(org, true));
+      if(netname && netname !== org) ipMeta.appendChild(badge(netname));
+
+      ipCard.append(ipTitle, ipMain, ipMeta);
+      resultArea.appendChild(ipCard);
+
+      // ── Card 2: BGP Prefix ─────────────────────────────────
+      const bgpPfxData = pfx.data;
+      if(bgpPfxData?.block?.resource || bgpPfxData?.asns?.length){
+        const pfxCard = el('div','bgp-card');
+        const pfxTitle = el('div','bgp-card-title'); pfxTitle.textContent='BGP Prefix';
+        pfxCard.appendChild(pfxTitle);
+
+        if(bgpPfxData.block?.resource){
+          const cidrRow = el('div','bgp-asn-main');
+          const cidrEl  = el('span','bgp-prefix-cidr'); cidrEl.style.fontSize='14px';
+          cidrEl.textContent = bgpPfxData.block.resource;
+          const copyBtn = el('button','bgp-badge'); copyBtn.style.cursor='pointer'; copyBtn.textContent='⎘ copy';
+          copyBtn.onclick=()=>navigator.clipboard?.writeText(bgpPfxData.block.resource).then(()=>{
+            copyBtn.textContent='✓'; setTimeout(()=>{ copyBtn.textContent='⎘ copy'; },1500);
+          });
+          cidrRow.append(cidrEl, copyBtn);
+          pfxCard.appendChild(cidrRow);
+          if(bgpPfxData.block.desc && bgpPfxData.block.desc!=='ALLOCATED UNSPECIFIED'){
+            const desc=el('div'); desc.style.cssText='font-size:11px;color:var(--text-dim);margin-top:3px;';
+            desc.textContent=bgpPfxData.block.desc; pfxCard.appendChild(desc);
+          }
+        }
+
+        const asns = bgpPfxData.asns || [];
+        if(asns.length){
+          const asnRow = el('div','bgp-meta-row'); asnRow.style.marginTop='5px';
+          asns.forEach(a=>{
+            const btn = el('span','bgp-badge highlight');
+            btn.style.cursor='pointer'; btn.title='Look up AS'+a.asn;
+            btn.textContent = 'AS'+a.asn+(a.holder?' — '+a.holder:'');
+            btn.onclick=()=>{ inp.value=String(a.asn); setMode('asn'); lookupAsn(a.asn); };
+            asnRow.appendChild(btn);
+          });
+          pfxCard.appendChild(asnRow);
+        }
+        resultArea.appendChild(pfxCard);
+      } else {
+        const noCard = el('div','bgp-card');
+        noCard.innerHTML='<div class="bgp-loading">No BGP prefix found. This IP may be unrouted or in a private range.</div>';
+        resultArea.appendChild(noCard);
+      }
+
+      // ── Card 3: External links ─────────────────────────────
+      const linksCard = el('div','bgp-card');
+      const linksRow  = el('div','bgp-links-row');
+      linksRow.append(
+        makeLink('↗ RIPEstat', 'https://stat.ripe.net/'+ip),
+        makeLink('↗ BGPView',  'https://bgpview.io/ip/'+ip),
+        makeLink('↗ HE BGP',   'https://bgp.he.net/ip/'+ip),
+        makeLink('↗ ipinfo',   'https://ipinfo.io/'+ip),
+        makeLink('↗ Shodan',   'https://www.shodan.io/host/'+ip),
+      );
+      linksCard.appendChild(linksRow);
+      resultArea.appendChild(linksCard);
+
+    } catch(e){ showError('Lookup failed: '+(e.message||e)); }
+  }
+
+  // ── Trigger ─────────────────────────────────────────────────
+  const doLookup = ()=>{
+    const v = inp.value.trim(); if(!v) return;
+    if(mode==='asn') lookupAsn(v);
+    else             lookupIp(v);
+  };
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') doLookup(); });
+  goBtn.onclick = doLookup;
+
+  return wrap;
+}
+/* ---- CVE BULLETIN ---- */
+function cveAlarmSound(){
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    // Descending two-tone urgent alert — distinct from Pomodoro chime
+    [[880,0],[660,0.25],[880,0.5],[660,0.75]].forEach(([freq,offset])=>{
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, now+offset);
+      gain.gain.setValueAtTime(0, now+offset);
+      gain.gain.linearRampToValueAtTime(0.15, now+offset+0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now+offset+0.22);
+      osc.start(now+offset); osc.stop(now+offset+0.25);
+    });
+  } catch(e){}
+}
+
+function buildCveWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.watchlist)   cfg.watchlist   = [];
+  if(cfg.alarmSound === undefined) cfg.alarmSound = false;
+  if(!cfg.watchInterval) cfg.watchInterval = 30; // minutes
+
+  const wrap = el('div','cve-widget');
+
+  // ── Alert banner (hidden until triggered) ──────────────────
+  const alertBanner = el('div','cve-alert-banner');
+  alertBanner.style.display = 'none';
+  alertBanner.id = 'cveAlert_'+sec.id;
+  const alertIcon = el('span','cve-alert-icon'); alertIcon.textContent = '🚨';
+  const alertBody = el('div','cve-alert-body');
+  const alertTitle = el('div','cve-alert-title'); alertTitle.textContent = 'NEW CVEs DETECTED';
+  const alertItems = el('div','cve-alert-items');
+  alertBody.append(alertTitle, alertItems);
+  const alertDismiss = el('button','cve-alert-dismiss'); alertDismiss.textContent = 'Dismiss';
+  alertDismiss.onclick = ()=>{ alertBanner.style.display='none'; };
+  alertBanner.append(alertIcon, alertBody, alertDismiss);
+  wrap.appendChild(alertBanner);
+
+  // ── Manual search ──────────────────────────────────────────
+  const searchRow = el('div'); searchRow.style.cssText='display:flex;gap:6px;margin-bottom:10px;';
+  const searchInp = el('input','search-widget-input');
+  searchInp.placeholder='Product / vendor search…'; searchInp.autocomplete='off';
+  const searchBtn = el('button','search-widget-go'); searchBtn.textContent='Search →';
+  const doSearch = ()=>{
+    const q = searchInp.value.trim();
+    if(!q) return;
+    window.open('https://nvd.nist.gov/vuln/search#/nvd/home?keyword='+encodeURIComponent(q)+'&resultType=records', '_blank');
+  };
+  searchInp.addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+  searchBtn.onclick = doSearch;
+  searchRow.append(searchInp, searchBtn);
+  wrap.appendChild(searchRow);
+
+  // ── Recent CVEs ────────────────────────────────────────────
+  const hdr = el('div'); hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:6px;';
+  const hdrLbl = el('div'); hdrLbl.style.cssText='font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;letter-spacing:0.04em;text-transform:uppercase;flex:1;';
+  hdrLbl.textContent = 'Recent CVEs';
+  const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='↺'; rfBtn.title='Refresh';
+  hdr.append(hdrLbl, rfBtn);
+  wrap.appendChild(hdr);
+
+  const listEl = el('div'); listEl.style.cssText='display:flex;flex-direction:column;gap:5px;';
+  listEl.id = 'cveList_'+sec.id;
+  wrap.appendChild(listEl);
+
+  // Scrollable list state
+  let cveAllItems = [];
+  const CVE_PAGE = 5;
+
+  listEl.style.cssText = 'display:flex;flex-direction:column;gap:5px;max-height:292px;overflow-y:auto;scroll-behavior:smooth;';
+
+  function cveExtractProduct(cve){
+    // Try CPE string from configurations first
+    try {
+      const nodes = cve.configurations?.[0]?.nodes || [];
+      for(const node of nodes){
+        const cpe = (node.cpeMatch||[])[0]?.criteria || '';
+        // cpe:2.3:a:vendor:product:version:...
+        const parts = cpe.split(':');
+        if(parts.length >= 5){
+          const vendor  = parts[3].replace(/_/g,' ');
+          const product = parts[4].replace(/_/g,' ');
+          if(vendor && vendor !== '*') return vendor !== product ? vendor+' '+product : product;
+        }
+      }
+    } catch(e){}
+    // Fallback: extract "X" from "... in X" or "... for X" in description
+    const desc = cve.descriptions?.find(d=>d.lang==='en')?.value || '';
+    const m = desc.match(/\bin\s+([A-Z][A-Za-z0-9._\- ]{2,30}?)(?:\s+(?:before|through|prior|versions?|v\d)|\.|,|$)/);
+    if(m) return m[1].trim();
+    return null;
+  }
+
+  function buildCveItem(cve){
+    const id   = cve.id;
+    const desc = cve.descriptions?.find(d=>d.lang==='en')?.value || 'No description';
+    const sev  = cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity ||
+                 cve.metrics?.cvssMetricV2?.[0]?.baseSeverity || '—';
+    const sevColor = {CRITICAL:'#ff4444',HIGH:'#ff8844',MEDIUM:'#ffcc44',LOW:'#44cc88'}[sev] || 'var(--text-dim)';
+    const pub  = cve.published ? new Date(cve.published) : null;
+    const product = cveExtractProduct(cve);
+
+    const item = el('div');
+    item.style.cssText = 'padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:border-color 0.15s;flex-shrink:0;';
+    item.onmouseenter = ()=>item.style.borderColor='var(--cyan)';
+    item.onmouseleave = ()=>item.style.borderColor='var(--border)';
+    item.onclick = ()=>window.open('https://nvd.nist.gov/vuln/detail/'+id,'_blank');
+
+    // Top row: ID + severity badge + product tag
+    const topRow = el('div'); topRow.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap;';
+    const idEl = el('span'); idEl.style.cssText='font-family:Share Tech Mono,monospace;font-size:11.5px;color:var(--gold);font-weight:700;flex-shrink:0;';
+    idEl.textContent = id;
+    const sevEl = el('span'); sevEl.style.cssText=`font-size:9.5px;font-family:Share Tech Mono,monospace;font-weight:700;color:${sevColor};border:1px solid ${sevColor};border-radius:3px;padding:1px 5px;flex-shrink:0;`;
+    sevEl.textContent = sev;
+    topRow.append(idEl, sevEl);
+
+    if(product){
+      const prodEl = el('span'); prodEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;background:rgba(15,184,221,0.12);border:1px solid var(--cyan);border-radius:3px;padding:1px 5px;color:var(--cyan);flex-shrink:0;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      prodEl.textContent = product;
+      prodEl.title = product;
+      topRow.appendChild(prodEl);
+    }
+
+    // Published age
+    if(pub){
+      const hrs = Math.round((Date.now()-pub.getTime())/3600000);
+      const age = hrs < 24 ? hrs+'h ago' : Math.round(hrs/24)+'d ago';
+      const ageEl = el('span'); ageEl.style.cssText='font-size:9.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;margin-left:auto;';
+      ageEl.textContent = age;
+      topRow.appendChild(ageEl);
+    }
+
+    const descEl = el('div'); descEl.style.cssText='font-size:11px;color:var(--text-dim);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
+    descEl.textContent = desc;
+    item.append(topRow, descEl);
+    return item;
+  }
+
+  async function fetchCves(){
+    listEl.innerHTML = '<div style="font-size:11.5px;color:var(--text-dim);font-style:italic;padding:4px 0;">Loading…</div>';
+    try {
+      const r = await fetch('https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=30&startIndex=0');
+      const j = await r.json();
+      cveAllItems = (j.vulnerabilities||[]).map(v=>v.cve);
+      renderCveList();
+      // Update header count
+      hdrLbl.textContent = `Recent CVEs (${cveAllItems.length})`;
+    } catch(e){
+      listEl.innerHTML = `<div style="font-size:11.5px;color:var(--del-color);">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  function renderCveList(){
+    listEl.innerHTML = '';
+    cveAllItems.forEach(cve => listEl.appendChild(buildCveItem(cve)));
+    // Scroll hint — show 5 items worth, rest scroll
+    listEl.scrollTop = 0;
+  }
+  rfBtn.onclick = fetchCves;
+  fetchCves();
+
+  // Auto-refresh the feed every hour
+  const cveRefreshTimer = setInterval(fetchCves, 60 * 60 * 1000);
+
+  // Footer link — appended after renderCveList so it sits below the scroll area
+  const footerLink = el('div');
+  footerLink.style.cssText = 'margin-top:6px;text-align:center;';
+  const footerA = el('a');
+  footerA.href = 'https://nvd.nist.gov/vuln/search';
+  footerA.target = '_blank'; footerA.rel = 'noopener noreferrer';
+  footerA.style.cssText = 'font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-decoration:none;letter-spacing:0.04em;opacity:0.6;transition:opacity 0.15s;';
+  footerA.textContent = '↗ nvd.nist.gov — full CVE database';
+  footerA.onmouseenter = ()=>footerA.style.opacity='1';
+  footerA.onmouseleave = ()=>footerA.style.opacity='0.6';
+  footerLink.appendChild(footerA);
+  wrap.appendChild(footerLink);
+
+  // ── Watchlist section ──────────────────────────────────────
+  const watchSection = el('div','cve-watch-section');
+
+  const watchHdr = el('div','cve-watch-header');
+  const watchTitle = el('div','cve-watch-title'); watchTitle.textContent = 'Watchlist';
+  const checkNowBtn = el('button','monitor-check-btn'); checkNowBtn.textContent='↺'; checkNowBtn.title='Check watchlist now';
+  watchHdr.append(watchTitle, checkNowBtn);
+  watchSection.appendChild(watchHdr);
+
+  const watchListEl = el('div','cve-watch-list');
+  watchListEl.id = 'cveWatch_'+sec.id;
+  watchSection.appendChild(watchListEl);
+
+  // Options row (edit mode only)
+  const optRow = el('div','cve-watch-options');
+  const alarmLbl = el('label','cve-watch-opt-label');
+  const alarmChk = el('input'); alarmChk.type='checkbox'; alarmChk.checked=!!cfg.alarmSound;
+  alarmChk.onchange = ()=>{ cfg.alarmSound=alarmChk.checked; persist(); };
+  alarmLbl.append(alarmChk, document.createTextNode(' Alarm sound'));
+  const intLbl = el('label','cve-watch-opt-label');
+  intLbl.style.marginLeft='8px';
+  const intInp = el('input','cve-interval-inp'); intInp.type='number'; intInp.min='5'; intInp.max='1440';
+  intInp.value = cfg.watchInterval;
+  intInp.title = 'Check interval in minutes';
+  // Remove spin arrows
+  intInp.style.cssText += ';-moz-appearance:textfield;appearance:textfield;';
+  intInp.addEventListener('change',()=>{
+    const v = Math.max(5, Math.min(1440, parseInt(intInp.value)||30));
+    intInp.value = v; cfg.watchInterval = v; persist();
+    cveStartWatching(sec, showNewCves);
+  });
+  intInp.addEventListener('keydown',e=>{ if(e.key==='Enter') intInp.blur(); });
+  intLbl.append(intInp, document.createTextNode(' min interval'));
+  optRow.append(alarmLbl, intLbl);
+  watchSection.appendChild(optRow);
+
+  // Add row (edit mode only)
+  const addRow = el('div','cve-watch-add-row');
+  const termInp = el('input','todo-add-inp'); termInp.placeholder='Product or vendor to watch…';
+  const addBtn = el('button','todo-add-btn'); addBtn.textContent='＋ Add';
+  const doAdd = ()=>{
+    const term = termInp.value.trim();
+    if(!term) return;
+    if(cfg.watchlist.find(w=>w.term.toLowerCase()===term.toLowerCase())) return;
+    cfg.watchlist.push({ term, lastChecked: null });
+    persist(); termInp.value='';
+    renderWatchlist();
+    cveStartWatching(sec, showNewCves);
+  };
+  termInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doAdd(); });
+  addBtn.onclick = doAdd;
+  addRow.append(termInp, addBtn);
+  watchSection.appendChild(addRow);
+  wrap.appendChild(watchSection);
+
+  // Render watchlist entries
+  function renderWatchlist(){
+    watchListEl.innerHTML='';
+    if(!cfg.watchlist.length){
+      const empty = el('div'); empty.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;padding:2px 0;';
+      empty.textContent = 'No terms watched. Add one below in edit mode.';
+      watchListEl.appendChild(empty); return;
+    }
+    cfg.watchlist.forEach((w,idx)=>{
+      const row = el('div','cve-watch-item');
+      const term = el('div','cve-watch-term'); term.textContent = w.term;
+      const status = el('div','cve-watch-status');
+      status.id = 'cveWS_'+sec.id+'_'+idx;
+      status.textContent = w.lastChecked
+        ? 'checked '+new Date(w.lastChecked).toLocaleTimeString()
+        : 'pending';
+      const del = icBtn('✕','Remove', ()=>{
+        cfg.watchlist.splice(idx,1); persist(); renderWatchlist();
+        cveStartWatching(sec, showNewCves);
+      });
+      del.classList.add('ic-del');
+      row.append(term, status, del);
+      watchListEl.appendChild(row);
+    });
+  }
+
+  // Show alert banner with new CVE hits
+  function showNewCves(hits){
+    if(!hits.length) return;
+    alertItems.innerHTML='';
+    hits.forEach(h=>{
+      const line = el('div');
+      line.textContent = h.term+': '+h.ids.join(', ');
+      alertItems.appendChild(line);
+    });
+    alertBanner.style.display='flex';
+    if(cfg.alarmSound) cveAlarmSound();
+    // Update status labels
+    renderWatchlist();
+  }
+
+  checkNowBtn.onclick = ()=> cveCheckAll(sec, showNewCves);
+
+  renderWatchlist();
+
+  // Start background watching
+  cveStartWatching(sec, showNewCves);
+
+  // Cleanup on DOM removal
+  const obs = new MutationObserver(()=>{
+    if(!document.contains(wrap)){
+      clearInterval(cveWatchTimers[sec.id]);
+      clearInterval(cveRefreshTimer);
+      delete cveWatchTimers[sec.id];
+      obs.disconnect();
+    }
+  });
+  obs.observe(document.body,{childList:true,subtree:true});
+
+  return wrap;
+}
+
+function cveStartWatching(sec, callback){
+  const cfg = sec.widgetConfig;
+  if(cveWatchTimers[sec.id]) clearInterval(cveWatchTimers[sec.id]);
+  if(!cfg.watchlist?.length) return;
+  const ms = (cfg.watchInterval||30) * 60 * 1000;
+  cveCheckAll(sec, callback);
+  cveWatchTimers[sec.id] = setInterval(()=> cveCheckAll(sec, callback), ms);
+}
+
+async function cveCheckAll(sec, callback){
+  const cfg = sec.widgetConfig;
+  if(!cfg.watchlist?.length) return;
+  const hits = [];
+  const cutoff = Date.now() - (72 * 60 * 60 * 1000); // 72 hours ago
+
+  for(const w of cfg.watchlist){
+    try {
+      const url = 'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch='
+                + encodeURIComponent(w.term)+'&resultsPerPage=10';
+      const r = await fetch(url);
+      const j = await r.json();
+      const vulns = j.vulnerabilities||[];
+      w.lastChecked = Date.now();
+
+      // Filter to CVEs published within 72 hours
+      const fresh = vulns.filter(v => {
+        const pub = v.cve.published;
+        return pub && new Date(pub).getTime() >= cutoff;
+      });
+
+      if(fresh.length){
+        hits.push({
+          term: w.term,
+          ids: fresh.map(v => {
+            const id  = v.cve.id;
+            const pub = new Date(v.cve.published);
+            const hrs = Math.round((Date.now()-pub.getTime())/3600000);
+            return id + ' ('+hrs+'h ago)';
+          })
+        });
+      }
+
+      persist();
+      // Update status labels
+      cfg.watchlist.forEach((ww,i)=>{
+        const el2 = document.getElementById('cveWS_'+sec.id+'_'+i);
+        if(el2 && ww.lastChecked) el2.textContent='checked '+new Date(ww.lastChecked).toLocaleTimeString();
+      });
+    } catch(e){ /* network error — skip this term */ }
+    // Polite delay between NVD API requests
+    await new Promise(res=>setTimeout(res,1500));
+  }
+  if(hits.length) callback(hits);
 }
 
 /* ---- SEARCH ENGINE SHORTCUTS ---- */
@@ -4792,16 +6668,44 @@ function switchTab(id){
   updateQuoteBarVisibility();
 }
 
+function applyWeatherPin(){
+  const pinned = !!D.pinWeather;
+  document.body.classList.toggle('weather-pinned', pinned);
+
+  // Sync the button state in whichever tab-bottom-row is visible
+  const btn = document.getElementById('weatherPinBtn');
+  if(btn){
+    btn.classList.toggle('pinned', pinned);
+    btn.textContent = pinned ? '📌 Pinned' : '📌 Pin bar';
+  }
+
+  // Set spacer height to match the actual pinned bar height so content clears it
+  if(pinned){
+    requestAnimationFrame(()=>{
+      const bar = document.querySelector('.tab-bottom-row');
+      const h = bar ? bar.getBoundingClientRect().height : 60;
+      document.querySelectorAll('.tab-bottom-row-spacer').forEach(s => {
+        s.style.height = h + 'px';
+      });
+      // Also bump body padding so nothing hides behind both bars
+      document.body.style.paddingBottom = (48 + h) + 'px';
+    });
+  } else {
+    document.querySelectorAll('.tab-bottom-row-spacer').forEach(s => s.style.height = '');
+    document.body.style.paddingBottom = '';
+  }
+}
+
+function toggleWeatherPin(){
+  D.pinWeather = !D.pinWeather;
+  persist();
+  applyWeatherPin();
+}
+
 function updateQuoteBarVisibility(){
   const tab = D.tabs.find(t => t.id === activeTab);
-  // Status boards don't have a weather strip — never hide quote bar for them
-  if(tab?.type === 'status'){
-    const bar = document.getElementById('quoteBar');
-    if(bar) bar.classList.remove('quote-hidden-by-weather');
-    return;
-  }
   const allSections = (tab?.columns||[]).flatMap(c=>c.sections||[]);
-  const hasWeather  = allSections.some(s=>s.weather);
+  const hasWeather  = tab?.showWeather || allSections.some(s=>s.weather);
   const bar = document.getElementById('quoteBar');
   if(bar) bar.classList.toggle('quote-hidden-by-weather', hasWeather);
 }
@@ -4813,6 +6717,7 @@ function promptAddTab(){
   document.getElementById('tabModalTitle').textContent = 'New Tab';
   document.getElementById('tmName').value = '';
   document.getElementById('tmHidden').checked = false;
+  document.getElementById('tmWeather').checked = false;
   openOverlay('tabOverlay');
   setTimeout(()=>document.getElementById('tmName').focus(),50);
 }
@@ -4823,19 +6728,39 @@ function openEditTab(tabId){
   document.getElementById('tabModalTitle').textContent = 'Edit Tab';
   document.getElementById('tmName').value = tab?.name||'';
   document.getElementById('tmHidden').checked = !!tab?.hidden;
+  // showWeather: true if tab has the flag OR if any section already has weather:true
+  const hasSectionWeather = (tab?.columns||[]).flatMap(c=>c.sections||[]).some(s=>s.weather);
+  document.getElementById('tmWeather').checked = !!(tab?.showWeather || hasSectionWeather);
   openOverlay('tabOverlay');
   setTimeout(()=>document.getElementById('tmName').focus(),50);
 }
 
 function saveTab(){
-  const name   = document.getElementById('tmName').value.trim();
+  const name        = document.getElementById('tmName').value.trim();
   if(!name) return;
-  const hidden = document.getElementById('tmHidden').checked;
+  const hidden      = document.getElementById('tmHidden').checked;
+  const showWeather = document.getElementById('tmWeather').checked;
+
   if(editTab){
     const tab = D.tabs.find(t=>t.id===editTab.tabId);
-    if(tab){ tab.name = name; tab.hidden = hidden; }
+    if(tab){
+      tab.name = name;
+      tab.hidden = hidden;
+      tab.showWeather = showWeather;
+      // Sync the section-level weather flag so paintAllWeather works:
+      // ensure exactly one section has weather:true when enabled, none when disabled
+      const allSections = (tab.columns||[]).flatMap(c=>c.sections||[]);
+      if(showWeather){
+        // If none already flagged, flag the first section
+        if(!allSections.some(s=>s.weather) && allSections.length){
+          allSections[0].weather = true;
+        }
+      } else {
+        allSections.forEach(s=>{ delete s.weather; });
+      }
+    }
   } else {
-    const newTab = { id:'t_'+Date.now(), name, hidden, columns:[] };
+    const newTab = { id:'t_'+Date.now(), name, hidden, showWeather, columns:[] };
     D.tabs.push(newTab);
     activeTab = newTab.id;
   }
@@ -4870,15 +6795,24 @@ function deleteTab(tabId){
    ================================================================ */
 let addSecCtx = null; // {tabId, colId}
 
+function selectWidgetCat(cat){
+  document.getElementById('wcTabGeneral')?.classList.toggle('active', cat==='general');
+  document.getElementById('wcTabNetwork')?.classList.toggle('active', cat==='network');
+  document.getElementById('wcPanelGeneral')?.classList.toggle('active', cat==='general');
+  document.getElementById('wcPanelNetwork')?.classList.toggle('active', cat==='network');
+}
+
 function openAddSection(tabId, colId){
   addSecCtx = {tabId, colId};
   newSecType    = 'links';
   newWidgetType = 'search';
   document.getElementById('stName').value = '';
   selectSecType('links');
+  // Reset widget picker to General tab, deactivate all cards
+  selectWidgetCat('general');
   WIDGET_TYPES.forEach(t => {
     const id = 'sw' + t.charAt(0).toUpperCase() + t.slice(1);
-    document.getElementById(id)?.classList.toggle('active', t === 'search');
+    document.getElementById(id)?.classList.remove('active');
   });
   openOverlay('secTypeOverlay');
   setTimeout(()=>document.getElementById('stName').focus(),50);
@@ -5403,18 +7337,98 @@ async function fetchAllWeather(){
 
 async function fetchWeather(loc){
   try{
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,apparent_temperature,weather_code&daily=temperature_2m_max,temperature_2m_min&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`;
-    const r = await fetch(url);
-    const j = await r.json();
-    loc._wx = j;
-    paintWeather(loc);
+    const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,apparent_temperature,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max&temperature_unit=fahrenheit&timezone=auto&forecast_days=7`;
+    const aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${loc.lat}&longitude=${loc.lon}&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide`;
+
+    const [wxRes, aqRes] = await Promise.all([fetch(wxUrl), fetch(aqUrl)]);
+    const [wx, aq] = await Promise.all([wxRes.json(), aqRes.json()]);
+
+    loc._wx = wx;
+    const cur = aq?.current || {};
+    loc._aq = {
+      us_aqi:           cur.us_aqi           ?? null,
+      pm2_5:            cur.pm2_5            ?? null,
+      pm10:             cur.pm10             ?? null,
+      ozone:            cur.ozone            ?? null,
+      nitrogen_dioxide: cur.nitrogen_dioxide ?? null,
+    };
   } catch(e){ /* offline — silent */ }
+
+  // Pollen fetch — worker handles all provider logic and normalization
+  // Dashboard just sends {service, apiKey, lat, lon} and gets {tree, grass, weed} back
+  loc._pollen = null;
+  if(D.pollenEnabled && D.pollenKey){
+    try{
+      const proxy = D.pollenProxy ? D.pollenProxy.replace(/\/$/, '') : null;
+      let result;
+
+      if(proxy){
+        // Via normalizing worker — simplest path, recommended
+        const r = await fetch(proxy, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service: D.pollenService || 'weatherapi',
+            apiKey:  D.pollenKey,
+            lat:     loc.lat,
+            lon:     loc.lon,
+          }),
+        });
+        result = await r.json();
+        if(result.error) console.warn('[salty] pollen worker error:', result.error);
+
+      } else {
+        // Direct fetch fallback (no proxy) — may hit CORS issues with some providers
+        const svc = D.pollenService || 'weatherapi';
+        let tree = null, grass = null, weed = null;
+
+        if(svc === 'weatherapi'){
+          const r = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=${D.pollenKey}&q=${loc.lat},${loc.lon}&days=1&aqi=no&alerts=no`);
+          const j = await r.json();
+          const day = j?.forecast?.forecastday?.[0]?.day;
+          if(day){ tree = day.pollen_tree||'None'; grass = day.pollen_grass||'None'; weed = day.pollen_weed||'None'; }
+
+        } else if(svc === 'tomorrow'){
+          const r = await fetch(`https://api.tomorrow.io/v4/weather/realtime?location=${loc.lat},${loc.lon}&fields=treeIndex,grassIndex,weedIndex&apikey=${D.pollenKey}`);
+          const j = await r.json();
+          const v = j?.data?.values;
+          const idx2txt = i => ['None','Very Low','Low','Moderate','High','Very High'][Math.min(Math.max(Math.round(i??0),0),5)];
+          if(v){ tree=idx2txt(v.treeIndex); grass=idx2txt(v.grassIndex); weed=idx2txt(v.weedIndex); }
+
+        } else if(svc === 'ambee'){
+          const r = await fetch(`https://api.ambeedata.com/latest/pollen/by-lat-lng?lat=${loc.lat}&lng=${loc.lon}`, { headers:{'x-api-key':D.pollenKey,'Accept':'application/json'} });
+          const j = await r.json();
+          const risk = j?.data?.[0]?.Risk;
+          if(risk){ tree=risk.tree_pollen||'None'; grass=risk.grass_pollen||'None'; weed=risk.weed_pollen||'None'; }
+
+        } else if(svc === 'google'){
+          const r = await fetch(`https://pollen.googleapis.com/v1/forecast:lookup?key=${D.pollenKey}&location.longitude=${loc.lon}&location.latitude=${loc.lat}&days=1`);
+          const j = await r.json();
+          const norm = c => c === 'Medium' ? 'Moderate' : (c || 'None');
+          j?.dailyInfo?.[0]?.pollenTypeInfo?.forEach(t => {
+            const lbl = norm(t.indexInfo?.category);
+            if(t.code==='TREE')  tree  = lbl;
+            if(t.code==='GRASS') grass = lbl;
+            if(t.code==='WEED')  weed  = lbl;
+          });
+        }
+        result = { tree, grass, weed };
+      }
+
+      if(result?.tree || result?.grass || result?.weed) loc._pollen = result;
+      console.debug('[salty] pollen:', loc._pollen);
+    } catch(e){
+      console.warn('[salty] pollen fetch failed:', e.message);
+    }
+  }
+
+  paintWeather(loc);
 }
 
 function paintAllWeather(){
   D.tabs.forEach(tab => {
     const allSections = (tab.columns||[]).flatMap(c=>c.sections||[]);
-    if(!allSections.some(s=>s.weather)) return;
+    if(!tab.showWeather && !allSections.some(s=>s.weather)) return;
     const strip = document.getElementById('ws_'+tab.id);
     if(!strip) return;
     strip.innerHTML = '';
@@ -5459,6 +7473,17 @@ function buildWeatherCard(loc){
 }
 
 function paintWeather(loc){
+  // AQI colour + label lookup (European AQI scale)
+  const aqiInfo = (aqi) => {
+    if(aqi === null || aqi === undefined) return { color:'var(--text-dim)', label:'—' };
+    if(aqi <=  50) return { color:'#44cc88', label:'Good' };
+    if(aqi <= 100) return { color:'#88cc44', label:'Moderate' };
+    if(aqi <= 150) return { color:'#ff8844', label:'Unhealthy*' };
+    if(aqi <= 200) return { color:'#ff4444', label:'Unhealthy' };
+    if(aqi <= 300) return { color:'#aa44ff', label:'Very Unhealthy' };
+    return             { color:'#880000', label:'Hazardous' };
+  };
+
   document.querySelectorAll('#wc_'+loc.id).forEach(card => {
     if(!loc._wx){ return; }
     const c  = loc._wx.current;
@@ -5468,11 +7493,98 @@ function paintWeather(loc){
     const cd = WMO[c.weather_code] || 'Unknown';
     const hi = d ? Math.round(d.temperature_2m_max[0]) : '--';
     const lo = d ? Math.round(d.temperature_2m_min[0]) : '--';
+
+    // Build 7-day forecast tooltip (skip day 0 = today, already shown)
+    let forecastRows = '';
+    if(d?.time){
+      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      d.time.slice(1).forEach((dateStr, i) => {
+        const idx  = i + 1;
+        const dow  = days[new Date(dateStr+'T12:00:00').getDay()];
+        const fhi  = Math.round(d.temperature_2m_max[idx]);
+        const flo  = Math.round(d.temperature_2m_min[idx]);
+        const fcd  = WMO[d.weather_code?.[idx]] || '—';
+        const pop  = d.precipitation_probability_max?.[idx];
+        const popStr = pop != null ? pop+'%' : '';
+        forecastRows += `
+          <div class="w-forecast-row">
+            <span class="w-forecast-day">${dow}</span>
+            <span class="w-forecast-desc">${fcd}</span>
+            <span class="w-forecast-hi">${fhi}°</span>
+            <span class="w-forecast-lo">${flo}°</span>
+            ${popStr ? `<span class="w-forecast-pop">💧${popStr}</span>` : '<span class="w-forecast-pop"></span>'}
+          </div>`;
+      });
+    }
+    const forecastTooltip = forecastRows
+      ? `<div class="w-forecast-tooltip">${forecastRows}</div>`
+      : '';
+
+    // AQI data
+    const aq   = loc._aq;
+    const aqi  = aq?.us_aqi != null ? Math.round(aq.us_aqi) : null;
+    const info = aqiInfo(aqi);
+    const pm25 = aq?.pm2_5    != null ? aq.pm2_5.toFixed(1)    : '—';
+    const pm10 = aq?.pm10     != null ? aq.pm10.toFixed(1)     : '—';
+    const o3   = aq?.ozone    != null ? aq.ozone.toFixed(1)    : '—';
+    const no2  = aq?.nitrogen_dioxide != null ? aq.nitrogen_dioxide.toFixed(1) : '—';
+
+    const aqiPanel = aqi !== null ? `
+      <div class="w-aqi">
+        <div class="w-aqi-num" style="color:${info.color}">${aqi}</div>
+        <div class="w-aqi-label" style="color:${info.color}">${info.label}</div>
+        <div class="w-aqi-tag">US AQI</div>
+        <div class="w-aqi-tooltip">
+          <div class="w-aqi-tooltip-row"><span>PM2.5</span><span>${pm25} µg/m³</span></div>
+          <div class="w-aqi-tooltip-row"><span>PM10</span><span>${pm10} µg/m³</span></div>
+          <div class="w-aqi-tooltip-row"><span>Ozone</span><span>${o3} µg/m³</span></div>
+          <div class="w-aqi-tooltip-row"><span>NO₂</span><span>${no2} µg/m³</span></div>
+        </div>
+      </div>` : '';
+
+    // Pollen data from WeatherAPI.com (text: "Low","Moderate","High","Very High")
+    const pollenColor = (v) => {
+      if(!v || v === 'None') return 'var(--text-dim)';
+      if(v === 'Low')       return '#44cc88';
+      if(v === 'Moderate')  return '#ffcc00';
+      if(v === 'High')      return '#ff8844';
+      return '#ff4444'; // Very High
+    };
+    const pollenRank = (v) => ({ 'None':0,'Low':1,'Moderate':2,'High':3,'Very High':4 }[v] ?? -1);
+
+    const pl = loc._pollen;
+    let pollenPanel = '';
+    if(pl && (pl.tree || pl.grass || pl.weed)){
+      const types = [
+        { name:'Tree',  val: pl.tree  },
+        { name:'Grass', val: pl.grass },
+        { name:'Weed',  val: pl.weed  },
+      ].filter(p => p.val);
+
+      if(types.length){
+        const dominant = types.reduce((a,b) => pollenRank(b.val) > pollenRank(a.val) ? b : a);
+        pollenPanel = `
+          <div class="w-pollen">
+            <div class="w-pollen-icon">🌿</div>
+            <div class="w-pollen-label" style="color:${pollenColor(dominant.val)}">${dominant.val}</div>
+            <div class="w-pollen-tag">${dominant.name}</div>
+            <div class="w-pollen-tooltip">
+              <div class="w-pollen-tooltip-row"><span>🌲 Tree</span><span style="color:${pollenColor(pl.tree)}">${pl.tree||'—'}</span></div>
+              <div class="w-pollen-tooltip-row"><span>🌿 Grass</span><span style="color:${pollenColor(pl.grass)}">${pl.grass||'—'}</span></div>
+              <div class="w-pollen-tooltip-row"><span>🌾 Weed</span><span style="color:${pollenColor(pl.weed)}">${pl.weed||'—'}</span></div>
+            </div>
+          </div>`;
+      }
+    }
+
     card.innerHTML = `
-      <div class="wloc">${loc.label}</div>
-      <div class="wtemp">${t}°<span style="font-size:14px;font-weight:400">F</span></div>
-      <div class="wdesc">${cd}</div>
-      <div class="whilo">H ${hi}° / L ${lo}° &nbsp;·&nbsp; Feels ${fl}°</div>
+      <div class="w-card-wx">
+        <div class="wloc">${loc.label}</div>
+        <div class="wtemp">${t}°<span style="font-size:14px;font-weight:400">F</span></div>
+        <div class="wdesc">${cd}</div>
+        <div class="whilo">H ${hi}° / L ${lo}° &nbsp;·&nbsp; Feels ${fl}°</div>
+        ${forecastTooltip}
+      </div>${aqiPanel}${pollenPanel}
     `;
   });
 }
@@ -5482,7 +7594,79 @@ function openWeatherModal(){
   renderWLocList();
   document.getElementById('wSearch').value='';
   document.getElementById('wSearchResults').innerHTML='';
+  document.getElementById('wPollenEnabled').checked = !!D.pollenEnabled;
+  document.getElementById('wPollenService').value = D.pollenService || 'weatherapi';
+  document.getElementById('wPollenKey').value = D.pollenKey || '';
+  document.getElementById('wPollenProxy').value = D.pollenProxy || '';
+  document.getElementById('wPollenStatus').textContent = '';
+  updatePollenServiceInfo();
   openOverlay('weatherOverlay');
+}
+
+const POLLEN_SERVICES = {
+  weatherapi: {
+    name: 'WeatherAPI.com',
+    url:  'https://www.weatherapi.com/pricing.aspx',
+    cost: 'Pollen data requires the Business plan at <strong>$7/month</strong>.',
+    note: 'Good coverage for US and global locations. Returns Low/Moderate/High/Very High text values.',
+    placeholder: 'WeatherAPI.com API key…',
+  },
+  tomorrow: {
+    name: 'Tomorrow.io',
+    url:  'https://app.tomorrow.io/signup',
+    cost: 'Pollen data requires a paid plan — <strong>pricing varies</strong> (Core plan and above).',
+    note: 'Returns a 0–5 pollen index per type. May require a CORS proxy for browser-based use.',
+    placeholder: 'Tomorrow.io API key…',
+  },
+  ambee: {
+    name: 'Ambee',
+    url:  'https://app.ambeedata.com/signup',
+    cost: 'Pollen data requires a paid plan — <strong>pricing varies</strong> by call volume.',
+    note: 'Returns Low/Moderate/High/Very High per type. Requires a CORS proxy for browser-based use.',
+    placeholder: 'Ambee API key…',
+  },
+  google: {
+    name: 'Google Pollen API',
+    url:  'https://developers.google.com/maps/documentation/pollen/get-started',
+    cost: '<strong>$5 per 1,000 requests</strong>, but Google provides a <strong>$200/month free credit</strong> — effectively free for personal dashboard use.',
+    note: 'Returns a 0–5 index with category text (None/Very Low/Low/Medium/High/Very High) for grass, tree, and weed. Requires a Google Maps Platform API key with Pollen API enabled. May require a CORS proxy.',
+    placeholder: 'Google Maps Platform API key…',
+  },
+};
+
+function updatePollenServiceInfo(){
+  const svc = POLLEN_SERVICES[document.getElementById('wPollenService').value] || POLLEN_SERVICES.weatherapi;
+  document.getElementById('wPollenKey').placeholder = svc.placeholder;
+  document.getElementById('wPollenServiceInfo').innerHTML =
+    `<strong style="color:var(--text)">${svc.name}</strong> — `+
+    `${svc.cost} ${svc.note} `+
+    `<a href="${svc.url}" target="_blank" rel="noopener" style="color:var(--cyan);">Sign up / pricing ↗</a>`;
+}
+
+function savePollenSettings(){
+  const key     = document.getElementById('wPollenKey').value.trim();
+  const enabled = document.getElementById('wPollenEnabled').checked;
+  const service = document.getElementById('wPollenService').value;
+  const status  = document.getElementById('wPollenStatus');
+
+  if(enabled && !key){
+    status.style.color = 'var(--del-color)';
+    status.textContent = 'Please enter an API key to enable pollen data.';
+    return;
+  }
+
+  D.pollenKey     = key;
+  D.pollenEnabled = enabled && !!key;
+  D.pollenService = service;
+  D.pollenProxy   = document.getElementById('wPollenProxy').value.trim();
+  persist();
+
+  status.style.color = 'var(--cyan)';
+  status.textContent = D.pollenEnabled
+    ? '✓ Pollen data enabled — will update on next weather refresh.'
+    : key ? '✓ Settings saved (pollen disabled).' : '✓ Saved.';
+
+  if(D.pollenEnabled) fetchAllWeather();
 }
 
 function renderWLocList(){
@@ -7176,7 +9360,7 @@ function setClockStyle(style){
   document.getElementById('clockPicker').classList.remove('open');
 }
 
-// Close clock picker, focus panel, and bg panel on outside click
+// Close clock picker, focus panel, bg panel, and mobile overflow menu on outside click
 document.addEventListener('click', e => {
   const clockPicker = document.getElementById('clockPicker');
   const clockWrap   = document.getElementById('clockWrap');
@@ -7197,7 +9381,28 @@ document.addEventListener('click', e => {
     bgPanel.classList.remove('open');
     bgBtn.classList.remove('active');
   }
+
+  const mobileMenu = document.getElementById('mobileOverflowMenu');
+  const moreBtn    = document.getElementById('mobileMoreBtn');
+  if(mobileMenu?.classList.contains('open') &&
+     !mobileMenu.contains(e.target) && !moreBtn?.contains(e.target)){
+    mobileMenu.classList.remove('open');
+    moreBtn?.classList.remove('active');
+  }
 });
+
+function toggleMobileMenu(){
+  const menu = document.getElementById('mobileOverflowMenu');
+  const btn  = document.getElementById('mobileMoreBtn');
+  if(!menu) return;
+  const isOpen = menu.classList.toggle('open');
+  btn?.classList.toggle('active', isOpen);
+}
+
+function closeMobileMenu(){
+  document.getElementById('mobileOverflowMenu')?.classList.remove('open');
+  document.getElementById('mobileMoreBtn')?.classList.remove('active');
+}
 
 /* ================================================================
    NOW PLAYING STATUS (bottom bar)
