@@ -5898,15 +5898,41 @@ function buildRssWidget(sec){
   if(!cfg.proxyUrl)     cfg.proxyUrl    = '';
   if(!cfg.filterKw)     cfg.filterKw    = '';
   if(!cfg.refreshMins)  cfg.refreshMins = 30;
+  if(!cfg.sortBy)       cfg.sortBy      = 'age';
+  if(!cfg.sortDir)      cfg.sortDir     = 'desc'; // 'asc' or 'desc'
 
   const wrap = el('div');
 
   // Header row
   const hdr = el('div','rss-hdr');
   const hdrTitle = el('div','rss-hdr-title'); hdrTitle.textContent = 'RSS Feed';
+
+  // Sort buttons — always visible
+  const sortAge = el('button','clock-style-btn');
+  const sortSrc = el('button','clock-style-btn');
+  sortAge.style.cssText = sortSrc.style.cssText = 'font-size:10px;padding:2px 8px;';
+  const updateSortBtns = () => {
+    const arrow = cfg.sortDir === 'asc' ? ' ↑' : ' ↓';
+    sortAge.textContent = 'By Age'   + (cfg.sortBy === 'age'    ? arrow : '');
+    sortSrc.textContent = 'By Source'+ (cfg.sortBy === 'source' ? arrow : '');
+    sortAge.classList.toggle('active', cfg.sortBy === 'age');
+    sortSrc.classList.toggle('active', cfg.sortBy === 'source');
+  };
+  sortAge.onclick = ()=>{
+    if(cfg.sortBy === 'age') cfg.sortDir = cfg.sortDir === 'desc' ? 'asc' : 'desc';
+    else { cfg.sortBy = 'age'; cfg.sortDir = 'desc'; }
+    persist(); updateSortBtns(); renderItems(allItems);
+  };
+  sortSrc.onclick = ()=>{
+    if(cfg.sortBy === 'source') cfg.sortDir = cfg.sortDir === 'desc' ? 'asc' : 'desc';
+    else { cfg.sortBy = 'source'; cfg.sortDir = 'asc'; }
+    persist(); updateSortBtns(); renderItems(allItems);
+  };
+  updateSortBtns();
+
   const refreshBtn = el('button','rss-refresh-btn'); refreshBtn.textContent='↺'; refreshBtn.title='Refresh now';
   refreshBtn.onclick = ()=> fetchAllFeeds();
-  hdr.append(hdrTitle, refreshBtn);
+  hdr.append(hdrTitle, sortAge, sortSrc, refreshBtn);
   wrap.appendChild(hdr);
 
   // Feed list display
@@ -6013,12 +6039,27 @@ function buildRssWidget(sec){
           return terms.some(t => haystack.includes(t));
         })
       : items;
-    if(!filtered.length){
+    // Sort
+    const sorted = [...filtered];
+    const dir = cfg.sortDir === 'asc' ? 1 : -1;
+    if(cfg.sortBy === 'source'){
+      sorted.sort((a,b) =>
+        dir * (a.source||'').localeCompare(b.source||'') ||
+        (new Date(b.date) - new Date(a.date))
+      );
+    } else {
+      sorted.sort((a,b) => {
+        const da=new Date(a.date), db=new Date(b.date);
+        const diff = (isNaN(db)?0:db.getTime()) - (isNaN(da)?0:da.getTime());
+        return dir * diff;
+      });
+    }
+    if(!sorted.length){
       const s=el('div','rss-status');
       s.textContent = cfg.feeds.length ? (kw?'No items match filter.':'No items found.') : 'Add a feed URL in edit mode.';
       feedList.appendChild(s); return;
     }
-    filtered.slice(0,cfg.maxItems).forEach(it=>{
+    sorted.slice(0,cfg.maxItems).forEach(it=>{
       const row=el('div','rss-item');
       row.title='Open article';
       row.onclick=()=> window.open(it.link,'_blank','noopener');
@@ -6116,11 +6157,7 @@ function buildRssWidget(sec){
     feedList.innerHTML=''; feedList.appendChild(s);
 
     const results = await Promise.all(cfg.feeds.map(f=>fetchFeed(f)));
-    // Merge and sort by date descending
-    allItems = results.flat().sort((a,b)=>{
-      const da=new Date(a.date), db=new Date(b.date);
-      return (isNaN(db)?0:db) - (isNaN(da)?0:da);
-    });
+    allItems = results.flat();
     renderItems(allItems);
   }
 
