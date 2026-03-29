@@ -6438,7 +6438,7 @@ function buildCveWidget(sec){
   keyInp.addEventListener('keydown',e=>{ if(e.key==='Enter') keySaveBtn.click(); });
 
   const workerInp = el('input','cve-interval-inp');
-  workerInp.type='text'; workerInp.style.cssText='flex:1;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-top:4px;';
+  workerInp.type='text'; workerInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-top:4px;';
   workerInp.placeholder='Cloudflare Worker URL (required to use API key)';
   workerInp.value = cfg.nvdWorker || '';
   workerInp.addEventListener('keydown',e=>{ if(e.key==='Enter') keySaveBtn.click(); });
