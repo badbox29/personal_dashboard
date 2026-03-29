@@ -6203,7 +6203,9 @@ function buildCveWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
   if(!cfg.watchlist)   cfg.watchlist   = [];
   if(cfg.alarmSound === undefined) cfg.alarmSound = false;
-  if(!cfg.watchInterval) cfg.watchInterval = 30; // minutes
+  if(!cfg.watchInterval) cfg.watchInterval = 30;
+  if(!cfg.nvdKey)    cfg.nvdKey    = '';
+  if(!cfg.nvdWorker) cfg.nvdWorker = '';
 
   const wrap = el('div','cve-widget');
 
@@ -6324,7 +6326,14 @@ function buildCveWidget(sec){
   async function fetchCves(){
     listEl.innerHTML = '<div style="font-size:11.5px;color:var(--text-dim);font-style:italic;padding:4px 0;">Loading…</div>';
     try {
-      const r = await fetch('https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=30&startIndex=0');
+      const endpoint = 'https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=30&startIndex=0';
+      let r;
+      if(cfg.nvdWorker){
+        const workerUrl = cfg.nvdWorker.replace(/\/+$/,'')+'/nvd';
+        r = await fetch(workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint, apiKey: cfg.nvdKey||undefined }) });
+      } else {
+        r = await fetch(endpoint);
+      }
       const j = await r.json();
       cveAllItems = (j.vulnerabilities||[]).map(v=>v.cve);
       renderCveList();
@@ -6408,7 +6417,39 @@ function buildCveWidget(sec){
   intInp.addEventListener('keydown',e=>{ if(e.key==='Enter') intInp.blur(); });
   intLbl.append(intInp, document.createTextNode(' min interval'));
   optRow.append(alarmLbl, intLbl);
+
+  // NVD API key row (edit mode only)
+  const keyRow = el('div');
+  keyRow.style.cssText='display:flex;flex-direction:column;gap:4px;margin-top:8px;width:100%;';
+  const keyInputRow = el('div'); keyInputRow.style.cssText='display:flex;gap:5px;';
+  const keyInp = el('input','cve-interval-inp');
+  keyInp.type='text'; keyInp.style.cssText='flex:1;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;';
+  keyInp.placeholder='NVD API key (optional)';
+  keyInp.value = cfg.nvdKey || '';
+  const keySaveBtn = el('button','todo-add-btn'); keySaveBtn.textContent='Save';
+  const keyStatus = el('div'); keyStatus.style.cssText='font-size:10px;color:var(--cyan);min-height:14px;';
+  keySaveBtn.onclick = ()=>{
+    cfg.nvdKey = keyInp.value.trim();
+    cfg.nvdWorker = workerInp.value.trim();
+    persist();
+    keyStatus.textContent = '✓ Saved';
+    setTimeout(()=>{ keyStatus.textContent=''; }, 2500);
+  };
+  keyInp.addEventListener('keydown',e=>{ if(e.key==='Enter') keySaveBtn.click(); });
+
+  const workerInp = el('input','cve-interval-inp');
+  workerInp.type='text'; workerInp.style.cssText='flex:1;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-top:4px;';
+  workerInp.placeholder='Cloudflare Worker URL (required to use API key)';
+  workerInp.value = cfg.nvdWorker || '';
+  workerInp.addEventListener('keydown',e=>{ if(e.key==='Enter') keySaveBtn.click(); });
+
+  const keyNote = el('div');
+  keyNote.style.cssText='font-size:10px;color:var(--text-dim);line-height:1.5;';
+  keyNote.innerHTML='Free key at <a href="https://nvd.nist.gov/developers/request-an-api-key" target="_blank" rel="noopener" style="color:var(--cyan);">nvd.nist.gov/developers/request-an-api-key</a> — raises limit from 5 to 50 req/30s. NVD requires the key in a request header which browsers block, so a Cloudflare Worker URL is also needed (same worker as pollen).';
+  keyInputRow.append(keyInp, keySaveBtn);
+  keyRow.append(keyInputRow, workerInp, keyStatus, keyNote);
   watchBody.appendChild(optRow);
+  watchBody.appendChild(keyRow);
 
   // Add row (edit mode only)
   const addRow = el('div','cve-watch-add-row');
@@ -6506,9 +6547,15 @@ async function cveCheckAll(sec, callback){
 
   for(const w of cfg.watchlist){
     try {
-      const url = 'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch='
-                + encodeURIComponent(w.term)+'&resultsPerPage=10';
-      const r = await fetch(url);
+      const endpoint = 'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch='
+                     + encodeURIComponent(w.term)+'&resultsPerPage=10';
+      let r;
+      if(cfg.nvdWorker){
+        const workerUrl = cfg.nvdWorker.replace(/\/+$/,'')+'/nvd';
+        r = await fetch(workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint, apiKey: cfg.nvdKey||undefined }) });
+      } else {
+        r = await fetch(endpoint);
+      }
       const j = await r.json();
       const vulns = j.vulnerabilities||[];
       w.lastChecked = Date.now();
