@@ -2551,6 +2551,12 @@ body.edit-mode .countdown-add-row { display: flex; }
 }
 .world-clock-del:hover { opacity: 1; background: rgba(204,50,50,0.12); }
 body.edit-mode .world-clock-del { display: block; }
+.world-clock-fmt-row {
+  display: none;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+body.edit-mode .world-clock-fmt-row { display: flex; }
 .world-clock-add-row {
   display: none;
   gap: 5px;
@@ -2982,7 +2988,16 @@ body.edit-mode .remind-add-row { display: flex; }
 }
 .cve-alert-dismiss:hover { background: rgba(255,68,68,0.15); }
 .cve-watch-section { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
-.cve-watch-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.cve-watch-header {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+  cursor: pointer; user-select: none;
+  padding: 2px 3px; border-radius: 3px; transition: background 0.15s;
+}
+.cve-watch-header:hover { background: rgba(255,255,255,0.04); }
+.cve-watch-chevron {
+  font-size: 9px; color: var(--text-dim); transition: transform 0.2s; flex-shrink: 0;
+}
+.cve-watch-header.open .cve-watch-chevron { transform: rotate(90deg); }
 .cve-watch-title {
   font-size: 10.5px; color: var(--text-dim);
   font-family: 'Share Tech Mono', monospace;
@@ -3007,8 +3022,123 @@ body.edit-mode .cve-watch-options { display: flex; }
 .cve-interval-inp:focus { border-color: var(--gold); }
 
 /* ============================================================
-   WIDGET — Port Reference popover & combo select
+   WIDGET — RSS Feed
    ============================================================ */
+.rss-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.rss-item {
+  padding: 6px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+.rss-item:hover { background: rgba(255,255,255,0.05); }
+.rss-item:last-child { border-bottom: none; }
+.rss-item-title {
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 2px;
+}
+.rss-item:hover .rss-item-title { color: var(--cyan); }
+.rss-item-meta {
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.7;
+  font-family: 'Share Tech Mono', monospace;
+  display: flex;
+  gap: 8px;
+}
+.rss-item-source { color: var(--gold); opacity: 0.8; }
+.rss-status {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 4px 0;
+}
+.rss-feed-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.rss-feed-row input {
+  flex: 1;
+  font-size: 11.5px;
+  font-family: 'Share Tech Mono', monospace;
+}
+.rss-feed-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.rss-feed-tag {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 6px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.rss-feed-tag button {
+  background: none; border: none; color: var(--text-dim);
+  cursor: pointer; font-size: 10px; padding: 0; line-height: 1;
+}
+.rss-feed-tag button:hover { color: var(--del-color); }
+.rss-settings-row {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+body.edit-mode .rss-settings-row { display: flex; }
+.rss-add-row {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+}
+body.edit-mode .rss-add-row { display: flex; }
+.rss-hdr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.rss-hdr-title {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  flex: 1;
+}
+.rss-refresh-btn {
+  font-size: 12px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: color 0.15s;
+  line-height: 1;
+}
+.rss-refresh-btn:hover { color: var(--cyan); }
 .port-combo-sel {
   flex: 1;
   background: var(--inp-bg);
@@ -3474,6 +3604,9 @@ body.edit-mode .cve-watch-options { display: flex; }
       <button class="clock-style-btn" data-style="digital" onclick="setClockStyle('digital')">📟 Digital Alarm</button>
       <button class="clock-style-btn" data-style="neon"    onclick="setClockStyle('neon')">💡 Neon Sign</button>
       <button class="clock-style-btn" data-style="minimal" onclick="setClockStyle('minimal')">⬜ Minimal</button>
+      <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
+      <button class="clock-style-btn" id="clock12hBtn"  onclick="toggleClock12h(true)">🕐 12h AM/PM</button>
+      <button class="clock-style-btn" id="clock24hBtn"  onclick="toggleClock12h(false)">🕐 24h</button>
     </div>
   </div>
 
@@ -3733,6 +3866,9 @@ body.edit-mode .cve-watch-options { display: flex; }
         <button class="sec-type-card" id="swTodo"      onclick="selectWidgetType('todo')">
           ✅ To-Do List<span>Checklist</span>
         </button>
+        <button class="sec-type-card" id="swRss"       onclick="selectWidgetType('rss')">
+          📡 RSS Feed<span>Live feed reader</span>
+        </button>
       </div>
       <!-- Network Engineering widgets -->
       <div class="widget-cat-panel" id="wcPanelNetwork">
@@ -3860,6 +3996,7 @@ const DEFAULTS = {
   showQuotes: true,
   showClock: true,
   clockStyle: 'nixie',
+  clock12h: true,
   bgStyle: 'none',
   bgColor: '#0fb8dd',
   bgOpacity: 25,
@@ -4196,7 +4333,7 @@ const SEARCH_ENGINES = [
   { id:'reddit',  label:'Reddit',     url:'https://www.reddit.com/search/?q=' },
 ];
 
-const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo',
+const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss',
                       'ports','myip','rfc','cve','bgp'];
 
 const UNIT_CATS = {
@@ -4354,6 +4491,7 @@ const PORT_COMBOS = {
   // Migrate: add clock settings if missing
   if(D.showClock === undefined) D.showClock = true;
   if(!D.clockStyle) D.clockStyle = 'nixie';
+  if(D.clock12h === undefined) D.clock12h = true;
 
   // Migrate: add colors if missing
   if(!D.colors) D.colors = deepClone(DEFAULTS.colors);
@@ -4777,6 +4915,7 @@ function buildWidgetBody(sec){
     case 'rfc':       return buildRfcWidget(sec);
     case 'cve':       return buildCveWidget(sec);
     case 'bgp':       return buildBgpWidget(sec);
+    case 'rss':       return buildRssWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -4885,8 +5024,26 @@ function buildConverterWidget(sec){
 function buildClocksWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
   if(!cfg.clocks) cfg.clocks = [];
+  if(cfg.hour12 === undefined) cfg.hour12 = true;
 
   const wrap = el('div','world-clocks');
+
+  // Format toggle — two explicit buttons
+  const fmtRow = el('div','world-clock-fmt-row');
+  const btn12 = el('button','clock-style-btn'); btn12.style.cssText='font-size:11px;padding:3px 10px;flex:1;';
+  const btn24 = el('button','clock-style-btn'); btn24.style.cssText='font-size:11px;padding:3px 10px;flex:1;';
+  btn12.textContent = '12h AM/PM';
+  btn24.textContent = '24h';
+  const updateFmtBtns = () => {
+    btn12.classList.toggle('active',  !!cfg.hour12);
+    btn24.classList.toggle('active', !cfg.hour12);
+  };
+  btn12.onclick = ()=>{ cfg.hour12 = true;  persist(); updateFmtBtns(); };
+  btn24.onclick = ()=>{ cfg.hour12 = false; persist(); updateFmtBtns(); };
+  updateFmtBtns();
+  fmtRow.append(btn12, btn24);
+  wrap.appendChild(fmtRow);
+
   const list = el('div','world-clocks-list');
   list.id = 'wclist_'+sec.id;
   wrap.appendChild(list);
@@ -4920,8 +5077,14 @@ function buildClocksWidget(sec){
       const dateEl = document.getElementById('wcd_'+sec.id+'_'+idx);
       if(!timeEl) return;
       try {
-        const t = new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:ck.tz,hour12:false}).format(now);
-        const d = new Intl.DateTimeFormat('en-GB',{weekday:'short',month:'short',day:'numeric',timeZone:ck.tz}).format(now);
+        const t = new Intl.DateTimeFormat('en-US',{
+          hour:   '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZone: ck.tz,
+          hour12: !!cfg.hour12,
+        }).format(now);
+        const d = new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:ck.tz}).format(now);
         timeEl.textContent = t;
         dateEl.textContent = d;
       } catch(e){ timeEl.textContent = 'Invalid TZ'; }
@@ -5727,6 +5890,258 @@ function buildBgpWidget(sec){
 
   return wrap;
 }
+/* ---- RSS FEED ---- */
+function buildRssWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.feeds)        cfg.feeds       = [];
+  if(!cfg.maxItems)     cfg.maxItems    = 10;
+  if(!cfg.proxyUrl)     cfg.proxyUrl    = '';
+  if(!cfg.filterKw)     cfg.filterKw    = '';
+  if(!cfg.refreshMins)  cfg.refreshMins = 30;
+
+  const wrap = el('div');
+
+  // Header row
+  const hdr = el('div','rss-hdr');
+  const hdrTitle = el('div','rss-hdr-title'); hdrTitle.textContent = 'RSS Feed';
+  const refreshBtn = el('button','rss-refresh-btn'); refreshBtn.textContent='↺'; refreshBtn.title='Refresh now';
+  refreshBtn.onclick = ()=> fetchAllFeeds();
+  hdr.append(hdrTitle, refreshBtn);
+  wrap.appendChild(hdr);
+
+  // Feed list display
+  const feedList = el('div','rss-feed-list');
+  const statusEl = el('div','rss-status'); statusEl.textContent='Loading…';
+  feedList.appendChild(statusEl);
+  wrap.appendChild(feedList);
+
+  // ── Settings row (edit mode only) ────────────────────────
+  const settingsRow = el('div','rss-settings-row');
+
+  const maxLbl = el('label'); maxLbl.style.cssText='display:flex;align-items:center;gap:4px;';
+  const maxInp = el('input'); maxInp.type='number'; maxInp.min='1'; maxInp.max='50';
+  maxInp.value=cfg.maxItems; maxInp.style.cssText='width:44px;font-size:11px;padding:2px 4px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:3px;color:var(--text);outline:none;text-align:center;';
+  maxInp.onchange=()=>{ cfg.maxItems=Math.max(1,Math.min(50,parseInt(maxInp.value)||10)); persist(); fetchAllFeeds(); };
+  maxLbl.append(maxInp, document.createTextNode(' items'));
+
+  const intLbl = el('label'); intLbl.style.cssText='display:flex;align-items:center;gap:4px;margin-left:8px;';
+  const intInp = el('input'); intInp.type='number'; intInp.min='5'; intInp.max='1440';
+  intInp.value=cfg.refreshMins; intInp.style.cssText='width:44px;font-size:11px;padding:2px 4px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:3px;color:var(--text);outline:none;text-align:center;';
+  intInp.onchange=()=>{ cfg.refreshMins=Math.max(5,Math.min(1440,parseInt(intInp.value)||30)); persist(); resetRefresh(); };
+  intLbl.append(intInp, document.createTextNode(' min refresh'));
+
+  settingsRow.append(maxLbl, intLbl);
+  wrap.appendChild(settingsRow);
+
+  // ── Add feed row (edit mode only) ─────────────────────────
+  const addRow = el('div','rss-add-row');
+
+  // Feed tags (existing feeds)
+  const tagsEl = el('div','rss-feed-tags');
+  const renderTags = ()=>{
+    tagsEl.innerHTML='';
+    cfg.feeds.forEach((f,i)=>{
+      const tag = el('div','rss-feed-tag');
+      const lbl = el('span'); lbl.textContent=f.label||f.url; lbl.title=f.url;
+      const del = el('button'); del.textContent='✕'; del.title='Remove feed';
+      del.onclick=()=>{ cfg.feeds.splice(i,1); persist(); renderTags(); fetchAllFeeds(); };
+      tag.append(lbl,del); tagsEl.appendChild(tag);
+    });
+  };
+  renderTags();
+  addRow.appendChild(tagsEl);
+
+  // URL + Label input row
+  const urlRow = el('div','rss-feed-row');
+  const urlInp = el('input','search-widget-input');
+  urlInp.placeholder='Feed URL (https://…)'; urlInp.style.flex='1';
+  const lblInp = el('input','search-widget-input');
+  lblInp.placeholder='Label (optional)'; lblInp.style.cssText='width:90px;flex-shrink:0;';
+  const addBtn = el('button','search-widget-go'); addBtn.textContent='＋ Add';
+  urlRow.append(urlInp, lblInp, addBtn);
+  addRow.appendChild(urlRow);
+
+  // Proxy URL input
+  const proxyRow = el('div','rss-feed-row');
+  const proxyInp = el('input','search-widget-input');
+  proxyInp.placeholder='CORS Proxy URL (e.g. https://api.rss2json.com/v1/api.json?rss_url= or your Worker URL)';
+  proxyInp.value = cfg.proxyUrl;
+  proxyInp.style.flex='1';
+  proxyInp.style.fontSize='11px';
+  proxyInp.onblur=()=>{ cfg.proxyUrl=proxyInp.value.trim(); persist(); };
+  const proxyNote = el('div');
+  proxyNote.style.cssText='font-size:10px;color:var(--text-dim);padding:0 2px;line-height:1.5;';
+  proxyNote.innerHTML='Free option: <a href="https://rss2json.com" target="_blank" rel="noopener" style="color:var(--cyan);">rss2json.com</a> · Or use your Cloudflare Worker (add an RSS route).';
+  proxyRow.append(proxyInp);
+  addRow.appendChild(proxyRow);
+  addRow.appendChild(proxyNote);
+
+  // Keyword filter
+  const kwRow = el('div','rss-feed-row');
+  const kwInp = el('input','search-widget-input');
+  kwInp.placeholder='Filter keywords/phrases, comma-separated (e.g. linux, kernel panic, CVE)';
+  kwInp.value=cfg.filterKw; kwInp.style.flex='1';
+  kwInp.oninput=()=>{ cfg.filterKw=kwInp.value; persist(); renderItems(allItems); };
+  kwRow.appendChild(kwInp);
+  addRow.appendChild(kwRow);
+
+  const doAdd=()=>{
+    const url=urlInp.value.trim();
+    if(!url||!url.startsWith('http')) return;
+    cfg.feeds.push({ url, label: lblInp.value.trim()||'' });
+    persist(); urlInp.value=''; lblInp.value='';
+    renderTags(); fetchAllFeeds();
+  };
+  addBtn.onclick=doAdd;
+  urlInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doAdd(); });
+  wrap.appendChild(addRow);
+
+  // ── Feed fetching & rendering ──────────────────────────────
+  let allItems = [];
+  let refreshTimer = null;
+
+  function renderItems(items){
+    feedList.innerHTML='';
+    // Parse comma-separated keywords/phrases, trim whitespace, ignore empty
+    const terms = (cfg.filterKw||'')
+      .split(',')
+      .map(t => t.trim().toLowerCase())
+      .filter(Boolean);
+    const filtered = terms.length
+      ? items.filter(it => {
+          const haystack = (it.title+' '+it.source+' '+it.summary).toLowerCase();
+          return terms.some(t => haystack.includes(t));
+        })
+      : items;
+    if(!filtered.length){
+      const s=el('div','rss-status');
+      s.textContent = cfg.feeds.length ? (kw?'No items match filter.':'No items found.') : 'Add a feed URL in edit mode.';
+      feedList.appendChild(s); return;
+    }
+    filtered.slice(0,cfg.maxItems).forEach(it=>{
+      const row=el('div','rss-item');
+      row.title='Open article';
+      row.onclick=()=> window.open(it.link,'_blank','noopener');
+      const title=el('div','rss-item-title'); title.textContent=it.title;
+      const meta=el('div','rss-item-meta');
+      if(it.source){ const src=el('span','rss-item-source'); src.textContent=it.source; meta.appendChild(src); }
+      if(it.date){
+        const age=el('span');
+        const d=new Date(it.date), now=new Date();
+        const hrs=Math.round((now-d)/3600000);
+        age.textContent = hrs<1?'just now':hrs<24?hrs+'h ago':Math.round(hrs/24)+'d ago';
+        meta.appendChild(age);
+      }
+      row.append(title,meta);
+      feedList.appendChild(row);
+    });
+  }
+
+  async function fetchFeed(feed){
+    const proxy=(cfg.proxyUrl||'').trim();
+    if(!proxy) return [];
+
+    try{
+      let items=[];
+
+      if(proxy.includes('rss2json.com')){
+        // rss2json.com — returns JSON
+        const sep = proxy.includes('?') ? '&' : '?';
+        const url = proxy.endsWith('=')
+          ? proxy+encodeURIComponent(feed.url)
+          : proxy+sep+'rss_url='+encodeURIComponent(feed.url);
+        const res = await fetch(url);
+        const j   = await res.json();
+        if(j.status!=='ok') return [];
+        items = (j.items||[]).map(it=>({
+          title:  it.title||'(no title)',
+          link:   it.link||it.url||'',
+          date:   it.pubDate||it.published||'',
+          summary:it.description?.replace(/<[^>]+>/g,'').slice(0,200)||'',
+          source: feed.label || j.feed?.title || '',
+        }));
+
+      } else {
+        // Cloudflare Worker — POST to /rss route, returns raw XML
+        const workerBase = proxy.replace(/\/+$/, '');
+        const endpoint   = workerBase.endsWith('/rss') ? workerBase : workerBase+'/rss';
+        const res = await fetch(endpoint, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ url: feed.url }),
+        });
+
+        // Check for JSON error response
+        const ct = res.headers.get('Content-Type')||'';
+        if(ct.includes('json')){
+          const j = await res.json();
+          if(j.error){ console.warn('[salty] RSS worker error:', j.error); return []; }
+        }
+
+        const xml = await res.text();
+        const doc = new DOMParser().parseFromString(xml, 'text/xml');
+        const isAtom = !!doc.querySelector('feed');
+        const feedTitle = doc.querySelector('channel > title, feed > title')?.textContent?.trim() || '';
+        const entries = isAtom
+          ? [...doc.querySelectorAll('feed > entry')]
+          : [...doc.querySelectorAll('channel > item')];
+
+        items = entries.map(e => {
+          const txt = sel => e.querySelector(sel)?.textContent?.trim() || '';
+          const atr = (sel, a) => e.querySelector(sel)?.getAttribute(a) || '';
+          return {
+            title:  txt('title') || '(no title)',
+            link:   isAtom ? (atr('link[rel="alternate"]','href') || atr('link','href') || txt('link')) : txt('link'),
+            date:   isAtom ? txt('updated') || txt('published') : txt('pubDate'),
+            summary: (isAtom ? txt('summary')||txt('content') : txt('description')).replace(/<[^>]+>/g,'').slice(0,200),
+            source: feed.label || feedTitle,
+          };
+        });
+      }
+
+      return items;
+    } catch(e){
+      console.warn('[salty] RSS fetch failed for',feed.url,e.message);
+      return [];
+    }
+  }
+
+  async function fetchAllFeeds(){
+    if(!cfg.feeds.length){
+      allItems=[];
+      renderItems([]);
+      return;
+    }
+    const s=el('div','rss-status'); s.textContent='Fetching…';
+    feedList.innerHTML=''; feedList.appendChild(s);
+
+    const results = await Promise.all(cfg.feeds.map(f=>fetchFeed(f)));
+    // Merge and sort by date descending
+    allItems = results.flat().sort((a,b)=>{
+      const da=new Date(a.date), db=new Date(b.date);
+      return (isNaN(db)?0:db) - (isNaN(da)?0:da);
+    });
+    renderItems(allItems);
+  }
+
+  function resetRefresh(){
+    if(refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(fetchAllFeeds, (cfg.refreshMins||30)*60000);
+  }
+
+  // Init
+  fetchAllFeeds();
+  resetRefresh();
+
+  // Cleanup
+  const obs=new MutationObserver(()=>{
+    if(!document.contains(wrap)){ clearInterval(refreshTimer); obs.disconnect(); }
+  });
+  obs.observe(document.body,{childList:true,subtree:true});
+
+  return wrap;
+}
+
 /* ---- CVE BULLETIN ---- */
 function cveAlarmSound(){
   try {
@@ -5912,14 +6327,29 @@ function buildCveWidget(sec){
   const watchSection = el('div','cve-watch-section');
 
   const watchHdr = el('div','cve-watch-header');
+  const watchChevron = el('span','cve-watch-chevron'); watchChevron.textContent = '▶';
   const watchTitle = el('div','cve-watch-title'); watchTitle.textContent = 'Watchlist';
-  const checkNowBtn = el('button','monitor-check-btn'); checkNowBtn.textContent='↺'; checkNowBtn.title='Check watchlist now';
-  watchHdr.append(watchTitle, checkNowBtn);
+  const checkNowBtn = el('button','monitor-check-btn');
+  checkNowBtn.textContent='↺'; checkNowBtn.title='Check watchlist now';
+  checkNowBtn.onclick = e=>{ e.stopPropagation(); cveCheckAll(sec, showNewCves); };
+  watchHdr.append(watchChevron, watchTitle, checkNowBtn);
   watchSection.appendChild(watchHdr);
+
+  // Collapsible body — collapsed by default
+  const watchBody = el('div');
+  watchBody.style.cssText = 'display:none;';
+  watchSection.appendChild(watchBody);
+
+  // Toggle collapse on header click
+  watchHdr.addEventListener('click', ()=>{
+    const open = watchBody.style.display !== 'none';
+    watchBody.style.display = open ? 'none' : '';
+    watchHdr.classList.toggle('open', !open);
+  });
 
   const watchListEl = el('div','cve-watch-list');
   watchListEl.id = 'cveWatch_'+sec.id;
-  watchSection.appendChild(watchListEl);
+  watchBody.appendChild(watchListEl);
 
   // Options row (edit mode only)
   const optRow = el('div','cve-watch-options');
@@ -5932,7 +6362,6 @@ function buildCveWidget(sec){
   const intInp = el('input','cve-interval-inp'); intInp.type='number'; intInp.min='5'; intInp.max='1440';
   intInp.value = cfg.watchInterval;
   intInp.title = 'Check interval in minutes';
-  // Remove spin arrows
   intInp.style.cssText += ';-moz-appearance:textfield;appearance:textfield;';
   intInp.addEventListener('change',()=>{
     const v = Math.max(5, Math.min(1440, parseInt(intInp.value)||30));
@@ -5942,7 +6371,7 @@ function buildCveWidget(sec){
   intInp.addEventListener('keydown',e=>{ if(e.key==='Enter') intInp.blur(); });
   intLbl.append(intInp, document.createTextNode(' min interval'));
   optRow.append(alarmLbl, intLbl);
-  watchSection.appendChild(optRow);
+  watchBody.appendChild(optRow);
 
   // Add row (edit mode only)
   const addRow = el('div','cve-watch-add-row');
@@ -5960,7 +6389,7 @@ function buildCveWidget(sec){
   termInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doAdd(); });
   addBtn.onclick = doAdd;
   addRow.append(termInp, addBtn);
-  watchSection.appendChild(addRow);
+  watchBody.appendChild(addRow);
   wrap.appendChild(watchSection);
 
   // Render watchlist entries
@@ -6003,8 +6432,6 @@ function buildCveWidget(sec){
     // Update status labels
     renderWatchlist();
   }
-
-  checkNowBtn.onclick = ()=> cveCheckAll(sec, showNewCves);
 
   renderWatchlist();
 
@@ -9323,6 +9750,11 @@ function applyClock(){
   document.querySelectorAll('.clock-style-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.style === D.clockStyle);
   });
+  // Mark format buttons
+  const btn12h = document.getElementById('clock12hBtn');
+  const btn24h = document.getElementById('clock24hBtn');
+  if(btn12h) btn12h.classList.toggle('active',  !!D.clock12h);
+  if(btn24h) btn24h.classList.toggle('active', !D.clock12h);
 
   if(on && !clockInterval){
     clockTick();
@@ -9337,10 +9769,19 @@ function clockTick(){
   const display = document.getElementById('clockDisplay');
   if(!display) return;
   const now = new Date();
-  const h = String(now.getHours()).padStart(2,'0');
-  const m = String(now.getMinutes()).padStart(2,'0');
-  const s = String(now.getSeconds()).padStart(2,'0');
-  display.textContent = `${h}:${m}:${s}`;
+  if(D.clock12h){
+    let h = now.getHours();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    display.textContent = `${h}:${m}:${s} ${ampm}`;
+  } else {
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    display.textContent = `${h}:${m}:${s}`;
+  }
 }
 
 function toggleClock(){
@@ -9351,6 +9792,12 @@ function toggleClock(){
 
 function toggleClockPicker(){
   document.getElementById('clockPicker').classList.toggle('open');
+}
+
+function toggleClock12h(use12h){
+  D.clock12h = !!use12h;
+  persist();
+  applyClock();
 }
 
 function setClockStyle(style){
