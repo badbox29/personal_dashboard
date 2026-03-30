@@ -3544,6 +3544,7 @@ body.edit-mode .rss-add-row { display: flex; }
     <button class="tool-btn" id="saveBtn" onclick="exportJSON()" title="Save bookmarks as JSON backup">⬇ Save</button>
     <button class="tool-btn" id="loadBtn" onclick="triggerImport()" title="Load a previously exported JSON backup">⬆ Load</button>
     <button class="tool-btn" id="bookmarksBtn" onclick="openBookmarkImport()" title="Import bookmarks from browser export file">📑 Bookmarks</button>
+    <button class="tool-btn" id="workerBtn" onclick="openWorkerModal()" title="Configure global Cloudflare Worker URL">⚡ Worker</button>
     <button class="tool-btn" id="resetBtn" style="color:#cc6666;" onclick="resetToDefaults()" title="Reset to defaults">↺ Reset</button>
     <!-- Mobile overflow trigger — hidden on desktop, shown on mobile via CSS -->
     <button class="tool-btn" id="mobileMoreBtn" onclick="toggleMobileMenu()"
@@ -3620,6 +3621,41 @@ body.edit-mode .rss-add-row { display: flex; }
 
 <!-- ===== HIDDEN FILE INPUT ===== -->
 <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<!-- ===== WORKER MODAL ===== -->
+<div class="overlay" id="workerOverlay">
+  <div class="modal" style="width:500px;">
+    <h3>⚡ Cloudflare Worker URL</h3>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 14px;line-height:1.7;">
+      A Cloudflare Worker acts as a CORS proxy for features that can't be called directly from the browser
+      (pollen data, NVD API key authentication, RSS feeds). Deploy the included <code style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--cyan);">pollen-proxy-worker.js</code>
+      to your free Cloudflare account and paste the URL here.
+    </p>
+    <label style="font-weight:600;">Global Worker URL</label>
+    <p style="font-size:11px;color:var(--text-dim);margin:4px 0 8px;line-height:1.6;">
+      Applies to <strong style="color:var(--text);">all</strong> features that use the worker — pollen data, NVD/CVE requests, and RSS feeds.
+      Individual widgets can override this with their own URL in their settings.
+    </p>
+    <div style="display:flex;gap:7px;">
+      <input type="text" id="workerUrlInp" placeholder="https://your-worker.your-subdomain.workers.dev"
+             style="flex:1;font-family:Share Tech Mono,monospace;font-size:12px;"
+             onkeydown="if(event.key==='Enter') saveWorkerUrl()">
+      <button class="mbtn mbtn-primary" onclick="saveWorkerUrl()" style="flex-shrink:0;">Save</button>
+    </div>
+    <div id="workerUrlStatus" style="font-size:11px;color:var(--cyan);margin-top:6px;min-height:16px;"></div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+      <p style="font-size:11px;color:var(--text-dim);margin:0;line-height:1.7;">
+        <strong style="color:var(--text);">Per-widget overrides:</strong> The Pollen (in Weather settings),
+        RSS Feed widget, and CVE Bulletin widget each have their own optional Worker URL field.
+        If filled in, that widget uses its own URL instead of this global one.
+        Leave them blank to use this global setting.
+      </p>
+    </div>
+    <div class="modal-actions">
+      <button class="mbtn mbtn-cancel" onclick="closeOverlay('workerOverlay')">Close</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== LINK MODAL ===== -->
 <div class="overlay" id="linkOverlay">
@@ -3968,7 +4004,7 @@ body.edit-mode .rss-add-row { display: flex; }
           CORS Proxy URL
           <span style="font-weight:400;color:var(--text-dim);"> — required if pollen provider blocks browser requests</span>
         </label>
-        <input type="text" id="wPollenProxy" placeholder="https://your-worker.your-subdomain.workers.dev"
+        <input type="text" id="wPollenProxy" placeholder="Override global Worker URL for pollen only (optional)"
                style="width:100%;font-family:'Share Tech Mono',monospace;font-size:11.5px;box-sizing:border-box;">
         <div style="font-size:10.5px;color:var(--text-dim);margin-top:4px;line-height:1.6;">
           A free Cloudflare Worker can act as a CORS proxy for pollen requests.
@@ -4005,6 +4041,7 @@ const DEFAULTS = {
   bgUrlActive: false,
   recentVisited: [],
   proxyUrl: '',
+  workerUrl: '',
   pollenKey: '',
   pollenEnabled: false,
   pollenService: 'weatherapi',
@@ -4467,6 +4504,7 @@ const PORT_COMBOS = {
   if(D.bgUrlActive === undefined) D.bgUrlActive = false;
   if(!D.recentVisited) D.recentVisited = [];
   if(D.proxyUrl === undefined) D.proxyUrl = '';
+  if(D.workerUrl === undefined) D.workerUrl = '';
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -4527,6 +4565,8 @@ const PORT_COMBOS = {
 function tryParse(s){ try{ return JSON.parse(s); } catch(e){ return null; } }
 function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
 function persist(){ localStorage.setItem('salty_v2', JSON.stringify(D)); }
+// Returns the effective worker URL for a widget: widget override → global → null
+function getWorkerUrl(widgetOverride){ return (widgetOverride||'').trim() || (D.workerUrl||'').trim() || null; }
 
 /* ================================================================
    RENDER ALL
@@ -5990,7 +6030,7 @@ function buildRssWidget(sec){
   // Proxy URL input
   const proxyRow = el('div','rss-feed-row');
   const proxyInp = el('input','search-widget-input');
-  proxyInp.placeholder='CORS Proxy URL (e.g. https://api.rss2json.com/v1/api.json?rss_url= or your Worker URL)';
+  proxyInp.placeholder='Override global Worker URL for this feed only (or paste rss2json.com URL)';
   proxyInp.value = cfg.proxyUrl;
   proxyInp.style.flex='1';
   proxyInp.style.fontSize='11px';
@@ -6079,7 +6119,7 @@ function buildRssWidget(sec){
   }
 
   async function fetchFeed(feed){
-    const proxy=(cfg.proxyUrl||'').trim();
+    const proxy=getWorkerUrl(cfg.proxyUrl);
     if(!proxy) return [];
 
     try{
@@ -6328,8 +6368,9 @@ function buildCveWidget(sec){
     try {
       const endpoint = 'https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=30&startIndex=0';
       let r;
-      if(cfg.nvdWorker){
-        const workerUrl = cfg.nvdWorker.replace(/\/+$/,'')+'/nvd';
+      const _nvdW1 = getWorkerUrl(cfg.nvdWorker);
+      if(_nvdW1){
+        const workerUrl = _nvdW1.replace(/\/+$/,'')+'/nvd';
         r = await fetch(workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint, apiKey: cfg.nvdKey||undefined }) });
       } else {
         r = await fetch(endpoint);
@@ -6439,7 +6480,7 @@ function buildCveWidget(sec){
 
   const workerInp = el('input','cve-interval-inp');
   workerInp.type='text'; workerInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-top:4px;';
-  workerInp.placeholder='Cloudflare Worker URL (required to use API key)';
+  workerInp.placeholder='Override global Worker URL for CVE only (optional)';
   workerInp.value = cfg.nvdWorker || '';
   workerInp.addEventListener('keydown',e=>{ if(e.key==='Enter') keySaveBtn.click(); });
 
@@ -6550,8 +6591,9 @@ async function cveCheckAll(sec, callback){
       const endpoint = 'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch='
                      + encodeURIComponent(w.term)+'&resultsPerPage=10';
       let r;
-      if(cfg.nvdWorker){
-        const workerUrl = cfg.nvdWorker.replace(/\/+$/,'')+'/nvd';
+      const _nvdW2 = getWorkerUrl(cfg.nvdWorker);
+      if(_nvdW2){
+        const workerUrl = _nvdW2.replace(/\/+$/,'')+'/nvd';
         r = await fetch(workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint, apiKey: cfg.nvdKey||undefined }) });
       } else {
         r = await fetch(endpoint);
@@ -7870,7 +7912,7 @@ async function fetchWeather(loc){
   loc._pollen = null;
   if(D.pollenEnabled && D.pollenKey){
     try{
-      const proxy = D.pollenProxy ? D.pollenProxy.replace(/\/$/, '') : null;
+      const proxy = getWorkerUrl(D.pollenProxy);
       let result;
 
       if(proxy){
@@ -8101,6 +8143,20 @@ function paintWeather(loc){
 }
 
 /* Weather settings modal */
+function openWorkerModal(){
+  document.getElementById('workerUrlInp').value = D.workerUrl || '';
+  document.getElementById('workerUrlStatus').textContent = '';
+  openOverlay('workerOverlay');
+}
+
+function saveWorkerUrl(){
+  D.workerUrl = document.getElementById('workerUrlInp').value.trim();
+  persist();
+  const status = document.getElementById('workerUrlStatus');
+  status.textContent = D.workerUrl ? '✓ Saved — applies to pollen, CVE, and RSS widgets.' : '✓ Cleared.';
+  setTimeout(()=>{ status.textContent=''; }, 3000);
+}
+
 function openWeatherModal(){
   renderWLocList();
   document.getElementById('wSearch').value='';
