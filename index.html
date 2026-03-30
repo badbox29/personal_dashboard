@@ -3012,6 +3012,8 @@ body.edit-mode .remind-add-row { display: flex; }
 body.edit-mode .cve-watch-add-row { display: flex; }
 .cve-watch-options { display: none; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
 body.edit-mode .cve-watch-options { display: flex; }
+.cve-watch-key-row { display: none; flex-direction: column; gap: 4px; margin-top: 8px; width: 100%; }
+body.edit-mode .cve-watch-key-row { display: flex; }
 .cve-watch-opt-label { font-size: 11.5px; color: var(--text-dim); display: flex; align-items: center; gap: 5px; cursor: pointer; }
 .cve-watch-opt-label input[type=checkbox] { width: auto; margin: 0; accent-color: var(--gold); cursor: pointer; }
 .cve-interval-inp {
@@ -3628,8 +3630,9 @@ body.edit-mode .rss-add-row { display: flex; }
     <h3>⚡ Cloudflare Worker URL</h3>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 14px;line-height:1.7;">
       A Cloudflare Worker acts as a CORS proxy for features that can't be called directly from the browser
-      (pollen data, NVD API key authentication, RSS feeds). Deploy the included <code style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--cyan);">pollen-proxy-worker.js</code>
-      to your free Cloudflare account and paste the URL here.
+      (pollen data, NVD API key authentication, RSS feeds). Deploy the worker script to your free Cloudflare account and paste the URL here.
+      The worker script is available at
+      <a href="https://github.com/badbox29/personal_dashboard/blob/main/pollen-proxy-worker.js" target="_blank" rel="noopener" style="color:var(--cyan);">github.com/badbox29/personal_dashboard</a>.
     </p>
     <label style="font-weight:600;">Global Worker URL</label>
     <p style="font-size:11px;color:var(--text-dim);margin:4px 0 8px;line-height:1.6;">
@@ -4008,9 +4011,9 @@ body.edit-mode .rss-add-row { display: flex; }
                style="width:100%;font-family:'Share Tech Mono',monospace;font-size:11.5px;box-sizing:border-box;">
         <div style="font-size:10.5px;color:var(--text-dim);margin-top:4px;line-height:1.6;">
           A free Cloudflare Worker can act as a CORS proxy for pollen requests.
-          Deploy the worker script from the
-          <a href="https://workers.cloudflare.com" target="_blank" rel="noopener" style="color:var(--cyan);">Cloudflare Workers dashboard</a>
-          and paste your worker URL above. Worker script available in your settings export.
+          Get the worker script from
+          <a href="https://github.com/badbox29/personal_dashboard/blob/main/pollen-proxy-worker.js" target="_blank" rel="noopener" style="color:var(--cyan);">github.com/badbox29/personal_dashboard</a>,
+          deploy it to your Cloudflare account, and paste your worker URL above.
         </div>
       </div>
       <div id="wPollenStatus" style="font-size:11px;color:var(--text-dim);margin-top:5px;min-height:16px;"></div>
@@ -6146,7 +6149,7 @@ function buildRssWidget(sec){
   proxyInp.onblur=()=>{ cfg.proxyUrl=proxyInp.value.trim(); persist(); };
   const proxyNote = el('div');
   proxyNote.style.cssText='font-size:10px;color:var(--text-dim);padding:0 2px;line-height:1.5;';
-  proxyNote.innerHTML='Free option: <a href="https://rss2json.com" target="_blank" rel="noopener" style="color:var(--cyan);">rss2json.com</a> · Or use your Cloudflare Worker (add an RSS route).';
+  proxyNote.innerHTML='Free option: <a href="https://rss2json.com" target="_blank" rel="noopener" style="color:var(--cyan);">rss2json.com</a> · Or use the same Cloudflare Worker as pollen/CVE — get the script at <a href="https://github.com/badbox29/personal_dashboard/blob/main/pollen-proxy-worker.js" target="_blank" rel="noopener" style="color:var(--cyan);">github.com/badbox29/personal_dashboard</a>.';
   proxyRow.append(proxyInp);
   addRow.appendChild(proxyRow);
   addRow.appendChild(proxyNote);
@@ -6532,7 +6535,7 @@ function buildCveWidget(sec){
   watchSection.appendChild(watchHdr);
 
   // Collapsible body — collapsed by default
-  const watchBody = el('div');
+  const watchBody = el('div','cve-watch-body');
   watchBody.style.cssText = 'display:none;';
   watchSection.appendChild(watchBody);
 
@@ -6569,8 +6572,7 @@ function buildCveWidget(sec){
   optRow.append(alarmLbl, intLbl);
 
   // NVD API key row (edit mode only)
-  const keyRow = el('div');
-  keyRow.style.cssText='display:flex;flex-direction:column;gap:4px;margin-top:8px;width:100%;';
+  const keyRow = el('div','cve-watch-key-row');
   const keyInputRow = el('div'); keyInputRow.style.cssText='display:flex;gap:5px;';
   const keyInp = el('input','cve-interval-inp');
   keyInp.type='text'; keyInp.style.cssText='flex:1;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;';
@@ -6595,7 +6597,7 @@ function buildCveWidget(sec){
 
   const keyNote = el('div');
   keyNote.style.cssText='font-size:10px;color:var(--text-dim);line-height:1.5;';
-  keyNote.innerHTML='Free key at <a href="https://nvd.nist.gov/developers/request-an-api-key" target="_blank" rel="noopener" style="color:var(--cyan);">nvd.nist.gov/developers/request-an-api-key</a> — raises limit from 5 to 50 req/30s. NVD requires the key in a request header which browsers block, so a Cloudflare Worker URL is also needed (same worker as pollen).';
+  keyNote.innerHTML='Free key at <a href="https://nvd.nist.gov/developers/request-an-api-key" target="_blank" rel="noopener" style="color:var(--cyan);">nvd.nist.gov/developers/request-an-api-key</a> — raises limit from 5 to 50 req/30s. NVD requires the key in a request header which browsers block, so a Cloudflare Worker is also needed. Get the worker script at <a href="https://github.com/badbox29/personal_dashboard/blob/main/pollen-proxy-worker.js" target="_blank" rel="noopener" style="color:var(--cyan);">github.com/badbox29/personal_dashboard</a>.';
   keyInputRow.append(keyInp, keySaveBtn);
   keyRow.append(keyInputRow, workerInp, keyStatus, keyNote);
   watchBody.appendChild(optRow);
@@ -7976,6 +7978,12 @@ function toggleEditMode(){
   btn.textContent = editMode ? '✓ Done' : '✏ Edit';
   document.getElementById('colorsBtn').style.display = editMode ? 'inline-block' : 'none';
   document.getElementById('workerBtn').style.display  = editMode ? 'inline-block' : 'none';
+  // Auto-expand CVE watchlist bodies in edit mode, collapse when leaving
+  document.querySelectorAll('.cve-watch-body').forEach(body => {
+    body.style.display = editMode ? '' : 'none';
+    const hdr = body.previousElementSibling;
+    if(hdr) hdr.classList.toggle('open', editMode);
+  });
 }
 
 /* ================================================================
