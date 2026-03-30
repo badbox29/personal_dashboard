@@ -3544,7 +3544,7 @@ body.edit-mode .rss-add-row { display: flex; }
     <button class="tool-btn" id="saveBtn" onclick="exportJSON()" title="Save bookmarks as JSON backup">⬇ Save</button>
     <button class="tool-btn" id="loadBtn" onclick="triggerImport()" title="Load a previously exported JSON backup">⬆ Load</button>
     <button class="tool-btn" id="bookmarksBtn" onclick="openBookmarkImport()" title="Import bookmarks from browser export file">📑 Bookmarks</button>
-    <button class="tool-btn" id="workerBtn" onclick="openWorkerModal()" title="Configure global Cloudflare Worker URL">⚡ Worker</button>
+    <button class="tool-btn" id="workerBtn" onclick="openWorkerModal()" title="Configure global Cloudflare Worker URL" style="display:none;">⚡ Worker</button>
     <button class="tool-btn" id="resetBtn" style="color:#cc6666;" onclick="resetToDefaults()" title="Reset to defaults">↺ Reset</button>
     <!-- Mobile overflow trigger — hidden on desktop, shown on mobile via CSS -->
     <button class="tool-btn" id="mobileMoreBtn" onclick="toggleMobileMenu()"
@@ -7866,6 +7866,7 @@ function toggleEditMode(){
   btn.classList.toggle('active', editMode);
   btn.textContent = editMode ? '✓ Done' : '✏ Edit';
   document.getElementById('colorsBtn').style.display = editMode ? 'inline-block' : 'none';
+  document.getElementById('workerBtn').style.display  = editMode ? 'inline-block' : 'none';
 }
 
 /* ================================================================
