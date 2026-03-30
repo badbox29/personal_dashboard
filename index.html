@@ -3630,7 +3630,7 @@ body.edit-mode .rss-add-row { display: flex; }
     <h3>⚡ Cloudflare Worker URL</h3>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 14px;line-height:1.7;">
       A Cloudflare Worker acts as a CORS proxy for features that can't be called directly from the browser
-      (pollen data, NVD API key authentication, RSS feeds). Deploy the worker script to your free Cloudflare account and paste the URL here.
+      (pollen data, NVD API token authentication, RSS feeds). Deploy the worker script to your free Cloudflare account and paste the URL here.
       The worker script is available at
       <a href="https://github.com/badbox29/personal_dashboard/blob/main/pollen-proxy-worker.js" target="_blank" rel="noopener" style="color:var(--cyan);">github.com/badbox29/personal_dashboard</a>.
     </p>
@@ -3998,7 +3998,7 @@ body.edit-mode .rss-add-row { display: flex; }
       <div id="wPollenServiceInfo" style="font-size:11px;color:var(--text-dim);background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:10px;line-height:1.7;"></div>
 
       <div style="display:flex;gap:7px;align-items:center;">
-        <input type="text" id="wPollenKey" placeholder="API key…"
+        <input type="text" id="wPollenKey" placeholder="API token (stored locally)…"
                style="flex:1;font-family:'Share Tech Mono',monospace;font-size:12px;">
         <button class="mbtn mbtn-primary" onclick="savePollenSettings()" style="padding:7px 14px;flex-shrink:0;">Save</button>
       </div>
@@ -6576,7 +6576,7 @@ function buildCveWidget(sec){
   const keyInputRow = el('div'); keyInputRow.style.cssText='display:flex;gap:5px;';
   const keyInp = el('input','cve-interval-inp');
   keyInp.type='text'; keyInp.style.cssText='flex:1;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;';
-  keyInp.placeholder='NVD API key (optional)';
+  keyInp.placeholder='NVD API token (stored locally, optional)';
   keyInp.value = cfg.nvdKey || '';
   const keySaveBtn = el('button','todo-add-btn'); keySaveBtn.textContent='Save';
   const keyStatus = el('div'); keyStatus.style.cssText='font-size:10px;color:var(--cyan);min-height:14px;';
@@ -8294,28 +8294,28 @@ const POLLEN_SERVICES = {
     url:  'https://www.weatherapi.com/pricing.aspx',
     cost: 'Pollen data requires the Business plan at <strong>$7/month</strong>.',
     note: 'Good coverage for US and global locations. Returns Low/Moderate/High/Very High text values.',
-    placeholder: 'WeatherAPI.com API key…',
+    placeholder: 'WeatherAPI.com API token (stored locally)…',
   },
   tomorrow: {
     name: 'Tomorrow.io',
     url:  'https://app.tomorrow.io/signup',
     cost: 'Pollen data requires a paid plan — <strong>pricing varies</strong> (Core plan and above).',
     note: 'Returns a 0–5 pollen index per type. May require a CORS proxy for browser-based use.',
-    placeholder: 'Tomorrow.io API key…',
+    placeholder: 'Tomorrow.io API token (stored locally)…',
   },
   ambee: {
     name: 'Ambee',
     url:  'https://app.ambeedata.com/signup',
     cost: 'Pollen data requires a paid plan — <strong>pricing varies</strong> by call volume.',
     note: 'Returns Low/Moderate/High/Very High per type. Requires a CORS proxy for browser-based use.',
-    placeholder: 'Ambee API key…',
+    placeholder: 'Ambee API token (stored locally)…',
   },
   google: {
     name: 'Google Pollen API',
     url:  'https://developers.google.com/maps/documentation/pollen/get-started',
     cost: '<strong>$5 per 1,000 requests</strong>, but Google provides a <strong>$200/month free credit</strong> — effectively free for personal dashboard use.',
-    note: 'Returns a 0–5 index with category text (None/Very Low/Low/Medium/High/Very High) for grass, tree, and weed. Requires a Google Maps Platform API key with Pollen API enabled. May require a CORS proxy.',
-    placeholder: 'Google Maps Platform API key…',
+    note: 'Returns a 0–5 index with category text (None/Very Low/Low/Medium/High/Very High) for grass, tree, and weed. Requires a Google Maps Platform API token with Pollen API enabled. May require a CORS proxy.',
+    placeholder: 'Google Maps Platform API token (stored locally)…',
   },
 };
 
@@ -8336,7 +8336,7 @@ function savePollenSettings(){
 
   if(enabled && !key){
     status.style.color = 'var(--del-color)';
-    status.textContent = 'Please enter an API key to enable pollen data.';
+    status.textContent = 'Please enter an API token to enable pollen data.';
     return;
   }
 
