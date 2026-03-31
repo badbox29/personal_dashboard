@@ -2972,6 +2972,18 @@ body.edit-mode .remind-add-row { display: flex; }
   from { border-color: #ff4444; box-shadow: 0 0 4px rgba(255,68,68,0.3); }
   to   { border-color: #ff8888; box-shadow: 0 0 12px rgba(255,68,68,0.6); }
 }
+@keyframes cveSpin {
+  to { transform: rotate(360deg); }
+}
+.cve-spinner {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border: 2px solid var(--text-dim);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: cveSpin 0.7s linear infinite;
+  flex-shrink: 0;
+}
 .cve-alert-icon { font-size: 16px; flex-shrink: 0; line-height: 1.4; }
 .cve-alert-body { flex: 1; min-width: 0; }
 .cve-alert-title {
@@ -4045,6 +4057,8 @@ const DEFAULTS = {
   recentVisited: [],
   proxyUrl: '',
   workerUrl: '',
+  cveAlarmHistory: [],
+  cveVendorList: [],
   pollenKey: '',
   pollenEnabled: false,
   pollenService: 'weatherapi',
@@ -4617,6 +4631,8 @@ const PORT_COMBOS = {
   if(!D.recentVisited) D.recentVisited = [];
   if(D.proxyUrl === undefined) D.proxyUrl = '';
   if(D.workerUrl === undefined) D.workerUrl = '';
+  if(!Array.isArray(D.cveAlarmHistory)) D.cveAlarmHistory = [];
+  if(!Array.isArray(D.cveVendorList))   D.cveVendorList   = [];
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -6335,19 +6351,23 @@ function buildRssWidget(sec){
 function cveAlarmSound(){
   try {
     const ctx = getAudioCtx();
-    const now = ctx.currentTime;
-    // Descending two-tone urgent alert — distinct from Pomodoro chime
-    [[880,0],[660,0.25],[880,0.5],[660,0.75]].forEach(([freq,offset])=>{
-      const osc  = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(freq, now+offset);
-      gain.gain.setValueAtTime(0, now+offset);
-      gain.gain.linearRampToValueAtTime(0.15, now+offset+0.01);
-      gain.gain.exponentialRampToValueAtTime(0.001, now+offset+0.22);
-      osc.start(now+offset); osc.stop(now+offset+0.25);
-    });
+    // Resume context if suspended (browser autoplay policy)
+    const play = ()=>{
+      const now = ctx.currentTime;
+      [[880,0],[660,0.25],[880,0.5],[660,0.75]].forEach(([freq,offset])=>{
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, now+offset);
+        gain.gain.setValueAtTime(0, now+offset);
+        gain.gain.linearRampToValueAtTime(0.15, now+offset+0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, now+offset+0.22);
+        osc.start(now+offset); osc.stop(now+offset+0.25);
+      });
+    };
+    if(ctx.state === 'suspended') ctx.resume().then(play);
+    else play();
   } catch(e){}
 }
 
@@ -6355,69 +6375,81 @@ function buildCveWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
   if(!cfg.watchlist)    cfg.watchlist    = [];
   if(cfg.alarmSound === undefined) cfg.alarmSound = false;
-  if(!cfg.watchInterval) cfg.watchInterval = 30;
   if(!cfg.nvdKey)       cfg.nvdKey       = '';
   if(!cfg.nvdWorker)    cfg.nvdWorker    = '';
   if(!cfg.sortBy)       cfg.sortBy       = 'date';
-  if(!cfg.sortDir)      cfg.sortDir      = 'desc';
+  cfg.sortDir = 'desc'; // always newest-first on load
 
-  const PAGE_SIZE = 100;
-  let cveAllItems = [];
-  let cvePage     = 0;
+  const PAGE_SIZE   = 100;
+  const CUTOFF_MS   = 72 * 60 * 60 * 1000; // 72 hours
+  const HISTORY_MAX = 500;
+  const REFRESH_MS  = 5 * 60 * 1000;       // 5 minutes
+  let cveAllItems   = [];
+  let cvePage       = 0;
+  let refreshTimer  = null;
 
   const wrap = el('div','cve-widget');
 
-  // ── Watchlist Hits panel (hidden until hits found) ────────
+  // Watchlist Hits panel (hidden until hits found)
   const hitsPanel = el('div');
   hitsPanel.style.cssText = 'display:none;margin-bottom:8px;';
-
   const hitsHdr = el('div');
   hitsHdr.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(255,68,68,0.1);border:1px solid #ff4444;border-radius:5px 5px 0 0;cursor:pointer;user-select:none;animation:cveAlertPulse 1.8s ease-in-out infinite alternate;';
-  const hitsIcon  = el('span'); hitsIcon.textContent='🚨'; hitsIcon.style.cssText='font-size:13px;flex-shrink:0;';
-  const hitsTitle = el('span'); hitsTitle.style.cssText='font-size:10.5px;font-family:Share Tech Mono,monospace;color:#ff8888;font-weight:700;letter-spacing:0.05em;flex:1;';
+  const hitsIcon    = el('span'); hitsIcon.textContent='\uD83D\uDEA8'; hitsIcon.style.cssText='font-size:13px;flex-shrink:0;';
+  const hitsTitle   = el('span'); hitsTitle.style.cssText='font-size:10.5px;font-family:Share Tech Mono,monospace;color:#ff8888;font-weight:700;letter-spacing:0.05em;flex:1;';
   hitsTitle.textContent = 'WATCHLIST HITS';
-  const hitsChevron = el('span'); hitsChevron.style.cssText='font-size:9px;color:#ff8888;transition:transform 0.2s;'; hitsChevron.textContent='▼';
+  const hitsChevron = el('span'); hitsChevron.style.cssText='font-size:9px;color:#ff8888;transition:transform 0.2s;'; hitsChevron.textContent='\u25bc';
   const hitsDismiss = el('button','cve-alert-dismiss'); hitsDismiss.textContent='Dismiss';
-  hitsDismiss.onclick = e=>{ e.stopPropagation(); hitsPanel.style.display='none'; hitsBody.style.display='none'; };
+  hitsDismiss.onclick = e=>{
+    e.stopPropagation();
+    const now = Date.now();
+    hitsBody.querySelectorAll('[data-cveid]').forEach(tile=>{
+      const id = tile.dataset.cveid;
+      if(!D.cveAlarmHistory.find(h=>h.id===id)){
+        D.cveAlarmHistory.unshift({ id, sev:tile.dataset.severity||'', pub:tile.dataset.published||'', term:tile.dataset.term||'', dismissedAt:now });
+      }
+    });
+    if(D.cveAlarmHistory.length > HISTORY_MAX) D.cveAlarmHistory = D.cveAlarmHistory.slice(0,HISTORY_MAX);
+    persist();
+    hitsPanel.style.display='none';
+  };
   hitsHdr.append(hitsIcon, hitsTitle, hitsChevron, hitsDismiss);
-
   const hitsBody = el('div');
-  hitsBody.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:6px 0;border:1px solid #ff4444;border-top:none;border-radius:0 0 5px 5px;max-height:220px;overflow-y:auto;padding:6px 8px;';
-
-  hitsHdr.addEventListener('click', ()=>{
+  hitsBody.style.cssText='display:flex;flex-direction:column;gap:4px;border:1px solid #ff4444;border-top:none;border-radius:0 0 5px 5px;max-height:220px;overflow-y:auto;padding:6px 8px;';
+  hitsHdr.addEventListener('click',()=>{
     const open = hitsBody.style.display !== 'none';
     hitsBody.style.display = open ? 'none' : '';
     hitsChevron.style.transform = open ? 'rotate(-90deg)' : '';
   });
-
   hitsPanel.append(hitsHdr, hitsBody);
   wrap.appendChild(hitsPanel);
 
-  // ── Manual search ──────────────────────────────────────────
+  // Manual search
   const searchRow = el('div'); searchRow.style.cssText='display:flex;gap:6px;margin-bottom:10px;';
   const searchInp = el('input','search-widget-input');
-  searchInp.placeholder='Product / vendor search…'; searchInp.autocomplete='off';
-  const searchBtn = el('button','search-widget-go'); searchBtn.textContent='Search →';
+  searchInp.placeholder='Product / vendor search\u2026'; searchInp.autocomplete='off';
+  const searchBtn = el('button','search-widget-go'); searchBtn.textContent='Search \u2192';
   const doSearch = ()=>{
-    const q = searchInp.value.trim();
-    if(!q) return;
-    window.open('https://nvd.nist.gov/vuln/search#/nvd/home?keyword='+encodeURIComponent(q)+'&resultType=records', '_blank');
+    const q=searchInp.value.trim(); if(!q) return;
+    window.open('https://nvd.nist.gov/vuln/search#/nvd/home?keyword='+encodeURIComponent(q)+'&resultType=records','_blank');
   };
-  searchInp.addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+  searchInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doSearch(); });
   searchBtn.onclick = doSearch;
   searchRow.append(searchInp, searchBtn);
   wrap.appendChild(searchRow);
 
-  // ── Header: label + sort buttons + refresh ─────────────────
+  // Header: label + spinner + sort + history + refresh
   const hdr = el('div'); hdr.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:6px;flex-wrap:wrap;';
-  const hdrLbl = el('div'); hdrLbl.style.cssText='font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;letter-spacing:0.04em;text-transform:uppercase;flex:1;min-width:80px;';
-  hdrLbl.textContent = 'Recent CVEs';
+  const hdrLbl = el('div'); hdrLbl.style.cssText='font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;letter-spacing:0.04em;text-transform:uppercase;flex:1;min-width:80px;display:flex;align-items:center;gap:5px;';
+  const hdrText     = el('span'); hdrText.textContent='Recent CVEs';
+  const spinner     = el('span','cve-spinner'); spinner.style.display='none';
+  const refreshNote = el('span'); refreshNote.style.cssText='font-size:9px;color:var(--cyan);font-family:Share Tech Mono,monospace;'; refreshNote.style.display='none'; refreshNote.textContent='Refreshing\u2026';
+  hdrLbl.append(hdrText, spinner, refreshNote);
 
   const sortDate = el('button','clock-style-btn'); sortDate.style.cssText='font-size:9.5px;padding:2px 6px;';
   const sortSev  = el('button','clock-style-btn'); sortSev.style.cssText='font-size:9.5px;padding:2px 6px;';
-
   const updateSortBtns = ()=>{
-    const arrow = cfg.sortDir==='asc' ? ' ↑' : ' ↓';
+    const arrow = cfg.sortDir==='asc' ? ' \u2191' : ' \u2193';
     sortDate.textContent = 'Date'+(cfg.sortBy==='date'     ? arrow : '');
     sortSev.textContent  = 'Sev' +(cfg.sortBy==='severity' ? arrow : '');
     sortDate.classList.toggle('active', cfg.sortBy==='date');
@@ -6435,419 +6467,405 @@ function buildCveWidget(sec){
   };
   updateSortBtns();
 
-  const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='↺'; rfBtn.title='Refresh';
-  hdr.append(hdrLbl, sortDate, sortSev, rfBtn);
+  const histBtn = el('button','monitor-check-btn'); histBtn.innerHTML='\uD83D\uDCCB'; histBtn.title='Alarm history';
+  histBtn.onclick = ()=> openCveHistoryModal();
+  const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='\u21ba'; rfBtn.title='Refresh now';
+  rfBtn.onclick = ()=> refresh();
+  hdr.append(hdrLbl, sortDate, sortSev, histBtn, rfBtn);
   wrap.appendChild(hdr);
 
   const listEl = el('div'); listEl.style.cssText='display:flex;flex-direction:column;gap:5px;max-height:292px;overflow-y:auto;scroll-behavior:smooth;';
   listEl.id = 'cveList_'+sec.id;
   wrap.appendChild(listEl);
 
-  // ── Pagination bar ─────────────────────────────────────────
-  const pageBar = el('div'); pageBar.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-top:5px;font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;';
-  const prevBtn = el('button','clock-style-btn'); prevBtn.style.cssText='font-size:9.5px;padding:2px 8px;'; prevBtn.textContent='◀ Prev';
+  // Pagination bar
+  const pageBar  = el('div'); pageBar.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-top:5px;font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;';
+  const prevBtn  = el('button','clock-style-btn'); prevBtn.style.cssText='font-size:9.5px;padding:2px 8px;'; prevBtn.textContent='\u25c4 Prev';
   const pageInfo = el('span');
-  const nextBtn = el('button','clock-style-btn'); nextBtn.style.cssText='font-size:9.5px;padding:2px 8px;'; nextBtn.textContent='Next ▶';
+  const nextBtn  = el('button','clock-style-btn'); nextBtn.style.cssText='font-size:9.5px;padding:2px 8px;'; nextBtn.textContent='Next \u25ba';
   prevBtn.onclick=()=>{ if(cvePage>0){ cvePage--; renderCveList(); } };
-  nextBtn.onclick=()=>{ const maxPage=Math.ceil(cveAllItems.length/PAGE_SIZE)-1; if(cvePage<maxPage){ cvePage++; renderCveList(); } };
+  nextBtn.onclick=()=>{ const mx=Math.ceil(cveAllItems.length/PAGE_SIZE)-1; if(cvePage<mx){ cvePage++; renderCveList(); } };
   pageBar.append(prevBtn, pageInfo, nextBtn);
   wrap.appendChild(pageBar);
 
-  // Scrollable list state
-
+  // CVE helpers
   function cveExtractProduct(cve){
-    // Try CPE string from configurations first
     try {
-      const nodes = cve.configurations?.[0]?.nodes || [];
+      const nodes=cve.configurations?.[0]?.nodes||[];
       for(const node of nodes){
-        const cpe = (node.cpeMatch||[])[0]?.criteria || '';
-        // cpe:2.3:a:vendor:product:version:...
-        const parts = cpe.split(':');
-        if(parts.length >= 5){
-          const vendor  = parts[3].replace(/_/g,' ');
-          const product = parts[4].replace(/_/g,' ');
-          if(vendor && vendor !== '*') return vendor !== product ? vendor+' '+product : product;
+        const cpe=(node.cpeMatch||[])[0]?.criteria||'';
+        const parts=cpe.split(':');
+        if(parts.length>=5){
+          const vendor=parts[3].replace(/_/g,' '); const product=parts[4].replace(/_/g,' ');
+          if(vendor&&vendor!=='*') return vendor!==product?vendor+' '+product:product;
         }
       }
     } catch(e){}
-    // Fallback: extract "X" from "... in X" or "... for X" in description
-    const desc = cve.descriptions?.find(d=>d.lang==='en')?.value || '';
-    const m = desc.match(/\bin\s+([A-Z][A-Za-z0-9._\- ]{2,30}?)(?:\s+(?:before|through|prior|versions?|v\d)|\.|,|$)/);
-    if(m) return m[1].trim();
-    return null;
+    const desc=cve.descriptions?.find(d=>d.lang==='en')?.value||'';
+    const m=desc.match(/\bin\s+([A-Z][A-Za-z0-9._\- ]{2,30}?)(?:\s+(?:before|through|prior|versions?|v\d)|\.|,|$)/);
+    if(m) return m[1].trim(); return null;
   }
 
-  function buildCveItem(cve){
-    const id   = cve.id;
-    const desc = cve.descriptions?.find(d=>d.lang==='en')?.value || 'No description';
-    const sev  = cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity ||
-                 cve.metrics?.cvssMetricV2?.[0]?.baseSeverity || '—';
-    const sevColor = {CRITICAL:'#ff4444',HIGH:'#ff8844',MEDIUM:'#ffcc44',LOW:'#44cc88'}[sev] || 'var(--text-dim)';
+  function buildCveItem(cve, matchTerm){
+    const id       = cve.id;
+    const desc     = cve.descriptions?.find(d=>d.lang==='en')?.value||'No description';
+    const sev      = cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity||cve.metrics?.cvssMetricV2?.[0]?.baseSeverity||'\u2014';
+    const sevColor = {CRITICAL:'#ff4444',HIGH:'#ff8844',MEDIUM:'#ffcc44',LOW:'#44cc88'}[sev]||'var(--text-dim)';
     const pub      = cve.published    ? new Date(cve.published)    : null;
     const modified = cve.lastModified ? new Date(cve.lastModified) : null;
     const product  = cveExtractProduct(cve);
 
     const item = el('div');
-    item.style.cssText = 'padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:border-color 0.15s;flex-shrink:0;';
-    item.onmouseenter = ()=>item.style.borderColor='var(--cyan)';
-    item.onmouseleave = ()=>item.style.borderColor='var(--border)';
-    item.onclick = ()=>window.open('https://nvd.nist.gov/vuln/detail/'+id,'_blank');
+    item.style.cssText='padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:border-color 0.15s;flex-shrink:0;';
+    item.dataset.cveid     = id;
+    item.dataset.severity  = sev;
+    item.dataset.published = cve.published||'';
+    item.dataset.term      = matchTerm||'';
+    item.onmouseenter=()=>item.style.borderColor='var(--cyan)';
+    item.onmouseleave=()=>item.style.borderColor='var(--border)';
+    item.onclick=()=>window.open('https://nvd.nist.gov/vuln/detail/'+id,'_blank');
 
-    // Top row: ID + severity badge + product tag
-    const topRow = el('div'); topRow.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap;';
-    const idEl = el('span'); idEl.style.cssText='font-family:Share Tech Mono,monospace;font-size:11.5px;color:var(--gold);font-weight:700;flex-shrink:0;';
-    idEl.textContent = id;
-    const sevEl = el('span'); sevEl.style.cssText=`font-size:9.5px;font-family:Share Tech Mono,monospace;font-weight:700;color:${sevColor};border:1px solid ${sevColor};border-radius:3px;padding:1px 5px;flex-shrink:0;`;
-    sevEl.textContent = sev;
-    topRow.append(idEl, sevEl);
-
+    const topRow=el('div'); topRow.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap;';
+    const idEl=el('span'); idEl.style.cssText='font-family:Share Tech Mono,monospace;font-size:11.5px;color:var(--gold);font-weight:700;flex-shrink:0;'; idEl.textContent=id;
+    const sevEl=el('span'); sevEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+sevColor+';border:1px solid '+sevColor+';border-radius:3px;padding:1px 5px;flex-shrink:0;'; sevEl.textContent=sev;
+    topRow.append(idEl,sevEl);
     if(product){
-      const prodEl = el('span'); prodEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;background:rgba(15,184,221,0.12);border:1px solid var(--cyan);border-radius:3px;padding:1px 5px;color:var(--cyan);flex-shrink:0;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-      prodEl.textContent = product;
-      prodEl.title = product;
-      topRow.appendChild(prodEl);
+      const prodEl=el('span'); prodEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;background:rgba(15,184,221,0.12);border:1px solid var(--cyan);border-radius:3px;padding:1px 5px;color:var(--cyan);flex-shrink:0;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      prodEl.textContent=product; prodEl.title=product; topRow.appendChild(prodEl);
     }
-
-    // Published age (right-aligned)
     if(pub){
-      const hrs = Math.round((Date.now()-pub.getTime())/3600000);
-      const age = hrs < 1 ? 'just now' : hrs < 24 ? hrs+'h ago' : Math.round(hrs/24)+'d ago';
-      const ageEl = el('span');
-      ageEl.style.cssText='font-size:9.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;margin-left:auto;';
-      ageEl.textContent = age;
-      ageEl.title = pub.toLocaleString();
-      topRow.appendChild(ageEl);
+      const hrs=Math.round((Date.now()-pub.getTime())/3600000);
+      const age=hrs<1?'just now':hrs<24?hrs+'h ago':Math.round(hrs/24)+'d ago';
+      const ageEl=el('span'); ageEl.style.cssText='font-size:9.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;margin-left:auto;';
+      ageEl.textContent=age; ageEl.title=pub.toLocaleString(); topRow.appendChild(ageEl);
     }
-
-    const descEl = el('div'); descEl.style.cssText='font-size:11px;color:var(--text-dim);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
-    descEl.textContent = desc;
-
-    // Date row: Published + Last Modified
-    const dateRow = el('div'); dateRow.style.cssText='display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;';
+    const descEl=el('div'); descEl.style.cssText='font-size:11px;color:var(--text-dim);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;'; descEl.textContent=desc;
+    const dateRow=el('div'); dateRow.style.cssText='display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;';
     if(pub){
-      const pubLbl = el('span');
-      pubLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);opacity:0.75;';
-      pubLbl.textContent = '📅 Published: '+pub.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
-      dateRow.appendChild(pubLbl);
+      const l=el('span'); l.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);opacity:0.75;';
+      l.textContent='Published: '+pub.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); dateRow.appendChild(l);
     }
     if(modified){
-      const modLbl = el('span');
-      modLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);opacity:0.6;';
-      modLbl.textContent = '✏ Modified: '+modified.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
-      dateRow.appendChild(modLbl);
+      const l=el('span'); l.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);opacity:0.6;';
+      l.textContent='Modified: '+modified.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'}); dateRow.appendChild(l);
     }
-
-    item.append(topRow, descEl, dateRow);
+    item.append(topRow,descEl,dateRow);
     return item;
   }
 
-  async function fetchCves(){
-    listEl.innerHTML = '<div style="font-size:11.5px;color:var(--text-dim);font-style:italic;padding:4px 0;">Loading…</div>';
+  function renderCveList(){
+    listEl.innerHTML='';
+    const sevOrder={CRITICAL:4,HIGH:3,MEDIUM:2,LOW:1};
+    const getSev=cve=>cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity||cve.metrics?.cvssMetricV2?.[0]?.baseSeverity||'';
+    const dir=cfg.sortDir==='desc'?1:-1;
+    const sorted=[...cveAllItems].sort((a,b)=>{
+      if(cfg.sortBy==='severity'){
+        const diff=(sevOrder[getSev(b)]||0)-(sevOrder[getSev(a)]||0);
+        return diff!==0?dir*diff:new Date(b.published)-new Date(a.published);
+      }
+      return dir*(new Date(b.published)-new Date(a.published));
+    });
+    const totalPages=Math.max(1,Math.ceil(sorted.length/PAGE_SIZE));
+    cvePage=Math.min(cvePage,totalPages-1);
+    sorted.slice(cvePage*PAGE_SIZE,(cvePage+1)*PAGE_SIZE).forEach(cve=>listEl.appendChild(buildCveItem(cve)));
+    listEl.scrollTop=0;
+    pageInfo.textContent=sorted.length?`${cvePage+1} / ${totalPages}`:'';
+    prevBtn.style.opacity=cvePage>0?'1':'0.3';
+    nextBtn.style.opacity=cvePage<totalPages-1?'1':'0.3';
+    pageBar.style.display=totalPages>1?'flex':'none';
+  }
+
+  // Unified refresh: fetch + bulletin display + watchlist scan
+  async function refresh(){
+    spinner.style.display=''; refreshNote.style.display='';
     try {
-      const base = 'https://services.nvd.nist.gov/rest/json/cves/2.0?noRejected';
-      const doFetch = async (url) => {
-        const _w = getWorkerUrl(cfg.nvdWorker);
-        if(_w && cfg.nvdKey){
-          const r = await fetch(_w.replace(/\/+$/,'')+'/nvd', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint: url, apiKey: cfg.nvdKey }) });
+      const doFetch=async url=>{
+        const _w=getWorkerUrl(cfg.nvdWorker);
+        if(_w&&cfg.nvdKey){
+          const r=await fetch(_w.replace(/\/+$/,'')+'/nvd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:url,apiKey:cfg.nvdKey})});
           return r.json();
         }
         return fetch(url).then(r=>r.json());
       };
-
-      // Step 1: get totalResults with a minimal fetch
-      const probe = await doFetch(base + '&resultsPerPage=1&startIndex=0');
-      const total = probe.totalResults || 0;
-
-      // Step 2: fetch the last 2000 (most recently published)
-      const startIndex = Math.max(0, total - 2000);
-      const j = await doFetch(base + '&resultsPerPage=2000&startIndex=' + startIndex);
+      const base  = 'https://services.nvd.nist.gov/rest/json/cves/2.0?noRejected';
+      const probe = await doFetch(base+'&resultsPerPage=1&startIndex=0');
+      const total = probe.totalResults||0;
+      const j     = await doFetch(base+'&resultsPerPage=2000&startIndex='+Math.max(0,total-2000));
       cveAllItems = (j.vulnerabilities||[]).map(v=>v.cve);
-      cvePage = 0;
-      renderCveList();
-      hdrLbl.textContent = `Recent CVEs (${cveAllItems.length} of ${total.toLocaleString()})`;
+      cvePage=0; renderCveList();
+      hdrText.textContent='Recent CVEs ('+cveAllItems.length.toLocaleString()+' of '+total.toLocaleString()+')';
+
+      // Extract and persist vendor list from CPE data
+      const now_ts = Date.now();
+      const vendorMap = new Map(D.cveVendorList.map(v=>[v.vendor, v.lastSeen]));
+      cveAllItems.forEach(cve=>{
+        try {
+          (cve.configurations||[]).forEach(c=>(c.nodes||[]).forEach(node=>{
+            (node.cpeMatch||[]).forEach(cpe=>{
+              const parts=(cpe.criteria||'').split(':');
+              const vendor=(parts[3]||'').replace(/_/g,' ').trim();
+              if(vendor && vendor!=='*' && vendor.length>1) vendorMap.set(vendor, now_ts);
+            });
+          }));
+        } catch(e){}
+      });
+      // Cap at 2000, sorted alphabetically, keeping most recently seen
+      D.cveVendorList = [...vendorMap.entries()]
+        .sort((a,b)=>a[0].localeCompare(b[0]))
+        .slice(0,2000)
+        .map(([vendor,lastSeen])=>({vendor,lastSeen}));
+      updateVendorDropdown();
+      persist();
+
+      // Watchlist scan — client-side, no extra API calls
+      if(cfg.watchlist?.length){
+        const cutoff    = Date.now()-CUTOFF_MS;
+        const dismissed = new Set(D.cveAlarmHistory.map(h=>h.id));
+        const seen      = new Set();
+        const newHits   = [];
+        cfg.watchlist.forEach(w=>{
+          const term=w.term.toLowerCase();
+          cveAllItems.forEach(cve=>{
+            if(dismissed.has(cve.id)||seen.has(cve.id)) return;
+            const pub=cve.published?new Date(cve.published).getTime():0;
+            if(pub<cutoff) return; // 72h cutoff
+
+            // Primary: match against CPE vendor/product fields (structured, reliable)
+            let matched = false;
+            try {
+              const nodes = (cve.configurations||[]).flatMap(c=>c.nodes||[]);
+              for(const node of nodes){
+                for(const cpe of (node.cpeMatch||[])){
+                  const parts = (cpe.criteria||'').split(':');
+                  // cpe:2.3:type:vendor:product:...
+                  const vendor  = (parts[3]||'').replace(/_/g,' ').toLowerCase();
+                  const product = (parts[4]||'').replace(/_/g,' ').toLowerCase();
+                  if(vendor.includes(term) || product.includes(term)){ matched=true; break; }
+                }
+                if(matched) break;
+              }
+            } catch(e){}
+
+            // Fallback: description text (CPE may not be populated on brand-new CVEs)
+            if(!matched){
+              const desc=(cve.descriptions?.find(d=>d.lang==='en')?.value||'').toLowerCase();
+              // Use word-boundary style match — term must be a whole word in the description
+              const wordRe = new RegExp('\\b'+term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b');
+              if(wordRe.test(desc)) matched=true;
+            }
+
+            if(matched){
+              seen.add(cve.id);
+              newHits.push({cve, term:w.term});
+            }
+          });
+        });
+        if(newHits.length){
+          hitsBody.innerHTML='';
+          hitsTitle.textContent='WATCHLIST HITS ('+newHits.length+')';
+          newHits
+            .sort((a,b)=>new Date(b.cve.published)-new Date(a.cve.published))
+            .forEach(h=>hitsBody.appendChild(buildCveItem(h.cve, h.term)));
+          hitsPanel.style.display=''; hitsBody.style.display=''; hitsChevron.style.transform='';
+          if(cfg.alarmSound) cveAlarmSound();
+        }
+        // Update last-checked timestamp for all terms
+        const ts=new Date().toLocaleTimeString();
+        cfg.watchlist.forEach((_,i)=>{
+          const el2=document.getElementById('cveWS_'+sec.id+'_'+i);
+          if(el2) el2.textContent='checked '+ts;
+        });
+        persist();
+      }
     } catch(e){
-      listEl.innerHTML = `<div style="font-size:11.5px;color:var(--del-color);">Failed to load: ${e.message}</div>`;
+      listEl.innerHTML='<div style="font-size:11.5px;color:var(--del-color);">Failed to load: '+e.message+'</div>';
+    } finally {
+      spinner.style.display='none'; refreshNote.style.display='none';
     }
   }
 
-  function renderCveList(){
-    listEl.innerHTML = '';
-    const sevOrder = {CRITICAL:4,HIGH:3,MEDIUM:2,LOW:1};
-    const getSev = cve => cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity ||
-                          cve.metrics?.cvssMetricV2?.[0]?.baseSeverity || '';
-    const dir = cfg.sortDir==='asc' ? 1 : -1;
-    const sorted = [...cveAllItems].sort((a,b)=>{
-      if(cfg.sortBy==='severity'){
-        const diff = (sevOrder[getSev(b)]||0) - (sevOrder[getSev(a)]||0);
-        return diff !== 0 ? dir * diff : new Date(b.published) - new Date(a.published);
-      }
-      return dir * (new Date(b.published) - new Date(a.published));
-    });
-    const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-    cvePage = Math.min(cvePage, totalPages - 1);
-    const pageItems = sorted.slice(cvePage * PAGE_SIZE, (cvePage + 1) * PAGE_SIZE);
-    pageItems.forEach(cve => listEl.appendChild(buildCveItem(cve)));
-    listEl.scrollTop = 0;
-    // Update pagination bar
-    pageInfo.textContent = sorted.length ? `${cvePage+1} / ${totalPages}` : '';
-    prevBtn.style.opacity = cvePage > 0 ? '1' : '0.3';
-    nextBtn.style.opacity = cvePage < totalPages-1 ? '1' : '0.3';
-    pageBar.style.display = totalPages > 1 ? 'flex' : 'none';
-  }
-  rfBtn.onclick = fetchCves;
-  fetchCves();
+  // Footer
+  const footerLink=el('div'); footerLink.style.cssText='margin-top:6px;text-align:center;';
+  const footerA=el('a'); footerA.href='https://nvd.nist.gov/vuln/search'; footerA.target='_blank'; footerA.rel='noopener noreferrer';
+  footerA.style.cssText='font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-decoration:none;letter-spacing:0.04em;opacity:0.6;transition:opacity 0.15s;';
+  footerA.textContent='\u2197 nvd.nist.gov \u2014 full CVE database';
+  footerA.onmouseenter=()=>footerA.style.opacity='1'; footerA.onmouseleave=()=>footerA.style.opacity='0.6';
+  footerLink.appendChild(footerA); wrap.appendChild(footerLink);
 
-  // Auto-refresh the feed every hour
-  const cveRefreshTimer = setInterval(fetchCves, 60 * 60 * 1000);
-
-  // Footer link — appended after renderCveList so it sits below the scroll area
-  const footerLink = el('div');
-  footerLink.style.cssText = 'margin-top:6px;text-align:center;';
-  const footerA = el('a');
-  footerA.href = 'https://nvd.nist.gov/vuln/search';
-  footerA.target = '_blank'; footerA.rel = 'noopener noreferrer';
-  footerA.style.cssText = 'font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-decoration:none;letter-spacing:0.04em;opacity:0.6;transition:opacity 0.15s;';
-  footerA.textContent = '↗ nvd.nist.gov — full CVE database';
-  footerA.onmouseenter = ()=>footerA.style.opacity='1';
-  footerA.onmouseleave = ()=>footerA.style.opacity='0.6';
-  footerLink.appendChild(footerA);
-  wrap.appendChild(footerLink);
-
-  // ── Watchlist section ──────────────────────────────────────
-  const watchSection = el('div','cve-watch-section');
-
-  const watchHdr = el('div','cve-watch-header');
-  const watchChevron = el('span','cve-watch-chevron'); watchChevron.textContent = '▶';
-  const watchTitle = el('div','cve-watch-title'); watchTitle.textContent = 'Watchlist';
-  const checkNowBtn = el('button','monitor-check-btn');
-  checkNowBtn.textContent='↺'; checkNowBtn.title='Check watchlist now';
-  checkNowBtn.onclick = e=>{ e.stopPropagation(); cveCheckAll(sec, showNewCves); };
-  watchHdr.append(watchChevron, watchTitle, checkNowBtn);
+  // Watchlist section
+  const watchSection=el('div','cve-watch-section');
+  const watchHdr=el('div','cve-watch-header');
+  const watchChevron=el('span','cve-watch-chevron'); watchChevron.textContent='\u25b6';
+  const watchTitle=el('div','cve-watch-title'); watchTitle.textContent='Watchlist';
+  watchHdr.append(watchChevron, watchTitle);
   watchSection.appendChild(watchHdr);
-
-  // Collapsible body — collapsed by default
-  const watchBody = el('div','cve-watch-body');
-  watchBody.style.cssText = 'display:none;';
+  const watchBody=el('div','cve-watch-body'); watchBody.style.cssText='display:none;';
   watchSection.appendChild(watchBody);
-
-  // Toggle collapse on header click
-  watchHdr.addEventListener('click', ()=>{
-    const open = watchBody.style.display !== 'none';
-    watchBody.style.display = open ? 'none' : '';
-    watchHdr.classList.toggle('open', !open);
+  watchHdr.addEventListener('click',()=>{
+    const open=watchBody.style.display!=='none';
+    watchBody.style.display=open?'none':''; watchHdr.classList.toggle('open',!open);
   });
 
-  const watchListEl = el('div','cve-watch-list');
-  watchListEl.id = 'cveWatch_'+sec.id;
+  const watchListEl=el('div','cve-watch-list'); watchListEl.id='cveWatch_'+sec.id;
   watchBody.appendChild(watchListEl);
 
-  // Options row (edit mode only)
-  const optRow = el('div','cve-watch-options');
-  const alarmLbl = el('label','cve-watch-opt-label');
-  const alarmChk = el('input'); alarmChk.type='checkbox'; alarmChk.checked=!!cfg.alarmSound;
-  alarmChk.onchange = ()=>{ cfg.alarmSound=alarmChk.checked; persist(); };
+  const optRow=el('div','cve-watch-options');
+  const alarmLbl=el('label','cve-watch-opt-label');
+  const alarmChk=el('input'); alarmChk.type='checkbox'; alarmChk.checked=!!cfg.alarmSound;
+  alarmChk.onchange=()=>{ cfg.alarmSound=alarmChk.checked; persist(); };
   alarmLbl.append(alarmChk, document.createTextNode(' Alarm sound'));
-  const intLbl = el('label','cve-watch-opt-label');
-  intLbl.style.marginLeft='8px';
-  const intInp = el('input','cve-interval-inp'); intInp.type='number'; intInp.min='5'; intInp.max='1440';
-  intInp.value = cfg.watchInterval;
-  intInp.title = 'Check interval in minutes';
-  intInp.style.cssText += ';-moz-appearance:textfield;appearance:textfield;';
-  intInp.addEventListener('change',()=>{
-    const v = Math.max(5, Math.min(1440, parseInt(intInp.value)||30));
-    intInp.value = v; cfg.watchInterval = v; persist();
-    cveStartWatching(sec, showNewCves);
-  });
-  intInp.addEventListener('keydown',e=>{ if(e.key==='Enter') intInp.blur(); });
-  intLbl.append(intInp, document.createTextNode(' min interval'));
-  optRow.append(alarmLbl, intLbl);
+  optRow.appendChild(alarmLbl);
 
-  // NVD API key row (edit mode only)
-  const keyRow = el('div','cve-watch-key-row');
-  const keyInputRow = el('div'); keyInputRow.style.cssText='display:flex;gap:5px;';
-  const keyInp = el('input','cve-interval-inp');
+  const keyRow=el('div','cve-watch-key-row');
+  const keyInputRow=el('div'); keyInputRow.style.cssText='display:flex;gap:5px;';
+  const keyInp=el('input','cve-interval-inp');
   keyInp.type='text'; keyInp.style.cssText='flex:1;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;';
-  keyInp.placeholder='NVD API token (stored locally, optional)';
-  keyInp.value = cfg.nvdKey || '';
-  const keySaveBtn = el('button','todo-add-btn'); keySaveBtn.textContent='Save';
-  const keyStatus = el('div'); keyStatus.style.cssText='font-size:10px;color:var(--cyan);min-height:14px;';
-  keySaveBtn.onclick = ()=>{
-    cfg.nvdKey = keyInp.value.trim();
-    cfg.nvdWorker = workerInp.value.trim();
-    persist();
-    keyStatus.textContent = '✓ Saved';
-    setTimeout(()=>{ keyStatus.textContent=''; }, 2500);
+  keyInp.placeholder='NVD API token (stored locally, optional)'; keyInp.value=cfg.nvdKey||'';
+  const keySaveBtn=el('button','todo-add-btn'); keySaveBtn.textContent='Save';
+  const keyStatus=el('div'); keyStatus.style.cssText='font-size:10px;color:var(--cyan);min-height:14px;';
+  const workerInp=el('input','cve-interval-inp');
+  workerInp.type='text'; workerInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-top:4px;';
+  workerInp.placeholder='Override global Worker URL for CVE only (optional)'; workerInp.value=cfg.nvdWorker||'';
+  keySaveBtn.onclick=()=>{
+    cfg.nvdKey=keyInp.value.trim(); cfg.nvdWorker=workerInp.value.trim(); persist();
+    keyStatus.textContent='\u2713 Saved'; setTimeout(()=>{ keyStatus.textContent=''; },2500);
   };
   keyInp.addEventListener('keydown',e=>{ if(e.key==='Enter') keySaveBtn.click(); });
-
-  const workerInp = el('input','cve-interval-inp');
-  workerInp.type='text'; workerInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-top:4px;';
-  workerInp.placeholder='Override global Worker URL for CVE only (optional)';
-  workerInp.value = cfg.nvdWorker || '';
   workerInp.addEventListener('keydown',e=>{ if(e.key==='Enter') keySaveBtn.click(); });
-
-  const keyNote = el('div');
-  keyNote.style.cssText='font-size:10px;color:var(--text-dim);line-height:1.5;';
-  keyNote.innerHTML='Free key at <a href="https://nvd.nist.gov/developers/request-an-api-key" target="_blank" rel="noopener" style="color:var(--cyan);">nvd.nist.gov/developers/request-an-api-key</a> — raises limit from 5 to 50 req/30s. NVD requires the key in a request header which browsers block, so a Cloudflare Worker is also needed. Get the worker script at <a href="https://github.com/badbox29/personal_dashboard/blob/main/pollen-proxy-worker.js" target="_blank" rel="noopener" style="color:var(--cyan);">github.com/badbox29/personal_dashboard</a>.';
+  const keyNote=el('div'); keyNote.style.cssText='font-size:10px;color:var(--text-dim);line-height:1.5;';
+  keyNote.innerHTML='Free key at <a href="https://nvd.nist.gov/developers/request-an-api-key" target="_blank" rel="noopener" style="color:var(--cyan);">nvd.nist.gov/developers/request-an-api-key</a> \u2014 raises limit from 5 to 50 req/30s. NVD requires the key in a request header which browsers block, so a Cloudflare Worker is also needed. Get the worker script at <a href="https://github.com/badbox29/personal_dashboard/blob/main/pollen-proxy-worker.js" target="_blank" rel="noopener" style="color:var(--cyan);">github.com/badbox29/personal_dashboard</a>.';
   keyInputRow.append(keyInp, keySaveBtn);
   keyRow.append(keyInputRow, workerInp, keyStatus, keyNote);
-  watchBody.appendChild(optRow);
-  watchBody.appendChild(keyRow);
+  watchBody.appendChild(optRow); watchBody.appendChild(keyRow);
 
-  // Add row (edit mode only)
-  const addRow = el('div','cve-watch-add-row');
-  const termInp = el('input','todo-add-inp'); termInp.placeholder='Product or vendor to watch…';
-  const addBtn = el('button','todo-add-btn'); addBtn.textContent='＋ Add';
-  const doAdd = ()=>{
-    const term = termInp.value.trim();
-    if(!term) return;
+  const addRow=el('div','cve-watch-add-row');
+  addRow.style.flexDirection='column';
+
+  // Vendor dropdown row
+  const dropRow=el('div'); dropRow.style.cssText='display:flex;gap:5px;width:100%;';
+  const vendorFilter=el('input','todo-add-inp');
+  vendorFilter.placeholder='Search vendor list\u2026'; vendorFilter.style.flex='1';
+  vendorFilter.autocomplete='off';
+  const vendorSel=el('select');
+  vendorSel.style.cssText='font-size:11px;padding:3px 6px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);flex:1;max-width:180px;';
+  const addFromListBtn=el('button','todo-add-btn'); addFromListBtn.textContent='\uff0b Add';
+
+  function updateVendorDropdown(){
+    const f=vendorFilter.value.toLowerCase();
+    const filtered=D.cveVendorList.filter(v=> !f || v.vendor.toLowerCase().includes(f));
+    vendorSel.innerHTML='';
+    if(!filtered.length){
+      const o=document.createElement('option'); o.textContent='No vendors found'; o.disabled=true; vendorSel.appendChild(o);
+    } else {
+      filtered.forEach(v=>{
+        const o=document.createElement('option');
+        o.value=v.vendor;
+        // Prettify: capitalize words
+        o.textContent=v.vendor.replace(/\b\w/g,c=>c.toUpperCase());
+        vendorSel.appendChild(o);
+      });
+    }
+  }
+
+  vendorFilter.addEventListener('input', updateVendorDropdown);
+  updateVendorDropdown();
+
+  addFromListBtn.onclick=()=>{
+    const term=vendorSel.value; if(!term) return;
     if(cfg.watchlist.find(w=>w.term.toLowerCase()===term.toLowerCase())) return;
-    cfg.watchlist.push({ term, lastChecked: null });
-    persist(); termInp.value='';
-    renderWatchlist();
-    cveStartWatching(sec, showNewCves);
+    cfg.watchlist.push({term}); persist(); renderWatchlist();
   };
-  termInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doAdd(); });
-  addBtn.onclick = doAdd;
-  addRow.append(termInp, addBtn);
+  dropRow.append(vendorFilter, vendorSel, addFromListBtn);
+  addRow.appendChild(dropRow);
+
+  // Divider
+  const divider=el('div'); divider.style.cssText='display:flex;align-items:center;gap:6px;width:100%;margin:4px 0;';
+  const dl=el('div'); dl.style.cssText='flex:1;height:1px;background:var(--border);';
+  const dt=el('span'); dt.style.cssText='font-size:9.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;white-space:nowrap;';
+  dt.textContent='or type custom term';
+  const dr=el('div'); dr.style.cssText='flex:1;height:1px;background:var(--border);';
+  divider.append(dl,dt,dr);
+  addRow.appendChild(divider);
+
+  // Custom entry row
+  const customRow=el('div'); customRow.style.cssText='display:flex;gap:5px;width:100%;';
+  const termInp=el('input','todo-add-inp'); termInp.placeholder='Custom term (e.g. windows server, active directory)\u2026'; termInp.style.flex='1';
+  const addCustomBtn=el('button','todo-add-btn'); addCustomBtn.textContent='\uff0b Add';
+  const doAddCustom=()=>{
+    const term=termInp.value.trim(); if(!term) return;
+    if(cfg.watchlist.find(w=>w.term.toLowerCase()===term.toLowerCase())) return;
+    cfg.watchlist.push({term}); persist(); termInp.value=''; renderWatchlist();
+  };
+  termInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doAddCustom(); });
+  addCustomBtn.onclick=doAddCustom;
+  customRow.append(termInp, addCustomBtn);
+  addRow.appendChild(customRow);
+
   watchBody.appendChild(addRow);
   wrap.appendChild(watchSection);
 
-  // Render watchlist entries
   function renderWatchlist(){
     watchListEl.innerHTML='';
     if(!cfg.watchlist.length){
-      const empty = el('div'); empty.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;padding:2px 0;';
-      empty.textContent = 'No terms watched. Add one below in edit mode.';
-      watchListEl.appendChild(empty); return;
+      const empty=el('div'); empty.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;padding:2px 0;';
+      empty.textContent='No terms watched. Add one below in edit mode.'; watchListEl.appendChild(empty); return;
     }
     cfg.watchlist.forEach((w,idx)=>{
-      const row = el('div','cve-watch-item');
-      const term = el('div','cve-watch-term'); term.textContent = w.term;
-      const status = el('div','cve-watch-status');
-      status.id = 'cveWS_'+sec.id+'_'+idx;
-      status.textContent = w.lastChecked
-        ? 'checked '+new Date(w.lastChecked).toLocaleTimeString()
-        : 'pending';
-      const del = icBtn('✕','Remove', ()=>{
-        cfg.watchlist.splice(idx,1); persist(); renderWatchlist();
-        cveStartWatching(sec, showNewCves);
-      });
-      del.classList.add('ic-del');
-      row.append(term, status, del);
-      watchListEl.appendChild(row);
+      const row=el('div','cve-watch-item');
+      const term=el('div','cve-watch-term'); term.textContent=w.term;
+      const status=el('div','cve-watch-status'); status.id='cveWS_'+sec.id+'_'+idx; status.textContent='pending';
+      const del=icBtn('\u2715','Remove',()=>{ cfg.watchlist.splice(idx,1); persist(); renderWatchlist(); });
+      del.classList.add('ic-del'); row.append(term,status,del); watchListEl.appendChild(row);
     });
-  }
-
-  // Show alert banner with new CVE hits
-  function showNewCves(hits){
-    if(!hits.length) return;
-    hitsBody.innerHTML = '';
-    // Collect all hit CVE IDs across all terms
-    const hitIds = new Set(hits.flatMap(h => h.ids.map(id => id.split(' ')[0])));
-    hitsTitle.textContent = `WATCHLIST HITS (${hitIds.size})`;
-    // Build a tile for each matched CVE id — look it up in cveAllItems first, fall back to stub
-    hitIds.forEach(id => {
-      const cve = cveAllItems.find(c => c.id === id);
-      if(cve){
-        hitsBody.appendChild(buildCveItem(cve));
-      } else {
-        // CVE not in current bulletin page — show minimal stub
-        const stub = el('div');
-        stub.style.cssText = 'padding:5px 8px;background:var(--inp-bg);border:1px solid #ff4444;border-radius:4px;font-family:Share Tech Mono,monospace;font-size:11.5px;color:var(--gold);cursor:pointer;';
-        stub.textContent = id;
-        stub.title = 'Click to view on NVD';
-        stub.onclick = ()=> window.open('https://nvd.nist.gov/vuln/detail/'+id,'_blank');
-        hitsBody.appendChild(stub);
-      }
-    });
-    hitsPanel.style.display = '';
-    hitsBody.style.display  = '';
-    hitsChevron.style.transform = '';
-    if(cfg.alarmSound) cveAlarmSound();
-    renderWatchlist();
   }
 
   renderWatchlist();
+  refresh();
+  refreshTimer=setInterval(refresh, REFRESH_MS);
 
-  // Start background watching
-  cveStartWatching(sec, showNewCves);
-
-  // Cleanup on DOM removal
-  const obs = new MutationObserver(()=>{
-    if(!document.contains(wrap)){
-      clearInterval(cveWatchTimers[sec.id]);
-      clearInterval(cveRefreshTimer);
-      delete cveWatchTimers[sec.id];
-      obs.disconnect();
-    }
-  });
+  const obs=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(refreshTimer); obs.disconnect(); } });
   obs.observe(document.body,{childList:true,subtree:true});
-
   return wrap;
 }
 
-function cveStartWatching(sec, callback){
-  const cfg = sec.widgetConfig;
-  if(cveWatchTimers[sec.id]) clearInterval(cveWatchTimers[sec.id]);
-  if(!cfg.watchlist?.length) return;
-  const ms = (cfg.watchInterval||30) * 60 * 1000;
-  cveCheckAll(sec, callback);
-  cveWatchTimers[sec.id] = setInterval(()=> cveCheckAll(sec, callback), ms);
-}
-
-async function cveCheckAll(sec, callback){
-  const cfg = sec.widgetConfig;
-  if(!cfg.watchlist?.length) return;
-  const hits = [];
-  const cutoff = Date.now() - (72 * 60 * 60 * 1000); // 72 hours ago
-
-  for(const w of cfg.watchlist){
-    try {
-      const endpoint = 'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch='
-                     + encodeURIComponent(w.term)+'&resultsPerPage=10&noRejected';
-      let r;
-      const _nvdW2 = getWorkerUrl(cfg.nvdWorker);
-      if(_nvdW2 && cfg.nvdKey){
-        const workerUrl = _nvdW2.replace(/\/+$/,'')+'/nvd';
-        r = await fetch(workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint, apiKey: cfg.nvdKey||undefined }) });
-      } else {
-        r = await fetch(endpoint);
-      }
-      const j = await r.json();
-      const vulns = j.vulnerabilities||[];
-      w.lastChecked = Date.now();
-
-      // Filter to CVEs published within 72 hours
-      const fresh = vulns.filter(v => {
-        const pub = v.cve.published;
-        return pub && new Date(pub).getTime() >= cutoff;
-      });
-
-      if(fresh.length){
-        hits.push({
-          term: w.term,
-          ids: fresh.map(v => {
-            const id  = v.cve.id;
-            const pub = new Date(v.cve.published);
-            const hrs = Math.round((Date.now()-pub.getTime())/3600000);
-            return id + ' ('+hrs+'h ago)';
-          })
-        });
-      }
-
-      persist();
-      // Update status labels
-      cfg.watchlist.forEach((ww,i)=>{
-        const el2 = document.getElementById('cveWS_'+sec.id+'_'+i);
-        if(el2 && ww.lastChecked) el2.textContent='checked '+new Date(ww.lastChecked).toLocaleTimeString();
-      });
-    } catch(e){ /* network error — skip this term */ }
-    // Polite delay between NVD API requests
-    await new Promise(res=>setTimeout(res,1500));
+function openCveHistoryModal(){
+  let overlay=document.getElementById('cveHistoryOverlay');
+  if(!overlay){
+    overlay=el('div','overlay'); overlay.id='cveHistoryOverlay';
+    const modal=el('div','modal'); modal.style.cssText='width:520px;max-height:80vh;display:flex;flex-direction:column;';
+    const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+    const mtitle=el('h3'); mtitle.style.margin='0'; mtitle.textContent='\uD83D\uDCCB CVE Alarm History';
+    const clearBtn=el('button','mbtn'); clearBtn.style.cssText='margin-left:auto;font-size:11px;padding:4px 10px;';
+    clearBtn.textContent='Clear All'; clearBtn.onclick=()=>{ D.cveAlarmHistory=[]; persist(); renderHistory(); };
+    mhdr.append(mtitle,clearBtn);
+    const body=el('div'); body.id='cveHistoryBody'; body.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-bottom:10px;';
+    const actions=el('div','modal-actions');
+    const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close'; closeBtn.onclick=()=>closeOverlay('cveHistoryOverlay');
+    actions.appendChild(closeBtn); modal.append(mhdr,body,actions); overlay.appendChild(modal); document.body.appendChild(overlay);
   }
-  if(hits.length) callback(hits);
+  function renderHistory(){
+    const body=document.getElementById('cveHistoryBody'); body.innerHTML='';
+    if(!D.cveAlarmHistory.length){
+      const empty=el('div'); empty.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;padding:8px 0;';
+      empty.textContent='No alarm history yet — dismissed hits will appear here.'; body.appendChild(empty); return;
+    }
+    D.cveAlarmHistory.forEach((h,i)=>{
+      const row=el('div'); row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;';
+      const idEl=el('a'); idEl.href='https://nvd.nist.gov/vuln/detail/'+h.id; idEl.target='_blank'; idEl.rel='noopener';
+      idEl.style.cssText='font-family:Share Tech Mono,monospace;font-size:11.5px;color:var(--gold);font-weight:700;text-decoration:none;flex-shrink:0;'; idEl.textContent=h.id;
+      const sc={CRITICAL:'#ff4444',HIGH:'#ff8844',MEDIUM:'#ffcc44',LOW:'#44cc88'}[h.sev]||'var(--text-dim)';
+      const sevEl=el('span'); sevEl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+sc+';border:1px solid '+sc+';border-radius:3px;padding:1px 4px;flex-shrink:0;'; sevEl.textContent=h.sev||'\u2014';
+      const termEl=el('span'); termEl.style.cssText='font-size:10px;color:var(--cyan);font-family:Share Tech Mono,monospace;flex:1;'; termEl.textContent=h.term||'';
+      const dateEl=el('span'); dateEl.style.cssText='font-size:9.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;'; dateEl.textContent=h.dismissedAt?new Date(h.dismissedAt).toLocaleString():'';
+      const delBtn=el('button'); delBtn.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11px;padding:0 2px;flex-shrink:0;'; delBtn.textContent='\u2715'; delBtn.title='Remove from history';
+      delBtn.onclick=()=>{ D.cveAlarmHistory.splice(i,1); persist(); renderHistory(); };
+      row.append(idEl,sevEl,termEl,dateEl,delBtn); body.appendChild(row);
+    });
+  }
+  renderHistory(); openOverlay('cveHistoryOverlay');
 }
+
+
 
 /* ---- SEARCH ENGINE SHORTCUTS ---- */
 function buildSearchWidget(sec){
