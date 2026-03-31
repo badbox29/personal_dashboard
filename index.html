@@ -3026,127 +3026,6 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 /* ============================================================
    WIDGET — RSS Feed
    ============================================================ */
-/* ============================================================
-   WIDGET — PRTG Monitor
-   ============================================================ */
-.prtg-device-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.prtg-device {
-  background: var(--inp-bg);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 7px 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: default;
-  position: relative;
-  transition: border-color 0.15s;
-}
-.prtg-device:hover { border-color: rgba(255,255,255,0.2); }
-.prtg-device.st-green  { border-left: 3px solid #44cc88; }
-.prtg-device.st-yellow { border-left: 3px solid #ffcc00; }
-.prtg-device.st-red    { border-left: 3px solid #ff4444; }
-.prtg-device.st-gray   { border-left: 3px solid var(--text-dim); }
-.prtg-dot {
-  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
-}
-.prtg-dot.green  { background: #44cc88; box-shadow: 0 0 5px rgba(68,204,136,0.6); }
-.prtg-dot.yellow { background: #ffcc00; box-shadow: 0 0 5px rgba(255,204,0,0.6); }
-.prtg-dot.red    { background: #ff4444; box-shadow: 0 0 5px rgba(255,68,68,0.6); }
-.prtg-dot.gray   { background: var(--text-dim); }
-.prtg-name {
-  flex: 1;
-  font-size: 12.5px;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.prtg-status-text {
-  font-size: 10px;
-  font-family: 'Share Tech Mono', monospace;
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-/* Hover tooltip */
-.prtg-tooltip {
-  display: none;
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
-  min-width: 220px;
-  background: var(--modal-bg);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 8px 10px;
-  z-index: 500;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.5);
-  pointer-events: none;
-}
-.prtg-device:hover .prtg-tooltip { display: block; }
-.prtg-tooltip-title {
-  font-size: 10px;
-  font-family: 'Share Tech Mono', monospace;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 5px;
-}
-.prtg-tooltip-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  font-size: 11px;
-  font-family: 'Share Tech Mono', monospace;
-  line-height: 1.9;
-}
-.prtg-tooltip-row span:first-child { color: var(--text-dim); }
-.prtg-tooltip-row span:last-child  { color: var(--text); text-align: right; }
-.prtg-sensor-dot {
-  display: inline-block;
-  width: 7px; height: 7px; border-radius: 50%;
-  margin-right: 4px; flex-shrink: 0;
-}
-.prtg-hdr {
-  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
-}
-.prtg-hdr-title {
-  font-size: 10px; font-family: 'Share Tech Mono', monospace;
-  color: var(--text-dim); letter-spacing: 0.06em;
-  text-transform: uppercase; flex: 1;
-}
-.prtg-refresh-btn {
-  font-size: 12px; background: none; border: none;
-  color: var(--text-dim); cursor: pointer;
-  padding: 2px 5px; border-radius: 3px; transition: color 0.15s;
-}
-.prtg-refresh-btn:hover { color: var(--cyan); }
-.prtg-status { font-size: 11.5px; color: var(--text-dim); font-style: italic; padding: 4px 0; }
-.prtg-settings-row {
-  display: none; flex-direction: column; gap: 6px; margin-top: 8px;
-}
-body.edit-mode .prtg-settings-row { display: flex; }
-.prtg-add-row {
-  display: none; gap: 5px; margin-top: 4px; flex-wrap: wrap; align-items: center;
-}
-body.edit-mode .prtg-add-row { display: flex; }
-.prtg-device-tag {
-  font-size: 10.5px; font-family: 'Share Tech Mono', monospace;
-  background: rgba(255,255,255,0.06); border: 1px solid var(--border);
-  border-radius: 3px; padding: 2px 6px; color: var(--text-dim);
-  display: flex; align-items: center; gap: 4px;
-}
-.prtg-device-tag button {
-  background: none; border: none; color: var(--text-dim);
-  cursor: pointer; font-size: 10px; padding: 0; line-height: 1;
-}
-.prtg-device-tag button:hover { color: var(--del-color); }
-
 .rss-feed-list {
   display: flex;
   flex-direction: column;
@@ -3668,7 +3547,6 @@ body.edit-mode .rss-add-row { display: flex; }
     <button class="tool-btn" id="loadBtn" onclick="triggerImport()" title="Load a previously exported JSON backup">⬆ Load</button>
     <button class="tool-btn" id="bookmarksBtn" onclick="openBookmarkImport()" title="Import bookmarks from browser export file">📑 Bookmarks</button>
     <button class="tool-btn" id="workerBtn" onclick="openWorkerModal()" title="Configure global Cloudflare Worker URL" style="display:none;">⚡ Worker</button>
-    <button class="tool-btn" id="prtgBtn"   onclick="openPrtgModal()"  title="Configure PRTG connection" style="display:none;">📡 PRTG</button>
     <button class="tool-btn" id="resetBtn" style="color:#cc6666;" onclick="resetToDefaults()" title="Reset to defaults">↺ Reset</button>
     <!-- Mobile overflow trigger — hidden on desktop, shown on mobile via CSS -->
     <button class="tool-btn" id="mobileMoreBtn" onclick="toggleMobileMenu()"
@@ -3745,49 +3623,6 @@ body.edit-mode .rss-add-row { display: flex; }
 
 <!-- ===== HIDDEN FILE INPUT ===== -->
 <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImport(event)">
-
-<!-- ===== PRTG MODAL ===== -->
-<div class="overlay" id="prtgOverlay">
-  <div class="modal" style="width:520px;">
-    <h3>📡 PRTG Connection</h3>
-    <p style="font-size:12px;color:var(--text-dim);margin:0 0 14px;line-height:1.7;">
-      Configure your PRTG instance once here. All PRTG widgets use these credentials.
-      Your API token is stored only in your browser's local storage and is included in settings exports.
-    </p>
-
-    <label style="font-weight:600;">PRTG Base URL</label>
-    <p style="font-size:11px;color:var(--text-dim);margin:4px 0 6px;line-height:1.5;">
-      Your PRTG server URL — e.g. <code style="font-family:Share Tech Mono,monospace;color:var(--cyan);">https://prtg.yourcompany.com</code>
-    </p>
-    <input type="text" id="prtgUrlInp" placeholder="https://prtg.yourcompany.com"
-           style="width:100%;margin-bottom:14px;font-family:Share Tech Mono,monospace;font-size:12px;box-sizing:border-box;"
-           onkeydown="if(event.key==='Enter') savePrtgSettings()">
-
-    <label style="font-weight:600;">API Token <span style="font-weight:400;color:var(--text-dim);font-size:11px;">(stored locally)</span></label>
-    <p style="font-size:11px;color:var(--text-dim);margin:4px 0 6px;line-height:1.5;">
-      Generate a token in PRTG under <strong style="color:var(--text);">Setup → My Account → API Token</strong>.
-      Read-only access is sufficient.
-    </p>
-    <div style="display:flex;gap:7px;margin-bottom:6px;">
-      <input type="password" id="prtgTokenInp" placeholder="PRTG API token…"
-             style="flex:1;font-family:Share Tech Mono,monospace;font-size:12px;"
-             onkeydown="if(event.key==='Enter') savePrtgSettings()">
-      <button class="mbtn mbtn-primary" onclick="savePrtgSettings()" style="flex-shrink:0;">Save</button>
-    </div>
-    <div id="prtgModalStatus" style="font-size:11px;color:var(--cyan);min-height:16px;margin-bottom:10px;"></div>
-
-    <div style="padding-top:12px;border-top:1px solid var(--border);">
-      <p style="font-size:11px;color:var(--text-dim);margin:0;line-height:1.7;">
-        Add PRTG widgets from the <strong style="color:var(--text);">Network Engineering</strong> section of the widget picker.
-        Each widget shows one PRTG group and can be placed anywhere on your dashboard.
-      </p>
-    </div>
-
-    <div class="modal-actions">
-      <button class="mbtn mbtn-cancel" onclick="closeOverlay('prtgOverlay')">Close</button>
-    </div>
-  </div>
-</div>
 
 <!-- ===== WORKER MODAL ===== -->
 <div class="overlay" id="workerOverlay">
@@ -4091,9 +3926,6 @@ body.edit-mode .rss-add-row { display: flex; }
         <button class="sec-type-card" id="swBgp"       onclick="selectWidgetType('bgp')">
           🔭 BGP / ASN<span>ASN &amp; IP prefix lookup</span>
         </button>
-        <button class="sec-type-card" id="swPrtg"      onclick="selectWidgetType('prtg')">
-          📡 PRTG Monitor<span>Device &amp; sensor status</span>
-        </button>
       </div>
     </div>
     <div class="modal-actions">
@@ -4214,8 +4046,6 @@ const DEFAULTS = {
   proxyUrl: '',
   workerUrl: '',
   pollenKey: '',
-  prtgUrl: '',
-  prtgToken: '',
   pollenEnabled: false,
   pollenService: 'weatherapi',
   pollenProxy: '',
@@ -4544,7 +4374,7 @@ const SEARCH_ENGINES = [
 ];
 
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss',
-                      'ports','myip','rfc','cve','bgp','prtg'];
+                      'ports','myip','rfc','cve','bgp'];
 
 const UNIT_CATS = {
   Length:      { units:['mm','cm','m','km','in','ft','yd','mi'],                       toBase:{ mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344 } },
@@ -4787,8 +4617,6 @@ const PORT_COMBOS = {
   if(!D.recentVisited) D.recentVisited = [];
   if(D.proxyUrl === undefined) D.proxyUrl = '';
   if(D.workerUrl === undefined) D.workerUrl = '';
-  if(D.prtgUrl   === undefined) D.prtgUrl   = '';
-  if(D.prtgToken === undefined) D.prtgToken = '';
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -5240,7 +5068,6 @@ function buildWidgetBody(sec){
     case 'cve':       return buildCveWidget(sec);
     case 'bgp':       return buildBgpWidget(sec);
     case 'rss':       return buildRssWidget(sec);
-    case 'prtg':      return buildPrtgWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -6215,242 +6042,6 @@ function buildBgpWidget(sec){
 
   return wrap;
 }
-/* ---- PRTG MONITOR ---- */
-function openPrtgModal(){
-  document.getElementById('prtgUrlInp').value   = D.prtgUrl   || '';
-  document.getElementById('prtgTokenInp').value = D.prtgToken || '';
-  document.getElementById('prtgModalStatus').textContent = '';
-  openOverlay('prtgOverlay');
-}
-
-function savePrtgSettings(){
-  D.prtgUrl   = document.getElementById('prtgUrlInp').value.trim().replace(/\/+$/,'');
-  D.prtgToken = document.getElementById('prtgTokenInp').value.trim();
-  persist();
-  const s = document.getElementById('prtgModalStatus');
-  s.textContent = '✓ Saved.';
-  setTimeout(()=>{ s.textContent=''; }, 2500);
-}
-
-function buildPrtgWidget(sec){
-  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
-  if(!cfg.label)        cfg.label        = 'PRTG Monitor';
-  if(!cfg.devices)      cfg.devices      = []; // [{objid, label, type:'device'|'url'}]
-  if(!cfg.refreshSecs)  cfg.refreshSecs  = 60; // min 30
-
-  const wrap = el('div');
-
-  // ── Header ─────────────────────────────────────────────────
-  const hdr = el('div','prtg-hdr');
-  const hdrTitle = el('div','prtg-hdr-title'); hdrTitle.textContent = cfg.label || 'PRTG Monitor';
-  const refreshBtn = el('button','prtg-refresh-btn'); refreshBtn.textContent='↺'; refreshBtn.title='Refresh now';
-  refreshBtn.onclick = ()=> fetchAll();
-  hdr.append(hdrTitle, refreshBtn);
-  wrap.appendChild(hdr);
-
-  // ── Device list ─────────────────────────────────────────────
-  const deviceList = el('div','prtg-device-list');
-  const statusEl   = el('div','prtg-status'); statusEl.textContent='Loading…';
-  deviceList.appendChild(statusEl);
-  wrap.appendChild(deviceList);
-
-  // ── Settings row (edit mode only) ───────────────────────────
-  const settingsRow = el('div','prtg-settings-row');
-
-  // Widget label
-  const lblRow = el('div'); lblRow.style.cssText='display:flex;gap:5px;align-items:center;';
-  const lblInp = el('input','search-widget-input');
-  lblInp.placeholder='Widget label'; lblInp.value=cfg.label||''; lblInp.style.flex='1';
-  lblInp.oninput=()=>{ cfg.label=lblInp.value.trim()||'PRTG Monitor'; hdrTitle.textContent=cfg.label; persist(); };
-  lblRow.appendChild(lblInp);
-  settingsRow.appendChild(lblRow);
-
-  // Refresh interval
-  const intRow = el('div'); intRow.style.cssText='display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);';
-  const intInp = el('input'); intInp.type='number'; intInp.min='30'; intInp.max='3600';
-  intInp.value=cfg.refreshSecs;
-  intInp.style.cssText='width:52px;font-size:11px;padding:2px 4px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:3px;color:var(--text);outline:none;text-align:center;-moz-appearance:textfield;appearance:textfield;';
-  intInp.onchange=()=>{
-    const v=Math.max(30,Math.min(3600,parseInt(intInp.value)||60));
-    intInp.value=v; cfg.refreshSecs=v; persist(); resetRefresh();
-  };
-  intInp.addEventListener('keydown',e=>{ if(e.key==='Enter') intInp.blur(); });
-  const intNote = el('span'); intNote.textContent='sec refresh (min 30 — PRTG rate limit)';
-  intRow.append(intInp, intNote);
-  settingsRow.appendChild(intRow);
-
-  // Device tags (existing entries)
-  const tagsEl = el('div'); tagsEl.style.cssText='display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;';
-  const renderTags = ()=>{
-    tagsEl.innerHTML='';
-    cfg.devices.forEach((d,i)=>{
-      const tag = el('div','prtg-device-tag');
-      const lbl = el('span'); lbl.textContent=(d.label||d.objid)+(d.type==='url'?' [URL]':'');
-      const del = el('button'); del.textContent='✕'; del.title='Remove';
-      del.onclick=()=>{ cfg.devices.splice(i,1); persist(); renderTags(); fetchAll(); };
-      tag.append(lbl,del); tagsEl.appendChild(tag);
-    });
-  };
-  renderTags();
-  settingsRow.appendChild(tagsEl);
-
-  // Add device row
-  const addRow = el('div','prtg-add-row');
-  const objIdInp = el('input','search-widget-input');
-  objIdInp.placeholder='PRTG Object ID'; objIdInp.style.cssText='width:90px;flex-shrink:0;';
-  const devLblInp = el('input','search-widget-input');
-  devLblInp.placeholder='Label (optional)'; devLblInp.style.flex='1';
-  const typeSel = el('select');
-  typeSel.style.cssText='font-size:11px;padding:3px 5px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:3px;color:var(--text);';
-  ['Device','URL Sensor'].forEach(t=>{
-    const o=document.createElement('option'); o.value=t==='Device'?'device':'url'; o.textContent=t;
-    typeSel.appendChild(o);
-  });
-  const addBtn = el('button','todo-add-btn'); addBtn.textContent='＋ Add';
-  const doAdd=()=>{
-    const id=objIdInp.value.trim();
-    if(!id||isNaN(id)) return;
-    cfg.devices.push({ objid:parseInt(id), label:devLblInp.value.trim(), type:typeSel.value });
-    persist(); objIdInp.value=''; devLblInp.value='';
-    renderTags(); fetchAll();
-  };
-  addBtn.onclick=doAdd;
-  objIdInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doAdd(); });
-  addRow.append(objIdInp, devLblInp, typeSel, addBtn);
-  settingsRow.appendChild(addRow);
-  wrap.appendChild(settingsRow);
-
-  // ── PRTG API helpers ─────────────────────────────────────────
-  const base  = ()=> (D.prtgUrl||'').replace(/\/+$/,'');
-  const token = ()=> D.prtgToken||'';
-
-  // Map PRTG status integer to our color
-  function prtgColor(statusid){
-    // 3=Up, 11=PartialDown→green; 4=Warning→yellow; 2=Down, 5=NoProbe, 14=Error→red
-    if([3,11].includes(statusid))  return 'green';
-    if([4,7].includes(statusid))   return 'yellow';
-    if([2,5,14].includes(statusid))return 'red';
-    return 'gray';
-  }
-
-  // Fetch a single device/URL sensor and return normalized result
-  async function fetchDevice(d){
-    const b = base(), t = token();
-    if(!b || !t) return null;
-    try {
-      if(d.type === 'url'){
-        // URL sensor — use getsensordetails
-        const r = await fetch(`${b}/api/getsensordetails.json?id=${d.objid}&apitoken=${encodeURIComponent(t)}`);
-        const j = await r.json();
-        const sd = j.sensordata;
-        const color = prtgColor(sd?.statusid);
-        return {
-          label:   d.label || sd?.name || String(d.objid),
-          color,
-          statusText: sd?.statustext || sd?.status || '',
-          channels: [{ name: 'HTTP Status', value: sd?.statustext || sd?.status || '', color }],
-        };
-      } else {
-        // Device — get device status + channels via table API
-        const [devR, chanR] = await Promise.all([
-          fetch(`${b}/api/table.json?content=devices&filter_objid=${d.objid}&columns=objid,device,status,statusid&apitoken=${encodeURIComponent(t)}`),
-          fetch(`${b}/api/table.json?content=channels&id=${d.objid}&columns=name,lastvalue,status,statusid&apitoken=${encodeURIComponent(t)}`),
-        ]);
-        const devJ  = await devR.json();
-        const chanJ = await chanR.json();
-        const dev   = devJ.devices?.[0];
-        if(!dev) return null;
-
-        const channels = (chanJ.channels||[]).map(ch=>({
-          name:  ch.name,
-          value: ch.lastvalue || '',
-          color: prtgColor(ch.statusid),
-        }));
-
-        // Worst color across all channels escalates device color
-        const worstColor = (['red','yellow','green','gray']).find(c=> channels.some(ch=>ch.color===c)) || prtgColor(dev.statusid);
-
-        return {
-          label:      d.label || dev.device || String(d.objid),
-          color:      worstColor,
-          statusText: dev.status || '',
-          channels,
-        };
-      }
-    } catch(e){
-      return { label: d.label||String(d.objid), color:'gray', statusText:'Error', channels:[] };
-    }
-  }
-
-  // Render device list from results
-  function renderDevices(results){
-    deviceList.innerHTML='';
-    if(!results.length){
-      const s=el('div','prtg-status');
-      s.textContent = cfg.devices.length
-        ? (!D.prtgUrl||!D.prtgToken ? 'Configure PRTG URL and API token via the 📡 PRTG button (edit mode).' : 'No data returned.')
-        : 'Add devices via edit mode.';
-      deviceList.appendChild(s); return;
-    }
-    results.forEach(r=>{
-      if(!r) return;
-      const tile = el('div',`prtg-device st-${r.color}`);
-      const dot  = el('div',`prtg-dot ${r.color}`);
-      const name = el('div','prtg-name'); name.textContent=r.label;
-      const stat = el('div','prtg-status-text'); stat.textContent=r.statusText;
-
-      // Tooltip
-      const tip  = el('div','prtg-tooltip');
-      const tipTitle = el('div','prtg-tooltip-title'); tipTitle.textContent=r.label;
-      tip.appendChild(tipTitle);
-      if(r.channels.length){
-        r.channels.forEach(ch=>{
-          const row = el('div','prtg-tooltip-row');
-          const sd  = el('span',`prtg-sensor-dot`);
-          sd.style.background = ch.color==='green'?'#44cc88':ch.color==='yellow'?'#ffcc00':ch.color==='red'?'#ff4444':'var(--text-dim)';
-          const lbl = el('span'); lbl.appendChild(sd); lbl.appendChild(document.createTextNode(ch.name));
-          const val = el('span'); val.textContent=ch.value;
-          row.append(lbl,val); tip.appendChild(row);
-        });
-      } else {
-        const row=el('div','prtg-tooltip-row');
-        const s=el('span'); s.textContent=r.statusText||'No channel data';
-        row.appendChild(s); tip.appendChild(row);
-      }
-
-      tile.append(dot, name, stat, tip);
-      deviceList.appendChild(tile);
-    });
-  }
-
-  // Fetch all configured devices in parallel
-  async function fetchAll(){
-    if(!cfg.devices.length){ renderDevices([]); return; }
-    const s=el('div','prtg-status'); s.textContent='Fetching…';
-    deviceList.innerHTML=''; deviceList.appendChild(s);
-    const results = await Promise.all(cfg.devices.map(d=>fetchDevice(d)));
-    renderDevices(results);
-  }
-
-  // Auto-refresh
-  let refreshTimer=null;
-  function resetRefresh(){
-    if(refreshTimer) clearInterval(refreshTimer);
-    refreshTimer = setInterval(fetchAll,(cfg.refreshSecs||60)*1000);
-  }
-
-  fetchAll();
-  resetRefresh();
-
-  // Cleanup on removal
-  const obs=new MutationObserver(()=>{
-    if(!document.contains(wrap)){ clearInterval(refreshTimer); obs.disconnect(); }
-  });
-  obs.observe(document.body,{childList:true,subtree:true});
-
-  return wrap;
-}
-
 /* ---- RSS FEED ---- */
 function buildRssWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
@@ -6765,8 +6356,12 @@ function buildCveWidget(sec){
   if(!cfg.watchlist)   cfg.watchlist   = [];
   if(cfg.alarmSound === undefined) cfg.alarmSound = false;
   if(!cfg.watchInterval) cfg.watchInterval = 30;
-  if(!cfg.nvdKey)    cfg.nvdKey    = '';
-  if(!cfg.nvdWorker) cfg.nvdWorker = '';
+  if(!cfg.nvdKey)      cfg.nvdKey      = '';
+  if(!cfg.nvdWorker)   cfg.nvdWorker   = '';
+  if(!cfg.lookbackDays) cfg.lookbackDays = 30;
+  if(!cfg.maxItems)    cfg.maxItems    = 50;
+  if(!cfg.sortBy)      cfg.sortBy      = 'date';   // 'date' | 'severity'
+  if(!cfg.sortDir)     cfg.sortDir     = 'desc';
 
   const wrap = el('div','cve-widget');
 
@@ -6799,23 +6394,71 @@ function buildCveWidget(sec){
   searchRow.append(searchInp, searchBtn);
   wrap.appendChild(searchRow);
 
-  // ── Recent CVEs ────────────────────────────────────────────
-  const hdr = el('div'); hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:6px;';
-  const hdrLbl = el('div'); hdrLbl.style.cssText='font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;letter-spacing:0.04em;text-transform:uppercase;flex:1;';
+  // ── Recent CVEs header + controls ─────────────────────────
+  const hdr = el('div'); hdr.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:6px;flex-wrap:wrap;';
+  const hdrLbl = el('div'); hdrLbl.style.cssText='font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;letter-spacing:0.04em;text-transform:uppercase;flex:1;min-width:80px;';
   hdrLbl.textContent = 'Recent CVEs';
+
+  // Lookback buttons — always visible
+  const lbBtns = [7,14,30,90].map(d=>{
+    const b = el('button','clock-style-btn');
+    b.style.cssText='font-size:9.5px;padding:2px 6px;';
+    b.textContent = d+'d';
+    b.onclick=()=>{ cfg.lookbackDays=d; persist(); updateControls(); fetchCves(); };
+    return b;
+  });
+
+  // Sort buttons — always visible
+  const sortDate = el('button','clock-style-btn'); sortDate.style.cssText='font-size:9.5px;padding:2px 6px;';
+  const sortSev  = el('button','clock-style-btn'); sortSev.style.cssText='font-size:9.5px;padding:2px 6px;';
+
+  const updateControls = ()=>{
+    lbBtns.forEach((b,i)=> b.classList.toggle('active', [7,14,30,90][i]===cfg.lookbackDays));
+    const arrow = cfg.sortDir==='asc' ? ' ↑' : ' ↓';
+    sortDate.textContent = 'Date'+(cfg.sortBy==='date'   ? arrow : '');
+    sortSev.textContent  = 'Sev' +(cfg.sortBy==='severity'? arrow : '');
+    sortDate.classList.toggle('active', cfg.sortBy==='date');
+    sortSev.classList.toggle('active',  cfg.sortBy==='severity');
+  };
+
+  sortDate.onclick=()=>{
+    if(cfg.sortBy==='date') cfg.sortDir=cfg.sortDir==='desc'?'asc':'desc';
+    else { cfg.sortBy='date'; cfg.sortDir='desc'; }
+    persist(); updateControls(); renderCveList();
+  };
+  sortSev.onclick=()=>{
+    if(cfg.sortBy==='severity') cfg.sortDir=cfg.sortDir==='desc'?'asc':'desc';
+    else { cfg.sortBy='severity'; cfg.sortDir='desc'; }
+    persist(); updateControls(); renderCveList();
+  };
+
   const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='↺'; rfBtn.title='Refresh';
-  hdr.append(hdrLbl, rfBtn);
+  hdr.append(hdrLbl, ...lbBtns, sortDate, sortSev, rfBtn);
+  updateControls();
   wrap.appendChild(hdr);
 
-  const listEl = el('div'); listEl.style.cssText='display:flex;flex-direction:column;gap:5px;';
+  const listEl = el('div'); listEl.style.cssText='display:flex;flex-direction:column;gap:5px;max-height:292px;overflow-y:auto;scroll-behavior:smooth;';
   listEl.id = 'cveList_'+sec.id;
   wrap.appendChild(listEl);
 
+  // Max items setting (edit mode only)
+  const maxRow = el('div','cve-watch-options');
+  maxRow.style.marginTop='4px';
+  const maxLbl = el('label'); maxLbl.style.cssText='font-size:11.5px;color:var(--text-dim);display:flex;align-items:center;gap:5px;';
+  const maxInp = el('input','cve-interval-inp'); maxInp.type='number'; maxInp.min='10'; maxInp.max='200'; maxInp.value=cfg.maxItems;
+  maxInp.style.cssText+=';-moz-appearance:textfield;appearance:textfield;';
+  maxInp.title='Maximum CVEs to show in the list';
+  maxInp.addEventListener('change',()=>{
+    cfg.maxItems=Math.max(10,Math.min(200,parseInt(maxInp.value)||50));
+    maxInp.value=cfg.maxItems; persist(); fetchCves();
+  });
+  maxInp.addEventListener('keydown',e=>{ if(e.key==='Enter') maxInp.blur(); });
+  maxLbl.append(maxInp, document.createTextNode(' max items'));
+  maxRow.appendChild(maxLbl);
+  wrap.appendChild(maxRow);
+
   // Scrollable list state
   let cveAllItems = [];
-  const CVE_PAGE = 5;
-
-  listEl.style.cssText = 'display:flex;flex-direction:column;gap:5px;max-height:292px;overflow-y:auto;scroll-behavior:smooth;';
 
   function cveExtractProduct(cve){
     // Try CPE string from configurations first
@@ -6887,7 +6530,14 @@ function buildCveWidget(sec){
   async function fetchCves(){
     listEl.innerHTML = '<div style="font-size:11.5px;color:var(--text-dim);font-style:italic;padding:4px 0;">Loading…</div>';
     try {
-      const endpoint = 'https://services.nvd.nist.gov/rest/json/cves/2.0?resultsPerPage=30&startIndex=0';
+      // Build date range for lookback window
+      const now   = new Date();
+      const start = new Date(now.getTime() - (cfg.lookbackDays||30) * 86400000);
+      const fmt   = d => d.toISOString().replace('Z','000');
+      const endpoint = 'https://services.nvd.nist.gov/rest/json/cves/2.0'
+        + `?pubStartDate=${encodeURIComponent(fmt(start))}`
+        + `&pubEndDate=${encodeURIComponent(fmt(now))}`
+        + `&resultsPerPage=${cfg.maxItems||50}&startIndex=0`;
       let r;
       const _nvdW1 = getWorkerUrl(cfg.nvdWorker);
       if(_nvdW1){
@@ -6899,7 +6549,6 @@ function buildCveWidget(sec){
       const j = await r.json();
       cveAllItems = (j.vulnerabilities||[]).map(v=>v.cve);
       renderCveList();
-      // Update header count
       hdrLbl.textContent = `Recent CVEs (${cveAllItems.length})`;
     } catch(e){
       listEl.innerHTML = `<div style="font-size:11.5px;color:var(--del-color);">Failed to load: ${e.message}</div>`;
@@ -6908,8 +6557,21 @@ function buildCveWidget(sec){
 
   function renderCveList(){
     listEl.innerHTML = '';
-    cveAllItems.forEach(cve => listEl.appendChild(buildCveItem(cve)));
-    // Scroll hint — show 5 items worth, rest scroll
+    const sevOrder = {CRITICAL:4,HIGH:3,MEDIUM:2,LOW:1};
+    const getSev = cve => cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity ||
+                          cve.metrics?.cvssMetricV2?.[0]?.baseSeverity || '';
+    const dir = cfg.sortDir==='asc' ? 1 : -1;
+    const sorted = [...cveAllItems].sort((a,b)=>{
+      if(cfg.sortBy==='severity'){
+        const diff = (sevOrder[getSev(b)]||0) - (sevOrder[getSev(a)]||0);
+        if(diff !== 0) return dir * diff;
+        // tiebreak by date
+        return new Date(b.published) - new Date(a.published);
+      } else {
+        return dir * (new Date(b.published) - new Date(a.published));
+      }
+    });
+    sorted.forEach(cve => listEl.appendChild(buildCveItem(cve)));
     listEl.scrollTop = 0;
   }
   rfBtn.onclick = fetchCves;
@@ -8387,7 +8049,6 @@ function toggleEditMode(){
   btn.textContent = editMode ? '✓ Done' : '✏ Edit';
   document.getElementById('colorsBtn').style.display = editMode ? 'inline-block' : 'none';
   document.getElementById('workerBtn').style.display  = editMode ? 'inline-block' : 'none';
-  document.getElementById('prtgBtn').style.display    = editMode ? 'inline-block' : 'none';
   // Auto-expand CVE watchlist bodies in edit mode, collapse when leaving
   document.querySelectorAll('.cve-watch-body').forEach(body => {
     body.style.display = editMode ? '' : 'none';
@@ -8671,7 +8332,6 @@ function paintWeather(loc){
 }
 
 /* Weather settings modal */
-
 function openWorkerModal(){
   document.getElementById('workerUrlInp').value = D.workerUrl || '';
   document.getElementById('workerUrlStatus').textContent = '';
