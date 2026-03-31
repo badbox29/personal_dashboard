@@ -6367,19 +6367,31 @@ function buildCveWidget(sec){
 
   const wrap = el('div','cve-widget');
 
-  // ── Alert banner ──────────────────────────────────────────
-  const alertBanner = el('div','cve-alert-banner');
-  alertBanner.style.display = 'none';
-  alertBanner.id = 'cveAlert_'+sec.id;
-  const alertIcon = el('span','cve-alert-icon'); alertIcon.textContent = '🚨';
-  const alertBody = el('div','cve-alert-body');
-  const alertTitle = el('div','cve-alert-title'); alertTitle.textContent = 'NEW CVEs DETECTED';
-  const alertItems = el('div','cve-alert-items');
-  alertBody.append(alertTitle, alertItems);
-  const alertDismiss = el('button','cve-alert-dismiss'); alertDismiss.textContent = 'Dismiss';
-  alertDismiss.onclick = ()=>{ alertBanner.style.display='none'; };
-  alertBanner.append(alertIcon, alertBody, alertDismiss);
-  wrap.appendChild(alertBanner);
+  // ── Watchlist Hits panel (hidden until hits found) ────────
+  const hitsPanel = el('div');
+  hitsPanel.style.cssText = 'display:none;margin-bottom:8px;';
+
+  const hitsHdr = el('div');
+  hitsHdr.style.cssText = 'display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(255,68,68,0.1);border:1px solid #ff4444;border-radius:5px 5px 0 0;cursor:pointer;user-select:none;animation:cveAlertPulse 1.8s ease-in-out infinite alternate;';
+  const hitsIcon  = el('span'); hitsIcon.textContent='🚨'; hitsIcon.style.cssText='font-size:13px;flex-shrink:0;';
+  const hitsTitle = el('span'); hitsTitle.style.cssText='font-size:10.5px;font-family:Share Tech Mono,monospace;color:#ff8888;font-weight:700;letter-spacing:0.05em;flex:1;';
+  hitsTitle.textContent = 'WATCHLIST HITS';
+  const hitsChevron = el('span'); hitsChevron.style.cssText='font-size:9px;color:#ff8888;transition:transform 0.2s;'; hitsChevron.textContent='▼';
+  const hitsDismiss = el('button','cve-alert-dismiss'); hitsDismiss.textContent='Dismiss';
+  hitsDismiss.onclick = e=>{ e.stopPropagation(); hitsPanel.style.display='none'; hitsBody.style.display='none'; };
+  hitsHdr.append(hitsIcon, hitsTitle, hitsChevron, hitsDismiss);
+
+  const hitsBody = el('div');
+  hitsBody.style.cssText = 'display:flex;flex-direction:column;gap:4px;padding:6px 0;border:1px solid #ff4444;border-top:none;border-radius:0 0 5px 5px;max-height:220px;overflow-y:auto;padding:6px 8px;';
+
+  hitsHdr.addEventListener('click', ()=>{
+    const open = hitsBody.style.display !== 'none';
+    hitsBody.style.display = open ? 'none' : '';
+    hitsChevron.style.transform = open ? 'rotate(-90deg)' : '';
+  });
+
+  hitsPanel.append(hitsHdr, hitsBody);
+  wrap.appendChild(hitsPanel);
 
   // ── Manual search ──────────────────────────────────────────
   const searchRow = el('div'); searchRow.style.cssText='display:flex;gap:6px;margin-bottom:10px;';
@@ -6730,15 +6742,29 @@ function buildCveWidget(sec){
   // Show alert banner with new CVE hits
   function showNewCves(hits){
     if(!hits.length) return;
-    alertItems.innerHTML='';
-    hits.forEach(h=>{
-      const line = el('div');
-      line.textContent = h.term+': '+h.ids.join(', ');
-      alertItems.appendChild(line);
+    hitsBody.innerHTML = '';
+    // Collect all hit CVE IDs across all terms
+    const hitIds = new Set(hits.flatMap(h => h.ids.map(id => id.split(' ')[0])));
+    hitsTitle.textContent = `WATCHLIST HITS (${hitIds.size})`;
+    // Build a tile for each matched CVE id — look it up in cveAllItems first, fall back to stub
+    hitIds.forEach(id => {
+      const cve = cveAllItems.find(c => c.id === id);
+      if(cve){
+        hitsBody.appendChild(buildCveItem(cve));
+      } else {
+        // CVE not in current bulletin page — show minimal stub
+        const stub = el('div');
+        stub.style.cssText = 'padding:5px 8px;background:var(--inp-bg);border:1px solid #ff4444;border-radius:4px;font-family:Share Tech Mono,monospace;font-size:11.5px;color:var(--gold);cursor:pointer;';
+        stub.textContent = id;
+        stub.title = 'Click to view on NVD';
+        stub.onclick = ()=> window.open('https://nvd.nist.gov/vuln/detail/'+id,'_blank');
+        hitsBody.appendChild(stub);
+      }
     });
-    alertBanner.style.display='flex';
+    hitsPanel.style.display = '';
+    hitsBody.style.display  = '';
+    hitsChevron.style.transform = '';
     if(cfg.alarmSound) cveAlarmSound();
-    // Update status labels
     renderWatchlist();
   }
 
