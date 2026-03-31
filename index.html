@@ -6353,19 +6353,21 @@ function cveAlarmSound(){
 
 function buildCveWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
-  if(!cfg.watchlist)   cfg.watchlist   = [];
+  if(!cfg.watchlist)    cfg.watchlist    = [];
   if(cfg.alarmSound === undefined) cfg.alarmSound = false;
   if(!cfg.watchInterval) cfg.watchInterval = 30;
-  if(!cfg.nvdKey)      cfg.nvdKey      = '';
-  if(!cfg.nvdWorker)   cfg.nvdWorker   = '';
-  if(!cfg.lookbackDays) cfg.lookbackDays = 30;
-  if(!cfg.maxItems)    cfg.maxItems    = 50;
-  if(!cfg.sortBy)      cfg.sortBy      = 'date';   // 'date' | 'severity'
-  if(!cfg.sortDir)     cfg.sortDir     = 'desc';
+  if(!cfg.nvdKey)       cfg.nvdKey       = '';
+  if(!cfg.nvdWorker)    cfg.nvdWorker    = '';
+  if(!cfg.sortBy)       cfg.sortBy       = 'date';
+  if(!cfg.sortDir)      cfg.sortDir      = 'desc';
+
+  const PAGE_SIZE = 100;
+  let cveAllItems = [];
+  let cvePage     = 0;
 
   const wrap = el('div','cve-widget');
 
-  // ── Alert banner (hidden until triggered) ──────────────────
+  // ── Alert banner ──────────────────────────────────────────
   const alertBanner = el('div','cve-alert-banner');
   alertBanner.style.display = 'none';
   alertBanner.id = 'cveAlert_'+sec.id;
@@ -6394,71 +6396,52 @@ function buildCveWidget(sec){
   searchRow.append(searchInp, searchBtn);
   wrap.appendChild(searchRow);
 
-  // ── Recent CVEs header + controls ─────────────────────────
+  // ── Header: label + sort buttons + refresh ─────────────────
   const hdr = el('div'); hdr.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:6px;flex-wrap:wrap;';
   const hdrLbl = el('div'); hdrLbl.style.cssText='font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;letter-spacing:0.04em;text-transform:uppercase;flex:1;min-width:80px;';
   hdrLbl.textContent = 'Recent CVEs';
 
-  // Lookback buttons — always visible
-  const lbBtns = [7,14,30,90].map(d=>{
-    const b = el('button','clock-style-btn');
-    b.style.cssText='font-size:9.5px;padding:2px 6px;';
-    b.textContent = d+'d';
-    b.onclick=()=>{ cfg.lookbackDays=d; persist(); updateControls(); fetchCves(); };
-    return b;
-  });
-
-  // Sort buttons — always visible
   const sortDate = el('button','clock-style-btn'); sortDate.style.cssText='font-size:9.5px;padding:2px 6px;';
   const sortSev  = el('button','clock-style-btn'); sortSev.style.cssText='font-size:9.5px;padding:2px 6px;';
 
-  const updateControls = ()=>{
-    lbBtns.forEach((b,i)=> b.classList.toggle('active', [7,14,30,90][i]===cfg.lookbackDays));
+  const updateSortBtns = ()=>{
     const arrow = cfg.sortDir==='asc' ? ' ↑' : ' ↓';
-    sortDate.textContent = 'Date'+(cfg.sortBy==='date'   ? arrow : '');
-    sortSev.textContent  = 'Sev' +(cfg.sortBy==='severity'? arrow : '');
+    sortDate.textContent = 'Date'+(cfg.sortBy==='date'     ? arrow : '');
+    sortSev.textContent  = 'Sev' +(cfg.sortBy==='severity' ? arrow : '');
     sortDate.classList.toggle('active', cfg.sortBy==='date');
     sortSev.classList.toggle('active',  cfg.sortBy==='severity');
   };
-
   sortDate.onclick=()=>{
     if(cfg.sortBy==='date') cfg.sortDir=cfg.sortDir==='desc'?'asc':'desc';
     else { cfg.sortBy='date'; cfg.sortDir='desc'; }
-    persist(); updateControls(); renderCveList();
+    persist(); updateSortBtns(); cvePage=0; renderCveList();
   };
   sortSev.onclick=()=>{
     if(cfg.sortBy==='severity') cfg.sortDir=cfg.sortDir==='desc'?'asc':'desc';
     else { cfg.sortBy='severity'; cfg.sortDir='desc'; }
-    persist(); updateControls(); renderCveList();
+    persist(); updateSortBtns(); cvePage=0; renderCveList();
   };
+  updateSortBtns();
 
   const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='↺'; rfBtn.title='Refresh';
-  hdr.append(hdrLbl, ...lbBtns, sortDate, sortSev, rfBtn);
-  updateControls();
+  hdr.append(hdrLbl, sortDate, sortSev, rfBtn);
   wrap.appendChild(hdr);
 
   const listEl = el('div'); listEl.style.cssText='display:flex;flex-direction:column;gap:5px;max-height:292px;overflow-y:auto;scroll-behavior:smooth;';
   listEl.id = 'cveList_'+sec.id;
   wrap.appendChild(listEl);
 
-  // Max items setting (edit mode only)
-  const maxRow = el('div','cve-watch-options');
-  maxRow.style.marginTop='4px';
-  const maxLbl = el('label'); maxLbl.style.cssText='font-size:11.5px;color:var(--text-dim);display:flex;align-items:center;gap:5px;';
-  const maxInp = el('input','cve-interval-inp'); maxInp.type='number'; maxInp.min='10'; maxInp.max='200'; maxInp.value=cfg.maxItems;
-  maxInp.style.cssText+=';-moz-appearance:textfield;appearance:textfield;';
-  maxInp.title='Maximum CVEs to show in the list';
-  maxInp.addEventListener('change',()=>{
-    cfg.maxItems=Math.max(10,Math.min(200,parseInt(maxInp.value)||50));
-    maxInp.value=cfg.maxItems; persist(); fetchCves();
-  });
-  maxInp.addEventListener('keydown',e=>{ if(e.key==='Enter') maxInp.blur(); });
-  maxLbl.append(maxInp, document.createTextNode(' max items'));
-  maxRow.appendChild(maxLbl);
-  wrap.appendChild(maxRow);
+  // ── Pagination bar ─────────────────────────────────────────
+  const pageBar = el('div'); pageBar.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-top:5px;font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;';
+  const prevBtn = el('button','clock-style-btn'); prevBtn.style.cssText='font-size:9.5px;padding:2px 8px;'; prevBtn.textContent='◀ Prev';
+  const pageInfo = el('span');
+  const nextBtn = el('button','clock-style-btn'); nextBtn.style.cssText='font-size:9.5px;padding:2px 8px;'; nextBtn.textContent='Next ▶';
+  prevBtn.onclick=()=>{ if(cvePage>0){ cvePage--; renderCveList(); } };
+  nextBtn.onclick=()=>{ const maxPage=Math.ceil(cveAllItems.length/PAGE_SIZE)-1; if(cvePage<maxPage){ cvePage++; renderCveList(); } };
+  pageBar.append(prevBtn, pageInfo, nextBtn);
+  wrap.appendChild(pageBar);
 
   // Scrollable list state
-  let cveAllItems = [];
 
   function cveExtractProduct(cve){
     // Try CPE string from configurations first
@@ -6488,8 +6471,9 @@ function buildCveWidget(sec){
     const sev  = cve.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity ||
                  cve.metrics?.cvssMetricV2?.[0]?.baseSeverity || '—';
     const sevColor = {CRITICAL:'#ff4444',HIGH:'#ff8844',MEDIUM:'#ffcc44',LOW:'#44cc88'}[sev] || 'var(--text-dim)';
-    const pub  = cve.published ? new Date(cve.published) : null;
-    const product = cveExtractProduct(cve);
+    const pub      = cve.published    ? new Date(cve.published)    : null;
+    const modified = cve.lastModified ? new Date(cve.lastModified) : null;
+    const product  = cveExtractProduct(cve);
 
     const item = el('div');
     item.style.cssText = 'padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;cursor:pointer;transition:border-color 0.15s;flex-shrink:0;';
@@ -6512,44 +6496,63 @@ function buildCveWidget(sec){
       topRow.appendChild(prodEl);
     }
 
-    // Published age
+    // Published age (right-aligned)
     if(pub){
       const hrs = Math.round((Date.now()-pub.getTime())/3600000);
-      const age = hrs < 24 ? hrs+'h ago' : Math.round(hrs/24)+'d ago';
-      const ageEl = el('span'); ageEl.style.cssText='font-size:9.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;margin-left:auto;';
+      const age = hrs < 1 ? 'just now' : hrs < 24 ? hrs+'h ago' : Math.round(hrs/24)+'d ago';
+      const ageEl = el('span');
+      ageEl.style.cssText='font-size:9.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;margin-left:auto;';
       ageEl.textContent = age;
+      ageEl.title = pub.toLocaleString();
       topRow.appendChild(ageEl);
     }
 
     const descEl = el('div'); descEl.style.cssText='font-size:11px;color:var(--text-dim);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
     descEl.textContent = desc;
-    item.append(topRow, descEl);
+
+    // Date row: Published + Last Modified
+    const dateRow = el('div'); dateRow.style.cssText='display:flex;gap:12px;margin-top:4px;flex-wrap:wrap;';
+    if(pub){
+      const pubLbl = el('span');
+      pubLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);opacity:0.75;';
+      pubLbl.textContent = '📅 Published: '+pub.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+      dateRow.appendChild(pubLbl);
+    }
+    if(modified){
+      const modLbl = el('span');
+      modLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);opacity:0.6;';
+      modLbl.textContent = '✏ Modified: '+modified.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+      dateRow.appendChild(modLbl);
+    }
+
+    item.append(topRow, descEl, dateRow);
     return item;
   }
 
   async function fetchCves(){
     listEl.innerHTML = '<div style="font-size:11.5px;color:var(--text-dim);font-style:italic;padding:4px 0;">Loading…</div>';
     try {
-      // Build date range for lookback window
-      const now   = new Date();
-      const start = new Date(now.getTime() - (cfg.lookbackDays||30) * 86400000);
-      const fmt   = d => d.toISOString().replace('Z','000');
-      const endpoint = 'https://services.nvd.nist.gov/rest/json/cves/2.0'
-        + `?pubStartDate=${encodeURIComponent(fmt(start))}`
-        + `&pubEndDate=${encodeURIComponent(fmt(now))}`
-        + `&resultsPerPage=${cfg.maxItems||50}&startIndex=0`;
-      let r;
-      const _nvdW1 = getWorkerUrl(cfg.nvdWorker);
-      if(_nvdW1){
-        const workerUrl = _nvdW1.replace(/\/+$/,'')+'/nvd';
-        r = await fetch(workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint, apiKey: cfg.nvdKey||undefined }) });
-      } else {
-        r = await fetch(endpoint);
-      }
-      const j = await r.json();
+      const base = 'https://services.nvd.nist.gov/rest/json/cves/2.0?noRejected';
+      const doFetch = async (url) => {
+        const _w = getWorkerUrl(cfg.nvdWorker);
+        if(_w && cfg.nvdKey){
+          const r = await fetch(_w.replace(/\/+$/,'')+'/nvd', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint: url, apiKey: cfg.nvdKey }) });
+          return r.json();
+        }
+        return fetch(url).then(r=>r.json());
+      };
+
+      // Step 1: get totalResults with a minimal fetch
+      const probe = await doFetch(base + '&resultsPerPage=1&startIndex=0');
+      const total = probe.totalResults || 0;
+
+      // Step 2: fetch the last 2000 (most recently published)
+      const startIndex = Math.max(0, total - 2000);
+      const j = await doFetch(base + '&resultsPerPage=2000&startIndex=' + startIndex);
       cveAllItems = (j.vulnerabilities||[]).map(v=>v.cve);
+      cvePage = 0;
       renderCveList();
-      hdrLbl.textContent = `Recent CVEs (${cveAllItems.length})`;
+      hdrLbl.textContent = `Recent CVEs (${cveAllItems.length} of ${total.toLocaleString()})`;
     } catch(e){
       listEl.innerHTML = `<div style="font-size:11.5px;color:var(--del-color);">Failed to load: ${e.message}</div>`;
     }
@@ -6564,15 +6567,20 @@ function buildCveWidget(sec){
     const sorted = [...cveAllItems].sort((a,b)=>{
       if(cfg.sortBy==='severity'){
         const diff = (sevOrder[getSev(b)]||0) - (sevOrder[getSev(a)]||0);
-        if(diff !== 0) return dir * diff;
-        // tiebreak by date
-        return new Date(b.published) - new Date(a.published);
-      } else {
-        return dir * (new Date(b.published) - new Date(a.published));
+        return diff !== 0 ? dir * diff : new Date(b.published) - new Date(a.published);
       }
+      return dir * (new Date(b.published) - new Date(a.published));
     });
-    sorted.forEach(cve => listEl.appendChild(buildCveItem(cve)));
+    const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+    cvePage = Math.min(cvePage, totalPages - 1);
+    const pageItems = sorted.slice(cvePage * PAGE_SIZE, (cvePage + 1) * PAGE_SIZE);
+    pageItems.forEach(cve => listEl.appendChild(buildCveItem(cve)));
     listEl.scrollTop = 0;
+    // Update pagination bar
+    pageInfo.textContent = sorted.length ? `${cvePage+1} / ${totalPages}` : '';
+    prevBtn.style.opacity = cvePage > 0 ? '1' : '0.3';
+    nextBtn.style.opacity = cvePage < totalPages-1 ? '1' : '0.3';
+    pageBar.style.display = totalPages > 1 ? 'flex' : 'none';
   }
   rfBtn.onclick = fetchCves;
   fetchCves();
@@ -6771,10 +6779,10 @@ async function cveCheckAll(sec, callback){
   for(const w of cfg.watchlist){
     try {
       const endpoint = 'https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch='
-                     + encodeURIComponent(w.term)+'&resultsPerPage=10';
+                     + encodeURIComponent(w.term)+'&resultsPerPage=10&noRejected';
       let r;
       const _nvdW2 = getWorkerUrl(cfg.nvdWorker);
-      if(_nvdW2){
+      if(_nvdW2 && cfg.nvdKey){
         const workerUrl = _nvdW2.replace(/\/+$/,'')+'/nvd';
         r = await fetch(workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ endpoint, apiKey: cfg.nvdKey||undefined }) });
       } else {
