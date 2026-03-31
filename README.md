@@ -6,3 +6,7 @@ Single-page web app designed as a personal dashboard.  Created as a labor of lov
 This project is shared publicly for use and reference only.
 
 You may view and interact with the hosted version, but the source code is not licensed for reuse, modification, or distribution.
+
+## pollen-proxy-worker.js
+
+This is a ready-made Cloudflare worker that, when deployed, can be pointed to in the config so certain widgets can function properly.  Primarily a tool to get around CORs restrictions with some of the API calls needed to do things like get pollen level data for the weather widgets.
