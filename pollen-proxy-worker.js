@@ -4,20 +4,33 @@
  *
  * Routes:
  *   POST /pollen  — Fetch & normalize pollen data from supported providers
- *   POST /rss     — Fetch & normalize any RSS/Atom feed
+ *   POST /rss     — Fetch & normalize any RSS/Atom feed (returns raw XML)
+ *   POST /nvd     — Proxy NVD CVE API (adds apiKey header server-side)
+ *   POST /sports  — Fetch & normalize sports scores from TheSportsDB
  *
  * All routes add CORS headers so browser-side fetch() calls work.
  * Results are cached to minimise upstream API hits.
  *
  * ── POLLEN (/pollen) ─────────────────────────────────────────
  * Body: { service, apiKey, lat, lon }
- * Returns: { tree, grass, weed }  (labels: None/Very Low/Low/Moderate/High/Very High)
+ * Returns: { tree, grass, weed }
  * Cache: 4 hours
  *
  * ── RSS (/rss) ───────────────────────────────────────────────
  * Body: { url, label? }
- * Returns: { feedTitle, items: [{ title, link, date, summary, source }] }
+ * Returns raw XML with CORS headers
  * Cache: 30 minutes
+ *
+ * ── NVD (/nvd) ───────────────────────────────────────────────
+ * Body: { endpoint, apiKey? }
+ * Proxies NVD REST API (browsers can't send apiKey header directly)
+ * Cache: 10 minutes
+ *
+ * ── SPORTS (/sports) ─────────────────────────────────────────
+ * Body: { league, view, team?, apiKey? }
+ * view: "upcoming" | "final" | "today" | "live"
+ * Returns: { league, sport, view, generatedAt, games: [...] }
+ * Cache: 60s (live) | 5min (today) | 10min (final/upcoming)
  */
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
@@ -111,42 +124,183 @@ const POLLEN_SERVICES = {
   },
 };
 
-// ── RSS normalizer ───────────────────────────────────────────────────────────
+// ── Sports config ────────────────────────────────────────────────────────────
 
-// ── NVD handler ──────────────────────────────────────────────────────────────
-// Proxies NVD API requests server-side so the apiKey header can be sent
-// without triggering CORS preflight failures in the browser.
-// Body: { endpoint, apiKey? }
-// endpoint = full NVD URL e.g. https://services.nvd.nist.gov/rest/json/cves/2.0?...
+// TheSportsDB league IDs
+const SPORTS_LEAGUES = {
+  nfl:        { id: '4391', name: 'NFL',              sport: 'American Football' },
+  nba:        { id: '4387', name: 'NBA',              sport: 'Basketball'        },
+  mlb:        { id: '4424', name: 'MLB',              sport: 'Baseball'          },
+  nhl:        { id: '4380', name: 'NHL',              sport: 'Ice Hockey'        },
+  epl:        { id: '4328', name: 'Premier League',   sport: 'Soccer'            },
+  mls:        { id: '4346', name: 'MLS',              sport: 'Soccer'            },
+  laliga:     { id: '4335', name: 'La Liga',          sport: 'Soccer'            },
+  seriea:     { id: '4332', name: 'Serie A',          sport: 'Soccer'            },
+  bundesliga: { id: '4331', name: 'Bundesliga',       sport: 'Soccer'            },
+  ligue1:     { id: '4334', name: 'Ligue 1',          sport: 'Soccer'            },
+  ucl:        { id: '4480', name: 'Champions League', sport: 'Soccer'            },
+};
 
-async function handleNvd(body) {
-  const { endpoint, apiKey } = body;
+const TSDB_BASE = 'https://www.thesportsdb.com/api/v1/json';
 
-  if(!endpoint || !endpoint.startsWith('https://services.nvd.nist.gov/'))
-    return json({ error: 'Invalid or missing endpoint' }, 400);
+// Cache TTLs per view
+const SPORTS_TTL = {
+  live:     60,       // 1 minute
+  today:    5  * 60,  // 5 minutes
+  final:    10 * 60,  // 10 minutes
+  upcoming: 10 * 60,  // 10 minutes
+};
 
-  const headers = { 'Accept': 'application/json' };
-  if(apiKey) headers['apiKey'] = apiKey;
+function normalizeSportsEvent(ev) {
+  // Safely parse score — handles undefined, null, empty string, and non-numeric
+  const parseScore = v => {
+    if(v === undefined || v === null || v === '') return null;
+    const n = parseInt(v, 10);
+    return isNaN(n) ? null : n;
+  };
+  const homeScore = parseScore(ev.intHomeScore);
+  const awayScore = parseScore(ev.intAwayScore);
 
-  let upstream;
-  try {
-    upstream = await fetch(endpoint, { method: 'GET', headers });
-  } catch(e) { return json({ error: `NVD fetch failed: ${e.message}` }, 502); }
-
-  let data;
-  try { data = await upstream.json(); }
-  catch(e) { return json({ error: `NVD returned non-JSON (status ${upstream.status})` }, 502); }
-
-  if(!upstream.ok){
-    const msg = data?.message || `HTTP ${upstream.status}`;
-    return json({ error: `NVD error: ${msg}` }, upstream.status);
+  let status = 'Scheduled';
+  if(ev.strStatus) {
+    const s = ev.strStatus.toLowerCase();
+    if(['match finished','ft','aet','pen','final','post'].includes(s))
+      status = 'Final';
+    else if(['in progress','live','1h','2h','ht','et','p1','p2','p3','p4','ot'].includes(s))
+      status = 'In Progress';
+    else if(s === 'postponed')  status = 'Postponed';
+    else if(s === 'cancelled' || s === 'canceled') status = 'Cancelled';
+    else if(homeScore !== null && awayScore !== null) status = 'Final';
+  } else if(homeScore !== null && awayScore !== null) {
+    status = 'Final';
   }
 
-  return json(data);
+  return {
+    id:        ev.idEvent      || '',
+    homeTeam:  ev.strHomeTeam  || 'Home',
+    awayTeam:  ev.strAwayTeam  || 'Away',
+    homeScore: homeScore,
+    awayScore: awayScore,
+    status:    status,
+    startTime: ev.strTimestamp || (ev.dateEvent ? ev.dateEvent + (ev.strTime ? 'T' + ev.strTime : '') : null),
+    venue:     ev.strVenue     || null,
+    homeBadge: ev.strHomeTeamBadge || null,
+    awayBadge: ev.strAwayTeamBadge || null,
+    round:     ev.intRound     || null,
+    season:    ev.strSeason    || null,
+    nextMatchFallback: ev._nextMatchFallback || false,
+  };
 }
+
+async function handleSports(body, ctx) {
+  const { league: leagueKey, view = 'today', team, apiKey, localDate } = body;
+
+  if(!leagueKey)
+    return json({ error: 'Required field: league. Valid: ' + Object.keys(SPORTS_LEAGUES).join(', ') }, 400);
+
+  const leagueCfg = SPORTS_LEAGUES[leagueKey.toLowerCase()];
+  if(!leagueCfg)
+    return json({ error: `Unknown league: ${leagueKey}. Valid: ${Object.keys(SPORTS_LEAGUES).join(', ')}` }, 400);
+
+  const validViews  = ['live','today','final','upcoming'];
+  const resolvedView = validViews.includes(view) ? view : 'today';
+  const key          = (apiKey || '').trim() || '123';
+  const ttl          = SPORTS_TTL[resolvedView] || 300;
+
+  const teamSlug  = team ? '_' + encodeURIComponent(team.toLowerCase()) : '';
+  const dateSlug  = (resolvedView === 'today' && localDate) ? '_' + localDate : '';
+  const cacheKey  = `https://sports-cache.internal/${leagueKey}/${resolvedView}${teamSlug}${dateSlug}/${key === '123' ? 'free' : 'paid'}`;
+  const cache    = caches.default;
+  const cached   = await cache.match(cacheKey);
+  if(cached) return json({ ...(await cached.json()), _cached: true });
+
+  let events = [];
+
+  try {
+    if(resolvedView === 'live') {
+      // Live scores — requires paid key; free key (123) returns empty gracefully
+      const r = await fetch(`${TSDB_BASE}/${key}/livescore.php?l=${leagueCfg.id}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      const j  = await r.json();
+      events   = j.events || j.livescores || [];
+
+    } else if(resolvedView === 'upcoming') {
+      const r = await fetch(`${TSDB_BASE}/${key}/eventsnextleague.php?id=${leagueCfg.id}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      const j  = await r.json();
+      events   = j.events || [];
+
+    } else if(resolvedView === 'final') {
+      const r = await fetch(`${TSDB_BASE}/${key}/eventspastleague.php?id=${leagueCfg.id}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      const j  = await r.json();
+      events   = j.events || [];
+
+    } else {
+      // today — merge past + upcoming, filter to today's date
+      const [pastR, nextR] = await Promise.all([
+        fetch(`${TSDB_BASE}/${key}/eventspastleague.php?id=${leagueCfg.id}`, { headers: { 'Accept': 'application/json' } }),
+        fetch(`${TSDB_BASE}/${key}/eventsnextleague.php?id=${leagueCfg.id}`, { headers: { 'Accept': 'application/json' } }),
+      ]);
+      const [pastJ, nextJ] = await Promise.all([pastR.json(), nextR.json()]);
+      const all   = [...(pastJ.events || []), ...(nextJ.events || [])];
+      // Use browser-provided local date if available; fall back to UTC
+      const today = (localDate && /^\d{4}-\d{2}-\d{2}$/.test(localDate))
+        ? localDate
+        : new Date().toISOString().slice(0, 10);
+      const todayEvents = all.filter(ev => (ev.dateEvent || '').slice(0, 10) === today);
+      if(todayEvents.length){
+        events = todayEvents;
+      } else {
+        // Nothing today — find the single next upcoming game
+        const upcoming = all
+          .filter(ev => (ev.dateEvent || '') > today)
+          .sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
+        events = upcoming.length ? [{ ...upcoming[0], _nextMatchFallback: true }] : [];
+      }
+    }
+  } catch(e) {
+    return json({ error: `Sports data fetch failed: ${e.message}` }, 502);
+  }
+
+  let games = events.map(normalizeSportsEvent);
+
+  // Optional team filter — only applied if it returns results
+  if(team && team.trim()) {
+    const t = team.toLowerCase();
+    const filtered = games.filter(g =>
+      g.homeTeam.toLowerCase().includes(t) || g.awayTeam.toLowerCase().includes(t)
+    );
+    if(filtered.length) games = filtered;
+  }
+
+  const result = {
+    league:      leagueCfg.name,
+    leagueKey:   leagueKey.toLowerCase(),
+    sport:       leagueCfg.sport,
+    view:        resolvedView,
+    generatedAt: new Date().toISOString(),
+    games,
+  };
+
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(result), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': `public, max-age=${ttl}`,
+    },
+  })));
+
+  return json(result);
+}
+
+// ── Route handlers ───────────────────────────────────────────────────────────
 
 const POLLEN_CACHE_TTL = 4 * 60 * 60;  // 4 hours
 const RSS_CACHE_TTL    = 30 * 60;       // 30 minutes
+const NVD_CACHE_TTL    = 10 * 60;       // 10 minutes
 
 async function handlePollen(body, ctx) {
   const { service, apiKey, lat, lon } = body;
@@ -158,14 +312,12 @@ async function handlePollen(body, ctx) {
   if(!svc)
     return json({ error: `Unknown service: ${service}. Valid: ${Object.keys(POLLEN_SERVICES).join(', ')}` }, 400);
 
-  // Cache check
   const keyHash  = [...apiKey].reduce((h,c) => (Math.imul(31,h) + c.charCodeAt(0)) | 0, 0);
   const cacheKey = `https://pollen-cache.internal/${service}/${lat.toFixed(2)},${lon.toFixed(2)}/${keyHash}`;
   const cache    = caches.default;
   const cached   = await cache.match(cacheKey);
   if(cached) return json({ ...(await cached.json()), _cached: true });
 
-  // Upstream fetch
   let upstream;
   try {
     upstream = await fetch(svc.buildUrl({ apiKey, lat, lon }), {
@@ -186,7 +338,6 @@ async function handlePollen(body, ctx) {
   try { normalized = svc.normalize(data); }
   catch(e) { return json({ error: e.message }, 502); }
 
-  // Cache normalized result
   ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(normalized), {
     headers: {
       'Content-Type': 'application/json',
@@ -203,7 +354,6 @@ async function handleRss(body, ctx) {
   if(!url || !url.startsWith('http'))
     return json({ error: 'Required field: url (must start with http)' }, 400);
 
-  // Cache check — returns raw XML
   const cacheKey = `https://rss-cache.internal/${encodeURIComponent(url)}`;
   const cache    = caches.default;
   const cached   = await cache.match(cacheKey);
@@ -213,7 +363,6 @@ async function handleRss(body, ctx) {
     });
   }
 
-  // Fetch feed server-side (no CORS restrictions here)
   let upstream;
   try {
     upstream = await fetch(url, {
@@ -229,7 +378,6 @@ async function handleRss(body, ctx) {
 
   const xml = await upstream.text();
 
-  // Cache raw XML
   ctx.waitUntil(cache.put(cacheKey, new Response(xml, {
     headers: {
       'Content-Type': 'application/xml; charset=utf-8',
@@ -237,10 +385,47 @@ async function handleRss(body, ctx) {
     },
   })));
 
-  // Return XML with CORS headers — browser parses it with DOMParser
   return new Response(xml, {
     headers: { ...CORS_HEADERS, 'Content-Type': 'application/xml; charset=utf-8' },
   });
+}
+
+async function handleNvd(body, ctx) {
+  const { endpoint, apiKey } = body;
+
+  if(!endpoint || !endpoint.startsWith('https://services.nvd.nist.gov/'))
+    return json({ error: 'Required field: endpoint (must be NVD API URL)' }, 400);
+
+  const cacheKey = `https://nvd-cache.internal/${encodeURIComponent(endpoint)}`;
+  const cache    = caches.default;
+  const cached   = await cache.match(cacheKey);
+  if(cached) return json({ ...(await cached.json()), _cached: true });
+
+  const headers = { 'Accept': 'application/json' };
+  if(apiKey) headers['apiKey'] = apiKey;
+
+  let upstream;
+  try {
+    upstream = await fetch(endpoint, { headers });
+  } catch(e) { return json({ error: `NVD fetch failed: ${e.message}` }, 502); }
+
+  let data;
+  try { data = await upstream.json(); }
+  catch(e) { return json({ error: 'NVD returned non-JSON' }, 502); }
+
+  if(!upstream.ok) {
+    const msg = data?.message || `HTTP ${upstream.status}`;
+    return json({ error: `NVD API error: ${msg}` }, upstream.status);
+  }
+
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(data), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': `public, max-age=${NVD_CACHE_TTL}`,
+    },
+  })));
+
+  return json(data);
 }
 
 // ── Main dispatcher ──────────────────────────────────────────────────────────
@@ -262,13 +447,13 @@ export default {
 
     if(path === '/pollen') return handlePollen(body, ctx);
     if(path === '/rss')    return handleRss(body, ctx);
-    if(path === '/nvd')    return handleNvd(body);
+    if(path === '/nvd')    return handleNvd(body, ctx);
+    if(path === '/sports') return handleSports(body, ctx);
 
-    // Legacy: if no path, detect from body fields
-    if(body.service)  return handlePollen(body, ctx);
-    if(body.url)      return handleRss(body, ctx);
-    if(body.endpoint) return handleNvd(body);
+    // Legacy: detect from body fields (backwards compat)
+    if(body.service) return handlePollen(body, ctx);
+    if(body.url)     return handleRss(body, ctx);
 
-    return json({ error: 'Unknown route. Use POST /pollen or POST /rss' }, 404);
+    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, or /sports' }, 404);
   }
 };

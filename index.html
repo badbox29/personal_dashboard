@@ -3036,6 +3036,179 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 .cve-interval-inp:focus { border-color: var(--gold); }
 
 /* ============================================================
+   WIDGET — Sports Scores
+   ============================================================ */
+.sports-controls {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.sports-select {
+  font-size: 11px;
+  padding: 3px 6px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  outline: none;
+  flex: 1;
+  min-width: 90px;
+}
+.sports-select:focus { border-color: var(--cyan); }
+.sports-view-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.sports-view-btn {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 9px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sports-view-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.sports-view-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
+.sports-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.sports-card {
+  padding: 7px 9px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  transition: border-color 0.15s;
+}
+.sports-card:hover { border-color: var(--cyan); }
+.sports-card.fav   { border-color: rgba(221,176,75,0.45); }
+.sports-card-teams {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sports-badge {
+  width: 20px; height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+.sports-team-name {
+  font-size: 11.5px;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sports-score {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: center;
+}
+.sports-score.winner { color: #44cc88; }
+.sports-divider {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.sports-card-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 9.5px;
+  color: var(--text-dim);
+}
+.sports-status {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.sports-status.live     { color: #ff8844; background: rgba(255,136,68,0.12); border: 1px solid rgba(255,136,68,0.35); animation: sportsPulse 1.5s ease-in-out infinite alternate; }
+.sports-status.final    { color: var(--text-dim); }
+.sports-status.sched    { color: var(--cyan); }
+.sports-status.other    { color: var(--text-dim); }
+@keyframes sportsPulse {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+.sports-ts {
+  font-size: 9px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  margin-top: 5px;
+  text-align: right;
+}
+.sports-team-filter {
+  font-size: 11px;
+  padding: 3px 6px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+.sports-team-filter:focus { border-color: var(--cyan); }
+
+.sports-fav-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+  min-height: 0;
+}
+.sports-fav-chip {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(221,176,75,0.1);
+  border: 1px solid rgba(221,176,75,0.4);
+  border-radius: 3px;
+  padding: 2px 6px;
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sports-fav-chip button {
+  background: none; border: none; color: var(--gold);
+  cursor: pointer; font-size: 10px; padding: 0; line-height: 1; opacity: 0.7;
+}
+.sports-fav-chip button:hover { opacity: 1; color: var(--del-color); }
+.sports-fav-add-row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.sports-edit-section-lbl {
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.sports-card.fav-match { border-color: rgba(221,176,75,0.55); }
+.sports-card.fav-match .sports-team-name.fav-team { color: var(--gold); font-weight: 700; }
+
+/* ============================================================
    WIDGET — Decision Helper
    ============================================================ */
 .decision-result {
@@ -4535,6 +4708,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swDecision"  onclick="selectWidgetType('decision')">
           🎲 Decision Helper<span>Pick, weight &amp; randomize</span>
         </button>
+        <button class="sec-type-card" id="swSports"    onclick="selectWidgetType('sports')">
+          🏆 Sports Scores<span>Scores &amp; schedules</span>
+        </button>
       </div>
       <!-- Network Engineering widgets -->
       <div class="widget-cat-panel" id="wcPanelNetwork">
@@ -4689,6 +4865,8 @@ const DEFAULTS = {
   workerUrl: '',
   cveAlarmHistory: [],
   cveVendorList: [],
+  sportsTeamLists: {},
+  defaultSportsLeague: '',
   pollenKey: '',
   pollenEnabled: false,
   pollenService: 'weatherapi',
@@ -5017,7 +5195,7 @@ const SEARCH_ENGINES = [
   { id:'reddit',  label:'Reddit',     url:'https://www.reddit.com/search/?q=' },
 ];
 
-const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision',
+const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports',
                       'ports','myip','rfc','cve','bgp','dns','subnet',
                       'github','regex'];
 
@@ -5264,6 +5442,8 @@ const PORT_COMBOS = {
   if(D.workerUrl === undefined) D.workerUrl = '';
   if(!Array.isArray(D.cveAlarmHistory)) D.cveAlarmHistory = [];
   if(!Array.isArray(D.cveVendorList))   D.cveVendorList   = [];
+  if(typeof D.sportsTeamLists !== 'object' || Array.isArray(D.sportsTeamLists)) D.sportsTeamLists = {};
+  if(D.defaultSportsLeague === undefined) D.defaultSportsLeague = '';
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -5722,6 +5902,7 @@ function buildWidgetBody(sec){
     case 'otd':       return buildOtdWidget(sec);
     case 'wiki':      return buildWikiWidget(sec);
     case 'decision':  return buildDecisionWidget(sec);
+    case 'sports':    return buildSportsWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -7332,6 +7513,346 @@ function buildBgpWidget(sec){
 
   return wrap;
 }
+/* ---- SPORTS SCORES ---- */
+function buildSportsWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  // Migrate old favTeam string → favTeams object
+  if(cfg.favTeam !== undefined){ delete cfg.favTeam; }
+  if(!cfg.favTeams)     cfg.favTeams     = {};
+  if(!cfg.sportsKey)    cfg.sportsKey    = '';
+  if(!cfg.sportsWorker) cfg.sportsWorker = '';
+  if(!cfg.refreshMins)  cfg.refreshMins  = 10;
+  // Default league: per-widget config → global default → 'nba'
+  if(!cfg.league) cfg.league = D.defaultSportsLeague || 'nba';
+
+  const LEAGUE_GROUPS = [
+    { label:'US Sports', leagues:[
+      { key:'nfl', label:'NFL'  },
+      { key:'nba', label:'NBA'  },
+      { key:'mlb', label:'MLB'  },
+      { key:'nhl', label:'NHL'  },
+    ]},
+    { label:'Soccer Leagues', leagues:[
+      { key:'epl',        label:'Premier League' },
+      { key:'laliga',     label:'La Liga'        },
+      { key:'bundesliga', label:'Bundesliga'     },
+      { key:'seriea',     label:'Serie A'        },
+      { key:'ligue1',     label:'Ligue 1'        },
+      { key:'mls',        label:'MLS'            },
+    ]},
+    { label:'Competitions', leagues:[
+      { key:'ucl', label:'Champions League' },
+    ]},
+  ];
+
+  const SOCCER_KEYS = new Set(['epl','laliga','bundesliga','seriea','ligue1','mls','ucl']);
+  const SEASONS = {
+    nfl: { start:8, end:1  },
+    nba: { start:9, end:5  },
+    mlb: { start:3, end:9  },
+    nhl: { start:9, end:5  },
+  };
+
+  function smartDefaultView(leagueKey){
+    if(SOCCER_KEYS.has(leagueKey)) return 'upcoming';
+    const s=SEASONS[leagueKey]; if(!s) return 'today';
+    const m=new Date().getMonth();
+    const inSeason=s.start>s.end?(m>=s.start||m<=s.end):(m>=s.start&&m<=s.end);
+    return inSeason?'today':'upcoming';
+  }
+  if(!cfg.view) cfg.view=smartDefaultView(cfg.league);
+
+  const VIEWS=['live','today','final','upcoming'];
+  const wrap=el('div');
+
+  // ── Controls row ───────────────────────────────────────
+  const ctrlRow=el('div','sports-controls');
+  const leagueSel=el('select','sports-select'); leagueSel.title='League';
+  LEAGUE_GROUPS.forEach(grp=>{
+    const og=document.createElement('optgroup'); og.label=grp.label;
+    grp.leagues.forEach(l=>{
+      const o=document.createElement('option'); o.value=l.key; o.textContent=l.label;
+      if(l.key===cfg.league) o.selected=true;
+      og.appendChild(o);
+    });
+    leagueSel.appendChild(og);
+  });
+  leagueSel.onchange=()=>{
+    cfg.league=leagueSel.value; cfg.view=smartDefaultView(cfg.league); persist();
+    buildViewTabs(); renderFavChips(); updateTeamDropdown(); fetchScores();
+  };
+  const rfBtn=el('button','monitor-check-btn'); rfBtn.textContent='\u21ba'; rfBtn.title='Refresh';
+  rfBtn.onclick=()=>fetchScores(true);
+  ctrlRow.append(leagueSel,rfBtn);
+  wrap.appendChild(ctrlRow);
+
+  // ── Favorite team chips (always visible) ──────────────
+  const favChipsEl=el('div','sports-fav-chips');
+  const renderFavChips=()=>{
+    favChipsEl.innerHTML='';
+    const favs=cfg.favTeams[cfg.league]||[];
+    favs.forEach((t,i)=>{
+      const chip=el('div','sports-fav-chip');
+      const lbl=el('span'); lbl.textContent=t;
+      const del=el('button'); del.textContent='\u2715'; del.title='Remove';
+      del.onclick=()=>{ cfg.favTeams[cfg.league].splice(i,1); persist(); renderFavChips(); renderGames(lastResult); };
+      chip.append(lbl,del); favChipsEl.appendChild(chip);
+    });
+  };
+  renderFavChips();
+  wrap.appendChild(favChipsEl);
+
+  // View tabs
+  const viewTabs=el('div','sports-view-tabs');
+  wrap.appendChild(viewTabs);
+
+  const feed=el('div','sports-feed'); wrap.appendChild(feed);
+  const tsEl=el('div','sports-ts'); tsEl.textContent=''; wrap.appendChild(tsEl);
+
+  // ── Edit section ───────────────────────────────────────
+  const editSection=el('div'); editSection.style.cssText='display:none;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;';
+
+  // Favorites management
+  const favLbl=el('div','sports-edit-section-lbl'); favLbl.textContent='Favorite Teams \u2014 '+cfg.league.toUpperCase();
+  const leagueSel2 = leagueSel; // alias — update label on change
+
+  const teamAddRow=el('div'); teamAddRow.style.cssText='display:flex;flex-direction:column;gap:4px;margin-bottom:6px;';
+  const teamRow1=el('div'); teamRow1.style.cssText='display:flex;gap:5px;';
+  const teamSel=el('select','sports-select'); teamSel.style.cssText='flex:1;font-size:11px;';
+  const teamFilter=el('input'); teamFilter.placeholder='Search teams\u2026';
+  teamFilter.style.cssText='flex:1;font-size:11px;padding:3px 6px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;';
+  teamFilter.oninput=()=>updateTeamDropdown();
+  teamRow1.append(teamFilter,teamSel);
+  const teamRow2=el('div'); teamRow2.style.cssText='display:flex;gap:5px;';
+  const addFavBtn=el('button','todo-add-btn'); addFavBtn.textContent='\uFF0B Add from list'; addFavBtn.style.flex='1';
+  addFavBtn.onclick=()=>{
+    const t=teamSel.value; if(!t) return;
+    if(!cfg.favTeams[cfg.league]) cfg.favTeams[cfg.league]=[];
+    if(cfg.favTeams[cfg.league].includes(t)) return;
+    cfg.favTeams[cfg.league].push(t); persist();
+    teamFilter.value=''; updateTeamDropdown(); renderFavChips(); renderGames(lastResult);
+  };
+  const addCustomBtn=el('button','clock-style-btn'); addCustomBtn.style.cssText='font-size:10px;padding:2px 9px;flex:1;';
+  addCustomBtn.textContent='\uFF0B Add custom';
+  addCustomBtn.onclick=()=>{
+    const t=teamFilter.value.trim(); if(!t) return;
+    if(!cfg.favTeams[cfg.league]) cfg.favTeams[cfg.league]=[];
+    if(cfg.favTeams[cfg.league].includes(t)) return;
+    cfg.favTeams[cfg.league].push(t); persist();
+    teamFilter.value=''; updateTeamDropdown(); renderFavChips(); renderGames(lastResult);
+  };
+  teamRow2.append(addFavBtn,addCustomBtn);
+  teamAddRow.append(teamRow1,teamRow2);
+
+  const updateTeamDropdown=()=>{
+    const f=teamFilter.value.toLowerCase();
+    const known=(D.sportsTeamLists[cfg.league]||[]).filter(t=> !f||t.toLowerCase().includes(f));
+    teamSel.innerHTML='';
+    if(!known.length){
+      const o=document.createElement('option'); o.textContent='No teams loaded yet'; o.disabled=true; teamSel.appendChild(o);
+    } else {
+      const ph=document.createElement('option'); ph.value=''; ph.textContent='Select team\u2026'; ph.disabled=true; ph.selected=true; teamSel.appendChild(ph);
+      known.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; teamSel.appendChild(o); });
+    }
+  };
+  updateTeamDropdown();
+
+  // Divider
+  const div1=el('div'); div1.style.cssText='height:1px;background:var(--border);margin:8px 0;';
+
+  // API key + worker
+  const apiLbl=el('div','sports-edit-section-lbl'); apiLbl.textContent='API \u0026 Worker Settings';
+  const keyInp=el('input','cve-interval-inp'); keyInp.type='text';
+  keyInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-bottom:4px;';
+  keyInp.placeholder='API token (stored locally, optional \u2014 free tier used if blank)'; keyInp.value=cfg.sportsKey||'';
+  const workerInp=el('input','cve-interval-inp'); workerInp.type='text';
+  workerInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-bottom:4px;';
+  workerInp.placeholder='Override global Worker URL for sports only (optional)'; workerInp.value=cfg.sportsWorker||'';
+  const saveRow=el('div'); saveRow.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap;';
+  const saveBtn=el('button','todo-add-btn'); saveBtn.textContent='Save';
+  const saveStatus=el('span'); saveStatus.style.cssText='font-size:10px;color:var(--cyan);';
+
+  // Default league button
+  const defBtn=el('button','clock-style-btn'); defBtn.style.cssText='font-size:10px;padding:2px 9px;margin-left:auto;';
+  const updateDefBtn=()=>{
+    defBtn.textContent = D.defaultSportsLeague===cfg.league ? '\u2713 Default league' : 'Set as default';
+    defBtn.classList.toggle('active', D.defaultSportsLeague===cfg.league);
+  };
+  defBtn.onclick=()=>{
+    D.defaultSportsLeague=cfg.league; persist(); updateDefBtn();
+    saveStatus.textContent='\u2713 Default saved'; setTimeout(()=>saveStatus.textContent='',2000);
+  };
+  updateDefBtn();
+
+  saveBtn.onclick=()=>{
+    cfg.sportsKey=keyInp.value.trim(); cfg.sportsWorker=workerInp.value.trim(); persist();
+    buildViewTabs();
+    saveStatus.textContent='\u2713 Saved'; setTimeout(()=>saveStatus.textContent='',2000);
+  };
+  saveRow.append(saveBtn,defBtn,saveStatus);
+
+  editSection.append(favLbl,teamAddRow,div1,apiLbl,keyInp,workerInp,saveRow);
+  wrap.appendChild(editSection);
+
+  const applyEdit=()=>{
+    const inEdit=document.body.classList.contains('edit-mode');
+    editSection.style.display=inEdit?'':'none';
+    if(inEdit){ favLbl.textContent='Favorite Teams \u2014 '+(cfg.league||'').toUpperCase(); updateDefBtn(); }
+  };
+  const obs=new MutationObserver(applyEdit);
+  obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyEdit();
+
+  buildViewTabs();
+
+  // ── Rendering ──────────────────────────────────────────
+  let lastResult=null;
+
+  function buildViewTabs(){
+    viewTabs.innerHTML='';
+    const hasPaidKey=!!(cfg.sportsKey||'').trim();
+    VIEWS.filter(v=>v!=='live'||hasPaidKey).forEach(v=>{
+      const btn=el('button','sports-view-btn');
+      btn.textContent=v.charAt(0).toUpperCase()+v.slice(1);
+      btn.dataset.view=v;
+      btn.classList.toggle('active',v===cfg.view);
+      btn.onclick=()=>{
+        cfg.view=v; persist();
+        viewTabs.querySelectorAll('.sports-view-btn').forEach(b=>b.classList.toggle('active',b.dataset.view===v));
+        fetchScores();
+      };
+      viewTabs.appendChild(btn);
+    });
+    if(cfg.view==='live'&&!hasPaidKey){ cfg.view=smartDefaultView(cfg.league); persist(); }
+  }
+
+  function formatTime(iso){
+    if(!iso) return '';
+    try { return new Date(iso).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+    catch(e){ return iso; }
+  }
+
+  function buildTooltip(g){
+    const parts=[];
+    if(g.startTime) parts.push(formatTime(g.startTime));
+    if(g.venue)     parts.push('\uD83C\uDFDF\uFE0F '+g.venue);
+    if(g.round)     parts.push('Round / Week: '+g.round);
+    if(g.season)    parts.push('Season: '+g.season);
+    return parts.join('\n');
+  }
+
+  function isFavTeam(teamName){
+    const favs=(cfg.favTeams[cfg.league]||[]).map(f=>f.toLowerCase());
+    return favs.some(f=>teamName.toLowerCase().includes(f)||f.includes(teamName.toLowerCase()));
+  }
+
+  function renderGames(result){
+    feed.innerHTML='';
+    if(!result){ const s=el('div','dns-status'); s.textContent='No data yet.'; feed.appendChild(s); return; }
+
+    let games=[...result.games];
+    if(!games.length){ const s=el('div','dns-status'); s.textContent='No games found.'; feed.appendChild(s); return; }
+
+    // Sort: fav games first, then by start time
+    const hasFavs=(cfg.favTeams[cfg.league]||[]).length>0;
+    if(hasFavs){
+      games.sort((a,b)=>{
+        const af=isFavTeam(a.homeTeam)||isFavTeam(a.awayTeam);
+        const bf=isFavTeam(b.homeTeam)||isFavTeam(b.awayTeam);
+        if(af&&!bf) return -1; if(!af&&bf) return 1; return 0;
+      });
+    }
+
+    games.forEach(g=>{
+      // Next match fallback — show a subtle label above the card
+      if(g.nextMatchFallback){
+        const lbl=el('div'); lbl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;padding:2px 2px 4px;opacity:0.7;';
+        lbl.textContent='No games today \u2014 next match:';
+        feed.appendChild(lbl);
+      }
+      const homeFav=isFavTeam(g.homeTeam);
+      const awayFav=isFavTeam(g.awayTeam);
+      const anyFav=homeFav||awayFav;
+
+      const card=el('div','sports-card'+(anyFav?' fav-match':''));
+      card.style.cursor='pointer';
+      const tip=buildTooltip(g); if(tip) card.title=tip;
+      if(g.id) card.onclick=()=>window.open('https://www.thesportsdb.com/event/'+g.id,'_blank','noopener');
+
+      const hasScore=g.homeScore!==null&&g.awayScore!==null;
+      const homeBetter=hasScore&&g.homeScore>g.awayScore;
+      const awayBetter=hasScore&&g.awayScore>g.homeScore;
+
+      const awayRow=el('div','sports-card-teams');
+      if(g.awayBadge){ const img=document.createElement('img'); img.className='sports-badge'; img.src=g.awayBadge; img.alt=''; img.onerror=()=>img.style.display='none'; awayRow.appendChild(img); }
+      const awayName=el('span','sports-team-name'+(awayFav?' fav-team':'')); awayName.textContent=g.awayTeam;
+      const awayScore=el('span','sports-score'+(awayBetter&&g.status==='Final'?' winner':'')); awayScore.textContent=hasScore?g.awayScore:'\u2014';
+      awayRow.append(awayName,awayScore);
+
+      const homeRow=el('div','sports-card-teams'); homeRow.style.marginTop='3px';
+      if(g.homeBadge){ const img=document.createElement('img'); img.className='sports-badge'; img.src=g.homeBadge; img.alt=''; img.onerror=()=>img.style.display='none'; homeRow.appendChild(img); }
+      const homeName=el('span','sports-team-name'+(homeFav?' fav-team':'')); homeName.textContent=g.homeTeam;
+      const homeScore=el('span','sports-score'+(homeBetter&&g.status==='Final'?' winner':'')); homeScore.textContent=hasScore?g.homeScore:'\u2014';
+      homeRow.append(homeName,homeScore);
+
+      const meta=el('div','sports-card-meta');
+      const statusEl=el('span','sports-status');
+      if(g.status==='In Progress'){     statusEl.textContent='LIVE';  statusEl.classList.add('live');  }
+      else if(g.status==='Final'){      statusEl.textContent='Final'; statusEl.classList.add('final'); }
+      else if(g.status==='Postponed'||g.status==='Cancelled'){ statusEl.textContent=g.status; statusEl.classList.add('other'); }
+      else { statusEl.textContent=formatTime(g.startTime)||'Scheduled'; statusEl.classList.add('sched'); }
+      const venueEl=el('span'); venueEl.textContent=g.venue||'';
+      venueEl.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;';
+      meta.append(statusEl,venueEl);
+
+      card.append(awayRow,homeRow,meta);
+      feed.appendChild(card);
+    });
+  }
+
+  // ── Fetch + team extraction ────────────────────────────
+  async function fetchScores(force=false){
+    const workerUrl=getWorkerUrl(cfg.sportsWorker);
+    if(!workerUrl){
+      feed.innerHTML='<div class="dns-status" style="color:var(--del-color);">Worker URL required. Set it via the \u26A1 toolbar button or in widget settings (edit mode).</div>';
+      return;
+    }
+    feed.innerHTML='<div class="dns-status">Loading\u2026</div>';
+    try {
+      const localDate=new Date().toLocaleDateString('en-CA');
+      const body={ league:cfg.league, view:cfg.view, localDate };
+      if(cfg.sportsKey) body.apiKey=cfg.sportsKey;
+      const r=await fetch(workerUrl.replace(/\/+$/,'')+'/sports',{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),
+      });
+      const j=await r.json();
+      if(j.error){ feed.innerHTML='<div class="dns-status" style="color:var(--del-color);">'+j.error+'</div>'; return; }
+      lastResult=j;
+
+      // Extract team names into D.sportsTeamLists
+      if(j.games&&j.games.length){
+        if(!D.sportsTeamLists[cfg.league]) D.sportsTeamLists[cfg.league]=[];
+        const existing=new Set(D.sportsTeamLists[cfg.league]);
+        j.games.forEach(g=>{ if(g.homeTeam) existing.add(g.homeTeam); if(g.awayTeam) existing.add(g.awayTeam); });
+        D.sportsTeamLists[cfg.league]=[...existing].sort((a,b)=>a.localeCompare(b));
+        persist();
+        updateTeamDropdown();
+      }
+
+      renderGames(j);
+      tsEl.textContent='Updated '+new Date(j.generatedAt).toLocaleTimeString()+(j._cached?' (cached)':'');
+    } catch(e){
+      feed.innerHTML='<div class="dns-status" style="color:var(--del-color);">Failed: '+e.message+'</div>';
+    }
+  }
+
+  fetchScores();
+  const timer=setInterval(()=>fetchScores(),(cfg.refreshMins||10)*60*1000);
+  const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(timer); obs.disconnect(); obsClean.disconnect(); } });
+  obsClean.observe(document.body,{childList:true,subtree:true});
+  return wrap;
+}
+
 /* ---- DECISION HELPER ---- */
 function buildDecisionWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
