@@ -3349,6 +3349,139 @@ body.edit-mode .rss-add-row { display: flex; }
 .port-row-active { background: rgba(15,184,221,0.08) !important; }
 
 /* ============================================================
+   WIDGET — Regex Tester
+   ============================================================ */
+.regex-field-row {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.regex-pattern-wrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  overflow: hidden;
+}
+.regex-pattern-wrap:focus-within { border-color: var(--gold); }
+.regex-slash {
+  padding: 0 4px;
+  color: var(--gold);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  flex-shrink: 0;
+  user-select: none;
+}
+.regex-pattern-inp {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  padding: 5px 2px;
+  min-width: 0;
+}
+.regex-flags-inp {
+  width: 44px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--inp-border);
+  outline: none;
+  color: var(--cyan);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  padding: 5px 6px;
+}
+.regex-status {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 7px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.regex-status.ok   { color: #44cc88; background: rgba(68,204,136,0.1); border: 1px solid rgba(68,204,136,0.3); }
+.regex-status.err  { color: var(--del-color); background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); }
+.regex-status.none { color: var(--text-dim); background: var(--inp-bg); border: 1px solid var(--border); }
+.regex-text-area {
+  width: 100%;
+  min-height: 100px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  padding: 6px 8px;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+  line-height: 1.6;
+}
+.regex-text-area:focus { border-color: var(--cyan); }
+.regex-highlight-wrap {
+  position: relative;
+  margin-top: 6px;
+}
+.regex-display {
+  width: 100%;
+  min-height: 100px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text-dim);
+  overflow-y: auto;
+  max-height: 180px;
+}
+.regex-match {
+  background: rgba(255,200,0,0.3);
+  color: var(--text);
+  border-radius: 2px;
+  outline: 1px solid rgba(255,200,0,0.5);
+}
+.regex-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.regex-example-btn {
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 7px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.regex-example-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.regex-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* ============================================================
    WIDGET — GitHub Activity
    ============================================================ */
 .gh-feed {
@@ -4284,6 +4417,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swGithub"    onclick="selectWidgetType('github')">
           🐙 GitHub Activity<span>Multi-user activity feed</span>
         </button>
+        <button class="sec-type-card" id="swRegex"     onclick="selectWidgetType('regex')">
+          🔎 Regex Tester<span>Live match highlighting</span>
+        </button>
       </div>
     </div>
     <div class="modal-actions">
@@ -4735,7 +4871,7 @@ const SEARCH_ENGINES = [
 
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki',
                       'ports','myip','rfc','cve','bgp','dns','subnet',
-                      'github'];
+                      'github','regex'];
 
 const UNIT_CATS = {
   Length:      { units:['mm','cm','m','km','in','ft','yd','mi'],                       toBase:{ mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344 } },
@@ -5433,6 +5569,7 @@ function buildWidgetBody(sec){
     case 'dns':       return buildDnsWidget(sec);
     case 'subnet':    return buildSubnetWidget(sec);
     case 'github':    return buildGithubWidget(sec);
+    case 'regex':     return buildRegexWidget(sec);
     case 'rss':       return buildRssWidget(sec);
     case 'otd':       return buildOtdWidget(sec);
     case 'wiki':      return buildWikiWidget(sec);
@@ -6086,6 +6223,140 @@ function buildRfcWidget(sec){
     grid.appendChild(btn);
   });
   wrap.appendChild(grid);
+  return wrap;
+}
+
+/* ---- REGEX TESTER ---- */
+function buildRegexWidget(sec){
+  const EXAMPLES = [
+    { label:'Email',   pattern:'[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}', flags:'gi', sample:'Contact us at hello@example.com or support@company.org for help.' },
+    { label:'IPv4',    pattern:'\\b(?:(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\b', flags:'g', sample:'Servers: 192.168.1.1, 10.0.0.255, 172.16.0.1, invalid: 999.1.2.3' },
+    { label:'IPv6',    pattern:'([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::1', flags:'gi', sample:'Addresses: 2001:0db8:85a3:0000:0000:8a2e:0370:7334 and loopback ::1' },
+    { label:'GUID',    pattern:'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', flags:'gi', sample:'ID: 550e8400-e29b-41d4-a716-446655440000 and 123e4567-e89b-12d3-a456-426614174000' },
+    { label:'URL',     pattern:'https?://[^\\s/$.?#].[^\\s]*', flags:'gi', sample:'Visit https://example.com or http://test.org/path?q=1 for more.' },
+    { label:'CVE',     pattern:'CVE-\\d{4}-\\d{4,}', flags:'gi', sample:'Patched CVE-2024-1234 and CVE-2023-99999 in this release.' },
+    { label:'MAC',     pattern:'([0-9A-Fa-f]{2}[:\\-]){5}[0-9A-Fa-f]{2}', flags:'gi', sample:'Device MAC: 00:1A:2B:3C:4D:5E and AA-BB-CC-DD-EE-FF' },
+    { label:'Date',    pattern:'\\b\\d{4}[-/]\\d{2}[-/]\\d{2}\\b', flags:'g', sample:'Events on 2024-03-15, 2024/12/31, and 2023-01-01.' },
+    { label:'Hex',     pattern:'#?[0-9A-Fa-f]{6}\\b', flags:'g', sample:'Colors: #ff4444, #00cc88, 1a2b3c, invalid: #xyz' },
+    { label:'JWT',     pattern:'eyJ[A-Za-z0-9_\\-]+\\.eyJ[A-Za-z0-9_\\-]+\\.[A-Za-z0-9_\\-]+', flags:'g', sample:'Token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.abc123' },
+  ];
+
+  const wrap = el('div');
+
+  // Quick examples
+  const examplesEl = el('div','regex-examples');
+  EXAMPLES.forEach(ex=>{
+    const btn = el('button','regex-example-btn');
+    btn.textContent = ex.label;
+    btn.onclick = ()=>{
+      patternInp.value = ex.pattern;
+      flagsInp.value   = ex.flags;
+      if(!textArea.value.trim()) textArea.value = ex.sample;
+      runRegex();
+    };
+    examplesEl.appendChild(btn);
+  });
+  wrap.appendChild(examplesEl);
+
+  // Pattern row: /pattern/flags + status
+  const fieldRow = el('div','regex-field-row');
+  const patternWrap = el('div','regex-pattern-wrap');
+  const slashL = el('span','regex-slash'); slashL.textContent='/';
+  const patternInp = el('input','regex-pattern-inp'); patternInp.placeholder='pattern…'; patternInp.spellcheck=false;
+  const slashR = el('span','regex-slash'); slashR.textContent='/';
+  const flagsInp = el('input','regex-flags-inp'); flagsInp.placeholder='gi'; flagsInp.value='gi'; flagsInp.spellcheck=false; flagsInp.maxLength=6;
+  patternWrap.append(slashL, patternInp, slashR, flagsInp);
+  const statusEl = el('span','regex-status none'); statusEl.textContent='no pattern';
+  fieldRow.append(patternWrap, statusEl);
+  wrap.appendChild(fieldRow);
+
+  // Test input
+  const textArea = el('textarea','regex-text-area');
+  textArea.placeholder = 'Paste or type test text here\u2026';
+  textArea.spellcheck = false;
+  wrap.appendChild(textArea);
+
+  // Highlighted display
+  const displayEl = el('div','regex-display');
+  displayEl.textContent = 'Matches will highlight here\u2026';
+  wrap.appendChild(displayEl);
+
+  // Info row: match count + copy matches
+  const infoRow = el('div','regex-info-row');
+  const matchCount = el('span'); matchCount.textContent='';
+  const copyBtn = el('button','monitor-check-btn'); copyBtn.textContent='Copy matches'; copyBtn.style.cssText='font-size:9.5px;padding:2px 8px;display:none;';
+  infoRow.append(matchCount, copyBtn);
+  wrap.appendChild(infoRow);
+
+  let lastMatches = [];
+
+  function runRegex(){
+    const pattern = patternInp.value;
+    const flags   = flagsInp.value.replace(/[^gimsuy]/g,'') || 'g';
+    const text    = textArea.value;
+
+    displayEl.innerHTML='';
+
+    if(!pattern){
+      statusEl.className='regex-status none'; statusEl.textContent='no pattern';
+      matchCount.textContent=''; copyBtn.style.display='none';
+      displayEl.textContent=text||'Matches will highlight here\u2026';
+      return;
+    }
+
+    let rx;
+    try {
+      // Ensure global flag so matchAll works
+      const f = flags.includes('g') ? flags : flags+'g';
+      rx = new RegExp(pattern, f);
+      statusEl.className='regex-status ok'; statusEl.textContent='valid';
+    } catch(e){
+      statusEl.className='regex-status err'; statusEl.textContent=e.message.slice(0,40);
+      matchCount.textContent=''; copyBtn.style.display='none';
+      displayEl.textContent=text||'';
+      return;
+    }
+
+    if(!text){
+      displayEl.textContent='Matches will highlight here\u2026';
+      matchCount.textContent=''; copyBtn.style.display='none'; return;
+    }
+
+    // Find all matches and build highlighted display
+    lastMatches=[];
+    let last=0;
+    const frag=document.createDocumentFragment();
+    for(const m of text.matchAll(rx)){
+      if(m.index>last) frag.appendChild(document.createTextNode(text.slice(last,m.index)));
+      const span=document.createElement('span');
+      span.className='regex-match';
+      span.textContent=m[0];
+      span.title=`Match ${lastMatches.length+1}: "${m[0]}"${m.length>1?' Groups: '+m.slice(1).map((g,i)=>`$${i+1}="${g}"`).join(', '):''}`;
+      frag.appendChild(span);
+      lastMatches.push(m[0]);
+      last=m.index+m[0].length;
+    }
+    if(last<text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    displayEl.appendChild(frag);
+
+    const n=lastMatches.length;
+    matchCount.textContent=n===0?'no matches':`${n} match${n!==1?'es':''}`;
+    statusEl.className=n>0?'regex-status ok':'regex-status none';
+    statusEl.textContent=n>0?`${n} match${n!==1?'es':''}`:'valid / no matches';
+    copyBtn.style.display=n>0?'':'none';
+  }
+
+  copyBtn.onclick=()=>{
+    navigator.clipboard.writeText(lastMatches.join('\n')).then(()=>{
+      const orig=copyBtn.textContent; copyBtn.textContent='\u2713 Copied!';
+      setTimeout(()=>{ copyBtn.textContent=orig; },1200);
+    });
+  };
+
+  patternInp.addEventListener('input', runRegex);
+  flagsInp.addEventListener('input',   runRegex);
+  textArea.addEventListener('input',   runRegex);
+
   return wrap;
 }
 
