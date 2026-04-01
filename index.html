@@ -7704,7 +7704,23 @@ function buildCveWidget(sec){
     persist();
     hitsPanel.style.display='none';
   };
-  hitsHdr.append(hitsIcon, hitsTitle, hitsChevron, hitsDismiss);
+  const hitsCopy = el('button','cve-alert-dismiss');
+  hitsCopy.textContent='\uD83D\uDCCB'; hitsCopy.title='Copy CVE IDs and URLs';
+  hitsCopy.style.cssText='margin-right:2px;';
+  hitsCopy.onclick = e=>{
+    e.stopPropagation();
+    const lines=[];
+    hitsBody.querySelectorAll('[data-cveid]').forEach(tile=>{
+      const id=tile.dataset.cveid;
+      lines.push(id+' — https://nvd.nist.gov/vuln/detail/'+id);
+    });
+    if(!lines.length) return;
+    navigator.clipboard.writeText(lines.join('\n')).then(()=>{
+      const orig=hitsCopy.textContent; hitsCopy.textContent='\u2713';
+      setTimeout(()=>{ hitsCopy.textContent=orig; },1500);
+    });
+  };
+  hitsHdr.append(hitsIcon, hitsTitle, hitsChevron, hitsCopy, hitsDismiss);
   const hitsBody = el('div');
   hitsBody.style.cssText='display:flex;flex-direction:column;gap:4px;border:1px solid #ff4444;border-top:none;border-radius:0 0 5px 5px;max-height:220px;overflow-y:auto;padding:6px 8px;';
   hitsHdr.addEventListener('click',()=>{
