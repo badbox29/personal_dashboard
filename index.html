@@ -3036,6 +3036,116 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 .cve-interval-inp:focus { border-color: var(--gold); }
 
 /* ============================================================
+   WIDGET — Wikipedia Featured Article
+   ============================================================ */
+.wiki-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wiki-thumbnail {
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.wiki-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+  cursor: pointer;
+  line-height: 1.3;
+}
+.wiki-title:hover { text-decoration: underline; }
+.wiki-extract {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wiki-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.wiki-read-more {
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cyan);
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.wiki-read-more:hover { opacity: 1; }
+.wiki-date {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+/* ============================================================
+   WIDGET — On This Day
+   ============================================================ */
+.otd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.otd-item {
+  display: flex;
+  gap: 10px;
+  padding: 6px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.otd-item:hover { border-color: var(--cyan); }
+.otd-year {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 700;
+  flex-shrink: 0;
+  min-width: 40px;
+  padding-top: 1px;
+}
+.otd-text {
+  font-size: 11.5px;
+  color: var(--text);
+  line-height: 1.4;
+}
+.otd-hdr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.otd-hdr-title {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  flex: 1;
+}
+.otd-type-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+/* ============================================================
    WIDGET — RSS Feed
    ============================================================ */
 .rss-feed-list {
@@ -3237,6 +3347,223 @@ body.edit-mode .rss-add-row { display: flex; }
 }
 .port-popover-link:hover { opacity: 1; }
 .port-row-active { background: rgba(15,184,221,0.08) !important; }
+
+/* ============================================================
+   WIDGET — GitHub Activity
+   ============================================================ */
+.gh-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.gh-event {
+  display: flex;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  align-items: flex-start;
+}
+.gh-event:hover { border-color: var(--cyan); }
+.gh-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.gh-body { flex: 1; min-width: 0; }
+.gh-actor {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--gold);
+  font-weight: 700;
+}
+.gh-action {
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gh-repo {
+  font-size: 10px;
+  color: var(--cyan);
+  font-family: 'Share Tech Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gh-age {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+.gh-user-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.gh-user-tag {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 6px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gh-user-tag button {
+  background: none; border: none; color: var(--text-dim);
+  cursor: pointer; font-size: 10px; padding: 0; line-height: 1;
+}
+.gh-user-tag button:hover { color: var(--del-color); }
+.gh-add-row {
+  display: none;
+  gap: 5px;
+  margin-top: 4px;
+}
+body.edit-mode .gh-add-row { display: flex; }
+
+/* ============================================================
+   WIDGET — Subnet Calculator
+   ============================================================ */
+.subnet-results {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
+}
+.subnet-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.subnet-row:hover { border-color: var(--cyan); }
+.subnet-label {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  min-width: 130px;
+  flex-shrink: 0;
+}
+.subnet-value {
+  font-size: 12px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  flex: 1;
+  word-break: break-all;
+}
+.subnet-copy-hint {
+  font-size: 9px;
+  color: var(--text-dim);
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.subnet-row:hover .subnet-copy-hint { opacity: 0.6; }
+.subnet-section-hdr {
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 6px 2px 2px;
+  opacity: 0.7;
+}
+.subnet-version-tabs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.subnet-error {
+  font-size: 11.5px;
+  color: var(--del-color);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+/* ============================================================
+   WIDGET — DNS Lookup
+   ============================================================ */
+.dns-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+.dns-record {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11.5px;
+  word-break: break-all;
+}
+.dns-record-type {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+.dns-record-value {
+  color: var(--text);
+  flex: 1;
+}
+.dns-record-ttl {
+  font-size: 9px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.dns-status {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 4px 0;
+}
+.dns-type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.dns-type-btn {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dns-type-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.dns-type-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(255,200,0,0.08); }
 
 /* ============================================================
    WIDGET — BGP / ASN Lookup
@@ -3890,6 +4217,7 @@ body.edit-mode .rss-add-row { display: flex; }
       <div class="widget-cat-tabs" style="margin-top:6px;">
         <button class="widget-cat-tab active" id="wcTabGeneral" onclick="selectWidgetCat('general')">🧩 General</button>
         <button class="widget-cat-tab" id="wcTabNetwork" onclick="selectWidgetCat('network')">🌐 Network Engineering</button>
+        <button class="widget-cat-tab" id="wcTabCoding"  onclick="selectWidgetCat('coding')">💻 Coding</button>
       </div>
       <!-- General widgets -->
       <div class="widget-cat-panel active" id="wcPanelGeneral">
@@ -3920,6 +4248,12 @@ body.edit-mode .rss-add-row { display: flex; }
         <button class="sec-type-card" id="swRss"       onclick="selectWidgetType('rss')">
           📡 RSS Feed<span>Live feed reader</span>
         </button>
+        <button class="sec-type-card" id="swOtd"       onclick="selectWidgetType('otd')">
+          📅 On This Day<span>History from Wikipedia</span>
+        </button>
+        <button class="sec-type-card" id="swWiki"      onclick="selectWidgetType('wiki')">
+          📖 Featured Article<span>Wikipedia's pick today</span>
+        </button>
       </div>
       <!-- Network Engineering widgets -->
       <div class="widget-cat-panel" id="wcPanelNetwork">
@@ -3937,6 +4271,18 @@ body.edit-mode .rss-add-row { display: flex; }
         </button>
         <button class="sec-type-card" id="swBgp"       onclick="selectWidgetType('bgp')">
           🔭 BGP / ASN<span>ASN &amp; IP prefix lookup</span>
+        </button>
+        <button class="sec-type-card" id="swDns"       onclick="selectWidgetType('dns')">
+          🔍 DNS Lookup<span>Cloudflare DNS-over-HTTPS</span>
+        </button>
+        <button class="sec-type-card" id="swSubnet"    onclick="selectWidgetType('subnet')">
+          🌐 Subnet Calc<span>IPv4 &amp; IPv6 calculator</span>
+        </button>
+      </div>
+      <!-- Coding widgets -->
+      <div class="widget-cat-panel" id="wcPanelCoding">
+        <button class="sec-type-card" id="swGithub"    onclick="selectWidgetType('github')">
+          🐙 GitHub Activity<span>Multi-user activity feed</span>
         </button>
       </div>
     </div>
@@ -4387,8 +4733,9 @@ const SEARCH_ENGINES = [
   { id:'reddit',  label:'Reddit',     url:'https://www.reddit.com/search/?q=' },
 ];
 
-const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss',
-                      'ports','myip','rfc','cve','bgp'];
+const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki',
+                      'ports','myip','rfc','cve','bgp','dns','subnet',
+                      'github'];
 
 const UNIT_CATS = {
   Length:      { units:['mm','cm','m','km','in','ft','yd','mi'],                       toBase:{ mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344 } },
@@ -5083,7 +5430,12 @@ function buildWidgetBody(sec){
     case 'rfc':       return buildRfcWidget(sec);
     case 'cve':       return buildCveWidget(sec);
     case 'bgp':       return buildBgpWidget(sec);
+    case 'dns':       return buildDnsWidget(sec);
+    case 'subnet':    return buildSubnetWidget(sec);
+    case 'github':    return buildGithubWidget(sec);
     case 'rss':       return buildRssWidget(sec);
+    case 'otd':       return buildOtdWidget(sec);
+    case 'wiki':      return buildWikiWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -5737,6 +6089,508 @@ function buildRfcWidget(sec){
   return wrap;
 }
 
+/* ---- GITHUB ACTIVITY ---- */
+function buildGithubWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.users)       cfg.users       = [];
+  if(!cfg.maxItems)    cfg.maxItems    = 20;
+  if(!cfg.refreshMins) cfg.refreshMins = 15;
+
+  const wrap = el('div');
+
+  // Header
+  const hdr = el('div','otd-hdr');
+  const hdrTitle = el('div','otd-hdr-title'); hdrTitle.textContent = 'GitHub Activity';
+  const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='\u21ba'; rfBtn.title='Refresh';
+  rfBtn.onclick = ()=> fetchAll();
+  hdr.append(hdrTitle, rfBtn);
+  wrap.appendChild(hdr);
+
+  // User tags (always visible)
+  const tagsEl = el('div','gh-user-tags');
+  const renderTags = ()=>{
+    tagsEl.innerHTML='';
+    cfg.users.forEach((u,i)=>{
+      const tag=el('div','gh-user-tag');
+      const lbl=el('span'); lbl.textContent=u;
+      const del=el('button'); del.textContent='\u2715';
+      del.onclick=()=>{ cfg.users.splice(i,1); persist(); renderTags(); fetchAll(); };
+      tag.append(lbl,del); tagsEl.appendChild(tag);
+    });
+  };
+  renderTags();
+  wrap.appendChild(tagsEl);
+
+  // Feed
+  const feed = el('div','gh-feed');
+  wrap.appendChild(feed);
+
+  // Add user row (edit mode only)
+  const addRow = el('div','gh-add-row');
+  const userInp = el('input','search-widget-input');
+  userInp.placeholder='GitHub username\u2026'; userInp.style.flex='1';
+  const addBtn = el('button','search-widget-go'); addBtn.textContent='\uFF0B Add';
+  const doAdd = ()=>{
+    const u=userInp.value.trim().replace(/^@/,'');
+    if(!u||cfg.users.includes(u)) return;
+    cfg.users.push(u); persist(); userInp.value='';
+    renderTags(); fetchAll();
+  };
+  userInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doAdd(); });
+  addBtn.onclick=doAdd;
+  addRow.append(userInp,addBtn);
+  wrap.appendChild(addRow);
+
+  // Event type → human label + link target
+  function describeEvent(ev, count, totalCommits){
+    count = count||1;
+    totalCommits = totalCommits||0;
+    const repo = ev.repo?.name || '';
+    const repoUrl = 'https://github.com/'+repo;
+    const p = ev.payload||{};
+    const times = count>1 ? ` (${count}×)` : '';
+    switch(ev.type){
+      case 'PushEvent': {
+        const n=totalCommits||p.commits?.length||0;
+        const msg=count===1?(p.commits?.[0]?.message||'').split('\n')[0].slice(0,60):'';
+        const label=`Pushed ${n} commit${n!==1?'s':''}${times}${msg?' \u2014 '+msg:''}`;
+        return { action:label, url:repoUrl+'/commits' };
+      }
+      case 'PullRequestEvent':
+        return { action:`${cap(p.action)} PR${times}: ${(p.pull_request?.title||'').slice(0,60)}`,
+                 url:p.pull_request?.html_url||repoUrl };
+      case 'IssuesEvent':
+        return { action:`${cap(p.action)} issue${times}: ${(p.issue?.title||'').slice(0,60)}`,
+                 url:p.issue?.html_url||repoUrl };
+      case 'IssueCommentEvent':
+        return { action:`Commented on issue${times}: ${(p.issue?.title||'').slice(0,50)}`,
+                 url:p.comment?.html_url||repoUrl };
+      case 'WatchEvent':
+        return { action:'Starred'+times, url:repoUrl };
+      case 'ForkEvent':
+        return { action:'Forked \u2192 '+(p.forkee?.full_name||''), url:p.forkee?.html_url||repoUrl };
+      case 'CreateEvent':
+        return { action:`Created ${p.ref_type||''}${p.ref?' '+p.ref:''}${times}`, url:repoUrl };
+      case 'DeleteEvent':
+        return { action:`Deleted ${p.ref_type||''} ${p.ref||''}${times}`, url:repoUrl };
+      case 'ReleaseEvent':
+        return { action:`Released${times}: ${(p.release?.name||p.release?.tag_name||'').slice(0,50)}`,
+                 url:p.release?.html_url||repoUrl };
+      case 'PullRequestReviewEvent':
+        return { action:`Reviewed PR${times}: ${(p.pull_request?.title||'').slice(0,50)}`,
+                 url:p.pull_request?.html_url||repoUrl };
+      case 'PublicEvent':
+        return { action:'Made repo public', url:repoUrl };
+      case 'MemberEvent':
+        return { action:`${cap(p.action)} ${p.member?.login||''} as collaborator`, url:repoUrl };
+      default:
+        return { action:ev.type.replace('Event','')+times, url:repoUrl };
+    }
+  }
+  function cap(s){ return s?s[0].toUpperCase()+s.slice(1):s; }
+
+  function renderFeed(events){
+    feed.innerHTML='';
+    if(!events.length){
+      const s=el('div','dns-status');
+      s.textContent=cfg.users.length?'No recent activity.':'Add GitHub usernames in edit mode.';
+      feed.appendChild(s); return;
+    }
+
+    // Step 1: filter out zero-commit push events (GitHub API artifact)
+    const filtered=events.filter(ev=>{
+      if(ev.type==='PushEvent' && (ev.payload?.commits?.length||0)===0) return false;
+      return true;
+    });
+
+    // Step 2: group consecutive events by actor+repo+type
+    const grouped=[];
+    filtered.forEach(ev=>{
+      const key=ev.actor?.login+'|'+ev.repo?.name+'|'+ev.type;
+      const last=grouped[grouped.length-1];
+      if(last && last._key===key){
+        // Merge into existing group
+        last._count++;
+        last._commits=(last._commits||0)+(ev.payload?.commits?.length||0);
+        // Keep earliest created_at for age display (last in array = oldest since sorted newest first)
+      } else {
+        grouped.push({
+          ...ev,
+          _key: key,
+          _count: 1,
+          _commits: ev.payload?.commits?.length||0,
+        });
+      }
+    });
+
+    // Step 3: render grouped events
+    hdrTitle.textContent='GitHub Activity ('+Math.min(grouped.length,cfg.maxItems)+')';
+    grouped.slice(0,cfg.maxItems).forEach(ev=>{
+      const {action,url}=describeEvent(ev, ev._count, ev._commits);
+      const row=el('div','gh-event');
+      row.onclick=()=>window.open(url,'_blank','noopener');
+
+      const avatar=document.createElement('img');
+      avatar.className='gh-avatar';
+      avatar.src='https://github.com/'+ev.actor?.login+'.png?size=44';
+      avatar.alt=ev.actor?.login||'';
+
+      const body=el('div','gh-body');
+      const actor=el('div','gh-actor'); actor.textContent=ev.actor?.login||'';
+      const act=el('div','gh-action'); act.textContent=action;
+      const repo=el('div','gh-repo'); repo.textContent=ev.repo?.name||'';
+      body.append(actor,act,repo);
+
+      const age=el('div','gh-age');
+      const d=new Date(ev.created_at);
+      const hrs=Math.round((Date.now()-d.getTime())/3600000);
+      age.textContent=hrs<1?'just now':hrs<24?hrs+'h ago':Math.round(hrs/24)+'d ago';
+      age.title=d.toLocaleString();
+
+      row.append(avatar,body,age);
+      feed.appendChild(row);
+    });
+  }
+
+  let allEvents=[];
+
+  async function fetchUser(username){
+    try {
+      const r=await fetch(`https://api.github.com/users/${encodeURIComponent(username)}/events/public?per_page=30`);
+      if(!r.ok) return [];
+      const j=await r.json();
+      return Array.isArray(j)?j:[];
+    } catch(e){ return []; }
+  }
+
+  async function fetchAll(){
+    if(!cfg.users.length){ renderFeed([]); return; }
+    feed.innerHTML='<div class="dns-status">Loading\u2026</div>';
+    const results=await Promise.all(cfg.users.map(fetchUser));
+    allEvents=results.flat().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    renderFeed(allEvents);
+    // Count is set inside renderFeed after filtering+grouping
+  }
+
+  fetchAll();
+  const timer=setInterval(fetchAll, (cfg.refreshMins||15)*60*1000);
+  const obs=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(timer); obs.disconnect(); } });
+  obs.observe(document.body,{childList:true,subtree:true});
+  return wrap;
+}
+
+/* ---- SUBNET CALCULATOR ---- */
+function buildSubnetWidget(sec){
+  const wrap = el('div');
+
+  // Version tabs
+  const tabs = el('div','subnet-version-tabs');
+  let version = 4;
+  const tab4 = el('button','clock-style-btn'); tab4.style.cssText='font-size:10px;padding:2px 10px;'; tab4.textContent='IPv4';
+  const tab6 = el('button','clock-style-btn'); tab6.style.cssText='font-size:10px;padding:2px 10px;'; tab6.textContent='IPv6';
+  const setVersion = v=>{
+    version=v;
+    tab4.classList.toggle('active',v===4);
+    tab6.classList.toggle('active',v===6);
+    inp.value='';
+    inp.placeholder = v===4 ? 'e.g. 192.168.1.0/24 or 10.0.0.55/16' : 'e.g. 2001:db8::/32';
+    results.innerHTML='';
+    clearBtn.style.display='none';
+  };
+  tab4.onclick=()=>setVersion(4);
+  tab6.onclick=()=>setVersion(6);
+  tabs.append(tab4,tab6);
+  wrap.appendChild(tabs);
+
+  // Input row
+  const inputRow=el('div'); inputRow.style.cssText='display:flex;gap:6px;margin-bottom:6px;';
+  const inp=el('input','search-widget-input');
+  inp.placeholder='e.g. 192.168.1.0/24 or 10.0.0.55/16'; inp.style.flex='1';
+  const calcBtn=el('button','search-widget-go'); calcBtn.textContent='Calculate';
+  const clearBtn=el('button','monitor-check-btn'); clearBtn.textContent='\u2715'; clearBtn.title='Clear';
+  clearBtn.style.display='none';
+  clearBtn.onclick=()=>{ inp.value=''; results.innerHTML=''; clearBtn.style.display='none'; };
+  inputRow.append(inp,calcBtn,clearBtn);
+  wrap.appendChild(inputRow);
+
+  const results=el('div','subnet-results');
+  wrap.appendChild(results);
+
+  // ── Copy helper ───────────────────────────────────────────
+  function makeRow(label, value){
+    const row=el('div','subnet-row');
+    row.title='Click to copy';
+    const lbl=el('span','subnet-label'); lbl.textContent=label;
+    const val=el('span','subnet-value'); val.textContent=value;
+    const hint=el('span','subnet-copy-hint'); hint.textContent='copy';
+    row.onclick=()=>{
+      navigator.clipboard.writeText(value).then(()=>{
+        const orig=hint.textContent; hint.textContent='\u2713';
+        setTimeout(()=>{ hint.textContent=orig; },1200);
+      });
+    };
+    row.append(lbl,val,hint);
+    return row;
+  }
+  function makeHdr(text){
+    const h=el('div','subnet-section-hdr'); h.textContent=text; return h;
+  }
+
+  // ── IPv4 math ─────────────────────────────────────────────
+  function calcIPv4(cidr){
+    const m=cidr.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(?:\/(\d{1,2}))?$/);
+    if(!m) throw new Error('Invalid IPv4 CIDR. Use format: 192.168.1.0/24');
+    const prefix=m[2]!==undefined?parseInt(m[2]):32;
+    if(prefix<0||prefix>32) throw new Error('Prefix must be 0\u201332');
+    const parts=m[1].split('.').map(Number);
+    if(parts.some(p=>p>255)) throw new Error('Invalid IPv4 address');
+
+    const ipInt=((parts[0]<<24)|(parts[1]<<16)|(parts[2]<<8)|parts[3])>>>0;
+    const maskInt=prefix===0?0:(0xFFFFFFFF<<(32-prefix))>>>0;
+    const netInt=(ipInt&maskInt)>>>0;
+    const bcastInt=(netInt|(~maskInt>>>0))>>>0;
+    const firstInt=prefix<31?netInt+1:netInt;
+    const lastInt=prefix<31?bcastInt-1:bcastInt;
+    const hosts=prefix>=31?Math.pow(2,32-prefix):Math.pow(2,32-prefix)-2;
+
+    const toIP=n=>[(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join('.');
+    const toMask=n=>toIP(n);
+    const wildcard=toIP((~maskInt)>>>0);
+    const ipClass=parts[0]<128?'A':parts[0]<192?'B':parts[0]<224?'C':parts[0]<240?'D':'E';
+    const isPrivate=
+      parts[0]===10 ||
+      (parts[0]===172&&parts[1]>=16&&parts[1]<=31) ||
+      (parts[0]===192&&parts[1]===168);
+
+    results.innerHTML='';
+    clearBtn.style.display='';
+    results.appendChild(makeHdr('Network'));
+    results.appendChild(makeRow('Input IP',m[1]));
+    results.appendChild(makeRow('CIDR Notation',toIP(netInt)+'/'+prefix));
+    results.appendChild(makeRow('Network Address',toIP(netInt)));
+    results.appendChild(makeRow('Broadcast Address',toIP(bcastInt)));
+    results.appendChild(makeHdr('Addressing'));
+    results.appendChild(makeRow('Subnet Mask',toMask(maskInt)));
+    results.appendChild(makeRow('Wildcard Mask',wildcard));
+    results.appendChild(makeRow('First Usable Host',toIP(firstInt)));
+    results.appendChild(makeRow('Last Usable Host',toIP(lastInt)));
+    results.appendChild(makeRow('Usable Hosts',hosts.toLocaleString()));
+    results.appendChild(makeRow('Total Addresses',Math.pow(2,32-prefix).toLocaleString()));
+    results.appendChild(makeHdr('Classification'));
+    results.appendChild(makeRow('IP Class','Class '+ipClass));
+    results.appendChild(makeRow('Private Range',isPrivate?'Yes (RFC 1918)':'No'));
+    results.appendChild(makeRow('Binary Mask',maskInt.toString(2).padStart(32,'0').replace(/(.{8})/g,'$1 ').trim()));
+  }
+
+  // ── IPv6 math ─────────────────────────────────────────────
+  function expandIPv6(addr){
+    // Handle :: expansion
+    if(addr.includes('::')){
+      const [left,right]=addr.split('::');
+      const l=left?left.split(':'):[];
+      const r=right?right.split(':'):[];
+      const missing=8-l.length-r.length;
+      return [...l,...Array(missing).fill('0'),...r].map(g=>g.padStart(4,'0')).join(':');
+    }
+    return addr.split(':').map(g=>g.padStart(4,'0')).join(':');
+  }
+
+  function ipv6ToWords(expanded){
+    return expanded.split(':').map(g=>parseInt(g,16));
+  }
+
+  function wordsToIPv6(words){
+    // Compress: find longest run of zeros
+    const hex=words.map(w=>w.toString(16));
+    let bestStart=-1,bestLen=0,curStart=-1,curLen=0;
+    hex.forEach((g,i)=>{
+      if(g==='0'){ if(curStart<0){ curStart=i; curLen=0; } curLen++; if(curLen>bestLen){ bestLen=curLen; bestStart=curStart; } }
+      else { curStart=-1; }
+    });
+    if(bestLen>1){
+      const left=hex.slice(0,bestStart).join(':');
+      const right=hex.slice(bestStart+bestLen).join(':');
+      return (left?left+'::':'::')+right;
+    }
+    return hex.join(':');
+  }
+
+  function calcIPv6(cidr){
+    const m=cidr.match(/^([0-9a-fA-F:]+)(?:\/(\d{1,3}))?$/);
+    if(!m) throw new Error('Invalid IPv6 CIDR. Use format: 2001:db8::/32');
+    const prefix=m[2]!==undefined?parseInt(m[2]):128;
+    if(prefix<0||prefix>128) throw new Error('Prefix must be 0\u2013128');
+
+    let expanded;
+    try { expanded=expandIPv6(m[1]); } catch(e){ throw new Error('Invalid IPv6 address'); }
+    const words=ipv6ToWords(expanded);
+    if(words.length!==8||words.some(w=>isNaN(w)||w>0xFFFF)) throw new Error('Invalid IPv6 address');
+
+    // Build network mask as 8 x 16-bit words
+    const maskWords=Array(8).fill(0).map((_,i)=>{
+      const bitsLeft=Math.max(0,prefix-i*16);
+      const bitsUsed=Math.min(16,bitsLeft);
+      return bitsUsed===0?0:bitsUsed===16?0xFFFF:(0xFFFF<<(16-bitsUsed))&0xFFFF;
+    });
+
+    const netWords=words.map((w,i)=>w&maskWords[i]);
+    // Last address: OR with inverted mask
+    const lastWords=netWords.map((w,i)=>w|(~maskWords[i]&0xFFFF));
+
+    const totalBits=128-prefix;
+    const totalStr=totalBits>=53?'2^'+totalBits+' ('+Math.pow(2,Math.min(totalBits,53)).toLocaleString()+(totalBits>53?'+':'')+')'
+      :Math.pow(2,totalBits).toLocaleString();
+
+    // Classify
+    const firstWord=words[0];
+    let scope='Global Unicast';
+    if(firstWord===0xfe80>>0||expanded.startsWith('fe80')) scope='Link-Local';
+    else if(expanded.startsWith('fc')||expanded.startsWith('fd')) scope='Unique Local (ULA)';
+    else if(expanded.startsWith('ff')) scope='Multicast';
+    else if(expanded==='0000:0000:0000:0000:0000:0000:0000:0001') scope='Loopback (::1)';
+    else if(expanded.startsWith('2002')) scope='6to4';
+    else if(expanded.startsWith('2001:0000')) scope='Teredo';
+
+    results.innerHTML='';
+    clearBtn.style.display='';
+    results.appendChild(makeHdr('Network'));
+    results.appendChild(makeRow('Input Address',m[1]));
+    results.appendChild(makeRow('Expanded',expanded));
+    results.appendChild(makeRow('Compressed',wordsToIPv6(words)));
+    results.appendChild(makeRow('Network Address',wordsToIPv6(netWords)+'/'+prefix));
+    results.appendChild(makeRow('Last Address',wordsToIPv6(lastWords)));
+    results.appendChild(makeHdr('Prefix'));
+    results.appendChild(makeRow('Prefix Length','/'+prefix));
+    results.appendChild(makeRow('Total Addresses',totalStr));
+    results.appendChild(makeHdr('Classification'));
+    results.appendChild(makeRow('Scope',scope));
+  }
+
+  // ── Dispatch ──────────────────────────────────────────────
+  function calculate(){
+    const q=inp.value.trim(); if(!q) return;
+    results.innerHTML='';
+    try {
+      if(version===4) calcIPv4(q);
+      else            calcIPv6(q);
+    } catch(e){
+      const err=el('div','subnet-error'); err.textContent=e.message; results.appendChild(err);
+      clearBtn.style.display='';
+    }
+  }
+
+  calcBtn.onclick=calculate;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') calculate(); });
+  setVersion(4);
+  return wrap;
+}
+
+/* ---- DNS LOOKUP ---- */
+function buildDnsWidget(sec){
+  const DNS_TYPES = ['A','AAAA','MX','TXT','CNAME','NS','SOA','PTR','SRV','CAA'];
+  let activeType  = 'A';
+  let lastQuery   = '';
+
+  const wrap = el('div');
+
+  // Input row
+  const inputRow = el('div'); inputRow.style.cssText='display:flex;gap:6px;margin-bottom:8px;';
+  const inp = el('input','search-widget-input');
+  inp.placeholder='Hostname or IP\u2026'; inp.autocomplete='off'; inp.style.flex='1';
+  const goBtn   = el('button','search-widget-go'); goBtn.textContent='Lookup';
+  const clearBtn = el('button','monitor-check-btn'); clearBtn.textContent='\u2715'; clearBtn.title='Clear';
+  clearBtn.onclick=()=>{ inp.value=''; lastQuery=''; results.innerHTML=''; clearBtn.style.display='none'; };
+  clearBtn.style.display='none';
+  inputRow.append(inp, goBtn, clearBtn);
+  wrap.appendChild(inputRow);
+
+  // Record type tabs
+  const typeTabs = el('div','dns-type-tabs');
+  DNS_TYPES.forEach(t=>{
+    const btn = el('button','dns-type-btn');
+    btn.textContent = t;
+    btn.classList.toggle('active', t===activeType);
+    btn.onclick=()=>{
+      activeType=t;
+      typeTabs.querySelectorAll('.dns-type-btn').forEach(b=>b.classList.toggle('active', b.textContent===t));
+      if(lastQuery) doLookup();
+    };
+    typeTabs.appendChild(btn);
+  });
+  wrap.appendChild(typeTabs);
+
+  // Results area
+  const results = el('div','dns-results');
+  wrap.appendChild(results);
+
+  async function doLookup(){
+    const q = inp.value.trim();
+    if(!q) return;
+    lastQuery = q;
+    results.innerHTML='<div class="dns-status">Looking up\u2026</div>';
+
+    try {
+      const url = 'https://cloudflare-dns.com/dns-query?name='
+        + encodeURIComponent(q) + '&type=' + activeType;
+      const r = await fetch(url, { headers:{ 'Accept':'application/dns-json' } });
+      const j = await r.json();
+
+      results.innerHTML='';
+      clearBtn.style.display='';
+
+      // Status code meanings
+      const statusMsg = {0:'No error',1:'Format error',2:'Server failure',3:'Name does not exist',4:'Not implemented',5:'Refused'};
+      if(j.Status !== 0){
+        const s=el('div','dns-status');
+        s.style.color='var(--del-color)';
+        s.textContent=statusMsg[j.Status]||'Query failed (status '+j.Status+')';
+        results.appendChild(s); return;
+      }
+
+      const answers = j.Answer || j.Authority || [];
+      if(!answers.length){
+        const s=el('div','dns-status');
+        s.textContent='No '+activeType+' records found for '+q;
+        results.appendChild(s); return;
+      }
+
+      answers.forEach(rec=>{
+        const typeNames={1:'A',2:'NS',5:'CNAME',6:'SOA',12:'PTR',15:'MX',16:'TXT',28:'AAAA',33:'SRV',257:'CAA'};
+        const typeName = typeNames[rec.type] || String(rec.type);
+        const row  = el('div','dns-record');
+        row.title='Click to copy value';
+        row.style.cursor='pointer';
+        row.onclick=()=>{
+          navigator.clipboard.writeText(rec.data).then(()=>{
+            const orig=val.textContent; val.textContent='\u2713 Copied!';
+            setTimeout(()=>{ val.textContent=orig; },1200);
+          });
+        };
+        const type = el('span','dns-record-type'); type.textContent=typeName;
+        const val  = el('span','dns-record-value'); val.textContent=rec.data;
+        const ttl  = el('span','dns-record-ttl'); ttl.textContent='TTL '+rec.TTL+'s';
+        row.append(type, val, ttl);
+        results.appendChild(row);
+      });
+
+      // Show DNSSEC status if available
+      if(j.AD){
+        const dnssec=el('div'); dnssec.style.cssText='font-size:10px;color:#44cc88;font-family:Share Tech Mono,monospace;margin-top:4px;padding:2px 4px;';
+        dnssec.textContent='\u2713 DNSSEC validated';
+        results.appendChild(dnssec);
+      }
+
+    } catch(e){
+      results.innerHTML='<div class="dns-status" style="color:var(--del-color);">Lookup failed: '+e.message+'</div>';
+    }
+  }
+
+  goBtn.onclick = doLookup;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') doLookup(); });
+
+  return wrap;
+}
+
 /* ---- BGP / ASN LOOKUP ---- */
 function buildBgpWidget(sec){
   const wrap = el('div');
@@ -6058,6 +6912,172 @@ function buildBgpWidget(sec){
 
   return wrap;
 }
+/* ---- WIKIPEDIA FEATURED ARTICLE ---- */
+function buildWikiWidget(sec){
+  const wrap = el('div');
+
+  // Header
+  const hdr = el('div','otd-hdr');
+  const hdrTitle = el('div','otd-hdr-title'); hdrTitle.textContent = 'Featured Article';
+  const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='\u21ba'; rfBtn.title='Refresh';
+  hdr.append(hdrTitle, rfBtn);
+  wrap.appendChild(hdr);
+
+  const content = el('div','wiki-wrap');
+  wrap.appendChild(content);
+
+  async function fetchFeatured(){
+    content.innerHTML='<div class="dns-status">Loading\u2026</div>';
+    try {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm   = String(now.getMonth()+1).padStart(2,'0');
+      const dd   = String(now.getDate()).padStart(2,'0');
+      const url  = `https://en.wikipedia.org/api/rest_v1/feed/featured/${yyyy}/${mm}/${dd}`;
+      const r    = await fetch(url, { headers:{ 'Accept':'application/json' } });
+      const j    = await r.json();
+      const art  = j.tfa; // Today's Featured Article
+      if(!art){ content.innerHTML='<div class="dns-status">No featured article today.</div>'; return; }
+
+      content.innerHTML='';
+
+      // Thumbnail
+      const thumb = art.thumbnail || art.originalimage;
+      if(thumb?.source){
+        const img = document.createElement('img');
+        img.src = thumb.source;
+        img.className = 'wiki-thumbnail';
+        img.alt = art.title||'';
+        img.onclick = ()=> window.open(art.content_urls?.desktop?.page||'https://en.wikipedia.org','_blank','noopener');
+        content.appendChild(img);
+      }
+
+      // Title
+      const title = el('div','wiki-title');
+      title.textContent = art.normalizedtitle || art.title || '';
+      title.onclick = ()=> window.open(art.content_urls?.desktop?.page||'https://en.wikipedia.org','_blank','noopener');
+      content.appendChild(title);
+
+      // Extract
+      const extract = el('div','wiki-extract');
+      extract.textContent = art.extract || '';
+      content.appendChild(extract);
+
+      // Footer
+      const footer = el('div','wiki-footer');
+      const link = el('a','wiki-read-more');
+      link.href = art.content_urls?.desktop?.page || 'https://en.wikipedia.org';
+      link.target='_blank'; link.rel='noopener';
+      link.textContent = '\u2197 Read full article on Wikipedia';
+      const date = el('span','wiki-date');
+      date.textContent = now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      footer.append(link, date);
+      content.appendChild(footer);
+
+    } catch(e){
+      content.innerHTML='<div class="dns-status" style="color:var(--del-color);">Failed to load: '+e.message+'</div>';
+    }
+  }
+
+  rfBtn.onclick = fetchFeatured;
+  fetchFeatured();
+
+  // Refresh daily — check every hour, refetch if the date has changed
+  let lastDate = new Date().toDateString();
+  const timer = setInterval(()=>{
+    const today = new Date().toDateString();
+    if(today !== lastDate){ lastDate=today; fetchFeatured(); }
+  }, 60*60*1000);
+  const obs=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(timer); obs.disconnect(); } });
+  obs.observe(document.body,{childList:true,subtree:true});
+
+  return wrap;
+}
+
+/* ---- ON THIS DAY ---- */
+function buildOtdWidget(sec){
+  const TYPES = ['events','births','deaths'];
+  const LABELS = {events:'Events', births:'Births', deaths:'Deaths'};
+  let activeType = 'events';
+
+  const wrap = el('div');
+
+  // Header
+  const hdr = el('div','otd-hdr');
+  const hdrTitle = el('div','otd-hdr-title');
+  const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='\u21ba'; rfBtn.title='Refresh';
+  hdr.append(hdrTitle, rfBtn);
+  wrap.appendChild(hdr);
+
+  // Type tabs
+  const typeTabs = el('div','otd-type-tabs');
+  TYPES.forEach(t=>{
+    const btn=el('button','clock-style-btn'); btn.style.cssText='font-size:9.5px;padding:2px 8px;';
+    btn.textContent=LABELS[t];
+    btn.classList.toggle('active', t===activeType);
+    btn.onclick=()=>{
+      activeType=t;
+      typeTabs.querySelectorAll('.clock-style-btn').forEach(b=>b.classList.toggle('active',b.textContent===LABELS[t]));
+      renderItems();
+    };
+    typeTabs.appendChild(btn);
+  });
+  wrap.appendChild(typeTabs);
+
+  const list = el('div','otd-list');
+  wrap.appendChild(list);
+
+  let cachedData = null;
+
+  function renderItems(){
+    list.innerHTML='';
+    if(!cachedData){ const s=el('div','dns-status'); s.textContent='Loading\u2026'; list.appendChild(s); return; }
+    const items = cachedData[activeType]||[];
+    if(!items.length){ const s=el('div','dns-status'); s.textContent='No '+LABELS[activeType].toLowerCase()+' found.'; list.appendChild(s); return; }
+    // Show up to 20, shuffled so it's different each load
+    const shuffled=[...items].sort(()=>Math.random()-0.5).slice(0,20);
+    shuffled.sort((a,b)=>parseInt(a.year||0)-parseInt(b.year||0));
+    shuffled.forEach(item=>{
+      const row=el('div','otd-item');
+      const year=el('span','otd-year'); year.textContent=item.year||'?';
+      const text=el('span','otd-text'); text.textContent=item.text||'';
+      row.append(year,text);
+      // Link to first Wikipedia page if available
+      const page=(item.pages||[])[0];
+      if(page?.content_urls?.desktop?.page){
+        row.title='Open on Wikipedia';
+        row.onclick=()=>window.open(page.content_urls.desktop.page,'_blank','noopener');
+      }
+      list.appendChild(row);
+    });
+  }
+
+  async function fetchOtd(){
+    const now=new Date();
+    const month=String(now.getMonth()+1).padStart(2,'0');
+    const day=String(now.getDate()).padStart(2,'0');
+    hdrTitle.textContent='On This Day \u2014 '+now.toLocaleDateString('en-US',{month:'long',day:'numeric'});
+    list.innerHTML='<div class="dns-status">Loading\u2026</div>';
+    try {
+      // Fetch all three types in parallel
+      const [evR,biR,deR]=await Promise.all([
+        fetch(`https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/${month}/${day}`),
+        fetch(`https://en.wikipedia.org/api/rest_v1/feed/onthisday/births/${month}/${day}`),
+        fetch(`https://en.wikipedia.org/api/rest_v1/feed/onthisday/deaths/${month}/${day}`),
+      ]);
+      const [evJ,biJ,deJ]=await Promise.all([evR.json(),biR.json(),deR.json()]);
+      cachedData={ events:evJ.events||[], births:biJ.births||[], deaths:deJ.deaths||[] };
+      renderItems();
+    } catch(e){
+      list.innerHTML='<div class="dns-status" style="color:var(--del-color);">Failed to load: '+e.message+'</div>';
+    }
+  }
+
+  rfBtn.onclick=fetchOtd;
+  fetchOtd();
+  return wrap;
+}
+
 /* ---- RSS FEED ---- */
 function buildRssWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
@@ -7585,8 +8605,10 @@ let addSecCtx = null; // {tabId, colId}
 function selectWidgetCat(cat){
   document.getElementById('wcTabGeneral')?.classList.toggle('active', cat==='general');
   document.getElementById('wcTabNetwork')?.classList.toggle('active', cat==='network');
+  document.getElementById('wcTabCoding')?.classList.toggle('active',  cat==='coding');
   document.getElementById('wcPanelGeneral')?.classList.toggle('active', cat==='general');
   document.getElementById('wcPanelNetwork')?.classList.toggle('active', cat==='network');
+  document.getElementById('wcPanelCoding')?.classList.toggle('active',  cat==='coding');
 }
 
 function openAddSection(tabId, colId){
