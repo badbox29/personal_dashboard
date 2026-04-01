@@ -3036,6 +3036,151 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 .cve-interval-inp:focus { border-color: var(--gold); }
 
 /* ============================================================
+   WIDGET — Decision Helper
+   ============================================================ */
+.decision-result {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  transition: border-color 0.3s;
+}
+.decision-result.highlight { border-color: var(--gold); animation: decisionPop 0.35s ease; }
+@keyframes decisionPop {
+  0%   { transform: scale(0.95); opacity:0.6; }
+  60%  { transform: scale(1.04); }
+  100% { transform: scale(1);    opacity:1; }
+}
+.decision-picked {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  font-family: 'Share Tech Mono', monospace;
+  line-height: 1.3;
+  word-break: break-word;
+}
+.decision-picked-multi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  margin-top: 4px;
+}
+.decision-badge {
+  font-size: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--gold);
+  background: rgba(221,176,75,0.1);
+  border: 1px solid var(--gold);
+  border-radius: 4px;
+  padding: 3px 10px;
+}
+.decision-ts {
+  font-size: 9.5px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  margin-top: 4px;
+}
+.decision-action-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.decision-option-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 0;
+}
+.decision-option-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.decision-option-label:hover { background: rgba(255,255,255,0.05); }
+.decision-option-weight {
+  width: 44px;
+  font-size: 11px;
+  text-align: center;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  padding: 2px 4px;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.decision-option-weight:focus { border-color: var(--gold); color: var(--text); }
+.decision-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 110px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+.decision-history-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  padding: 2px 4px;
+}
+.decision-history-item span:first-child { color: var(--text); }
+.decision-elim-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+}
+.decision-elim-pair {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.decision-elim-btn {
+  flex: 1;
+  padding: 10px 8px;
+  background: var(--inp-bg);
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12.5px;
+  font-family: 'Share Tech Mono', monospace;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  word-break: break-word;
+}
+.decision-elim-btn:hover { border-color: var(--gold); color: var(--gold); }
+.decision-elim-progress {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+}
+.decision-saved-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 0;
+  font-size: 11.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+}
+.decision-saved-row span { flex:1; cursor:pointer; }
+.decision-saved-row span:hover { color: var(--cyan); }
+.decision-edit-only { display: none; }
+
+/* ============================================================
    WIDGET — Wikipedia Featured Article
    ============================================================ */
 .wiki-wrap {
@@ -4387,6 +4532,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swWiki"      onclick="selectWidgetType('wiki')">
           📖 Featured Article<span>Wikipedia's pick today</span>
         </button>
+        <button class="sec-type-card" id="swDecision"  onclick="selectWidgetType('decision')">
+          🎲 Decision Helper<span>Pick, weight &amp; randomize</span>
+        </button>
       </div>
       <!-- Network Engineering widgets -->
       <div class="widget-cat-panel" id="wcPanelNetwork">
@@ -4869,7 +5017,7 @@ const SEARCH_ENGINES = [
   { id:'reddit',  label:'Reddit',     url:'https://www.reddit.com/search/?q=' },
 ];
 
-const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki',
+const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision',
                       'ports','myip','rfc','cve','bgp','dns','subnet',
                       'github','regex'];
 
@@ -5573,6 +5721,7 @@ function buildWidgetBody(sec){
     case 'rss':       return buildRssWidget(sec);
     case 'otd':       return buildOtdWidget(sec);
     case 'wiki':      return buildWikiWidget(sec);
+    case 'decision':  return buildDecisionWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -7183,6 +7332,378 @@ function buildBgpWidget(sec){
 
   return wrap;
 }
+/* ---- DECISION HELPER ---- */
+function buildDecisionWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.options)     cfg.options     = [];
+  if(!cfg.history)     cfg.history     = [];
+  if(!cfg.savedLists)  cfg.savedLists  = [];
+  if(!cfg.recentPicks) cfg.recentPicks = [];
+  if(cfg.useWeights   === undefined) cfg.useWeights   = false;
+  if(cfg.avoidRecent  === undefined) cfg.avoidRecent  = false;
+  if(!cfg.recentCount) cfg.recentCount = 3;
+  if(!cfg.pickN)       cfg.pickN       = 2;
+  if(!cfg.tagFilter)   cfg.tagFilter   = '';
+  cfg.elimState = null; // never persist elimination mid-state
+
+  let elimState = null; // local only
+
+  const wrap = el('div');
+
+  // ── Result display ────────────────────────────────────────
+  const resultBox = el('div','decision-result');
+  const resultContent = el('div','decision-picked'); resultContent.textContent='—';
+  const resultTs = el('div','decision-ts'); resultTs.textContent='';
+  resultBox.append(resultContent, resultTs);
+  wrap.appendChild(resultBox);
+
+  // ── Action buttons ────────────────────────────────────────
+  const actionRow = el('div','decision-action-row');
+  const pick1Btn  = el('button','search-widget-go'); pick1Btn.textContent='🎲 Pick 1';
+  const pickNBtn  = el('button','search-widget-go'); pickNBtn.textContent='🎲 Pick N';
+  const shuffleBtn= el('button','clock-style-btn'); shuffleBtn.style.cssText='font-size:11px;padding:4px 10px;'; shuffleBtn.textContent='⇅ Shuffle';
+  const elimBtn   = el('button','clock-style-btn'); elimBtn.style.cssText='font-size:11px;padding:4px 10px;'; elimBtn.textContent='⚔ Eliminate';
+  actionRow.append(pick1Btn, pickNBtn, shuffleBtn, elimBtn);
+  wrap.appendChild(actionRow);
+
+  // ── Toggles + settings row (edit mode) ───────────────────
+  // ── Config strip (always visible, compact) ───────────────
+  const configStrip = el('div'); configStrip.style.cssText='display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-bottom:8px;';
+
+  const wtBtn = el('button','clock-style-btn'); wtBtn.style.cssText='font-size:9.5px;padding:2px 8px;';
+  const arBtn = el('button','clock-style-btn'); arBtn.style.cssText='font-size:9.5px;padding:2px 8px;';
+  const updateToggles = ()=>{
+    wtBtn.textContent='Weights '+(cfg.useWeights?'ON':'OFF');
+    wtBtn.classList.toggle('active', cfg.useWeights);
+    arBtn.textContent='Avoid Recent '+(cfg.avoidRecent?'ON':'OFF');
+    arBtn.classList.toggle('active', cfg.avoidRecent);
+  };
+  wtBtn.onclick=()=>{ cfg.useWeights=!cfg.useWeights; persist(); updateToggles(); renderOptions(); };
+  arBtn.onclick=()=>{ cfg.avoidRecent=!cfg.avoidRecent; persist(); updateToggles(); };
+  updateToggles();
+
+  const pickNLbl = el('label'); pickNLbl.style.cssText='display:flex;align-items:center;gap:4px;font-size:9.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;';
+  const pickNInp = el('input'); pickNInp.type='number'; pickNInp.min='2'; pickNInp.max='20'; pickNInp.value=cfg.pickN;
+  pickNInp.style.cssText='width:36px;font-size:10px;padding:1px 4px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:3px;color:var(--text);outline:none;text-align:center;-moz-appearance:textfield;appearance:textfield;';
+  pickNInp.onchange=()=>{ cfg.pickN=Math.max(2,Math.min(20,parseInt(pickNInp.value)||2)); persist(); };
+  pickNLbl.append(pickNInp, document.createTextNode(' Pick N'));
+
+  // Tag filter inline in config strip
+  const filterInp = el('input','search-widget-input'); filterInp.placeholder='Filter by tag…'; filterInp.style.cssText='flex:1;min-width:80px;font-size:10px;padding:3px 7px;';
+  filterInp.value = cfg.tagFilter;
+  filterInp.oninput=()=>{ cfg.tagFilter=filterInp.value.trim(); persist(); };
+
+  configStrip.append(wtBtn, arBtn, pickNLbl, filterInp);
+  wrap.appendChild(configStrip);
+
+  // ── Options list (always visible) ────────────────────────
+  const optionsSection = el('div');
+
+  const optList = el('div'); optList.style.cssText='display:flex;flex-direction:column;gap:2px;margin-bottom:6px;';
+  const renderOptions = ()=>{
+    optList.innerHTML='';
+    if(!cfg.options.length){
+      const empty=el('div'); empty.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;padding:4px 2px;';
+      empty.textContent='No options yet — add some below.'; optList.appendChild(empty);
+    }
+    cfg.options.forEach((opt,i)=>{
+      const row = el('div','decision-option-row');
+      const lbl = el('input','decision-option-label');
+      lbl.value=opt.label; lbl.style.cssText='flex:1;font-size:12px;background:none;border:1px solid transparent;border-radius:3px;padding:2px 5px;color:var(--text);outline:none;cursor:text;';
+      lbl.onfocus=()=>lbl.style.borderColor='var(--inp-border)';
+      lbl.onblur=()=>{ lbl.style.borderColor='transparent'; opt.label=lbl.value.trim()||opt.label; persist(); };
+      lbl.addEventListener('keydown',e=>{ if(e.key==='Enter') lbl.blur(); });
+
+      const wgt = el('input','decision-option-weight'); wgt.type='number'; wgt.min='1'; wgt.max='100'; wgt.value=opt.weight||1;
+      wgt.style.display=cfg.useWeights?'':'none';
+      wgt.title='Weight (higher = more likely)';
+      wgt.onchange=()=>{ opt.weight=Math.max(1,parseInt(wgt.value)||1); wgt.value=opt.weight; persist(); };
+
+      const tagInp = el('input');
+      tagInp.value=opt.tags||''; tagInp.placeholder='tags…';
+      tagInp.style.cssText='width:70px;font-size:10px;background:none;border:1px solid transparent;border-radius:3px;padding:2px 4px;color:var(--text-dim);outline:none;cursor:text;';
+      tagInp.onfocus=()=>tagInp.style.borderColor='var(--inp-border)';
+      tagInp.onblur=()=>{ tagInp.style.borderColor='transparent'; opt.tags=tagInp.value.trim(); persist(); };
+
+      const del = icBtn('✕','Remove',()=>{ cfg.options.splice(i,1); persist(); renderOptions(); });
+      del.classList.add('ic-del');
+      row.append(lbl, wgt, tagInp, del);
+      optList.appendChild(row);
+    });
+  };
+  optionsSection.appendChild(optList);
+
+  // Add option row — always visible
+  const addRow = el('div'); addRow.style.cssText='display:flex;gap:5px;margin-bottom:8px;';
+  const addInp = el('input','todo-add-inp'); addInp.placeholder='New option…'; addInp.style.flex='1';
+  const addBtn = el('button','todo-add-btn'); addBtn.textContent='＋ Add';
+  const doAddOpt=()=>{
+    const label=addInp.value.trim(); if(!label) return;
+    cfg.options.push({id:Date.now()+'_'+Math.random().toString(36).slice(2), label, weight:1, tags:''});
+    persist(); addInp.value=''; renderOptions(); addInp.focus();
+  };
+  addInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doAddOpt(); });
+  addBtn.onclick=doAddOpt;
+  addRow.append(addInp, addBtn);
+  optionsSection.appendChild(addRow);
+
+  // ── Saved lists — always visible (load + save new) ────────
+  const listsRow = el('div'); listsRow.style.cssText='display:flex;gap:5px;align-items:center;margin-bottom:6px;flex-wrap:wrap;';
+
+  // Load dropdown — auto-loads on selection
+  const loadSel = el('select');
+  loadSel.style.cssText='flex:1;font-size:11px;padding:3px 6px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);min-width:0;';
+  loadSel.onchange=()=>{
+    const name=loadSel.value; if(!name) return;
+    const found=cfg.savedLists.find(s=>s.name===name);
+    if(!found) return;
+    if(cfg.options.length && !confirm('Replace current options with "'+name+'"?')){
+      loadSel.value=''; return;
+    }
+    cfg.options=JSON.parse(JSON.stringify(found.options));
+    persist(); renderOptions();
+    loadSel.value=''; // reset to placeholder after load
+  };
+
+  // Save new list — inline name prompt
+  const saveNewBtn = el('button','clock-style-btn'); saveNewBtn.style.cssText='font-size:10px;padding:2px 9px;white-space:nowrap;';
+  saveNewBtn.textContent='＋ Save List';
+  let savePromptOpen=false;
+  const savePromptRow = el('div'); savePromptRow.style.cssText='display:none;gap:5px;width:100%;margin-top:4px;';
+  const saveNameInp = el('input','todo-add-inp'); saveNameInp.placeholder='List name…'; saveNameInp.style.flex='1';
+  const saveConfirmBtn = el('button','todo-add-btn'); saveConfirmBtn.textContent='Save';
+  const saveCancelBtn = el('button','monitor-check-btn'); saveCancelBtn.textContent='✕'; saveCancelBtn.style.cssText='padding:2px 6px;';
+  const doSave=()=>{
+    const name=saveNameInp.value.trim(); if(!name||!cfg.options.length) return;
+    cfg.savedLists=cfg.savedLists.filter(s=>s.name!==name);
+    cfg.savedLists.unshift({name, options:JSON.parse(JSON.stringify(cfg.options))});
+    persist(); saveNameInp.value='';
+    savePromptRow.style.display='none'; savePromptOpen=false;
+    renderSaved(); updateLoadSel();
+  };
+  saveNewBtn.onclick=()=>{
+    savePromptOpen=!savePromptOpen;
+    savePromptRow.style.display=savePromptOpen?'flex':'none';
+    if(savePromptOpen) saveNameInp.focus();
+  };
+  saveConfirmBtn.onclick=doSave;
+  saveCancelBtn.onclick=()=>{ savePromptRow.style.display='none'; savePromptOpen=false; saveNameInp.value=''; };
+  saveNameInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doSave(); if(e.key==='Escape'){ saveCancelBtn.click(); } });
+  savePromptRow.append(saveNameInp, saveConfirmBtn, saveCancelBtn);
+
+  // Reset button
+  const resetBtn = el('button','monitor-check-btn'); resetBtn.textContent='↺ Reset'; resetBtn.title='Clear options, result and history';
+  resetBtn.style.cssText='font-size:10px;padding:2px 8px;';
+  resetBtn.onclick=()=>{
+    cfg.options=[]; cfg.history=[]; cfg.recentPicks=[];
+    resultContent.textContent='—'; resultTs.textContent='';
+    resultBox.classList.remove('highlight');
+    elimArea.style.display='none'; elimArea.innerHTML=''; elimState=null;
+    persist(); renderOptions(); renderHistory(); updateLoadSel();
+  };
+
+  listsRow.append(loadSel, saveNewBtn, resetBtn);
+  optionsSection.appendChild(listsRow);
+  optionsSection.appendChild(savePromptRow);
+
+  // ── Saved lists management (edit mode only) ───────────────
+  const savedMgmt = el('div','decision-edit-only'); savedMgmt.style.cssText='display:none;padding-top:6px;border-top:1px solid var(--border);margin-bottom:6px;';
+  const savedMgmtLbl = el('div'); savedMgmtLbl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'; savedMgmtLbl.textContent='Manage Saved Lists';
+  const savedList = el('div'); savedList.style.cssText='display:flex;flex-direction:column;gap:2px;max-height:120px;overflow-y:auto;';
+
+  const renderSaved=()=>{
+    savedList.innerHTML='';
+    if(!cfg.savedLists.length){
+      const e=el('div'); e.style.cssText='font-size:10.5px;color:var(--text-dim);font-style:italic;'; e.textContent='No saved lists.'; savedList.appendChild(e);
+    }
+    cfg.savedLists.forEach((s,i)=>{
+      const row=el('div','decision-saved-row');
+      const nameSp=el('span'); nameSp.textContent=s.name+' ('+s.options.length+')';
+      nameSp.style.cursor='default'; // no load action here, that's in the dropdown
+      const del=icBtn('✕','Delete',()=>{ cfg.savedLists.splice(i,1); persist(); renderSaved(); updateLoadSel(); });
+      del.classList.add('ic-del');
+      row.append(nameSp,del); savedList.appendChild(row);
+    });
+  };
+  savedMgmt.append(savedMgmtLbl, savedList);
+  optionsSection.appendChild(savedMgmt);
+  wrap.appendChild(optionsSection);
+
+  // Keep load dropdown in sync
+  const updateLoadSel=()=>{
+    loadSel.innerHTML='';
+    if(!cfg.savedLists.length){
+      const o=document.createElement('option'); o.value=''; o.textContent='No saved lists'; o.disabled=true; loadSel.appendChild(o);
+    } else {
+      const placeholder=document.createElement('option'); placeholder.value=''; placeholder.textContent='Load a saved list…'; placeholder.disabled=true; placeholder.selected=true; loadSel.appendChild(placeholder);
+      cfg.savedLists.forEach(s=>{
+        const o=document.createElement('option'); o.value=s.name; o.textContent=s.name+' ('+s.options.length+')'; loadSel.appendChild(o);
+      });
+    }
+  };
+  updateLoadSel();
+
+  // ── History display ───────────────────────────────────────
+  const histSection = el('div'); histSection.style.cssText='margin-top:8px;padding-top:8px;border-top:1px solid var(--border);';
+  const histHdr = el('div'); histHdr.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:4px;';
+  const histLbl = el('span'); histLbl.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;flex:1;'; histLbl.textContent='Recent Picks';
+  const clearHistBtn = el('button','monitor-check-btn'); clearHistBtn.textContent='Clear'; clearHistBtn.style.cssText='font-size:9px;padding:1px 7px;';
+  clearHistBtn.onclick=()=>{ cfg.history=[]; cfg.recentPicks=[]; persist(); renderHistory(); };
+  histHdr.append(histLbl,clearHistBtn);
+  histSection.appendChild(histHdr);
+  const histList = el('div','decision-history-list');
+  const renderHistory=()=>{
+    histList.innerHTML='';
+    if(!cfg.history.length){ const e=el('div'); e.style.cssText='font-size:10.5px;color:var(--text-dim);font-style:italic;'; e.textContent='No picks yet.'; histList.appendChild(e); return; }
+    cfg.history.forEach(h=>{
+      const row=el('div','decision-history-item');
+      const v=el('span'); v.textContent=h.label;
+      const t=el('span'); t.textContent=h.ts;
+      row.append(v,t); histList.appendChild(row);
+    });
+  };
+  histSection.appendChild(histList);
+  wrap.appendChild(histSection);
+
+  // ── Elimination area ──────────────────────────────────────
+  const elimArea = el('div','decision-elim-area'); elimArea.style.display='none';
+  wrap.appendChild(elimArea);
+
+  // ── Core selection logic ──────────────────────────────────
+  function getPool(){
+    const f=(cfg.tagFilter||'').toLowerCase();
+    let pool=cfg.options.filter(o=>o.label.trim());
+    if(f) pool=pool.filter(o=>(o.tags||'').toLowerCase().includes(f)||(o.label||'').toLowerCase().includes(f));
+    if(cfg.avoidRecent && cfg.recentPicks.length && pool.length>cfg.recentCount){
+      const recent=new Set(cfg.recentPicks.slice(-cfg.recentCount));
+      const filtered=pool.filter(o=>!recent.has(o.id));
+      if(filtered.length) pool=filtered;
+    }
+    return pool;
+  }
+
+  function weightedPick(pool){
+    if(!cfg.useWeights) return pool[Math.floor(Math.random()*pool.length)];
+    const total=pool.reduce((s,o)=>s+(o.weight||1),0);
+    let r=Math.random()*total;
+    for(const o of pool){ r-=(o.weight||1); if(r<=0) return o; }
+    return pool[pool.length-1];
+  }
+
+  function recordPick(label, id){
+    const ts=new Date().toLocaleTimeString();
+    cfg.history.unshift({label,ts});
+    if(cfg.history.length>10) cfg.history=cfg.history.slice(0,10);
+    if(id){ cfg.recentPicks.push(id); if(cfg.recentPicks.length>10) cfg.recentPicks=cfg.recentPicks.slice(-10); }
+    persist(); renderHistory();
+  }
+
+  function showResult(text, multi){
+    resultBox.classList.remove('highlight');
+    void resultBox.offsetWidth; // reflow to restart animation
+    resultBox.classList.add('highlight');
+    if(multi){
+      resultContent.innerHTML='';
+      const mw=el('div','decision-picked-multi');
+      multi.forEach(m=>{ const b=el('span','decision-badge'); b.textContent=m; mw.appendChild(b); });
+      resultContent.appendChild(mw);
+    } else {
+      resultContent.innerHTML=''; resultContent.textContent=text;
+    }
+    resultTs.textContent=new Date().toLocaleTimeString();
+  }
+
+  pick1Btn.onclick=()=>{
+    elimArea.style.display='none'; elimState=null;
+    const pool=getPool(); if(!pool.length){ showResult('No options available'); return; }
+    const pick=weightedPick(pool);
+    showResult(pick.label);
+    recordPick(pick.label, pick.id);
+  };
+
+  pickNBtn.onclick=()=>{
+    elimArea.style.display='none'; elimState=null;
+    const pool=getPool(); const n=Math.min(cfg.pickN||2, pool.length);
+    if(!pool.length){ showResult('No options available'); return; }
+    // Weighted sampling without replacement
+    const remaining=[...pool]; const picks=[];
+    for(let i=0;i<n;i++){
+      const p=weightedPick(remaining);
+      picks.push(p);
+      remaining.splice(remaining.indexOf(p),1);
+    }
+    showResult('', picks.map(p=>p.label));
+    picks.forEach(p=>recordPick(p.label, p.id));
+  };
+
+  shuffleBtn.onclick=()=>{
+    elimArea.style.display='none'; elimState=null;
+    for(let i=cfg.options.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [cfg.options[i],cfg.options[j]]=[cfg.options[j],cfg.options[i]];
+    }
+    persist(); renderOptions();
+    showResult('Shuffled!');
+    resultTs.textContent='';
+  };
+
+  elimBtn.onclick=()=>{
+    const pool=getPool(); if(pool.length<2){ showResult('Need at least 2 options'); return; }
+    elimState={remaining:[...pool].sort(()=>Math.random()-0.5)};
+    resultContent.textContent=''; resultTs.textContent='';
+    showElimRound();
+  };
+
+  function showElimRound(){
+    if(!elimState||elimState.remaining.length<2){
+      elimArea.style.display='none';
+      if(elimState?.remaining.length===1){
+        const winner=elimState.remaining[0];
+        showResult('\uD83C\uDFC6 '+winner.label);
+        recordPick(winner.label, winner.id);
+      }
+      elimState=null; return;
+    }
+    elimArea.style.display='flex'; elimArea.innerHTML='';
+    const [a,b]=elimState.remaining;
+    const progress=el('div','decision-elim-progress');
+    progress.textContent=(elimState.remaining.length)+' remaining — pick your preference';
+    const pair=el('div','decision-elim-pair');
+    [a,b].forEach(opt=>{
+      const btn=el('button','decision-elim-btn'); btn.textContent=opt.label;
+      btn.onclick=()=>{
+        // Remove the loser, keep the winner
+        elimState.remaining=elimState.remaining.filter(o=>o.id!==( opt.id===a.id?b.id:a.id));
+        showElimRound();
+      };
+      pair.appendChild(btn);
+    });
+    const cancelBtn=el('button','monitor-check-btn'); cancelBtn.textContent='Cancel'; cancelBtn.style.cssText='font-size:10px;padding:2px 8px;';
+    cancelBtn.onclick=()=>{ elimArea.style.display='none'; elimArea.innerHTML=''; elimState=null; };
+    elimArea.append(progress,pair,cancelBtn);
+  }
+
+  // ── Edit mode: saved list management panel only ───────────
+  const applyEditMode = ()=>{
+    const inEdit = document.body.classList.contains('edit-mode');
+    wrap.querySelectorAll('.decision-edit-only').forEach(e=>{
+      e.style.display = inEdit ? (e.tagName==='DIV'?'block':'') : 'none';
+    });
+  };
+  const obs2=new MutationObserver(applyEditMode);
+  obs2.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyEditMode();
+
+  renderOptions();
+  renderHistory();
+  renderSaved();
+
+  const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ obs2.disconnect(); obsClean.disconnect(); } });
+  obsClean.observe(document.body,{childList:true,subtree:true});
+
+  return wrap;
+}
+
 /* ---- WIKIPEDIA FEATURED ARTICLE ---- */
 function buildWikiWidget(sec){
   const wrap = el('div');
