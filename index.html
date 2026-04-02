@@ -3036,6 +3036,176 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 .cve-interval-inp:focus { border-color: var(--gold); }
 
 /* ============================================================
+   WIDGET — Abstract Composition Generator
+   ============================================================ */
+.comp-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.comp-section {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--inp-bg);
+  transition: background 0.15s;
+}
+.comp-section:last-child { border-bottom: none; }
+.comp-section:hover { background: rgba(255,255,255,0.03); }
+.comp-section-lbl {
+  font-size: 9px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  min-width: 58px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+.comp-section-val {
+  font-size: 12px;
+  color: var(--text);
+  flex: 1;
+  line-height: 1.4;
+}
+.comp-section-val.palette { color: var(--gold); font-family: 'Share Tech Mono', monospace; }
+.comp-section-val.concept { color: var(--cyan); font-style: italic; }
+.comp-lock-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 1px 4px;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: all 0.15s;
+  opacity: 0.45;
+}
+.comp-lock-btn:hover { opacity: 1; border-color: var(--border); }
+.comp-lock-btn.locked { opacity: 1; color: var(--gold); border-color: rgba(221,176,75,0.4); }
+.comp-actions {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.comp-spark-btn {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 3px 9px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--inp-bg);
+  color: var(--text-dim);
+  transition: all 0.15s;
+  margin-left: auto;
+}
+.comp-spark-btn:hover { border-color: var(--gold); color: var(--gold); }
+.comp-spark-btn.active { border-color: var(--gold); background: rgba(221,176,75,0.12); color: var(--gold); }
+.comp-empty {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 18px 10px;
+  text-align: center;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+/* Modal sections */
+.comp-modal-section {
+  margin-bottom: 14px;
+}
+.comp-modal-section-title {
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 7px;
+}
+.comp-guidance-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.comp-guidance-tile {
+  flex: 1;
+  min-width: 90px;
+  padding: 6px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.comp-guidance-tile-lbl {
+  font-size: 9px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+}
+.comp-guidance-tile-val {
+  font-size: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--cyan);
+}
+.comp-layering {
+  font-size: 11.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  padding: 5px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+.comp-saved-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  font-size: 11.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.comp-saved-row:hover { background: rgba(255,255,255,0.04); color: var(--cyan); }
+.comp-saved-row span { flex: 1; }
+.comp-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.comp-bias-sel {
+  font-size: 11px;
+  padding: 3px 6px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  outline: none;
+  flex: 1;
+}
+.comp-bias-sel:focus { border-color: var(--cyan); }
+
+/* ============================================================
    WIDGET — Energy Tracker
    ============================================================ */
 .energy-row {
@@ -4846,6 +5016,7 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="widget-cat-tab active" id="wcTabGeneral" onclick="selectWidgetCat('general')">🧩 General</button>
         <button class="widget-cat-tab" id="wcTabNetwork" onclick="selectWidgetCat('network')">🌐 Network Engineering</button>
         <button class="widget-cat-tab" id="wcTabCoding"  onclick="selectWidgetCat('coding')">💻 Coding</button>
+        <button class="widget-cat-tab" id="wcTabCreative" onclick="selectWidgetCat('creative')">🎨 Creative</button>
       </div>
       <!-- General widgets -->
       <div class="widget-cat-panel active" id="wcPanelGeneral">
@@ -4923,6 +5094,12 @@ body.edit-mode .gh-add-row { display: flex; }
         </button>
         <button class="sec-type-card" id="swRegex"     onclick="selectWidgetType('regex')">
           🔎 Regex Tester<span>Live match highlighting</span>
+        </button>
+      </div>
+      <!-- Creative widgets -->
+      <div class="widget-cat-panel" id="wcPanelCreative">
+        <button class="sec-type-card" id="swCompose"   onclick="selectWidgetType('compose')">
+          🖼 Composition Gen<span>Abstract painting catalyst</span>
         </button>
       </div>
     </div>
@@ -5378,7 +5555,8 @@ const SEARCH_ENGINES = [
 
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
                       'ports','myip','rfc','cve','bgp','dns','subnet',
-                      'github','regex'];
+                      'github','regex',
+                      'compose'];
 
 const UNIT_CATS = {
   Length:      { units:['mm','cm','m','km','in','ft','yd','mi'],                       toBase:{ mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344 } },
@@ -6086,6 +6264,7 @@ function buildWidgetBody(sec){
     case 'decision':  return buildDecisionWidget(sec);
     case 'sports':    return buildSportsWidget(sec);
     case 'energy':    return buildEnergyWidget(sec);
+    case 'compose':   return buildComposeWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -7696,6 +7875,475 @@ function buildBgpWidget(sec){
 
   return wrap;
 }
+/* ---- ABSTRACT COMPOSITION GENERATOR ---- */
+function buildComposeWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.sections)    cfg.sections    = {palette:true,structure:true,texture:true,tension:true,concept:true};
+  if(!cfg.complexity)  cfg.complexity  = 'balanced';
+  if(!cfg.mood)        cfg.mood        = 'mixed';
+  if(!cfg.styleLean)   cfg.styleLean   = 'mixed';
+  if(!cfg.saved)       cfg.saved       = [];
+  if(cfg.spark === undefined) cfg.spark = false;
+
+  // ── Data pools ────────────────────────────────────────
+  const PALETTES = {
+    warm: [
+      'burnt sienna, raw umber, warm white accent',
+      'yellow ochre, venetian red, off-white',
+      'cadmium orange, deep violet shadow, titanium white',
+      'raw sienna, indian red, pale gold highlight',
+      'terra rosa, yellow ochre, ivory black',
+      'naples yellow, transparent oxide red, warm gray',
+    ],
+    cool: [
+      "payne's gray, cobalt blue, pale gold accent",
+      'muted ultramarine, warm ochre, off-white',
+      'phthalo blue, titanium white, rust accent',
+      'cerulean, deep umber, zinc white',
+      'prussian blue, neutral gray, cream highlight',
+      "indigo, cobalt teal, payne's gray, silver-white",
+    ],
+    neutral: [
+      'charcoal, raw umber, pale lemon highlight',
+      'neutral gray, ivory black, zinc white',
+      'lamp black, naples yellow, oxide red',
+      'bone white, warm gray, carbon black',
+      'raw umber, titanium white, soft black',
+    ],
+    dramatic: [
+      "cadmium red, payne's gray, silver-white",
+      "deep crimson, prussian blue, fractured gold",
+      'viridian, burnt orange, titanium white',
+      'oxide red, phthalo green, ivory accent',
+      'cobalt violet, yellow ochre, lamp black',
+      "alizarin crimson, ultramarine, raw umber, gold",
+    ],
+  };
+
+  const STRUCTURES = {
+    geometric: [
+      'vertical split tension — two unequal fields in opposition',
+      'grid fracture — regular geometry interrupted by diagonal breaks',
+      'hard horizon with geometric intrusion from below',
+      'centered rectangular mass, compressed edges',
+      'stacked horizontal bands with disrupted middle layer',
+      'radial division — four quadrants with active center',
+    ],
+    organic: [
+      'central mass dissolving at edges into open field',
+      'diagonal sweep from lower-left, trailing into upper-right void',
+      'floating organic forms, loosely clustered, asymmetric',
+      'horizon line implied but never stated — atmospheric',
+      'dense core with radiating fragmentation outward',
+      'layered organic strata, bottom-heavy, sky-open',
+    ],
+    mixed: [
+      'geometric skeleton interrupted by organic passage',
+      'top-heavy compression releasing downward into open space',
+      'interlocking angular and curved zones in uneasy balance',
+      'scattered nodes connected by implied directional energy',
+      'edge-to-center migration — forms collapsing inward',
+      'asymmetric bilateral — mirrored intent, broken execution',
+    ],
+  };
+
+  const TEXTURES = {
+    minimal: [
+      'smooth field with single palette knife scrape as accent',
+      'thin glaze layer, translucent mid-tones over dry underpainting',
+      'broad flat application, subtle tonal shift at edges',
+      'single dry-brush pass to reveal texture beneath',
+    ],
+    balanced: [
+      'palette knife ridges in foreground, dry-brush blend in mid-layer',
+      'impasto accents at focal point, glazed transitions elsewhere',
+      'broken-edge stippling at perimeter, smooth interior passages',
+      'layered underpainting bleed-through with selective scraping',
+      'tape-defined hard edges contrasting with gestural interior',
+      'thick impasto builds in center, feathered brush at borders',
+    ],
+    complex: [
+      'multiple glaze layers interrupted by palette knife excavation',
+      'impasto ridges mid-layer, sanded back and re-glazed on top',
+      'alternating thick and thin passages — tension through contrast',
+      'underpainting as active participant: intentional bleed zones',
+      'encaustic-style buildup: layer, scrape, layer, sear',
+      'gestural marks partially buried under subsequent translucent fields',
+    ],
+  };
+
+  const TENSIONS = {
+    calm: [
+      'slow inward pull toward soft center',
+      'left-to-right gentle drift, unhurried',
+      'settled weight at bottom, lightening upward',
+      'static composition with micro-disturbances at edges',
+      'breathable open field, tension held in reserve',
+    ],
+    tense: [
+      'collision of opposing forces mid-canvas',
+      'compressed diagonal — energy blocked, seeking exit',
+      'two fields in unresolved confrontation',
+      'focal point under pressure from surrounding mass',
+      'sharp directional force interrupted abruptly',
+    ],
+    chaotic: [
+      'simultaneous competing directions — no resolution',
+      'centrifugal force pushing forms toward edges',
+      'fracture pattern radiating from off-center impact',
+      'directional momentum shifting mid-path',
+      'entropy held loosely in compositional structure',
+    ],
+    meditative: [
+      'outward expansion from breathing center',
+      'deep stillness with faint tremor',
+      'forms in slow suspension — neither arriving nor departing',
+      'time compressed into single accumulative surface',
+      'rhythm of containment and release, very slow',
+    ],
+  };
+
+  const CONCEPTS = [
+    'contained instability', 'pressure beneath stillness',
+    'fracture resolving into unity', 'light emerging through obstruction',
+    'weight dreaming of flight', 'the moment before collapse',
+    'edges that remember what they divided', 'accumulated silences',
+    'structure at the limit of its own patience', 'held breath',
+    'what remains after subtraction', 'slow violence of order',
+    'something insisting on existing', 'grief with good posture',
+    'the thickness of in-between', 'a system forgetting itself',
+    'resistance becoming texture', 'proximity without contact',
+    'latent momentum', 'the color of a decision unmade',
+    'tension that has accepted itself', 'form as argument',
+    'aftermath of tenderness', 'the boundary learning to move',
+  ];
+
+  // Spark-only pools — unusual, pushed combinations
+  const SPARK_PALETTES = [
+    "fluorescent cadmium lemon, lamp black, trace of phthalo violet",
+    "near-white with single deep indigo interruption",
+    "all earth tones except one violent pure hue",
+    "two near-identical grays, one precise red accent",
+    "desaturated field with full-saturation focal point only",
+  ];
+  const SPARK_STRUCTURES = [
+    'single mark — the rest is intentional nothing',
+    'two compositional systems overlaid, neither dominant',
+    'the canvas treated as if it already contains a hidden image',
+    'edge-dominant — center deliberately emptied',
+    'rotational asymmetry — the composition implies continuation',
+  ];
+  const SPARK_CONCEPTS = [
+    'the embarrassment of beauty', 'failure as compositional logic',
+    'what the paint wanted to do', 'a mistake promoted to principle',
+    'the wrong color in the right place', 'permission granted too late',
+  ];
+
+  // ── Lock state ────────────────────────────────────────
+  const locks = { palette:false, structure:false, texture:false, tension:false, concept:false };
+  let current  = null;
+
+  // ── Generation logic ──────────────────────────────────
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function getPool(pools, key){
+    const spark = cfg.spark;
+    if(key==='palette'){
+      const tone = cfg.mood==='calm'?'cool': cfg.mood==='tense'?'dramatic': cfg.mood==='chaotic'?'dramatic':
+                   cfg.mood==='meditative'?'neutral':'warm';
+      const combined = spark
+        ? [...(pools.warm||[]),...(pools.cool||[]),...(pools.neutral||[]),...(pools.dramatic||[]),...SPARK_PALETTES]
+        : [...(pools[tone]||[]),...(pools.warm||[]),...(pools.cool||[])];
+      return combined;
+    }
+    if(key==='structure'){
+      const style = cfg.styleLean;
+      const combined = spark
+        ? [...(pools.geometric||[]),...(pools.organic||[]),...(pools.mixed||[]),...SPARK_STRUCTURES]
+        : style==='mixed'?[...(pools.geometric||[]),...(pools.organic||[]),...(pools.mixed||[])]
+          :(pools[style]||[]).concat(pools.mixed||[]);
+      return combined;
+    }
+    if(key==='texture'){
+      const cx = cfg.complexity;
+      const combined = spark
+        ? [...(pools.minimal||[]),...(pools.balanced||[]),...(pools.complex||[])]
+        : (pools[cx]||[]).concat(pools.balanced||[]);
+      return combined;
+    }
+    if(key==='tension'){
+      const combined = spark
+        ? [...(pools.calm||[]),...(pools.tense||[]),...(pools.chaotic||[]),...(pools.meditative||[])]
+        : (pools[cfg.mood]||pools.tense||[]).concat(pools.meditative||[]);
+      return combined;
+    }
+    if(key==='concept'){
+      return spark ? [...pools,...SPARK_CONCEPTS] : pools;
+    }
+    return [];
+  }
+
+  function generate(refine=false){
+    const prev = current;
+    current = current ? {...current} : {};
+    const sections = ['palette','structure','texture','tension','concept'];
+    if(refine && prev){
+      // Refine: change 1-2 unlocked sections
+      const unlocked = sections.filter(s=>!locks[s] && cfg.sections[s]);
+      const toChange = unlocked.sort(()=>Math.random()-0.5).slice(0, Math.min(2,unlocked.length));
+      toChange.forEach(s=> current[s] = pickSection(s));
+    } else {
+      sections.forEach(s=>{
+        if(!locks[s] || !prev) current[s] = pickSection(s);
+      });
+    }
+    return current;
+  }
+
+  function pickSection(s){
+    if(s==='palette')   return pick(getPool(PALETTES,  'palette'));
+    if(s==='structure') return pick(getPool(STRUCTURES,'structure'));
+    if(s==='texture')   return pick(getPool(TEXTURES,  'texture'));
+    if(s==='tension')   return pick(getPool(TENSIONS,  'tension'));
+    if(s==='concept')   return pick(getPool(CONCEPTS,  'concept'));
+    return '';
+  }
+
+  // Derive canvas guidance from current result
+  function deriveGuidance(comp){
+    if(!comp) return null;
+    const s = (comp.structure||'').toLowerCase();
+    let orientation = 'Portrait';
+    if(s.includes('horizontal')||s.includes('sweep')||s.includes('horizon')||s.includes('strata')) orientation='Landscape';
+    else if(s.includes('central')||s.includes('radial')||s.includes('floating')) orientation='Square';
+
+    let density = 'Balanced';
+    if(s.includes('sparse')||s.includes('single')||s.includes('empty')||s.includes('void')) density='Sparse';
+    else if(s.includes('dense')||s.includes('clustered')||s.includes('heavy')||s.includes('mass')) density='Dense';
+
+    const t = (comp.texture||'').toLowerCase();
+    let layering = 'Underpainting → mid-layer passage → surface accent';
+    if(t.includes('glaz')) layering='Lean block-in → glaze → glaze → accent mark';
+    else if(t.includes('impasto')) layering='Thin ground → build impasto mass → scrape → highlight';
+    else if(t.includes('dry brush')) layering='Base field → dry brush texture → selective refinement';
+    else if(t.includes('tape')||t.includes('hard edge')) layering='Tape → fill → peel → gestural layer on top';
+    else if(t.includes('knife')) layering='Loose underpainting → knife layer → optional glaze';
+
+    return { orientation, density, layering };
+  }
+
+  // ── Widget DOM ────────────────────────────────────────
+  const wrap = el('div');
+
+  // Actions row
+  const actRow = el('div','comp-actions');
+  const genBtn = el('button','search-widget-go'); genBtn.textContent='Generate';
+  const refBtn = el('button','clock-style-btn'); refBtn.style.cssText='font-size:11px;padding:3px 10px;'; refBtn.textContent='Refine';
+  const sparkBtn = el('button','comp-spark-btn'); sparkBtn.textContent='\u26A1 Spark';
+  sparkBtn.classList.toggle('active', !!cfg.spark);
+  sparkBtn.onclick=()=>{ cfg.spark=!cfg.spark; sparkBtn.classList.toggle('active',cfg.spark); persist(); };
+  actRow.append(genBtn, refBtn, sparkBtn);
+  wrap.appendChild(actRow);
+
+  // Result area
+  const resultArea = el('div');
+  wrap.appendChild(resultArea);
+
+  const SECTION_DEFS = [
+    { key:'palette',   label:'Palette',   cls:'palette'  },
+    { key:'structure', label:'Structure', cls:''         },
+    { key:'texture',   label:'Texture',   cls:''         },
+    { key:'tension',   label:'Tension',   cls:''         },
+    { key:'concept',   label:'Concept',   cls:'concept'  },
+  ];
+
+  function renderResult(){
+    resultArea.innerHTML='';
+    if(!current){
+      const empty=el('div','comp-empty');
+      empty.textContent='Hit Generate to create a composition.';
+      resultArea.appendChild(empty); return;
+    }
+    const card=el('div','comp-result');
+    SECTION_DEFS.forEach(({key,label,cls})=>{
+      if(!cfg.sections[key]) return;
+      const row=el('div','comp-section');
+      const lbl=el('span','comp-section-lbl'); lbl.textContent=label;
+      const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=current[key]||'—';
+      const lockBtn=el('button','comp-lock-btn'+(locks[key]?' locked':''));
+      lockBtn.textContent=locks[key]?'\uD83D\uDD12':'\uD83D\uDD13';
+      lockBtn.title=locks[key]?'Locked — click to unlock':'Click to lock';
+      lockBtn.onclick=e=>{
+        e.stopPropagation();
+        locks[key]=!locks[key];
+        lockBtn.classList.toggle('locked',locks[key]);
+        lockBtn.textContent=locks[key]?'\uD83D\uDD12':'\uD83D\uDD13';
+        lockBtn.title=locks[key]?'Locked — click to unlock':'Click to lock';
+      };
+      row.append(lbl,val,lockBtn);
+      card.appendChild(row);
+    });
+    resultArea.appendChild(card);
+  }
+
+  genBtn.onclick=()=>{ generate(false); renderResult(); };
+  refBtn.onclick=()=>{
+    if(!current){ generate(false); renderResult(); return; }
+    generate(true); renderResult();
+  };
+
+  // View full + save button
+  const footRow=el('div'); footRow.style.cssText='display:flex;gap:5px;margin-top:4px;';
+  const viewBtn=el('button','monitor-check-btn'); viewBtn.textContent='Full view \u2192'; viewBtn.style.cssText='font-size:10px;padding:2px 9px;';
+  viewBtn.onclick=()=>openComposeModal(current, cfg, deriveGuidance(current), ()=>renderResult());
+  footRow.appendChild(viewBtn);
+  wrap.appendChild(footRow);
+
+  // Edit mode settings
+  const editSec=el('div'); editSec.style.cssText='display:none;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;';
+  const editLbl=el('div','sports-edit-section-lbl'); editLbl.textContent='Generation Settings';
+
+  // Section toggles
+  const togRow=el('div','comp-edit-row');
+  togRow.style.flexWrap='wrap'; togRow.style.gap='6px';
+  SECTION_DEFS.forEach(({key,label})=>{
+    const tog=el('label'); tog.style.cssText='display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;';
+    const chk=el('input'); chk.type='checkbox'; chk.checked=!!cfg.sections[key];
+    chk.onchange=()=>{ cfg.sections[key]=chk.checked; persist(); };
+    tog.append(chk, document.createTextNode(label));
+    togRow.appendChild(tog);
+  });
+
+  // Bias dropdowns
+  const biasRow=el('div','comp-edit-row');
+  const makeBias=(lbl,key,opts)=>{
+    const wrap2=el('div'); wrap2.style.cssText='display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px;';
+    const l=el('div'); l.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;'; l.textContent=lbl;
+    const s=el('select','comp-bias-sel');
+    opts.forEach(([v,t])=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; if(cfg[key]===v) o.selected=true; s.appendChild(o); });
+    s.onchange=()=>{ cfg[key]=s.value; persist(); };
+    wrap2.append(l,s); return wrap2;
+  };
+  biasRow.append(
+    makeBias('Complexity','complexity',[['minimal','Minimal'],['balanced','Balanced'],['complex','Complex']]),
+    makeBias('Mood','mood',[['calm','Calm'],['tense','Tense'],['chaotic','Chaotic'],['meditative','Meditative'],['mixed','Mixed']]),
+    makeBias('Style','styleLean',[['geometric','Geometric'],['organic','Organic'],['mixed','Mixed']]),
+  );
+
+  editSec.append(editLbl, togRow, biasRow);
+  wrap.appendChild(editSec);
+
+  const applyEdit=()=>{ editSec.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obs=new MutationObserver(applyEdit);
+  obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyEdit();
+
+  renderResult();
+
+  const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ obs.disconnect(); obsClean.disconnect(); } });
+  obsClean.observe(document.body,{childList:true,subtree:true});
+  return wrap;
+}
+
+function openComposeModal(comp, cfg, guidance, onUpdate){
+  let overlay=document.getElementById('composeOverlay');
+  if(!overlay){
+    overlay=el('div','overlay'); overlay.id='composeOverlay';
+    const modal=el('div','modal'); modal.style.cssText='width:560px;max-height:84vh;display:flex;flex-direction:column;';
+    const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:14px;';
+    const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='\uD83D\uDDBC\uFE0F Abstract Composition';
+    mhdr.appendChild(mtitle);
+    const body=el('div'); body.id='composeModalBody'; body.style.cssText='flex:1;overflow-y:auto;';
+    const actions=el('div','modal-actions');
+    const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close'; closeBtn.onclick=()=>closeOverlay('composeOverlay');
+    actions.appendChild(closeBtn);
+    modal.append(mhdr,body,actions);
+    overlay.appendChild(modal); document.body.appendChild(overlay);
+  }
+
+  function render(){
+    const body=document.getElementById('composeModalBody'); body.innerHTML='';
+
+    if(!comp){ const e=el('div'); e.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;'; e.textContent='Generate a composition first.'; body.appendChild(e); openOverlay('composeOverlay'); return; }
+
+    // ── Full breakdown ────────────────────────────────
+    const breakSec=el('div','comp-modal-section');
+    const breakTitle=el('div','comp-modal-section-title'); breakTitle.textContent='Full Composition';
+    breakSec.appendChild(breakTitle);
+    const card=el('div','comp-result');
+    [
+      {key:'palette',  label:'Palette',   cls:'palette'},
+      {key:'structure',label:'Structure', cls:''},
+      {key:'texture',  label:'Texture',   cls:''},
+      {key:'tension',  label:'Tension',   cls:''},
+      {key:'concept',  label:'Concept',   cls:'concept'},
+    ].forEach(({key,label,cls})=>{
+      if(!(cfg.sections[key])) return;
+      const row=el('div','comp-section');
+      const lbl=el('span','comp-section-lbl'); lbl.textContent=label;
+      const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=comp[key]||'—';
+      row.append(lbl,val); card.appendChild(row);
+    });
+    breakSec.appendChild(card);
+    body.appendChild(breakSec);
+
+    // ── Canvas guidance ───────────────────────────────
+    if(guidance){
+      const guideSec=el('div','comp-modal-section');
+      const guideTitle=el('div','comp-modal-section-title'); guideTitle.textContent='Canvas Guidance';
+      guideSec.appendChild(guideTitle);
+      const grid=el('div','comp-guidance-grid');
+      [{l:'Orientation',v:guidance.orientation},{l:'Focal Density',v:guidance.density}].forEach(({l,v})=>{
+        const tile=el('div','comp-guidance-tile');
+        const tl=el('div','comp-guidance-tile-lbl'); tl.textContent=l;
+        const tv=el('div','comp-guidance-tile-val'); tv.textContent=v;
+        tile.append(tl,tv); grid.appendChild(tile);
+      });
+      guideSec.appendChild(grid);
+      const layerLbl=el('div'); layerLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;'; layerLbl.textContent='Suggested Layering Order';
+      const layerVal=el('div','comp-layering'); layerVal.textContent=guidance.layering;
+      guideSec.append(layerLbl,layerVal);
+      body.appendChild(guideSec);
+    }
+
+    // ── Save section ─────────────────────────────────
+    const saveSec=el('div','comp-modal-section');
+    const saveTitle=el('div','comp-modal-section-title'); saveTitle.textContent='Save This Composition';
+    saveSec.appendChild(saveTitle);
+    const saveRow=el('div'); saveRow.style.cssText='display:flex;gap:5px;margin-bottom:10px;';
+    const nameInp=el('input','todo-add-inp'); nameInp.placeholder='Name this composition\u2026'; nameInp.style.flex='1';
+    const saveBtn=el('button','todo-add-btn'); saveBtn.textContent='Save';
+    saveBtn.onclick=()=>{
+      const name=nameInp.value.trim(); if(!name) return;
+      cfg.saved=cfg.saved.filter(s=>s.name!==name);
+      cfg.saved.unshift({name, comp:{...comp}, savedAt:new Date().toISOString()});
+      persist(); nameInp.value=''; render();
+    };
+    nameInp.addEventListener('keydown',e=>{ if(e.key==='Enter') saveBtn.click(); });
+    saveRow.append(nameInp,saveBtn);
+    saveSec.appendChild(saveRow);
+
+    if(cfg.saved.length){
+      const savedTitle=el('div'); savedTitle.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;'; savedTitle.textContent='Saved Compositions';
+      saveSec.appendChild(savedTitle);
+      cfg.saved.forEach((s,i)=>{
+        const row=el('div','comp-saved-row');
+        const name=el('span'); name.textContent=s.name;
+        const date=el('span'); date.style.cssText='font-size:9.5px;color:var(--text-dim);flex-shrink:0;'; date.textContent=new Date(s.savedAt).toLocaleDateString();
+        const loadBtn=el('button','monitor-check-btn'); loadBtn.textContent='Load'; loadBtn.style.cssText='font-size:9.5px;padding:1px 7px;';
+        loadBtn.onclick=e=>{ e.stopPropagation(); Object.assign(comp,s.comp); if(onUpdate) onUpdate(); render(); };
+        const del=icBtn('\u2715','Delete',()=>{ cfg.saved.splice(i,1); persist(); render(); });
+        del.classList.add('ic-del');
+        row.append(name,date,loadBtn,del); saveSec.appendChild(row);
+      });
+    }
+    body.appendChild(saveSec);
+  }
+
+  render();
+  openOverlay('composeOverlay');
+}
+
 /* ---- ENERGY TRACKER ---- */
 function buildEnergyWidget(sec){
   const ENERGY_OPTS   = ['Drained','Low','Normal','High','Wired'];
@@ -10479,9 +11127,11 @@ function selectWidgetCat(cat){
   document.getElementById('wcTabGeneral')?.classList.toggle('active', cat==='general');
   document.getElementById('wcTabNetwork')?.classList.toggle('active', cat==='network');
   document.getElementById('wcTabCoding')?.classList.toggle('active',  cat==='coding');
+  document.getElementById('wcTabCreative')?.classList.toggle('active', cat==='creative');
   document.getElementById('wcPanelGeneral')?.classList.toggle('active', cat==='general');
   document.getElementById('wcPanelNetwork')?.classList.toggle('active', cat==='network');
   document.getElementById('wcPanelCoding')?.classList.toggle('active',  cat==='coding');
+  document.getElementById('wcPanelCreative')?.classList.toggle('active', cat==='creative');
 }
 
 function openAddSection(tabId, colId){
