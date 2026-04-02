@@ -3036,7 +3036,184 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 .cve-interval-inp:focus { border-color: var(--gold); }
 
 /* ============================================================
-   WIDGET — Sports Scores
+   WIDGET — Energy Tracker
+   ============================================================ */
+.energy-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.energy-row-label {
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 52px;
+  flex-shrink: 0;
+}
+.energy-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+.energy-chip {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 3px 9px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--inp-bg);
+  color: var(--text-dim);
+  transition: all 0.15s;
+  user-select: none;
+}
+.energy-chip:hover { border-color: var(--cyan); color: var(--text); }
+/* Energy chip selected states */
+.energy-chip.sel-drained   { border-color:#cc4444; background:rgba(204,68,68,0.15); color:#ff8888; }
+.energy-chip.sel-low       { border-color:#cc7744; background:rgba(204,119,68,0.15); color:#ffaa88; }
+.energy-chip.sel-normal    { border-color:var(--cyan); background:rgba(15,184,221,0.12); color:var(--cyan); }
+.energy-chip.sel-high      { border-color:#44cc88; background:rgba(68,204,136,0.15); color:#44cc88; }
+.energy-chip.sel-wired     { border-color:var(--gold); background:rgba(221,176,75,0.15); color:var(--gold); }
+/* Focus chip selected states */
+.energy-chip.sel-scattered { border-color:#cc4444; background:rgba(204,68,68,0.15); color:#ff8888; }
+.energy-chip.sel-foggy     { border-color:#cc7744; background:rgba(204,119,68,0.15); color:#ffaa88; }
+.energy-chip.sel-steady    { border-color:var(--cyan); background:rgba(15,184,221,0.12); color:var(--cyan); }
+.energy-chip.sel-locked-in { border-color:#44cc88; background:rgba(68,204,136,0.15); color:#44cc88; }
+/* Friction chip selected states */
+.energy-chip.sel-resistant { border-color:#cc4444; background:rgba(204,68,68,0.15); color:#ff8888; }
+.energy-chip.sel-neutral   { border-color:var(--cyan); background:rgba(15,184,221,0.12); color:var(--cyan); }
+.energy-chip.sel-engaged   { border-color:#44cc88; background:rgba(68,204,136,0.15); color:#44cc88; }
+.energy-chip.sel-restless  { border-color:var(--gold); background:rgba(221,176,75,0.15); color:var(--gold); }
+.energy-log-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.energy-last-logged {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  flex: 1;
+}
+.energy-note-inp {
+  width: 100%;
+  font-size: 11px;
+  padding: 4px 7px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 6px;
+  font-family: inherit;
+}
+.energy-note-inp:focus { border-color: var(--cyan); }
+.energy-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+/* History modal */
+.energy-history-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 8px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.energy-history-time {
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+}
+.energy-history-vals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.energy-history-badge {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.energy-history-note {
+  font-size: 10.5px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+.energy-insight {
+  font-size: 11.5px;
+  color: var(--text);
+  line-height: 1.5;
+  padding: 4px 8px;
+  background: rgba(15,184,221,0.06);
+  border-left: 2px solid var(--cyan);
+  border-radius: 0 4px 4px 0;
+  margin-bottom: 4px;
+}
+.energy-pattern-section {
+  margin-bottom: 12px;
+}
+.energy-pattern-title {
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+/* Reminder state — warm amber, invitation not alarm */
+@keyframes energyReminderPulse {
+  from { box-shadow: 0 0 0 0 rgba(221,176,75,0.0); }
+  to   { box-shadow: 0 0 8px 2px rgba(221,176,75,0.25); }
+}
+.energy-reminder-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: rgba(221,176,75,0.08);
+  border: 1px solid rgba(221,176,75,0.35);
+  border-radius: 5px;
+  margin-bottom: 8px;
+  animation: energyReminderPulse 2s ease-in-out infinite alternate;
+}
+.energy-reminder-text {
+  font-size: 11.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--gold);
+  flex: 1;
+}
+.energy-reminder-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.energy-edit-section {
+  display: none;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  gap: 6px;
+  flex-direction: column;
+}
+body.edit-mode .energy-edit-section { display: flex; }
+
+
    ============================================================ */
 .sports-controls {
   display: flex;
@@ -4711,6 +4888,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swSports"    onclick="selectWidgetType('sports')">
           🏆 Sports Scores<span>Scores &amp; schedules</span>
         </button>
+        <button class="sec-type-card" id="swEnergy"    onclick="selectWidgetType('energy')">
+          ⚡ Energy Tracker<span>Log &amp; spot patterns</span>
+        </button>
       </div>
       <!-- Network Engineering widgets -->
       <div class="widget-cat-panel" id="wcPanelNetwork">
@@ -4867,6 +5047,7 @@ const DEFAULTS = {
   cveVendorList: [],
   sportsTeamLists: {},
   defaultSportsLeague: '',
+  energyEntries: [],
   pollenKey: '',
   pollenEnabled: false,
   pollenService: 'weatherapi',
@@ -5195,7 +5376,7 @@ const SEARCH_ENGINES = [
   { id:'reddit',  label:'Reddit',     url:'https://www.reddit.com/search/?q=' },
 ];
 
-const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports',
+const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
                       'ports','myip','rfc','cve','bgp','dns','subnet',
                       'github','regex'];
 
@@ -5444,6 +5625,7 @@ const PORT_COMBOS = {
   if(!Array.isArray(D.cveVendorList))   D.cveVendorList   = [];
   if(typeof D.sportsTeamLists !== 'object' || Array.isArray(D.sportsTeamLists)) D.sportsTeamLists = {};
   if(D.defaultSportsLeague === undefined) D.defaultSportsLeague = '';
+  if(!Array.isArray(D.energyEntries)) D.energyEntries = [];
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -5903,6 +6085,7 @@ function buildWidgetBody(sec){
     case 'wiki':      return buildWikiWidget(sec);
     case 'decision':  return buildDecisionWidget(sec);
     case 'sports':    return buildSportsWidget(sec);
+    case 'energy':    return buildEnergyWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -7513,6 +7696,367 @@ function buildBgpWidget(sec){
 
   return wrap;
 }
+/* ---- ENERGY TRACKER ---- */
+function buildEnergyWidget(sec){
+  const ENERGY_OPTS   = ['Drained','Low','Normal','High','Wired'];
+  const FOCUS_OPTS    = ['Scattered','Foggy','Steady','Locked In'];
+  const FRICTION_OPTS = ['Resistant','Neutral','Engaged','Restless'];
+  const CONTEXT_TAGS  = ['Coding','Meetings','Exercise','Relaxing','Other'];
+  const MAX_ENTRIES   = 500;
+  const SNOOZE_MS     = 30 * 60 * 1000; // 30 minutes
+
+  const FREQ_OPTIONS = [
+    { label:'Every 1 hour',   ms: 1  * 60 * 60 * 1000 },
+    { label:'Every 2 hours',  ms: 2  * 60 * 60 * 1000 },
+    { label:'Every 4 hours',  ms: 4  * 60 * 60 * 1000 },
+    { label:'Every 6 hours',  ms: 6  * 60 * 60 * 1000 },
+    { label:'Every 8 hours',  ms: 8  * 60 * 60 * 1000 },
+    { label:'Every 12 hours', ms: 12 * 60 * 60 * 1000 },
+    { label:'Once per day',   ms: 24 * 60 * 60 * 1000 },
+  ];
+
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(cfg.remindersEnabled === undefined) cfg.remindersEnabled = false;
+  if(!cfg.reminderFreqMs) cfg.reminderFreqMs = 4 * 60 * 60 * 1000;
+  if(!cfg.snoozeUntil)    cfg.snoozeUntil    = 0;
+
+  let selEnergy   = null;
+  let selFocus    = null;
+  let selFriction = null;
+  let selTag      = null;
+
+  const wrap = el('div');
+
+  // ── Reminder banner (shown when active) ────────────────
+  const reminderBanner = el('div','energy-reminder-banner');
+  reminderBanner.style.display = 'none';
+  const reminderIcon = el('span','energy-reminder-icon'); reminderIcon.textContent = '\u23F0';
+  const reminderText = el('span','energy-reminder-text'); reminderText.textContent = 'Quick energy check-in';
+  const logNowBtn  = el('button','todo-add-btn'); logNowBtn.textContent = 'Log now';
+  logNowBtn.style.cssText = 'font-size:10px;padding:2px 10px;flex-shrink:0;';
+  const laterBtn   = el('button','monitor-check-btn'); laterBtn.textContent = 'Later';
+  laterBtn.style.cssText = 'font-size:10px;padding:2px 8px;flex-shrink:0;';
+  laterBtn.onclick = ()=>{
+    cfg.snoozeUntil = Date.now() + SNOOZE_MS;
+    persist();
+    reminderBanner.style.display = 'none';
+  };
+  logNowBtn.onclick = ()=>{
+    // Dismiss banner and focus the note input to invite logging
+    reminderBanner.style.display = 'none';
+    noteInp.focus();
+  };
+  reminderBanner.append(reminderIcon, reminderText, logNowBtn, laterBtn);
+  wrap.appendChild(reminderBanner);
+
+  // ── Chip row builder ───────────────────────────────────
+  function makeChipRow(label, opts, getter, setter){
+    const row=el('div','energy-row');
+    const lbl=el('div','energy-row-label'); lbl.textContent=label;
+    const chips=el('div','energy-chips');
+    opts.forEach(opt=>{
+      const chip=el('div','energy-chip');
+      chip.textContent=opt; chip.dataset.val=opt;
+      const selClass='sel-'+opt.toLowerCase().replace(/\s+/g,'-');
+      chip.onclick=()=>{
+        if(getter()===opt){ setter(null); chip.classList.remove(selClass); }
+        else {
+          setter(opt);
+          chips.querySelectorAll('.energy-chip').forEach(c=>{
+            c.classList.remove('sel-'+c.dataset.val.toLowerCase().replace(/\s+/g,'-'));
+          });
+          chip.classList.add(selClass);
+        }
+      };
+      chips.appendChild(chip);
+    });
+    row.append(lbl,chips);
+    return row;
+  }
+
+  wrap.appendChild(makeChipRow('Energy',   ENERGY_OPTS,   ()=>selEnergy,   v=>{ selEnergy=v; }));
+  wrap.appendChild(makeChipRow('Focus',    FOCUS_OPTS,    ()=>selFocus,    v=>{ selFocus=v; }));
+  wrap.appendChild(makeChipRow('Friction', FRICTION_OPTS, ()=>selFriction, v=>{ selFriction=v; }));
+
+  // ── Context tags ───────────────────────────────────────
+  const tagRow=el('div','energy-row');
+  const tagLbl=el('div','energy-row-label'); tagLbl.textContent='Context';
+  const tagChips=el('div','energy-chips');
+  CONTEXT_TAGS.forEach(t=>{
+    const chip=el('div','energy-chip'); chip.textContent=t; chip.dataset.val=t;
+    chip.onclick=()=>{
+      if(selTag===t){ selTag=null; chip.classList.remove('sel-normal'); }
+      else {
+        selTag=t;
+        tagChips.querySelectorAll('.energy-chip').forEach(c=>c.classList.remove('sel-normal'));
+        chip.classList.add('sel-normal');
+      }
+    };
+    tagChips.appendChild(chip);
+  });
+  tagRow.append(tagLbl,tagChips);
+  wrap.appendChild(tagRow);
+
+  // ── Note input ─────────────────────────────────────────
+  const noteInp=el('input','energy-note-inp'); noteInp.placeholder='Optional note\u2026'; noteInp.maxLength=200;
+  wrap.appendChild(noteInp);
+
+  // ── Log row ────────────────────────────────────────────
+  const logRow=el('div','energy-log-row');
+  const logBtn=el('button','search-widget-go'); logBtn.textContent='Log Entry';
+  const lastLogEl=el('div','energy-last-logged');
+
+  const getLastLogged=()=>{
+    if(!D.energyEntries.length) return '';
+    const d=new Date(D.energyEntries[0].timestamp);
+    return 'Last: '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  };
+  lastLogEl.textContent=getLastLogged();
+
+  const doLog=()=>{
+    const entry={
+      timestamp: new Date().toISOString(),
+      energy:    selEnergy   || null,
+      focus:     selFocus    || null,
+      friction:  selFriction || null,
+      context:   selTag      || null,
+      note:      noteInp.value.trim() || null,
+    };
+    D.energyEntries.unshift(entry);
+    if(D.energyEntries.length>MAX_ENTRIES) D.energyEntries=D.energyEntries.slice(0,MAX_ENTRIES);
+    cfg.snoozeUntil = 0; // clear any snooze on fresh log
+    persist();
+    selEnergy=null; selFocus=null; selFriction=null; selTag=null;
+    wrap.querySelectorAll('.energy-chip').forEach(c=>{
+      c.classList.remove('sel-'+c.dataset.val.toLowerCase().replace(/\s+/g,'-'),'sel-normal');
+    });
+    noteInp.value='';
+    lastLogEl.textContent=getLastLogged();
+    reminderBanner.style.display='none'; // always clear reminder on log
+    const orig=logBtn.textContent; logBtn.textContent='\u2713 Logged'; logBtn.disabled=true;
+    setTimeout(()=>{ logBtn.textContent=orig; logBtn.disabled=false; },1200);
+  };
+  logBtn.onclick=doLog;
+
+  const histBtn=el('button','monitor-check-btn'); histBtn.textContent='History \u2192';
+  histBtn.style.cssText='font-size:10px;padding:2px 9px;';
+  histBtn.onclick=()=>openEnergyModal();
+  logRow.append(logBtn, lastLogEl, histBtn);
+  wrap.appendChild(logRow);
+
+  // ── Edit mode: reminder settings ──────────────────────
+  const editSection=el('div','energy-edit-section');
+
+  const remLbl=el('div','sports-edit-section-lbl'); remLbl.textContent='Reminder Settings';
+  const remRow=el('div'); remRow.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
+  const remChk=el('input'); remChk.type='checkbox'; remChk.id='energyRemChk_'+sec.id; remChk.checked=!!cfg.remindersEnabled;
+  const remChkLbl=el('label'); remChkLbl.htmlFor=remChk.id;
+  remChkLbl.style.cssText='font-size:11.5px;color:var(--text-dim);display:flex;align-items:center;gap:5px;cursor:pointer;';
+  remChkLbl.append(remChk, document.createTextNode('Enable reminders'));
+
+  const freqSel=el('select','sports-select'); freqSel.style.cssText='flex:1;min-width:130px;font-size:11px;';
+  FREQ_OPTIONS.forEach(f=>{
+    const o=document.createElement('option'); o.value=f.ms; o.textContent=f.label;
+    if(f.ms===cfg.reminderFreqMs) o.selected=true;
+    freqSel.appendChild(o);
+  });
+
+  remChk.onchange=()=>{ cfg.remindersEnabled=remChk.checked; persist(); };
+  freqSel.onchange=()=>{ cfg.reminderFreqMs=parseInt(freqSel.value); persist(); };
+  remRow.append(remChkLbl, freqSel);
+  editSection.append(remLbl, remRow);
+  wrap.appendChild(editSection);
+
+  // ── Reminder check logic ───────────────────────────────
+  function checkReminder(){
+    if(!cfg.remindersEnabled){ reminderBanner.style.display='none'; return; }
+    const now      = Date.now();
+    const lastTs   = D.energyEntries.length ? new Date(D.energyEntries[0].timestamp).getTime() : 0;
+    const elapsed  = now - lastTs;
+    const snoozed  = cfg.snoozeUntil && now < cfg.snoozeUntil;
+    const due      = elapsed >= cfg.reminderFreqMs;
+    reminderBanner.style.display = (due && !snoozed) ? '' : 'none';
+  }
+
+  checkReminder();
+  const reminderTimer = setInterval(checkReminder, 60 * 1000); // check every minute
+
+  const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(reminderTimer); obsClean.disconnect(); } });
+  obsClean.observe(document.body,{childList:true,subtree:true});
+
+  return wrap;
+}
+
+// ── Energy history + pattern modal ──────────────────────
+function openEnergyModal(){
+  const ENTRY_COLORS={
+    Drained:'#ff8888', Low:'#ffaa88', Normal:'var(--cyan)', High:'#44cc88', Wired:'var(--gold)',
+    Scattered:'#ff8888', Foggy:'#ffaa88', Steady:'var(--cyan)', 'Locked In':'#44cc88',
+    Resistant:'#ff8888', Neutral:'var(--cyan)', Engaged:'#44cc88', Restless:'var(--gold)',
+  };
+
+  let overlay=document.getElementById('energyHistoryOverlay');
+  if(!overlay){
+    overlay=el('div','overlay'); overlay.id='energyHistoryOverlay';
+    const modal=el('div','modal'); modal.style.cssText='width:540px;max-height:82vh;display:flex;flex-direction:column;';
+    const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+    const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='\u26A1 Energy Tracker';
+    const clearBtn=el('button','mbtn'); clearBtn.style.cssText='font-size:11px;padding:4px 10px;';
+    clearBtn.textContent='Clear All';
+    clearBtn.onclick=()=>{ if(confirm('Clear all energy entries?')){ D.energyEntries=[]; persist(); renderModal(); } };
+    mhdr.append(mtitle,clearBtn);
+
+    const body=el('div'); body.id='energyModalBody'; body.style.cssText='flex:1;overflow-y:auto;';
+    const actions=el('div','modal-actions');
+    const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close';
+    closeBtn.onclick=()=>closeOverlay('energyHistoryOverlay');
+    actions.appendChild(closeBtn);
+    modal.append(mhdr,body,actions);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+  }
+
+  function section(title){
+    const s=el('div','energy-pattern-section');
+    const t=el('div','energy-pattern-title'); t.textContent=title;
+    s.appendChild(t); return s;
+  }
+
+  function badge(val){
+    const b=el('span','energy-history-badge');
+    b.textContent=val||'\u2014';
+    if(val&&ENTRY_COLORS[val]){ b.style.borderColor=ENTRY_COLORS[val]; b.style.color=ENTRY_COLORS[val]; }
+    return b;
+  }
+
+  function renderModal(){
+    const body=document.getElementById('energyModalBody');
+    body.innerHTML='';
+
+    const now=new Date();
+    const todayStr=now.toLocaleDateString('en-CA');
+    const sevenDaysAgo=Date.now()-7*24*60*60*1000;
+
+    const todayEntries=D.energyEntries.filter(e=>e.timestamp.slice(0,10)===todayStr);
+    const weekEntries=D.energyEntries.filter(e=>new Date(e.timestamp).getTime()>=sevenDaysAgo);
+
+    // ── Pattern summary (last 7 days) ──────────────────
+    const patternSec=section('Pattern Summary \u2014 Last 7 Days');
+
+    if(weekEntries.length<3){
+      const note=el('div'); note.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;padding:4px 0;';
+      note.textContent='Log a few more entries to see patterns here.';
+      patternSec.appendChild(note);
+    } else {
+      function mostCommon(entries, field){
+        const counts={};
+        entries.forEach(e=>{ if(e[field]){ counts[e[field]]=(counts[e[field]]||0)+1; } });
+        return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+      }
+      function timeOfDay(ts){
+        const h=new Date(ts).getHours();
+        if(h>=5&&h<11)  return 'Morning';
+        if(h>=11&&h<17) return 'Afternoon';
+        if(h>=17&&h<22) return 'Evening';
+        return 'Late Night';
+      }
+      function bestTimeFor(entries, field, value){
+        const timeCounts={};
+        entries.filter(e=>e[field]===value).forEach(e=>{
+          const t=timeOfDay(e.timestamp);
+          timeCounts[t]=(timeCounts[t]||0)+1;
+        });
+        return Object.entries(timeCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+      }
+      function worstTimeFor(entries, field, values){
+        // values = low-state values (e.g. Drained, Low)
+        const timeCounts={};
+        entries.filter(e=>values.includes(e[field])).forEach(e=>{
+          const t=timeOfDay(e.timestamp);
+          timeCounts[t]=(timeCounts[t]||0)+1;
+        });
+        return Object.entries(timeCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+      }
+
+      const topEnergy   = mostCommon(weekEntries,'energy');
+      const topFocus    = mostCommon(weekEntries,'focus');
+      const topFriction = mostCommon(weekEntries,'friction');
+
+      // Basic summary
+      const summaryGrid=el('div'); summaryGrid.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;';
+      [['Energy',topEnergy],['Focus',topFocus],['Friction',topFriction]].forEach(([lbl,val])=>{
+        if(!val) return;
+        const tile=el('div'); tile.style.cssText='flex:1;min-width:100px;padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;';
+        const tl=el('div'); tl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;'; tl.textContent='Most common '+lbl;
+        const tv=el('div'); tv.style.cssText='font-size:13px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+(ENTRY_COLORS[val]||'var(--text)')+';'; tv.textContent=val;
+        tile.append(tl,tv); summaryGrid.appendChild(tile);
+      });
+      patternSec.appendChild(summaryGrid);
+
+      // Derived insights (after ≥10 entries)
+      if(weekEntries.length>=10){
+        const insights=[];
+        if(topFocus){
+          const t=bestTimeFor(weekEntries,'focus',topFocus);
+          if(t) insights.push('You tend to be \u201c'+topFocus+'\u201d in the '+t.toLowerCase()+'.');
+        }
+        if(topEnergy){
+          const worstTime=worstTimeFor(weekEntries,'energy',['Drained','Low']);
+          if(worstTime) insights.push('Energy is lowest in the '+worstTime.toLowerCase()+'.');
+        }
+        const topCtx=mostCommon(weekEntries,'context');
+        if(topCtx) insights.push('Most entries are tagged \u201c'+topCtx+'\u201d.');
+        if(insights.length){
+          insights.forEach(ins=>{
+            const d=el('div','energy-insight'); d.textContent=ins; patternSec.appendChild(d);
+          });
+        }
+      }
+    }
+    body.appendChild(patternSec);
+
+    // ── Today's entries ────────────────────────────────
+    const todaySec=section("Today's Log ("+todayEntries.length+' entr'+(todayEntries.length===1?'y':'ies')+')');
+    if(!todayEntries.length){
+      const empty=el('div'); empty.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;padding:4px 0;';
+      empty.textContent='No entries logged today yet.'; todaySec.appendChild(empty);
+    } else {
+      const list=el('div'); list.style.cssText='display:flex;flex-direction:column;gap:5px;';
+      todayEntries.forEach((e,i)=>{
+        const row=el('div','energy-history-entry');
+        const timeEl=el('div','energy-history-time');
+        timeEl.textContent=new Date(e.timestamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
+          +(e.context?' \u00b7 '+e.context:'');
+        const vals=el('div','energy-history-vals');
+        if(e.energy)   vals.appendChild(badge(e.energy));
+        if(e.focus)    vals.appendChild(badge(e.focus));
+        if(e.friction) vals.appendChild(badge(e.friction));
+        row.append(timeEl,vals);
+        if(e.note){
+          const noteEl=el('div','energy-history-note'); noteEl.textContent=e.note; row.appendChild(noteEl);
+        }
+        // Delete button
+        const del=el('button'); del.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:2px;align-self:flex-start;margin-left:auto;';
+        del.textContent='\u2715'; del.title='Delete entry';
+        del.onclick=()=>{ D.energyEntries.splice(D.energyEntries.indexOf(e),1); persist(); renderModal(); };
+        timeEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);display:flex;align-items:center;';
+        timeEl.appendChild(del);
+        list.appendChild(row);
+      });
+      todaySec.appendChild(list);
+    }
+    body.appendChild(todaySec);
+
+    // ── All-time count ─────────────────────────────────
+    const footer=el('div'); footer.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);';
+    footer.textContent=D.energyEntries.length+' total entr'+(D.energyEntries.length===1?'y':'ies')+' stored.';
+    body.appendChild(footer);
+  }
+
+  renderModal();
+  openOverlay('energyHistoryOverlay');
+}
+
 /* ---- SPORTS SCORES ---- */
 function buildSportsWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
