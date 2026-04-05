@@ -428,6 +428,72 @@ async function handleNvd(body, ctx) {
   return json(data);
 }
 
+async function handleOtx(body, ctx) {
+  const { apiKey, limit = 20 } = body;
+
+  if(!apiKey)
+    return json({ error: 'Required field: apiKey' }, 400);
+
+  const safeLimit = Math.min(Math.max(parseInt(limit)||20, 1), 50);
+  const cacheKey  = `https://otx-cache.internal/${
+    [...apiKey].reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))|0,0)
+  }/${safeLimit}`;
+  const cache   = caches.default;
+  const cached  = await cache.match(cacheKey);
+  if(cached) return json({ ...(await cached.json()), _cached: true });
+
+  let upstream;
+  try {
+    upstream = await fetch(
+      `https://otx.alienvault.com/api/v1/pulses/subscribed?limit=${safeLimit}`,
+      { headers: { 'X-OTX-API-KEY': apiKey, 'Accept': 'application/json' } }
+    );
+  } catch(e) { return json({ error: `OTX fetch failed: ${e.message}` }, 502); }
+
+  let data;
+  try { data = await upstream.json(); }
+  catch(e) { return json({ error: 'OTX returned non-JSON' }, 502); }
+
+  if(!upstream.ok) {
+    const msg = data?.detail || data?.error || `HTTP ${upstream.status}`;
+    return json({ error: `OTX API error: ${msg}` }, upstream.status);
+  }
+
+  // Normalize to stable schema — only fields confirmed in sample data
+  const normalized = {
+    totalCount: data.count || 0,
+    pulses: (data.results || []).map(p => ({
+      id:                p.id             || '',
+      name:              p.name           || '',
+      description:       p.description    || '',
+      adversary:         p.adversary      || '',
+      author:            p.author_name    || '',
+      created:           p.created        || null,
+      modified:          p.modified       || null,
+      tlp:               p.tlp            || 'white',
+      tags:              p.tags           || [],
+      targeted_countries: p.targeted_countries || [],
+      malware_families:  p.malware_families   || [],
+      industries:        p.industries     || [],
+      attack_ids:        p.attack_ids     || [],
+      references:        p.references     || [],
+      indicatorCount:    (p.indicators||[]).length,
+      // Include indicators so client can do IOC type breakdown
+      indicators:        (p.indicators||[]).map(i=>({ type: i.type, indicator: i.indicator })),
+    })),
+  };
+
+  const OTX_CACHE_TTL = 15 * 60; // 15 minutes
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(normalized), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': `public, max-age=${OTX_CACHE_TTL}`,
+    },
+  })));
+
+  return json(normalized);
+}
+
 // ── Main dispatcher ──────────────────────────────────────────────────────────
 
 export default {
@@ -449,6 +515,7 @@ export default {
     if(path === '/rss')    return handleRss(body, ctx);
     if(path === '/nvd')    return handleNvd(body, ctx);
     if(path === '/sports') return handleSports(body, ctx);
+    if(path === '/otx')    return handleOtx(body, ctx);
 
     // Legacy: detect from body fields (backwards compat)
     if(body.service) return handlePollen(body, ctx);
