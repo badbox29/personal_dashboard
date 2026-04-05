@@ -164,6 +164,39 @@ body {
 .tab-btn.drop-left  { box-shadow: -3px 0 0 0 var(--cyan); }
 .tab-btn.drop-right { box-shadow:  3px 0 0 0 var(--cyan); }
 
+/* Tab alert glows — visible against any tab background color */
+@keyframes tabGlowCritical {
+  0%   { box-shadow: 0 0 0 1.5px rgba(255,80,80,0.9), 0 0 6px 2px rgba(255,80,80,0.3); }
+  50%  { box-shadow: 0 0 0 2px   rgba(255,80,80,1),   0 0 14px 5px rgba(255,80,80,0.55); }
+  100% { box-shadow: 0 0 0 1.5px rgba(255,80,80,0.9), 0 0 6px 2px rgba(255,80,80,0.3); }
+}
+@keyframes tabGlowSoft {
+  0%   { box-shadow: 0 0 0 1.5px rgba(221,176,75,0.8), 0 0 6px 2px rgba(221,176,75,0.25); }
+  50%  { box-shadow: 0 0 0 2px   rgba(221,176,75,1),   0 0 14px 5px rgba(221,176,75,0.45); }
+  100% { box-shadow: 0 0 0 1.5px rgba(221,176,75,0.8), 0 0 6px 2px rgba(221,176,75,0.25); }
+}
+@keyframes tabGlowInfo {
+  0%   { box-shadow: 0 0 0 1.5px rgba(68,204,136,0.8), 0 0 6px 2px rgba(68,204,136,0.25); }
+  50%  { box-shadow: 0 0 0 2px   rgba(68,204,136,1),   0 0 14px 5px rgba(68,204,136,0.45); }
+  100% { box-shadow: 0 0 0 1.5px rgba(68,204,136,0.8), 0 0 6px 2px rgba(68,204,136,0.25); }
+}
+.tab-btn.alert-critical { animation: tabGlowCritical 1.8s ease-in-out infinite; position: relative; }
+.tab-btn.alert-soft     { animation: tabGlowSoft 2.4s ease-in-out infinite; position: relative; }
+.tab-btn.alert-info     { animation: tabGlowInfo 2.8s ease-in-out infinite; position: relative; }
+.tab-btn.alert-critical::after,
+.tab-btn.alert-soft::after,
+.tab-btn.alert-info::after {
+  content: ''; position: absolute; top: 4px; right: 4px;
+  width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.35);
+}
+.tab-btn.alert-critical::after { background: #ff5050; }
+.tab-btn.alert-soft::after     { background: var(--gold); }
+.tab-btn.alert-info::after     { background: #44cc88; }
+.tab-btn.alert-critical.drop-left,
+.tab-btn.alert-critical.drop-right,
+.tab-btn.alert-soft.drop-left,
+.tab-btn.alert-soft.drop-right { animation: none; }
+
 .toolbar {
   margin-left: auto;
   display: flex;
@@ -4364,6 +4397,52 @@ body.edit-mode .gh-add-row { display: flex; }
 .dns-type-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(255,200,0,0.08); }
 
 /* ============================================================
+   WIDGET — OTX Threat Intelligence
+   ============================================================ */
+.otx-summary-strip { display:flex; gap:5px; margin-bottom:10px; }
+.otx-stat { flex:1; padding:7px 8px; background:var(--inp-bg); border:1px solid var(--border); border-radius:5px; display:flex; flex-direction:column; gap:2px; min-width:0; }
+.otx-stat-value { font-size:16px; font-weight:700; font-family:'Share Tech Mono',monospace; color:var(--gold); line-height:1; }
+.otx-stat-label { font-size:9px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; }
+.otx-elevated-banner { display:flex; align-items:center; gap:6px; padding:5px 8px; background:rgba(255,136,68,0.08); border:1px solid rgba(255,136,68,0.4); border-radius:4px; font-size:11px; font-family:'Share Tech Mono',monospace; color:#ff8844; margin-bottom:8px; animation:otxElevatedPulse 2.5s ease-in-out infinite alternate; }
+@keyframes otxElevatedPulse { from { border-color:rgba(255,136,68,0.3); } to { border-color:rgba(255,136,68,0.7); } }
+.otx-section-hdr { font-size:9.5px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px; margin-top:8px; }
+.otx-pulse-list { display:flex; flex-direction:column; gap:4px; max-height:240px; overflow-y:auto; }
+.otx-pulse-row { display:flex; flex-direction:column; gap:3px; padding:6px 8px; background:var(--inp-bg); border:1px solid var(--border); border-radius:4px; cursor:pointer; transition:border-color 0.15s; }
+.otx-pulse-row:hover { border-color:var(--cyan); }
+.otx-pulse-top { display:flex; align-items:center; gap:6px; }
+.otx-adversary-chip { font-size:9px; font-family:'Share Tech Mono',monospace; font-weight:700; padding:1px 6px; border-radius:3px; background:rgba(255,80,80,0.12); border:1px solid rgba(255,80,80,0.4); color:#ff8888; flex-shrink:0; white-space:nowrap; max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+.otx-tlp-chip { font-size:9px; font-family:'Share Tech Mono',monospace; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0; }
+.otx-tlp-white { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25); color:var(--text-dim); }
+.otx-tlp-green { background:rgba(68,204,136,0.12); border:1px solid rgba(68,204,136,0.4); color:#44cc88; }
+.otx-tlp-amber { background:rgba(255,200,0,0.12); border:1px solid rgba(255,200,0,0.4); color:var(--gold); }
+.otx-tlp-red   { background:rgba(255,80,80,0.12); border:1px solid rgba(255,80,80,0.4); color:#ff5050; }
+.otx-new-badge { font-size:8.5px; font-family:'Share Tech Mono',monospace; font-weight:700; padding:1px 5px; border-radius:3px; background:rgba(68,204,136,0.12); border:1px solid rgba(68,204,136,0.4); color:#44cc88; flex-shrink:0; }
+.otx-updated-badge { font-size:8.5px; font-family:'Share Tech Mono',monospace; padding:1px 5px; border-radius:3px; background:rgba(221,176,75,0.1); border:1px solid rgba(221,176,75,0.3); color:var(--gold); flex-shrink:0; }
+.otx-pulse-name { font-size:11px; color:var(--text); line-height:1.35; flex:1; min-width:0; }
+.otx-pulse-meta { font-size:9.5px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); display:flex; gap:8px; align-items:center; }
+.otx-ioc-count { color:var(--cyan); }
+.otx-chip-row { display:flex; flex-wrap:wrap; gap:3px; margin-top:3px; }
+.otx-tag-chip { font-size:9px; font-family:'Share Tech Mono',monospace; padding:1px 5px; border-radius:3px; background:rgba(180,170,150,0.08); border:1px solid rgba(180,170,150,0.22); color:rgba(180,170,150,0.75); }
+.otx-industry-watched { border-color:rgba(221,176,75,0.45) !important; }
+.otx-adversary-strip { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+.otx-adversary-strip-chip { font-size:9.5px; font-family:'Share Tech Mono',monospace; padding:2px 7px; border-radius:3px; background:rgba(255,80,80,0.08); border:1px solid rgba(255,80,80,0.3); color:#ff9999; cursor:default; }
+.otx-filter-row { display:flex; gap:5px; margin-bottom:7px; flex-wrap:wrap; }
+.otx-modal-pulse { padding:10px 12px; background:var(--inp-bg); border:1px solid var(--border); border-radius:6px; margin-bottom:8px; }
+.otx-modal-desc { font-size:11.5px; color:var(--text-dim); line-height:1.6; margin-bottom:8px; }
+.otx-modal-grid { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.otx-modal-tile { flex:1; min-width:80px; padding:5px 8px; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:4px; }
+.otx-modal-tile-lbl { font-size:9px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; }
+.otx-modal-tile-val { font-size:11px; font-family:'Share Tech Mono',monospace; color:var(--text); }
+.otx-ioc-breakdown { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }
+.otx-ioc-badge { font-size:9.5px; font-family:'Share Tech Mono',monospace; padding:2px 7px; border-radius:3px; background:var(--inp-bg); border:1px solid var(--border); color:var(--text-dim); }
+.otx-ioc-badge span { color:var(--gold); font-weight:700; margin-right:3px; }
+.otx-ref-link { font-size:11px; font-family:'Share Tech Mono',monospace; color:var(--cyan); text-decoration:none; display:inline-block; margin-top:4px; opacity:0.85; transition:opacity 0.15s; }
+.otx-ref-link:hover { opacity:1; }
+.otx-api-required { padding:14px 10px; background:var(--inp-bg); border:1px solid var(--border); border-radius:6px; text-align:center; }
+.otx-api-required-title { font-size:12px; font-family:'Share Tech Mono',monospace; color:var(--gold); font-weight:700; margin-bottom:4px; }
+.otx-api-required-sub { font-size:11px; color:var(--text-dim); }
+
+/* ============================================================
    WIDGET — BGP / ASN Lookup
    ============================================================ */
 .bgp-mode-tabs {
@@ -5086,6 +5165,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swSubnet"    onclick="selectWidgetType('subnet')">
           🌐 Subnet Calc<span>IPv4 &amp; IPv6 calculator</span>
         </button>
+        <button class="sec-type-card" id="swOtx"       onclick="selectWidgetType('otx')">
+          🛰 Threat Intel<span>LevelBlue OTX feed — API required</span>
+        </button>
       </div>
       <!-- Coding widgets -->
       <div class="widget-cat-panel" id="wcPanelCoding">
@@ -5225,6 +5307,8 @@ const DEFAULTS = {
   sportsTeamLists: {},
   defaultSportsLeague: '',
   energyEntries: [],
+  otxIndustries: [],
+  otxAlarmHistory: [],
   pollenKey: '',
   pollenEnabled: false,
   pollenService: 'weatherapi',
@@ -5544,6 +5628,36 @@ let bgCtx         = null;
 const statusState = {};
 const cveWatchTimers = {}; // secId → intervalId for CVE watchlist polling
 
+// ── Tab Alert System ──────────────────────────────────────────────────────────
+// Widgets call setTabAlert(tabId, 'critical'|'soft') / clearTabAlert(tabId)
+// Tabs auto-clear when navigated to.
+const tabAlerts = new Map(); // tabId → 'critical' | 'soft'
+
+function setTabAlert(tabId, level='info'){
+  if(!tabId) return;
+  const priority = { critical:3, soft:2, info:1 };
+  const current  = tabAlerts.get(tabId);
+  // Don't downgrade to a lower priority level
+  if(current && (priority[current]||0) >= (priority[level]||0)) return;
+  tabAlerts.set(tabId, level);
+  _applyTabAlertClasses();
+}
+
+function clearTabAlert(tabId){
+  if(!tabId) return;
+  tabAlerts.delete(tabId);
+  _applyTabAlertClasses();
+}
+
+function _applyTabAlertClasses(){
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    const id = btn.dataset.tabId;
+    btn.classList.remove('alert-critical','alert-soft','alert-info');
+    const level = tabAlerts.get(id);
+    if(level) btn.classList.add('alert-'+level);
+  });
+}
+
 // Widget constants — must be declared before init IIFE runs renderAll
 const SEARCH_ENGINES = [
   { id:'google',  label:'Google',     url:'https://www.google.com/search?q=' },
@@ -5554,7 +5668,7 @@ const SEARCH_ENGINES = [
 ];
 
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
-                      'ports','myip','rfc','cve','bgp','dns','subnet',
+                      'ports','myip','rfc','cve','bgp','dns','subnet','otx',
                       'github','regex',
                       'compose'];
 
@@ -5804,6 +5918,8 @@ const PORT_COMBOS = {
   if(typeof D.sportsTeamLists !== 'object' || Array.isArray(D.sportsTeamLists)) D.sportsTeamLists = {};
   if(D.defaultSportsLeague === undefined) D.defaultSportsLeague = '';
   if(!Array.isArray(D.energyEntries)) D.energyEntries = [];
+  if(!Array.isArray(D.otxIndustries))    D.otxIndustries    = [];
+  if(!Array.isArray(D.otxAlarmHistory))  D.otxAlarmHistory  = [];
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -6165,7 +6281,7 @@ function buildSection(tabId, colId, sec){
     hd.append(handle, ht, hedit, hdel);
     card.appendChild(hd);
     const wb = el('div','widget-body');
-    wb.appendChild(buildWidgetBody(sec));
+    wb.appendChild(buildWidgetBody(sec, tabId));
     card.appendChild(wb);
   } else {
     // Standard links section
@@ -6239,7 +6355,7 @@ function buildMonitorBody(tabId, colId, sec){
 /* ================================================================
    WIDGETS — DISPATCHER + BUILDERS
    ================================================================ */
-function buildWidgetBody(sec){
+function buildWidgetBody(sec, tabId){
   switch(sec.widgetType){
     case 'search':    return buildSearchWidget(sec);
     case 'note':      return buildNoteWidget(sec);
@@ -6252,10 +6368,11 @@ function buildWidgetBody(sec){
     case 'ports':     return buildPortsWidget(sec);
     case 'myip':      return buildMyIpWidget(sec);
     case 'rfc':       return buildRfcWidget(sec);
-    case 'cve':       return buildCveWidget(sec);
+    case 'cve':       return buildCveWidget(sec, tabId);
     case 'bgp':       return buildBgpWidget(sec);
     case 'dns':       return buildDnsWidget(sec);
     case 'subnet':    return buildSubnetWidget(sec);
+    case 'otx':       return buildOtxWidget(sec, tabId);
     case 'github':    return buildGithubWidget(sec);
     case 'regex':     return buildRegexWidget(sec);
     case 'rss':       return buildRssWidget(sec);
@@ -6263,7 +6380,7 @@ function buildWidgetBody(sec){
     case 'wiki':      return buildWikiWidget(sec);
     case 'decision':  return buildDecisionWidget(sec);
     case 'sports':    return buildSportsWidget(sec);
-    case 'energy':    return buildEnergyWidget(sec);
+    case 'energy':    return buildEnergyWidget(sec, tabId);
     case 'compose':   return buildComposeWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
@@ -7554,6 +7671,460 @@ function buildDnsWidget(sec){
   return wrap;
 }
 
+/* ---- OTX ALARM SOUND ---- */
+// Distinct from CVE alarm: lower tone, slower triplet pattern — intelligence alert feel
+function otxAlarmSound(){
+  try {
+    const ctx = getAudioCtx();
+    const play = ()=>{
+      const now = ctx.currentTime;
+      // Three descending pulses — slower, more deliberate than CVE's rapid quad
+      [[660,0],[520,0.35],[660,0.7]].forEach(([freq,offset])=>{
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now+offset);
+        gain.gain.setValueAtTime(0, now+offset);
+        gain.gain.linearRampToValueAtTime(0.12, now+offset+0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now+offset+0.3);
+        osc.start(now+offset); osc.stop(now+offset+0.35);
+      });
+    };
+    if(ctx.state === 'suspended') ctx.resume().then(play);
+    else play();
+  } catch(e){}
+}
+
+/* ---- OTX THREAT INTELLIGENCE ---- */
+function buildOtxWidget(sec, tabId){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.otxKey)            cfg.otxKey            = '';
+  if(!cfg.otxWorker)         cfg.otxWorker         = '';
+  if(!cfg.refreshMins)       cfg.refreshMins       = 30;
+  if(!cfg.maxPulses)         cfg.maxPulses         = 20;
+  if(!cfg.watchedIndustries) cfg.watchedIndustries = [];
+  if(cfg.alarmSound === undefined) cfg.alarmSound  = false;
+
+  const OTX_HISTORY_MAX = 200;
+  let isFirstLoad = true; // suppress audio on initial page render
+
+  // ── Helpers ────────────────────────────────────────────
+  function relativeTime(iso){
+    if(!iso) return '';
+    const diff=Date.now()-new Date(iso).getTime(), h=Math.floor(diff/3600000);
+    if(h<1) return 'just now'; if(h<24) return h+'h ago'; return Math.floor(h/24)+'d ago';
+  }
+  function tlpClass(tlp){
+    const t=(tlp||'').toLowerCase();
+    if(t==='green') return 'otx-tlp-green'; if(t==='amber') return 'otx-tlp-amber'; if(t==='red') return 'otx-tlp-red'; return 'otx-tlp-white';
+  }
+  function countIocTypes(indicators){
+    const counts={};
+    (indicators||[]).forEach(ind=>{ const t=ind.type||'Unknown'; counts[t]=(counts[t]||0)+1; });
+    return counts;
+  }
+  // 7-day rolling average, threshold 1.5x
+  function isElevated(pulses){
+    if(!pulses||pulses.length<3) return false;
+    const now=Date.now(), dayMs=86400000, weekMs=7*dayMs;
+    const weekPulses=pulses.filter(p=>now-new Date(p.modified).getTime()<weekMs);
+    if(!weekPulses.length) return false;
+    const dailyAvg=weekPulses.length/7;
+    const todayCount=pulses.filter(p=>now-new Date(p.modified).getTime()<dayMs).length;
+    return todayCount>0 && dailyAvg>0 && todayCount>dailyAvg*1.5;
+  }
+  function topAdversaries(pulses){
+    const counts={};
+    (pulses||[]).forEach(p=>{ if(p.adversary){ counts[p.adversary]=(counts[p.adversary]||0)+1; } });
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([name])=>name);
+  }
+  function isWatchedIndustry(pulse){
+    if(!cfg.watchedIndustries.length) return false;
+    return (pulse.industries||[]).some(ind=>cfg.watchedIndustries.includes(ind));
+  }
+
+  const wrap=el('div');
+
+  // ── Watched-industry hits panel (mirrors CVE watchlist hits) ──
+  const otxHitsPanel=el('div'); otxHitsPanel.style.cssText='display:none;margin-bottom:8px;';
+  const otxHitsHdr=el('div');
+  otxHitsHdr.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(255,68,68,0.1);border:1px solid #ff4444;border-radius:5px 5px 0 0;cursor:pointer;user-select:none;animation:cveAlertPulse 1.8s ease-in-out infinite alternate;';
+  const otxHitsIcon=el('span'); otxHitsIcon.textContent='\uD83D\uDEA8'; otxHitsIcon.style.cssText='font-size:13px;flex-shrink:0;';
+  const otxHitsTitle=el('span'); otxHitsTitle.style.cssText='font-size:10.5px;font-family:Share Tech Mono,monospace;color:#ff8888;font-weight:700;letter-spacing:0.05em;flex:1;'; otxHitsTitle.textContent='INDUSTRY ALERTS';
+  const otxHitsChevron=el('span'); otxHitsChevron.style.cssText='font-size:9px;color:#ff8888;transition:transform 0.2s;'; otxHitsChevron.textContent='\u25bc';
+  const otxHitsDismiss=el('button','cve-alert-dismiss'); otxHitsDismiss.textContent='Dismiss';
+  otxHitsDismiss.onclick=e=>{
+    e.stopPropagation();
+    const now=Date.now();
+    otxHitsBody.querySelectorAll('[data-otxid]').forEach(tile=>{
+      const id=tile.dataset.otxid;
+      if(!D.otxAlarmHistory.find(h=>h.id===id)){
+        D.otxAlarmHistory.unshift({ id, name:tile.dataset.otxname||'', industry:tile.dataset.otxindustry||'', dismissedAt:now });
+      }
+    });
+    if(D.otxAlarmHistory.length>OTX_HISTORY_MAX) D.otxAlarmHistory=D.otxAlarmHistory.slice(0,OTX_HISTORY_MAX);
+    persist();
+    otxHitsPanel.style.display='none';
+    clearTabAlert(tabId);
+  };
+  otxHitsHdr.append(otxHitsIcon,otxHitsTitle,otxHitsChevron,otxHitsDismiss);
+  const otxHitsBody=el('div');
+  otxHitsBody.style.cssText='display:flex;flex-direction:column;gap:4px;border:1px solid #ff4444;border-top:none;border-radius:0 0 5px 5px;max-height:220px;overflow-y:auto;padding:6px 8px;';
+  otxHitsHdr.addEventListener('click',()=>{
+    const open=otxHitsBody.style.display!=='none';
+    otxHitsBody.style.display=open?'none':'';
+    otxHitsChevron.style.transform=open?'rotate(-90deg)':'';
+  });
+  otxHitsPanel.append(otxHitsHdr,otxHitsBody);
+  const apiRequiredEl=el('div','otx-api-required');
+  const arTitle=el('div','otx-api-required-title'); arTitle.textContent='⚠ API Key Required';
+  const arSub=el('div','otx-api-required-sub'); arSub.textContent='Enter your LevelBlue OTX key in edit mode to enable this widget.';
+  apiRequiredEl.append(arTitle,arSub);
+
+  // ── Summary strip ──────────────────────────────────────
+  const summaryStrip=el('div','otx-summary-strip');
+  const makeStat=(value,label)=>{
+    const tile=el('div','otx-stat');
+    const val=el('div','otx-stat-value'); val.textContent=value;
+    const lbl=el('div','otx-stat-label'); lbl.textContent=label;
+    tile.append(val,lbl); summaryStrip.appendChild(tile); return val;
+  };
+  const statTotal=makeStat('—','Total Pulses');
+  const statToday=makeStat('—','New Today');
+  const statWeek=makeStat('—','This Week');
+
+  // ── Elevated activity banner ───────────────────────────
+  const elevBanner=el('div','otx-elevated-banner'); elevBanner.style.display='none';
+  elevBanner.innerHTML='⚡ Elevated activity — above 7-day daily average';
+
+  // ── Top adversaries strip ──────────────────────────────
+  const adversaryStrip=el('div','otx-adversary-strip');
+
+  // ── Filter row ─────────────────────────────────────────
+  const filterRow=el('div','otx-filter-row');
+  const searchInp=el('input','search-widget-input');
+  searchInp.placeholder='Search pulses\u2026'; searchInp.style.cssText='flex:1;min-width:0;font-size:11px;padding:4px 8px;';
+  searchInp.oninput=()=>applyFilters();
+  const adversaryFilter=el('select','sports-select'); adversaryFilter.style.cssText='flex:1;min-width:80px;font-size:11px;';
+  adversaryFilter.onchange=()=>applyFilters();
+  filterRow.append(searchInp,adversaryFilter);
+
+  // ── Header row ─────────────────────────────────────────
+  const hdrRow=el('div'); hdrRow.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:5px;';
+  const hdrLbl=el('div','otx-section-hdr'); hdrLbl.style.cssText='margin:0;flex:1;'; hdrLbl.textContent='Recent Pulses';
+  const tsEl=el('div'); tsEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);';
+  const histBtn=el('button','monitor-check-btn'); histBtn.textContent='\uD83D\uDCCB'; histBtn.title='Dismissed alert history'; histBtn.style.cssText='font-size:10px;padding:2px 7px;';
+  histBtn.onclick=()=>openOtxHistoryModal();
+  const rfBtn=el('button','monitor-check-btn'); rfBtn.textContent='\u21ba'; rfBtn.title='Refresh'; rfBtn.onclick=()=>refresh();
+  hdrRow.append(hdrLbl,tsEl,histBtn,rfBtn);
+
+  // ── Pulse list ─────────────────────────────────────────
+  const pulseList=el('div','otx-pulse-list');
+
+  // ── Edit mode ──────────────────────────────────────────
+  const editSec=el('div'); editSec.style.cssText='display:none;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;';
+
+  const indLbl=el('div','sports-edit-section-lbl'); indLbl.textContent='Watched Industries';
+  const indChips=el('div','sports-fav-chips');
+  const renderIndChips=()=>{
+    indChips.innerHTML='';
+    cfg.watchedIndustries.forEach((ind,i)=>{
+      const chip=el('div','sports-fav-chip');
+      const lbl2=el('span'); lbl2.textContent=ind;
+      const del=el('button'); del.textContent='\u2715';
+      del.onclick=()=>{ cfg.watchedIndustries.splice(i,1); persist(); renderIndChips(); if(lastData) renderData(lastData); };
+      chip.append(lbl2,del); indChips.appendChild(chip);
+    });
+  };
+  const indAddRow=el('div'); indAddRow.style.cssText='display:flex;gap:5px;margin-bottom:8px;';
+  const indSel=el('select','sports-select'); indSel.style.cssText='flex:1;font-size:11px;';
+  const indAddBtn=el('button','todo-add-btn'); indAddBtn.textContent='\uFF0B Add';
+  indAddBtn.onclick=()=>{
+    const ind=indSel.value; if(!ind||cfg.watchedIndustries.includes(ind)) return;
+    cfg.watchedIndustries.push(ind); persist(); renderIndChips(); if(lastData) renderData(lastData);
+  };
+  indAddRow.append(indSel,indAddBtn);
+  const updateIndDropdown=()=>{
+    indSel.innerHTML='';
+    if(!D.otxIndustries.length){
+      const o=document.createElement('option'); o.textContent='No industries loaded yet'; o.disabled=true; indSel.appendChild(o);
+    } else {
+      const ph=document.createElement('option'); ph.value=''; ph.textContent='Select industry\u2026'; ph.disabled=true; ph.selected=true; indSel.appendChild(ph);
+      D.otxIndustries.forEach(ind=>{ const o=document.createElement('option'); o.value=ind; o.textContent=ind; indSel.appendChild(o); });
+    }
+  };
+  updateIndDropdown();
+
+  const apiLbl=el('div','sports-edit-section-lbl'); apiLbl.style.marginTop='8px'; apiLbl.textContent='API Settings';
+  // Alarm sound toggle — same pattern as CVE widget
+  const alarmRow=el('div','cve-watch-options');
+  const alarmLbl=el('label','cve-watch-opt-label');
+  const alarmChk=el('input'); alarmChk.type='checkbox'; alarmChk.id='otxAlarmChk_'+sec.id; alarmChk.checked=!!cfg.alarmSound;
+  alarmChk.onchange=()=>{ cfg.alarmSound=alarmChk.checked; persist(); };
+  alarmLbl.append(alarmChk, document.createTextNode(' Alarm sound'));
+  alarmRow.appendChild(alarmLbl);
+  const keyInp=el('input','cve-interval-inp'); keyInp.type='password';
+  keyInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-bottom:4px;';
+  keyInp.placeholder='OTX API key (stored locally)'; keyInp.value=cfg.otxKey||'';
+  const workerInp=el('input','cve-interval-inp'); workerInp.type='text';
+  workerInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-bottom:4px;';
+  workerInp.placeholder='Override global Worker URL (optional)'; workerInp.value=cfg.otxWorker||'';
+  const saveRow=el('div'); saveRow.style.cssText='display:flex;align-items:center;gap:6px;';
+  const saveBtn=el('button','todo-add-btn'); saveBtn.textContent='Save';
+  const saveStatus=el('span'); saveStatus.style.cssText='font-size:10px;color:var(--cyan);';
+  saveBtn.onclick=()=>{ cfg.otxKey=keyInp.value.trim(); cfg.otxWorker=workerInp.value.trim(); persist(); saveStatus.textContent='\u2713 Saved'; setTimeout(()=>saveStatus.textContent='',2000); refresh(); };
+  saveRow.append(saveBtn,saveStatus);
+  const editNote=el('div'); editNote.style.cssText='font-size:10px;color:var(--text-dim);margin-top:5px;line-height:1.5;';
+  editNote.innerHTML='Get your free OTX key at <a href="https://otx.alienvault.com" target="_blank" rel="noopener" style="color:var(--cyan);">otx.alienvault.com</a>';
+  editSec.append(indLbl,indChips,indAddRow,apiLbl,alarmRow,keyInp,workerInp,saveRow,editNote);
+  wrap.appendChild(editSec);
+
+  const applyEdit=()=>{ editSec.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obsEdit=new MutationObserver(applyEdit);
+  obsEdit.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyEdit();
+
+  // ── DOM assembly ───────────────────────────────────────
+  wrap.insertBefore(apiRequiredEl,  editSec);
+  wrap.insertBefore(otxHitsPanel,   editSec);
+  wrap.insertBefore(summaryStrip,   editSec);
+  wrap.insertBefore(elevBanner,     editSec);
+  wrap.insertBefore(adversaryStrip, editSec);
+  wrap.insertBefore(filterRow,      editSec);
+  wrap.insertBefore(hdrRow,         editSec);
+  wrap.insertBefore(pulseList,      editSec);
+
+  let lastData=null, allPulses=[];
+
+  // ── Filter + render ────────────────────────────────────
+  function applyFilters(){
+    const q=(searchInp.value||'').toLowerCase().trim();
+    const advFilter=adversaryFilter.value;
+    let filtered=[...allPulses];
+    if(q) filtered=filtered.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.adversary||'').toLowerCase().includes(q)||(p.tags||[]).some(t=>t.toLowerCase().includes(q)));
+    if(advFilter) filtered=filtered.filter(p=>p.adversary===advFilter);
+    renderPulses(filtered);
+  }
+
+  function renderPulses(pulses){
+    pulseList.innerHTML='';
+    if(!pulses||!pulses.length){ const e=el('div','dns-status'); e.textContent='No pulses match current filters.'; pulseList.appendChild(e); return; }
+    pulses.forEach(pulse=>{
+      const watched=isWatchedIndustry(pulse);
+      const row=el('div','otx-pulse-row'+(watched?' otx-industry-watched':''));
+      row.onclick=()=>openOtxModal(pulse);
+      const topRow=el('div','otx-pulse-top');
+      if(pulse.adversary){ const adv=el('span','otx-adversary-chip'); adv.textContent=pulse.adversary; adv.title=pulse.adversary; topRow.appendChild(adv); }
+      const tlp=el('span','otx-tlp-chip '+tlpClass(pulse.tlp)); tlp.textContent='TLP:'+(pulse.tlp||'WHITE').toUpperCase();
+      const revBadge=el('span',pulse.revision<=1?'otx-new-badge':'otx-updated-badge'); revBadge.textContent=pulse.revision<=1?'NEW':'UPD'; revBadge.title=pulse.revision<=1?'New pulse':'Revised (v'+pulse.revision+')';
+      const age=el('span'); age.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-left:auto;flex-shrink:0;'; age.textContent=relativeTime(pulse.modified);
+      topRow.append(tlp,revBadge,age);
+      const name=el('div','otx-pulse-name'); name.textContent=pulse.name||'Unnamed pulse';
+      const meta=el('div','otx-pulse-meta');
+      if(pulse.indicatorCount){ const iocEl=el('span','otx-ioc-count'); iocEl.textContent=pulse.indicatorCount+' IOC'+(pulse.indicatorCount!==1?'s':''); meta.appendChild(iocEl); }
+      if(pulse.industries&&pulse.industries.length){ const ind=el('span'); ind.textContent=pulse.industries.slice(0,2).join(', '); meta.appendChild(ind); }
+      const chips=el('div','otx-chip-row');
+      (pulse.tags||[]).slice(0,4).forEach(t=>{ const c=el('span','otx-tag-chip'); c.textContent=t; chips.appendChild(c); });
+      row.append(topRow,name,meta);
+      if(chips.children.length) row.appendChild(chips);
+      pulseList.appendChild(row);
+    });
+  }
+
+  function renderData(data){
+    const {totalCount,pulses}=data;
+    const now=Date.now(), dayMs=86400000, weekMs=7*dayMs;
+    allPulses=pulses||[];
+    const todayCount=allPulses.filter(p=>now-new Date(p.modified).getTime()<dayMs).length;
+    const weekCount =allPulses.filter(p=>now-new Date(p.modified).getTime()<weekMs).length;
+    statTotal.textContent=totalCount?totalCount.toLocaleString():'—';
+    statToday.textContent=todayCount;
+    statWeek.textContent=weekCount;
+    elevBanner.style.display=isElevated(allPulses)?'':'none';
+
+    // Top adversaries strip
+    adversaryStrip.innerHTML='';
+    const advNames=topAdversaries(allPulses);
+    if(advNames.length){
+      const stripLbl=el('div','otx-section-hdr'); stripLbl.style.cssText='margin:0 0 5px;font-size:9px;'; stripLbl.textContent='Top Adversaries';
+      const chipsWrap=el('div'); chipsWrap.style.cssText='display:flex;flex-wrap:wrap;gap:4px;';
+      advNames.slice(0,8).forEach(name=>{ const c=el('span','otx-adversary-strip-chip'); c.textContent=name; chipsWrap.appendChild(c); });
+      adversaryStrip.append(stripLbl,chipsWrap);
+    }
+
+    // Adversary filter dropdown
+    const prevAdv=adversaryFilter.value;
+    adversaryFilter.innerHTML='';
+    const allOpt=document.createElement('option'); allOpt.value=''; allOpt.textContent='All adversaries'; adversaryFilter.appendChild(allOpt);
+    advNames.forEach(name=>{ const o=document.createElement('option'); o.value=name; o.textContent=name; adversaryFilter.appendChild(o); });
+    if(prevAdv&&advNames.includes(prevAdv)) adversaryFilter.value=prevAdv;
+
+    // Persist industries
+    const indSet=new Set(D.otxIndustries);
+    allPulses.forEach(p=>(p.industries||[]).forEach(ind=>indSet.add(ind)));
+    D.otxIndustries=[...indSet].sort(); persist(); updateIndDropdown();
+
+    // ── Industry hit detection ─────────────────────────
+    const dismissed=new Set(D.otxAlarmHistory.map(h=>h.id));
+    const hitPulses=allPulses.filter(p=>isWatchedIndustry(p) && !dismissed.has(p.id));
+    if(hitPulses.length){
+      otxHitsBody.innerHTML='';
+      otxHitsTitle.textContent='INDUSTRY ALERTS ('+hitPulses.length+')';
+      hitPulses.forEach(pulse=>{
+        const matchedIndustries=(pulse.industries||[]).filter(i=>cfg.watchedIndustries.includes(i));
+        const tile=el('div'); tile.style.cssText='padding:5px 7px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.3);border-radius:4px;cursor:pointer;';
+        tile.dataset.otxid=pulse.id;
+        tile.dataset.otxname=pulse.name||'';
+        tile.dataset.otxindustry=matchedIndustries.join(', ');
+        tile.onclick=()=>openOtxModal(pulse);
+        const tname=el('div'); tname.style.cssText='font-size:11px;color:var(--text);line-height:1.35;margin-bottom:3px;'; tname.textContent=pulse.name||'Unnamed pulse';
+        const tmeta=el('div'); tmeta.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:#ff8888;';
+        tmeta.textContent=(pulse.adversary?pulse.adversary+' · ':'')+matchedIndustries.join(', ');
+        tile.append(tname,tmeta); otxHitsBody.appendChild(tile);
+      });
+      otxHitsPanel.style.display=''; otxHitsBody.style.display=''; otxHitsChevron.style.transform='';
+      setTabAlert(tabId,'critical');
+      if(cfg.alarmSound && !isFirstLoad) otxAlarmSound();
+    } else {
+      otxHitsPanel.style.display='none';
+      clearTabAlert(tabId);
+    }
+    isFirstLoad=false;
+
+    applyFilters();
+    tsEl.textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  }
+
+  // ── Fetch ──────────────────────────────────────────────
+  async function refresh(){
+    const workerUrl=getWorkerUrl(cfg.otxWorker);
+    if(!cfg.otxKey){
+      apiRequiredEl.style.display='';
+      [summaryStrip,elevBanner,adversaryStrip,filterRow,hdrRow,pulseList].forEach(e=>e.style.display='none');
+      return;
+    }
+    apiRequiredEl.style.display='none';
+    [summaryStrip,adversaryStrip,filterRow,hdrRow,pulseList].forEach(e=>e.style.display='');
+    pulseList.innerHTML='<div class="dns-status">Loading\u2026</div>';
+    if(!workerUrl){ pulseList.innerHTML='<div class="dns-status" style="color:var(--del-color);">Worker URL required. Set it via the \u26A1 button.</div>'; return; }
+    try {
+      const r=await fetch(workerUrl.replace(/\/+$/,'')+'/otx',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:cfg.otxKey,limit:cfg.maxPulses})});
+      const j=await r.json();
+      if(j.error){ pulseList.innerHTML=`<div class="dns-status" style="color:var(--del-color);">${j.error}</div>`; return; }
+      lastData=j; renderData(j);
+    } catch(e){ pulseList.innerHTML=`<div class="dns-status" style="color:var(--del-color);">Failed: ${e.message}</div>`; }
+  }
+
+  // ── Detail modal ───────────────────────────────────────
+  function openOtxModal(pulse){
+    let overlay=document.getElementById('otxPulseOverlay');
+    if(!overlay){
+      overlay=el('div','overlay'); overlay.id='otxPulseOverlay';
+      const modal=el('div','modal'); modal.style.cssText='width:560px;max-height:84vh;display:flex;flex-direction:column;';
+      const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+      const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;font-size:13px;'; mtitle.id='otxModalTitle';
+      mhdr.appendChild(mtitle);
+      const body=el('div'); body.id='otxModalBody'; body.style.cssText='flex:1;overflow-y:auto;';
+      const actions=el('div','modal-actions');
+      const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close'; closeBtn.onclick=()=>closeOverlay('otxPulseOverlay');
+      actions.appendChild(closeBtn); modal.append(mhdr,body,actions); overlay.appendChild(modal); document.body.appendChild(overlay);
+    }
+    document.getElementById('otxModalTitle').textContent=pulse.name||'Pulse Detail';
+    const body=document.getElementById('otxModalBody'); body.innerHTML='';
+    const card=el('div','otx-modal-pulse');
+    const chipRow=el('div'); chipRow.style.cssText='display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;align-items:center;';
+    if(pulse.adversary){ const c=el('span','otx-adversary-chip'); c.textContent=pulse.adversary; chipRow.appendChild(c); }
+    const tlp=el('span','otx-tlp-chip '+tlpClass(pulse.tlp)); tlp.textContent='TLP:'+(pulse.tlp||'WHITE').toUpperCase(); chipRow.appendChild(tlp);
+    const rev=el('span',pulse.revision<=1?'otx-new-badge':'otx-updated-badge'); rev.textContent=pulse.revision<=1?'NEW':'Revision '+pulse.revision; chipRow.appendChild(rev);
+    const age=el('span'); age.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-left:auto;'; age.textContent='Modified '+relativeTime(pulse.modified); chipRow.appendChild(age);
+    const desc=el('div','otx-modal-desc'); desc.textContent=pulse.description||'No description available.';
+    const grid=el('div','otx-modal-grid');
+    const makeTile=(lbl,items)=>{
+      if(!items||!items.length) return;
+      const t=el('div','otx-modal-tile');
+      const tl=el('div','otx-modal-tile-lbl'); tl.textContent=lbl;
+      const tv=el('div','otx-modal-tile-val'); tv.textContent=items.join(', ')||'—';
+      t.append(tl,tv); grid.appendChild(t);
+    };
+    makeTile('Industries',pulse.industries); makeTile('Countries',pulse.targeted_countries); makeTile('Malware',pulse.malware_families);
+    if(pulse.attack_ids&&pulse.attack_ids.length){
+      const mt=el('div','otx-modal-tile'); mt.style.flex='100%';
+      const ml=el('div','otx-modal-tile-lbl'); ml.textContent='MITRE ATT\u0026CK';
+      const mv=el('div'); mv.style.cssText='display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;';
+      pulse.attack_ids.slice(0,12).forEach(id=>{ const c=el('span','otx-tag-chip'); c.textContent=id; mv.appendChild(c); });
+      mt.append(ml,mv); grid.appendChild(mt);
+    }
+    const iocCounts=countIocTypes(pulse.indicators);
+    card.append(chipRow,desc,grid);
+    if(Object.keys(iocCounts).length){
+      const iocSec=el('div'); iocSec.style.marginBottom='8px';
+      const il=el('div','otx-section-hdr'); il.style.marginTop='6px'; il.textContent='IOC Breakdown';
+      const iocRow=el('div','otx-ioc-breakdown');
+      Object.entries(iocCounts).sort((a,b)=>b[1]-a[1]).forEach(([type,count])=>{ const badge=el('div','otx-ioc-badge'); const n=el('span'); n.textContent=count; badge.append(n,document.createTextNode(type)); iocRow.appendChild(badge); });
+      iocSec.append(il,iocRow); card.appendChild(iocSec);
+    }
+    if(pulse.references&&pulse.references.length){
+      const refSec=el('div');
+      const rl=el('div','otx-section-hdr'); rl.textContent='References'; refSec.appendChild(rl);
+      pulse.references.forEach(ref=>{ const a=el('a','otx-ref-link'); a.href=ref; a.target='_blank'; a.rel='noopener'; a.textContent='\u2197 '+ref.replace(/^https?:\/\//,'').slice(0,60)+(ref.length>60?'\u2026':''); refSec.appendChild(a); });
+      card.appendChild(refSec);
+    }
+    body.appendChild(card);
+    openOverlay('otxPulseOverlay');
+  }
+
+  // ── Dismissed history modal ────────────────────────────
+  function openOtxHistoryModal(){
+    let overlay=document.getElementById('otxHistoryOverlay');
+    if(!overlay){
+      overlay=el('div','overlay'); overlay.id='otxHistoryOverlay';
+      const modal=el('div','modal'); modal.style.cssText='width:520px;max-height:80vh;display:flex;flex-direction:column;';
+      const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+      const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='Industry Alert History';
+      const clearBtn=el('button','mbtn'); clearBtn.style.cssText='font-size:11px;padding:4px 10px;';
+      clearBtn.textContent='Clear All';
+      clearBtn.onclick=()=>{ if(confirm('Clear all OTX alert history?')){ D.otxAlarmHistory=[]; persist(); renderHist(); } };
+      mhdr.append(mtitle,clearBtn);
+      const body=el('div'); body.id='otxHistoryBody'; body.style.cssText='flex:1;overflow-y:auto;';
+      const actions=el('div','modal-actions');
+      const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close'; closeBtn.onclick=()=>closeOverlay('otxHistoryOverlay');
+      actions.appendChild(closeBtn); modal.append(mhdr,body,actions); overlay.appendChild(modal); document.body.appendChild(overlay);
+    }
+    function renderHist(){
+      const body=document.getElementById('otxHistoryBody'); body.innerHTML='';
+      if(!D.otxAlarmHistory.length){
+        const e=el('div'); e.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;padding:8px 0;'; e.textContent='No dismissed alerts yet.'; body.appendChild(e); return;
+      }
+      const list=el('div'); list.style.cssText='display:flex;flex-direction:column;gap:5px;';
+      D.otxAlarmHistory.forEach((h,i)=>{
+        const row=el('div'); row.style.cssText='display:flex;flex-direction:column;gap:3px;padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;';
+        const top=el('div'); top.style.cssText='display:flex;align-items:center;gap:6px;';
+        const name=el('div'); name.style.cssText='font-size:11px;color:var(--text);flex:1;line-height:1.3;'; name.textContent=h.name||h.id;
+        const ts=el('span'); ts.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);flex-shrink:0;'; ts.textContent=h.dismissedAt?new Date(h.dismissedAt).toLocaleString():'';
+        const del=el('button'); del.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:2px 4px;flex-shrink:0;'; del.textContent='\u2715';
+        del.onclick=()=>{ D.otxAlarmHistory.splice(i,1); persist(); renderHist(); };
+        top.append(name,ts,del);
+        const meta=el('div'); meta.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:#ff8888;'; meta.textContent=h.industry||'';
+        row.append(top,meta); list.appendChild(row);
+      });
+      body.appendChild(list);
+    }
+    renderHist();
+    openOverlay('otxHistoryOverlay');
+  }
+  if(!cfg.otxKey){
+    [summaryStrip,elevBanner,adversaryStrip,filterRow,hdrRow,pulseList].forEach(e=>e.style.display='none');
+  } else { apiRequiredEl.style.display='none'; }
+
+  renderIndChips();
+  refresh();
+  const timer=setInterval(refresh,(cfg.refreshMins||30)*60*1000);
+  const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(timer); obsEdit.disconnect(); obsClean.disconnect(); } });
+  obsClean.observe(document.body,{childList:true,subtree:true});
+  return wrap;
+}
+
 /* ---- BGP / ASN LOOKUP ---- */
 function buildBgpWidget(sec){
   const wrap = el('div');
@@ -8345,7 +8916,7 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
 }
 
 /* ---- ENERGY TRACKER ---- */
-function buildEnergyWidget(sec){
+function buildEnergyWidget(sec, tabId){
   const ENERGY_OPTS   = ['Drained','Low','Normal','High','Wired'];
   const FOCUS_OPTS    = ['Scattered','Foggy','Steady','Locked In'];
   const FRICTION_OPTS = ['Resistant','Neutral','Engaged','Restless'];
@@ -8388,6 +8959,7 @@ function buildEnergyWidget(sec){
     cfg.snoozeUntil = Date.now() + SNOOZE_MS;
     persist();
     reminderBanner.style.display = 'none';
+    clearTabAlert(tabId);
   };
   logNowBtn.onclick = ()=>{
     // Dismiss banner and focus the note input to invite logging
@@ -8517,13 +9089,16 @@ function buildEnergyWidget(sec){
 
   // ── Reminder check logic ───────────────────────────────
   function checkReminder(){
-    if(!cfg.remindersEnabled){ reminderBanner.style.display='none'; return; }
+    if(!cfg.remindersEnabled){ reminderBanner.style.display='none'; clearTabAlert(tabId); return; }
     const now      = Date.now();
     const lastTs   = D.energyEntries.length ? new Date(D.energyEntries[0].timestamp).getTime() : 0;
     const elapsed  = now - lastTs;
     const snoozed  = cfg.snoozeUntil && now < cfg.snoozeUntil;
     const due      = elapsed >= cfg.reminderFreqMs;
-    reminderBanner.style.display = (due && !snoozed) ? '' : 'none';
+    const active   = due && !snoozed;
+    reminderBanner.style.display = active ? '' : 'none';
+    if(active) setTabAlert(tabId, 'info');
+    else clearTabAlert(tabId);
   }
 
   checkReminder();
@@ -10989,6 +11564,10 @@ function performDrop(destTabId, destColId, destSecId, destParentId, targetId, dr
    ================================================================ */
 function switchTab(id){
   activeTab = id;
+  // Auto-clear critical and soft alerts on tab visit (you've seen them).
+  // Info alerts (e.g. energy reminder) require explicit action to dismiss.
+  const alertLevel = tabAlerts.get(id);
+  if(alertLevel === 'critical' || alertLevel === 'soft') clearTabAlert(id);
   clearSearch();
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('searching'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tabId===id));
