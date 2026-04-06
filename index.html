@@ -4752,6 +4752,11 @@ body.edit-mode .gh-add-row { display: flex; }
 .votd-plan-name-inp{flex:1;min-width:140px;font-size:11px;padding:4px 8px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;}
 .votd-plan-name-inp:focus{border-color:var(--gold);}
 
+
+.votd-term-badges{display:flex;flex-wrap:wrap;gap:3px;flex:1;justify-content:flex-end;margin:0 6px;}
+.votd-term-badge{font-size:9px;font-family:'Share Tech Mono',monospace;padding:1px 5px;border-radius:3px;border:1px solid var(--border);color:var(--text-dim);white-space:nowrap;}
+.votd-term-badge.multi{border-color:var(--gold);color:var(--gold);background:rgba(221,176,75,.08);}
+
 </style>
 </head>
 <body>
@@ -11976,10 +11981,11 @@ function bmBuildTopicSearch(){
         }).then(r=>r.json()).catch(()=>({verses:[]}))
       ));
       const merged={};
-      responses.forEach(j=>{
+      responses.forEach((j,i)=>{
         (j.verses||[]).forEach(v=>{
-          if(!merged[v.reference]) merged[v.reference]={reference:v.reference,votes:0};
+          if(!merged[v.reference]) merged[v.reference]={reference:v.reference,votes:0,terms:[]};
           merged[v.reference].votes+=v.votes||0;
+          if(!merged[v.reference].terms.includes(terms[i])) merged[v.reference].terms.push(terms[i]);
         });
       });
       const j={verses:Object.values(merged).sort((a,b)=>b.votes-a.votes)};
@@ -11991,6 +11997,11 @@ function bmBuildTopicSearch(){
         item.addEventListener('mouseleave', hideVerseTooltip);
         const refSp=el('span','bible-topic-ref'); refSp.textContent=v.reference;
         const vSp=el('span','bible-topic-votes'); vSp.textContent=v.votes?v.votes.toLocaleString()+'✓':'';
+        // Term source badges
+        const bmBadgeWrap=el('div','votd-term-badges');
+        (v.terms||[]).forEach(t=>{
+          const b=el('span','votd-term-badge'+(v.terms&&v.terms.length>1?' multi':'')); b.textContent=t; bmBadgeWrap.appendChild(b);
+        });
         const addBtn=el('button','bible-topic-add'); addBtn.textContent='+ Plan'; addBtn.title='Add to reading plan';
         addBtn.onclick=e=>{
           e.stopPropagation();
@@ -12231,6 +12242,11 @@ function votdRender(){
       row.style.cursor='default';
       const ref=el('span','votd-builder-result-ref'); ref.textContent=v.reference;
       const vc=el('span','votd-builder-result-votes'); vc.textContent=v.votes?v.votes.toLocaleString()+'✓':'';
+      // Term source badges
+      const badgeWrap=el('div','votd-term-badges');
+      (v.terms||[]).forEach(t=>{
+        const b=el('span','votd-term-badge'+(v.terms.length>1?' multi':'')); b.textContent=t; badgeWrap.appendChild(b);
+      });
       const aBtn=el('button','votd-builder-result-add'); aBtn.textContent='+ Add';
       aBtn.onclick=()=>{
         if(!_votdStaging.includes(v.reference)){
@@ -12244,7 +12260,7 @@ function votdRender(){
       // Hover preview
       row.addEventListener('mouseenter', ()=>showVerseTooltip(v.reference, row));
       row.addEventListener('mouseleave', hideVerseTooltip);
-      row.append(ref, vc, aBtn);
+      row.append(ref, vc, badgeWrap, aBtn);
       resultsDiv.appendChild(row);
     });
   }
@@ -12330,12 +12346,13 @@ function votdRender(){
           body:JSON.stringify({topic}),
         }).then(r=>r.json()).catch(()=>({verses:[]}))
       ));
-      // Merge: dedupe by reference, sum votes across terms, sort by votes desc
+      // Merge: dedupe by reference, sum votes, track source terms
       const merged={};
-      responses.forEach(j=>{
+      responses.forEach((j,i)=>{
         (j.verses||[]).forEach(v=>{
-          if(!merged[v.reference]) merged[v.reference]={reference:v.reference,votes:0};
+          if(!merged[v.reference]) merged[v.reference]={reference:v.reference,votes:0,terms:[]};
           merged[v.reference].votes+=v.votes||0;
+          if(!merged[v.reference].terms.includes(terms[i])) merged[v.reference].terms.push(terms[i]);
         });
       });
       _votdSearchResults=Object.values(merged).sort((a,b)=>b.votes-a.votes);
