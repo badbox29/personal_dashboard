@@ -4620,7 +4620,7 @@ body.edit-mode .gh-add-row { display: flex; }
 
 /* ── Bible Widget ─────────────────────────────────────────────── */
 .bible-widget{display:flex;flex-direction:column;gap:6px;}
-.bible-widget-hdr{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.bible-widget-hdr{display:flex;align-items:center;gap:6px;margin-bottom:2px;min-width:0;overflow:hidden;}
 .bible-widget-title{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;flex:1;}
 .bible-trans-badge{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 6px;flex-shrink:0;}
 .bible-votd-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;cursor:default;}
@@ -4709,7 +4709,7 @@ body.edit-mode .gh-add-row { display: flex; }
 
 
 /* ── Bible v2 additions ───────────────────────────────────────── */
-.bible-trans-sel-widget{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 5px;background:var(--inp-bg);cursor:pointer;outline:none;}
+.bible-trans-sel-widget{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 5px;background:var(--inp-bg);cursor:pointer;outline:none;max-width:170px;min-width:0;}
 .bible-trans-sel-widget:focus{border-color:var(--gold);}
 .bible-action-row{flex-wrap:wrap;}
 .bible-opts-btn{font-size:11px;padding:4px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;transition:all .15s;}
@@ -11871,19 +11871,19 @@ function openBibleModal(cfg){
 
     const fg=document.createElement('optgroup'); fg.label='Free — bolls.life';
     [
-      {c:'NKJV',l:'NKJV — New King James (1982)'},
-      {c:'KJV', l:'KJV — King James (1769)'},
-      {c:'GNV', l:'GNV — Geneva Bible (1599)'},
-      {c:'ASV', l:'ASV — American Standard (1901)'},
-      {c:'RSV', l:'RSV — Revised Standard (1952)'},
-      {c:'YLT', l:'YLT — Young\'s Literal (1898)'},
-      {c:'ESV', l:'ESV — English Standard (2001)'},
-      {c:'NASB',l:'NASB — New American Standard (1995)'},
+      {c:'NKJV',l:'NKJV — New King James'},
+      {c:'KJV', l:'KJV — King James'},
+      {c:'GNV', l:'GNV — Geneva Bible'},
+      {c:'ASV', l:'ASV — American Standard'},
+      {c:'RSV', l:'RSV — Revised Standard'},
+      {c:'YLT', l:'YLT — Young\'s Literal'},
+      {c:'ESV', l:'ESV — English Standard'},
+      {c:'NASB',l:'NASB — New American Standard'},
       {c:'NET', l:'NET — New English Translation'},
       {c:'WEB', l:'WEB — World English Bible'},
-      {c:'NIV', l:'NIV — New International (1984)'},
-      {c:'NLT', l:'NLT — New Living Translation (2015)'},
-      {c:'CJB', l:'CJB — Complete Jewish Bible (1998)'},
+      {c:'NIV', l:'NIV — New International'},
+      {c:'NLT', l:'NLT — New Living Translation'},
+      {c:'CJB', l:'CJB — Complete Jewish Bible'},
       {c:'TLV', l:'TLV — Tree of Life Version'},
     ].forEach(({c,l})=>{
       const o=document.createElement('option'); o.value=c; o.textContent=l;
@@ -12657,19 +12657,19 @@ function buildBibleWidget(sec){
     transSel.innerHTML='';
     const fg=document.createElement('optgroup'); fg.label='Free — bolls.life';
     [
-      {c:'NKJV',l:'NKJV — New King James (1982)'},
-      {c:'KJV', l:'KJV — King James (1769)'},
-      {c:'GNV', l:'GNV — Geneva Bible (1599)'},
-      {c:'ASV', l:'ASV — American Standard (1901)'},
-      {c:'RSV', l:'RSV — Revised Standard (1952)'},
-      {c:'YLT', l:'YLT — Young\'s Literal (1898)'},
-      {c:'ESV', l:'ESV — English Standard (2001)'},
-      {c:'NASB',l:'NASB — New American Standard (1995)'},
+      {c:'NKJV',l:'NKJV — New King James'},
+      {c:'KJV', l:'KJV — King James'},
+      {c:'GNV', l:'GNV — Geneva Bible'},
+      {c:'ASV', l:'ASV — American Standard'},
+      {c:'RSV', l:'RSV — Revised Standard'},
+      {c:'YLT', l:'YLT — Young\'s Literal'},
+      {c:'ESV', l:'ESV — English Standard'},
+      {c:'NASB',l:'NASB — New American Standard'},
       {c:'NET', l:'NET — New English Translation'},
       {c:'WEB', l:'WEB — World English Bible'},
-      {c:'NIV', l:'NIV — New International (1984)'},
-      {c:'NLT', l:'NLT — New Living Translation (2015)'},
-      {c:'CJB', l:'CJB — Complete Jewish Bible (1998)'},
+      {c:'NIV', l:'NIV — New International'},
+      {c:'NLT', l:'NLT — New Living Translation'},
+      {c:'CJB', l:'CJB — Complete Jewish Bible'},
       {c:'TLV', l:'TLV — Tree of Life Version'},
     ].forEach(({c,l})=>{
       const o=document.createElement('option'); o.value=c; o.textContent=l;
@@ -12914,10 +12914,11 @@ function buildWotdWidget(sec){
     const word = wotdTodayWord();
     try {
       let data;
-      if(cfg.apiKey && cfg.workerUrl){
+      const resolvedWorker = getWorkerUrl(cfg.workerUrl);
+      if(cfg.apiKey && resolvedWorker){
         // Try Wordnik WOTD first
         try {
-          const w = cfg.workerUrl.replace(/\/+$/,'');
+          const w = resolvedWorker.replace(/\/+$/,'');
           const r = await fetch(w+'/wotd',{
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({apiKey: cfg.apiKey}),
@@ -12977,7 +12978,7 @@ function buildWotdWidget(sec){
   const wr = el('div','wotd-setting-row');
   const wl = el('label','wotd-setting-lbl'); wl.textContent='Worker URL';
   const wi = el('input','search-widget-input');
-  wi.placeholder='Worker URL (required for Wordnik)…'; wi.value=cfg.workerUrl||''; wi.style.flex='1'; wi.style.fontSize='10px';
+  wi.placeholder='Override global Worker URL…'; wi.value=cfg.workerUrl||''; wi.style.flex='1'; wi.style.fontSize='10px';
   wi.onblur=()=>{ cfg.workerUrl=wi.value.trim(); persist(); };
   wr.append(wl, wi);
   settings.appendChild(wr);
