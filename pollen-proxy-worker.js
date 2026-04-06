@@ -472,21 +472,32 @@ async function handleTopics(body, ctx) {
   //     <p>verse text...</p>
   //   </div>
   //
-  // We capture: [1] reference from class="bibleref"  [2] vote count from class="note"
+  // Two-pass approach: extract refs and vote counts independently by position,
+  // then zip together. More robust than a single combined regex across two elements.
+
+  // Pass 1 — all references from class="bibleref" anchors
+  const rawRefs = [];
+  const refRe   = /<a[^>]+class="bibleref"[^>]*>([^<]+)<\/a>/g;
+  let rm;
+  while((rm = refRe.exec(html)) !== null) rawRefs.push(rm[1].trim());
+
+  // Pass 2 — all vote counts from class="note" spans
+  // Text inside span looks like: "ESV / 14,320 helpful votes"
+  const rawVotes = [];
+  const voteRe   = /<span class="note">[^/]*\/\s*([\d,]+)\s*helpful/g;
+  let vm;
+  while((vm = voteRe.exec(html)) !== null)
+    rawVotes.push(parseInt(vm[1].replace(/,/g, ''), 10));
+
+  // Zip by position — refs and note spans appear in matching order in the DOM
   const verses = [];
   const seen   = new Set();
-
-  // Match bibleref anchor then note span containing "/ N helpful votes" within ~400 chars
-  const primaryRe = /<a[^>]+class="bibleref"[^>]*>([^<]+)<\/a>[\s\S]{0,400}?<span class="note">[\s\S]{0,150}?\/([\d,]+)\s*helpful/g;
-  let m;
-  while((m = primaryRe.exec(html)) !== null) {
-    const ref   = m[1].trim();
-    const votes = parseInt(m[2].replace(/,/g, ''), 10);
+  rawRefs.forEach((ref, i) => {
     if(ref.includes(':') && !seen.has(ref)) {
       seen.add(ref);
-      verses.push({ reference: ref, votes });
+      verses.push({ reference: ref, votes: rawVotes[i] ?? 0 });
     }
-  }
+  });
 
   // ── Fallback parser ──────────────────────────────────────────────────────
   // If the primary regex found nothing (layout change / blocked), extract any
