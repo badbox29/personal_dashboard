@@ -46,6 +46,11 @@
  *       use this is informational; see https://docs.api.bible for details.
  *
  * ── TOPICS (/topics) ─────────────────────────────────────────
+ *
+ * ── WOTD (/wotd) ──────────────────────────────────────────────
+ * Body: { apiKey }
+ * Returns Wordnik word-of-the-day: { word, definitions, examples, note }
+ * Cache: 6 hours (WOTD changes once per day)
  * Body: { topic }
  *   topic: free-text topic string e.g. "hope", "anxiety", "forgiveness"
  * Returns: { topic, url, verses: [{ reference, votes }] }
@@ -728,6 +733,52 @@ async function handleOtx(body, ctx) {
   return json(normalized);
 }
 
+
+// ── WOTD handler (/wotd) ─────────────────────────────────────────────────────
+//
+// Proxies Wordnik's word-of-the-day endpoint, adding api-key server-side.
+// Returns the raw Wordnik WOTD JSON: { word, definitions, examples, note, ... }
+// Cache: 6 hours — WOTD changes once daily at midnight UTC.
+
+const WOTD_CACHE_TTL = 6 * 60 * 60; // 6 hours
+
+async function handleWotd(body, ctx) {
+  const { apiKey } = body;
+  if(!apiKey)
+    return json({ error: 'Required field: apiKey' }, 400);
+
+  const keyHash  = hashStr(apiKey);
+  const today    = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const cacheKey = `https://wotd-cache.internal/${keyHash}/${today}`;
+  const cache    = caches.default;
+  const cached   = await cache.match(cacheKey);
+  if(cached) return json({ ...(await cached.json()), _cached: true });
+
+  const url = `https://api.wordnik.com/v4/words.json/wordOfTheDay?api_key=${apiKey}`;
+  let upstream;
+  try {
+    upstream = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  } catch(e) { return json({ error: `Wordnik fetch failed: ${e.message}` }, 502); }
+
+  let data;
+  try { data = await upstream.json(); }
+  catch(e) { return json({ error: 'Wordnik returned non-JSON' }, 502); }
+
+  if(!upstream.ok) {
+    const msg = data?.message || data?.error || `HTTP ${upstream.status}`;
+    return json({ error: `Wordnik API error: ${msg}` }, upstream.status);
+  }
+
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(data), {
+    headers: {
+      'Content-Type':  'application/json',
+      'Cache-Control': `public, max-age=${WOTD_CACHE_TTL}`,
+    },
+  })));
+
+  return json(data);
+}
+
 // ── Main dispatcher ──────────────────────────────────────────────────────────
 
 export default {
@@ -752,11 +803,12 @@ export default {
     if(path === '/otx')    return handleOtx(body, ctx);
     if(path === '/bible')  return handleBible(body, ctx);
     if(path === '/topics') return handleTopics(body, ctx);
+    if(path === '/wotd')   return handleWotd(body, ctx);
 
     // Legacy: detect from body fields (backwards compat)
     if(body.service) return handlePollen(body, ctx);
     if(body.url)     return handleRss(body, ctx);
 
-    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /sports, /otx, /bible, or /topics' }, 404);
+    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /sports, /otx, /bible, /topics, or /wotd' }, 404);
   }
 };
