@@ -4788,6 +4788,29 @@ body.edit-mode .gh-add-row { display: flex; }
 .wotd-loading{font-size:12px;color:var(--text-dim);font-style:italic;padding:6px 0;}
 .wotd-error{font-size:12px;color:var(--del-color);padding:4px 0;}
 
+
+/* ── NASA APOD widget ─────────────────────────────────── */
+.apod-widget{display:flex;flex-direction:column;gap:7px;}
+.apod-hdr{display:flex;align-items:center;gap:6px;}
+.apod-title-lbl{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;flex:1;}
+.apod-date-badge{font-size:9px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);border:1px solid var(--border);border-radius:3px;padding:1px 5px;flex-shrink:0;}
+.apod-img-wrap{position:relative;width:100%;border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;background:#000;transition:border-color .15s;}
+.apod-img-wrap:hover{border-color:var(--gold);}
+.apod-img{width:100%;display:block;object-fit:cover;max-height:260px;}
+.apod-video-wrap{width:100%;border-radius:6px;overflow:hidden;border:1px solid var(--border);background:#000;cursor:pointer;transition:border-color .15s;display:flex;align-items:center;justify-content:center;min-height:140px;}
+.apod-video-wrap:hover{border-color:var(--gold);}
+.apod-video-icon{font-size:40px;opacity:.7;}
+.apod-caption-title{font-size:13px;font-weight:600;color:var(--text-head);line-height:1.4;margin-top:4px;}
+.apod-explanation{font-size:11.5px;line-height:1.65;color:var(--text);margin-top:3px;}
+.apod-expand-btn{font-size:10.5px;color:var(--gold);background:none;border:none;cursor:pointer;padding:0;margin-top:2px;display:block;}
+.apod-expand-btn:hover{color:var(--link-hover);}
+.apod-copyright{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);margin-top:3px;}
+.apod-loading{font-size:12px;color:var(--text-dim);font-style:italic;padding:8px 2px;}
+.apod-error{font-size:12px;color:var(--del-color);padding:6px 2px;}
+.apod-settings{border-top:1px solid var(--border);padding-top:8px;margin-top:2px;display:flex;flex-direction:column;gap:7px;}
+.apod-setting-row{display:flex;align-items:center;gap:8px;}
+.apod-setting-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:80px;}
+
 </style>
 </head>
 <body>
@@ -5320,6 +5343,9 @@ body.edit-mode .gh-add-row { display: flex; }
         </button>
         <button class="sec-type-card" id="swWotd"     onclick="selectWidgetType('wotd')">
           📚 Word of the Day<span>Vocabulary builder</span>
+        </button>
+        <button class="sec-type-card" id="swApod"     onclick="selectWidgetType('apod')">
+          🔭 NASA APOD<span>Astronomy Picture of the Day</span>
         </button>
       </div>
       <!-- Network Engineering widgets -->
@@ -6742,6 +6768,7 @@ function buildWidgetBody(sec, tabId){
     case 'compose':   return buildComposeWidget(sec);
     case 'bible':    return buildBibleWidget(sec);
     case 'wotd':     return buildWotdWidget(sec);
+    case 'apod':     return buildApodWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -12965,6 +12992,189 @@ function buildWotdWidget(sec){
   obsC.observe(document.body,{childList:true,subtree:true});
 
   loadWord();
+  return wrap;
+}
+
+
+/* ════════════════════════════════════════════════════════
+   NASA APOD WIDGET
+   ════════════════════════════════════════════════════════ */
+
+function buildApodWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.apiKey)       cfg.apiKey       = '';
+  if(!cfg.refreshHours) cfg.refreshHours = 24;
+
+  // APOD page URL for a given date string "YYYY-MM-DD"
+  function apodPageUrl(dateStr){
+    // NASA APOD archive URL pattern: apYYMMDD.html
+    if(!dateStr) return 'https://apod.nasa.gov/apod/astropix.html';
+    const d = dateStr.replace(/-/g,'').slice(2); // "YYYYMMDD" → "YYMMDD"
+    return 'https://apod.nasa.gov/apod/ap'+d+'.html';
+  }
+
+  let _apodData   = null;
+  let _expanded   = false;
+  let _refreshTimer = null;
+
+  const wrap = el('div','apod-widget');
+
+  // Header
+  const hdr  = el('div','apod-hdr');
+  const lbl  = el('span','apod-title-lbl'); lbl.textContent = '🔭 Astronomy Picture of the Day';
+  const dateBadge = el('span','apod-date-badge');
+  hdr.append(lbl, dateBadge);
+  wrap.appendChild(hdr);
+
+  // Content area
+  const content = el('div');
+  wrap.appendChild(content);
+
+  function render(data){
+    _apodData = data;
+    content.innerHTML = '';
+    dateBadge.textContent = data.date || '';
+
+    if(data.media_type === 'video'){
+      // Video APOD — show a clickable placeholder
+      const vWrap = el('div','apod-video-wrap');
+      const icon  = el('div','apod-video-icon'); icon.textContent = '▶';
+      const note  = el('div');
+      note.style.cssText = 'font-size:11px;color:var(--text-dim);margin-top:6px;text-align:center;';
+      note.textContent = 'Video — click to view on NASA APOD';
+      vWrap.append(icon, note);
+      vWrap.onclick = ()=> window.open(apodPageUrl(data.date), '_blank', 'noopener');
+      content.appendChild(vWrap);
+    } else {
+      // Image APOD
+      const imgWrap = el('div','apod-img-wrap');
+      const img = el('img','apod-img');
+      img.src = data.url;
+      img.alt = data.title || 'NASA APOD';
+      img.loading = 'lazy';
+      imgWrap.appendChild(img);
+      imgWrap.onclick = ()=> window.open(apodPageUrl(data.date), '_blank', 'noopener');
+      imgWrap.title = 'Open on NASA APOD';
+      content.appendChild(imgWrap);
+    }
+
+    // Title
+    const titleEl = el('div','apod-caption-title');
+    titleEl.textContent = data.title || '';
+    content.appendChild(titleEl);
+
+    // Explanation (truncated, expandable)
+    const fullText  = (data.explanation || '').trim();
+    const shortText = fullText.length > 220 ? fullText.slice(0, 220).trimEnd() + '…' : fullText;
+    const expEl     = el('div','apod-explanation');
+    expEl.textContent = _expanded ? fullText : shortText;
+    content.appendChild(expEl);
+
+    if(fullText.length > 220){
+      const expandBtn = el('button','apod-expand-btn');
+      expandBtn.textContent = _expanded ? '▲ Show less' : '▼ Read more';
+      expandBtn.onclick = ()=>{
+        _expanded = !_expanded;
+        expEl.textContent   = _expanded ? fullText : shortText;
+        expandBtn.textContent = _expanded ? '▲ Show less' : '▼ Read more';
+      };
+      content.appendChild(expandBtn);
+    }
+
+    // Copyright
+    if(data.copyright){
+      const cr = el('div','apod-copyright');
+      cr.textContent = '© ' + data.copyright.replace(/\n/g,' ').trim();
+      content.appendChild(cr);
+    }
+  }
+
+  function showLoading(){
+    content.innerHTML = '<div class="apod-loading">Loading…</div>';
+    dateBadge.textContent = '';
+  }
+
+  function showError(msg){
+    content.innerHTML = '<div class="apod-error">⚠ ' + msg + '</div>';
+  }
+
+  async function fetchApod(){
+    if(!cfg.apiKey){
+      showError('Add your NASA API key in edit mode');
+      return;
+    }
+    showLoading();
+    try {
+      const url = 'https://api.nasa.gov/planetary/apod?api_key='
+                + encodeURIComponent(cfg.apiKey) + '&thumbs=true';
+      const r = await fetch(url);
+      if(!r.ok){
+        const j = await r.json().catch(()=>({}));
+        throw new Error(j?.msg || j?.error?.message || 'HTTP '+r.status);
+      }
+      const data = await r.json();
+      render(data);
+    } catch(e){
+      showError(e.message);
+    }
+  }
+
+  function scheduleRefresh(){
+    if(_refreshTimer) clearTimeout(_refreshTimer);
+    const ms = Math.max(1, cfg.refreshHours) * 60 * 60 * 1000;
+    _refreshTimer = setTimeout(()=>{ fetchApod(); scheduleRefresh(); }, ms);
+  }
+
+  // ── Settings (edit mode) ──────────────────────────────────
+  const settings = el('div','apod-settings');
+
+  // API Key
+  const kr = el('div','apod-setting-row');
+  const kl = el('label','apod-setting-lbl'); kl.textContent = 'NASA Key';
+  const ki = el('input','search-widget-input'); ki.type='password';
+  ki.placeholder='Paste NASA API key…'; ki.value=cfg.apiKey; ki.style.flex='1';
+  const ksBtn = el('button','search-widget-go');
+  ksBtn.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;';
+  ksBtn.textContent='Save';
+  ksBtn.onclick=()=>{
+    cfg.apiKey=ki.value.trim(); persist();
+    ksBtn.textContent='✓'; setTimeout(()=>{ ksBtn.textContent='Save'; },1500);
+    fetchApod();
+  };
+  kr.append(kl, ki, ksBtn);
+  settings.appendChild(kr);
+
+  // Refresh interval
+  const rr = el('div','apod-setting-row');
+  const rl = el('label','apod-setting-lbl'); rl.textContent='Refresh';
+  const ri = el('input','search-widget-input'); ri.type='number'; ri.min='1'; ri.max='168';
+  ri.value=cfg.refreshHours; ri.style.cssText='width:54px;text-align:center;';
+  ri.style.cssText+='font-size:11px;padding:3px 6px;';
+  const rSuffix = el('span'); rSuffix.style.cssText='font-size:11px;color:var(--text-dim);white-space:nowrap;';
+  rSuffix.textContent='hours';
+  ri.onchange=()=>{
+    cfg.refreshHours=Math.max(1,Math.min(168,parseInt(ri.value)||24));
+    ri.value=cfg.refreshHours; persist(); scheduleRefresh();
+  };
+  rr.append(rl, ri, rSuffix);
+  settings.appendChild(rr);
+
+  const applyVis=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obs=new MutationObserver(applyVis);
+  obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyVis();
+  wrap.appendChild(settings);
+
+  const obsC=new MutationObserver(()=>{
+    if(!document.contains(wrap)){
+      obs.disconnect(); obsC.disconnect();
+      if(_refreshTimer) clearTimeout(_refreshTimer);
+    }
+  });
+  obsC.observe(document.body,{childList:true,subtree:true});
+
+  fetchApod();
+  scheduleRefresh();
   return wrap;
 }
 
