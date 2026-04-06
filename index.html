@@ -1948,6 +1948,7 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
 /* Widget category tabs (inside widget picker) */
 .widget-cat-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-bottom: 10px;
   border-bottom: 1px solid var(--border);
@@ -1959,12 +1960,13 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
   border-radius: 4px;
   color: var(--text-dim);
   font-family: 'Outfit', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 4px 12px;
+  padding: 4px 10px;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .widget-cat-tab:hover  { border-color: var(--cyan); color: var(--cyan); }
 .widget-cat-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
@@ -9182,8 +9184,7 @@ function buildEnergyWidget(sec, tabId){
   reminderBanner.style.display = 'none';
   const reminderIcon = el('span','energy-reminder-icon'); reminderIcon.textContent = '\u23F0';
   const reminderText = el('span','energy-reminder-text'); reminderText.textContent = 'Quick energy check-in';
-  const logNowBtn  = el('button','todo-add-btn'); logNowBtn.textContent = 'Log now';
-  logNowBtn.style.cssText = 'font-size:10px;padding:2px 10px;flex-shrink:0;';
+
   const laterBtn   = el('button','monitor-check-btn'); laterBtn.textContent = 'Later';
   laterBtn.style.cssText = 'font-size:10px;padding:2px 8px;flex-shrink:0;';
   laterBtn.onclick = ()=>{
@@ -9192,12 +9193,7 @@ function buildEnergyWidget(sec, tabId){
     reminderBanner.style.display = 'none';
     clearTabAlert(tabId);
   };
-  logNowBtn.onclick = ()=>{
-    // Dismiss banner and focus the note input to invite logging
-    reminderBanner.style.display = 'none';
-    noteInp.focus();
-  };
-  reminderBanner.append(reminderIcon, reminderText, logNowBtn, laterBtn);
+  reminderBanner.append(reminderIcon, reminderText, laterBtn);
   wrap.appendChild(reminderBanner);
 
   // ── Chip row builder ───────────────────────────────────
