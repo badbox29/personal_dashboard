@@ -4765,6 +4765,29 @@ body.edit-mode .gh-add-row { display: flex; }
 .weather-strip-refresh:hover{color:var(--gold);opacity:1;}
 .weather-strip-refresh.spinning{animation:spin 0.7s linear infinite;display:inline-block;color:var(--gold);opacity:1;}
 
+
+/* ── Word of the Day widget ───────────────────────────── */
+.wotd-widget{display:flex;flex-direction:column;gap:7px;}
+.wotd-hdr{display:flex;align-items:center;gap:6px;}
+.wotd-title{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;flex:1;}
+.wotd-source-badge{font-size:9px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);border:1px solid var(--border);border-radius:3px;padding:1px 5px;flex-shrink:0;}
+.wotd-source-badge.live{border-color:var(--gold);color:var(--gold);}
+.wotd-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 13px;cursor:pointer;transition:border-color .15s;}
+.wotd-card:hover{border-color:var(--gold);}
+.wotd-word{font-size:20px;font-weight:700;color:var(--text-head);letter-spacing:.01em;margin-bottom:2px;}
+.wotd-pos{font-size:10.5px;font-family:'Share Tech Mono',monospace;color:var(--gold);text-transform:italic;margin-bottom:6px;}
+.wotd-def{font-size:12.5px;line-height:1.65;color:var(--text);margin-bottom:4px;}
+.wotd-example{font-size:11.5px;line-height:1.6;color:var(--text-dim);font-style:italic;border-left:2px solid var(--border);padding-left:8px;margin-top:5px;}
+.wotd-phonetic{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);margin-top:4px;}
+.wotd-action-row{display:flex;gap:6px;}
+.wotd-random-btn{font-size:11px;padding:4px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;transition:all .15s;}
+.wotd-random-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.wotd-settings{border-top:1px solid var(--border);padding-top:8px;margin-top:2px;display:flex;flex-direction:column;gap:7px;}
+.wotd-setting-row{display:flex;align-items:center;gap:8px;}
+.wotd-setting-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:80px;}
+.wotd-loading{font-size:12px;color:var(--text-dim);font-style:italic;padding:6px 0;}
+.wotd-error{font-size:12px;color:var(--del-color);padding:4px 0;}
+
 </style>
 </head>
 <body>
@@ -5294,6 +5317,9 @@ body.edit-mode .gh-add-row { display: flex; }
         </button>
         <button class="sec-type-card" id="swBible"    onclick="selectWidgetType('bible')">
           📖 Bible<span>Daily verse &amp; browser</span>
+        </button>
+        <button class="sec-type-card" id="swWotd"     onclick="selectWidgetType('wotd')">
+          📚 Word of the Day<span>Vocabulary builder</span>
         </button>
       </div>
       <!-- Network Engineering widgets -->
@@ -6657,6 +6683,7 @@ function buildWidgetBody(sec, tabId){
     case 'energy':    return buildEnergyWidget(sec, tabId);
     case 'compose':   return buildComposeWidget(sec);
     case 'bible':    return buildBibleWidget(sec);
+    case 'wotd':     return buildWotdWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -12684,6 +12711,260 @@ function buildBibleWidget(sec){
   return wrap;
 }
 
+
+
+/* ════════════════════════════════════════════════════════
+   WORD OF THE DAY WIDGET
+   ════════════════════════════════════════════════════════ */
+
+// ── Curated word list (200 words) ─────────────────────────
+const WOTD_LIST = [
+  'ephemeral','luminous','serendipity','mellifluous','eloquent',
+  'laconic','perspicacious','sanguine','eloquent','serene',
+  'abstruse','acumen','alacrity','altruism','ambiguous',
+  'ameliorate','anachronism','anecdote','anomaly','antiquated',
+  'apathy','archaic','ardent','arduous','articulate',
+  'ascetic','audacious','auspicious','austere','avant-garde',
+  'benevolent','bequeath','bereft','blithe','bombastic',
+  'brevity','bucolic','cacophony','candor','capricious',
+  'caustic','chicanery','circumspect','clandestine','cogent',
+  'colloquial','complacent','conundrum','copious','corroborate',
+  'credulous','culpable','dauntless','debilitate','decorum',
+  'deferential','deleterious','demure','denigrate','desolate',
+  'didactic','diffident','diligent','discern','disparate',
+  'dissemble','distraught','dogmatic','dubious','ebullient',
+  'eccentric','egregious','elusive','emulate','endemic',
+  'enigmatic','equanimity','equivocal','erudite','esoteric',
+  'euphemism','evanescent','exacerbate','excoriate','exemplary',
+  'exhaustive','exorbitant','expedient','explicit','exuberant',
+  'facetious','fallacious','fastidious','fatuous','feckless',
+  'felicitous','fervent','flippant','fortuitous','frugal',
+  'garrulous','germane','grandiose','gregarious','guile',
+  'hapless','harbinger','hegemony','hubris','hyperbole',
+  'iconoclast','idiosyncrasy','ignominious','immutable','impetuous',
+  'implicit','impudent','incisive','indefatigable','indolent',
+  'ineffable','inept','inexorable','ingenuous','inimical',
+  'insidious','insouciant','intrepid','inveterate','irascible',
+  'jocular','judicious','juxtapose','laconic','languid',
+  'lassitude','laud','loquacious','lucid','lugubrious',
+  'magnanimous','malapropism','malleable','mendacious','mercurial',
+  'metamorphosis','meticulous','mnemonic','morose','mundane',
+  'nebulous','nefarious','nonchalant','nuance','obfuscate',
+  'obsequious','obstinate','occlude','opulent','orthodox',
+  'ostensible','ostentatious','paradox','pariah','parsimonious',
+  'paucity','pedantic','penchant','penitent','perfidious',
+  'pervasive','phlegmatic','piety','plaintive','platitude',
+  'plausible','poignant','pragmatic','precipitate','preclude',
+  'predilection','preempt','prerogative','prescient','presumptuous',
+  'profligate','prolific','propitious','prosaic','prudent',
+  'pungent','quandary','querulous','quixotic','rancor',
+  'rarefied','recalcitrant','reclusive','reticent','rhetoric',
+  'sagacious','sanctimonious','sardonic','satiate','scrupulous',
+  'solace','solemn','solicitous','solipsism','soporific',
+  'specious','spurious','stoic','strident','subjugate',
+  'succinct','superfluous','sycophant','tacit','tangential',
+  'temerity','tenacious','timorous','tortuous','tractable',
+  'transient','truculent','tumultuous','ubiquitous','unctuous',
+  'vacuous','vapid','verbose','vicarious','vindictive',
+  'virtuoso','vitriolic','vivacious','vociferous','volatile',
+  'wistful','zealous','zenith','zeal','ardor',
+];
+
+// De-dupe and fix the list
+const _WOTD_DEDUPED = [...new Set(WOTD_LIST)];
+
+function wotdTodayWord(){
+  const day = Math.floor(Date.now() / 86400000);
+  return _WOTD_DEDUPED[day % _WOTD_DEDUPED.length];
+}
+
+// ── Fetch from Free Dictionary API (no key, CORS-safe) ────
+async function fetchFreeDict(word){
+  const r = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word));
+  if(!r.ok) throw new Error('No definition found for "'+word+'"');
+  const j = await r.json();
+  const entry = j[0];
+  const meaning = entry.meanings?.[0] || {};
+  const defObj  = meaning.definitions?.[0] || {};
+  return {
+    word:     entry.word,
+    phonetic: entry.phonetic || entry.phonetics?.find(p=>p.text)?.text || '',
+    pos:      meaning.partOfSpeech || '',
+    def:      defObj.definition || '',
+    example:  defObj.example || '',
+    source:   'Free Dictionary',
+  };
+}
+
+// ── Fetch from Wordnik via worker ─────────────────────────
+async function fetchWordnik(word, apiKey, workerUrl){
+  const w = workerUrl ? workerUrl.replace(/\/+$/,'') : null;
+  if(!w) throw new Error('Worker URL required for Wordnik');
+
+  // Fetch definition + WOTD in parallel
+  const [defRes, wotdRes] = await Promise.all([
+    fetch(w+'/bible', { // reuse generic proxy route
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        apiKey,
+        path: '/v4/word.json/'+encodeURIComponent(word)+'/definitions',
+        params: { limit:'3', api_key: apiKey },
+        _wordnikBase: 'https://api.wordnik.com',
+      }),
+    }).catch(()=>null),
+    // Also try WOTD endpoint directly — it returns the word + defs together
+    fetch(w+'/wotd', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ apiKey }),
+    }).catch(()=>null),
+  ]);
+
+  // Prefer WOTD endpoint result if it came back clean
+  if(wotdRes?.ok){
+    const j = await wotdRes.json();
+    if(j.word && !j.error){
+      return {
+        word:     j.word,
+        phonetic: '',
+        pos:      j.definitions?.[0]?.partOfSpeech || '',
+        def:      j.definitions?.[0]?.text?.replace(/<[^>]+>/g,'') || '',
+        example:  j.examples?.[0]?.text?.replace(/<[^>]+>/g,'') || '',
+        source:   'Wordnik',
+      };
+    }
+  }
+  // Fall through to free dict
+  return fetchFreeDict(word);
+}
+
+/* ── buildWotdWidget ──────────────────────────────────────── */
+function buildWotdWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.apiKey)    cfg.apiKey    = '';
+  if(!cfg.workerUrl) cfg.workerUrl = '';
+
+  let _data = null; // cached result for current day
+
+  const wrap = el('div','wotd-widget');
+
+  // Header
+  const hdr    = el('div','wotd-hdr');
+  const title  = el('span','wotd-title'); title.textContent = '📚 Word of the Day';
+  const badge  = el('span','wotd-source-badge'); badge.textContent = 'Curated';
+  hdr.append(title, badge);
+  wrap.appendChild(hdr);
+
+  // Card (clickable → Wordnik page)
+  const card = el('div','wotd-card');
+  const wordEl  = el('div','wotd-word');
+  const posEl   = el('div','wotd-pos');
+  const defEl   = el('div','wotd-def');
+  const exEl    = el('div','wotd-example');
+  const phonEl  = el('div','wotd-phonetic');
+  wordEl.textContent = 'Loading…';
+  card.append(wordEl, posEl, defEl, exEl, phonEl);
+  card.onclick = ()=>{
+    const w = (_data?.word || wotdTodayWord()).toLowerCase();
+    window.open('https://www.wordnik.com/words/'+encodeURIComponent(w), '_blank', 'noopener');
+  };
+  wrap.appendChild(card);
+
+  // Action row
+  const actRow   = el('div','wotd-action-row');
+  const randomBtn = el('button','wotd-random-btn');
+  randomBtn.textContent = '🎲 Random Word';
+  randomBtn.onclick = ()=> window.open('https://www.wordnik.com/random', '_blank', 'noopener');
+  actRow.appendChild(randomBtn);
+  wrap.appendChild(actRow);
+
+  // ── Load word ─────────────────────────────────────────────
+  async function loadWord(){
+    wordEl.textContent = 'Loading…';
+    posEl.textContent = defEl.textContent = exEl.textContent = phonEl.textContent = '';
+    _data = null;
+    const word = wotdTodayWord();
+    try {
+      let data;
+      if(cfg.apiKey && cfg.workerUrl){
+        // Try Wordnik WOTD first
+        try {
+          const w = cfg.workerUrl.replace(/\/+$/,'');
+          const r = await fetch(w+'/wotd',{
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({apiKey: cfg.apiKey}),
+          });
+          const j = await r.json();
+          if(j.word && !j.error){
+            data = {
+              word:    j.word,
+              phonetic:'',
+              pos:     j.definitions?.[0]?.partOfSpeech || '',
+              def:     (j.definitions?.[0]?.text || '').replace(/<[^>]+>/g,''),
+              example: (j.examples?.[0]?.text || '').replace(/<[^>]+>/g,''),
+              source:  'Wordnik',
+            };
+          }
+        } catch(e){ /* fall through */ }
+      }
+      if(!data){
+        // Free Dictionary API — direct, no proxy needed
+        data = await fetchFreeDict(word);
+      }
+      _data = data;
+      wordEl.textContent  = data.word;
+      posEl.textContent   = data.pos;
+      defEl.textContent   = data.def;
+      exEl.textContent    = data.example ? '\u201c' + data.example + '\u201d' : '';
+      exEl.style.display  = data.example ? '' : 'none';
+      phonEl.textContent  = data.phonetic || '';
+      badge.textContent   = data.source;
+      badge.classList.toggle('live', data.source === 'Wordnik');
+    } catch(e){
+      wordEl.textContent = word;
+      posEl.textContent  = '';
+      defEl.className    = 'wotd-error';
+      defEl.textContent  = e.message;
+    }
+  }
+
+  // ── Settings (edit mode) ──────────────────────────────────
+  const settings = el('div','wotd-settings');
+
+  const kr = el('div','wotd-setting-row');
+  const kl = el('label','wotd-setting-lbl'); kl.textContent = 'Wordnik Key';
+  const ki = el('input','search-widget-input'); ki.type='password';
+  ki.placeholder = 'Paste Wordnik API key…'; ki.value=cfg.apiKey; ki.style.flex='1';
+  const ksBtn = el('button','search-widget-go');
+  ksBtn.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;';
+  ksBtn.textContent='Save';
+  ksBtn.onclick=()=>{
+    cfg.apiKey=ki.value.trim(); persist();
+    ksBtn.textContent='✓'; setTimeout(()=>{ ksBtn.textContent='Save'; },1500);
+    loadWord();
+  };
+  kr.append(kl, ki, ksBtn);
+  settings.appendChild(kr);
+
+  const wr = el('div','wotd-setting-row');
+  const wl = el('label','wotd-setting-lbl'); wl.textContent='Worker URL';
+  const wi = el('input','search-widget-input');
+  wi.placeholder='Worker URL (required for Wordnik)…'; wi.value=cfg.workerUrl||''; wi.style.flex='1'; wi.style.fontSize='10px';
+  wi.onblur=()=>{ cfg.workerUrl=wi.value.trim(); persist(); };
+  wr.append(wl, wi);
+  settings.appendChild(wr);
+
+  const applyVis=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obs=new MutationObserver(applyVis);
+  obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyVis();
+  wrap.appendChild(settings);
+
+  const obsC=new MutationObserver(()=>{ if(!document.contains(wrap)){ obs.disconnect(); obsC.disconnect(); } });
+  obsC.observe(document.body,{childList:true,subtree:true});
+
+  loadWord();
+  return wrap;
+}
 
 function buildItem(tabId, colId, secId, item, parentId){
   if(item.type === 'heading') return buildHeadingItem(tabId, colId, secId, item);
