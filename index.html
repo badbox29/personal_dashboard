@@ -11954,7 +11954,7 @@ function bmBuildTopicSearch(){
   const wrap=el('div');
   const row=el('div','bible-topic-row');
   const inp=el('input','search-widget-input');
-  inp.placeholder='hope, anxiety, forgiveness…'; inp.style.flex='1'; inp.style.fontSize='11px';
+  inp.placeholder='One or more themes: hope, love, joy…'; inp.style.flex='1'; inp.style.fontSize='11px';
   const goBtn=el('button','search-widget-go'); goBtn.style.cssText='font-size:10.5px;padding:3px 10px;'; goBtn.textContent='Search';
   row.append(inp,goBtn);
   wrap.appendChild(row);
@@ -11962,16 +11962,27 @@ function bmBuildTopicSearch(){
   wrap.appendChild(results);
 
   const doSearch=async()=>{
-    const topic=inp.value.trim(); if(!topic) return;
-    results.innerHTML='<div class="bible-loading">Searching OpenBible…</div>';
+    const raw=inp.value.trim(); if(!raw) return;
+    const terms=[...new Set(raw.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean))];
+    const label=terms.length>1?terms.length+' terms':'1 term';
+    results.innerHTML='<div class="bible-loading">Searching '+label+'…</div>';
     const w=getWorkerUrl(_bm?.cfg?.workerUrl);
     if(!w){ results.innerHTML='<div class="bible-error">Worker URL not set</div>'; return; }
     try{
-      const r=await fetch(w.replace(/\/+$/,'')+'/topics',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({topic}),
+      const responses=await Promise.all(terms.map(topic=>
+        fetch(w.replace(/\/+$/,'')+'/topics',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({topic}),
+        }).then(r=>r.json()).catch(()=>({verses:[]}))
+      ));
+      const merged={};
+      responses.forEach(j=>{
+        (j.verses||[]).forEach(v=>{
+          if(!merged[v.reference]) merged[v.reference]={reference:v.reference,votes:0};
+          merged[v.reference].votes+=v.votes||0;
+        });
       });
-      const j=await r.json();
+      const j={verses:Object.values(merged).sort((a,b)=>b.votes-a.votes)};
       results.innerHTML='';
       if(!j.verses?.length){ results.innerHTML='<div class="bible-loading">No results found</div>'; return; }
       j.verses.slice(0,25).forEach(v=>{
@@ -12207,7 +12218,7 @@ function votdRender(){
   // Search row
   const sRow = el('div','votd-search-row');
   const sInp = el('input','search-widget-input');
-  sInp.placeholder='Search a theme: hope, courage, patience…'; sInp.style.flex='1'; sInp.style.fontSize='11px';
+  sInp.placeholder='One or more themes: hope, love, joy…'; sInp.style.flex='1'; sInp.style.fontSize='11px';
   const sBtn = el('button','search-widget-go'); sBtn.style.cssText='font-size:10.5px;padding:3px 10px;'; sBtn.textContent='Search';
   sRow.append(sInp, sBtn);
   builder.appendChild(sRow);
@@ -12305,21 +12316,32 @@ function votdRender(){
 
   // Wire search
   const doSearch=async()=>{
-    const topic=sInp.value.trim(); if(!topic) return;
-    resultsDiv.innerHTML='<div class="bible-loading">Searching…</div>';
+    const raw=sInp.value.trim(); if(!raw) return;
+    const terms=[...new Set(raw.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean))];
+    const label=terms.length>1?terms.length+' terms':'1 term';
+    resultsDiv.innerHTML='<div class="bible-loading">Searching '+label+'…</div>';
     const w=getWorkerUrl(_votdCfg?.workerUrl);
     if(!w){ resultsDiv.innerHTML='<div class="bible-error">Worker URL not set — check widget settings</div>'; return; }
     try{
-      const r=await fetch(w.replace(/\/+$/,'')+'/topics',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({topic}),
+      // Fire all term searches in parallel
+      const responses=await Promise.all(terms.map(topic=>
+        fetch(w.replace(/\/+$/,'')+'/topics',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({topic}),
+        }).then(r=>r.json()).catch(()=>({verses:[]}))
+      ));
+      // Merge: dedupe by reference, sum votes across terms, sort by votes desc
+      const merged={};
+      responses.forEach(j=>{
+        (j.verses||[]).forEach(v=>{
+          if(!merged[v.reference]) merged[v.reference]={reference:v.reference,votes:0};
+          merged[v.reference].votes+=v.votes||0;
+        });
       });
-      const j=await r.json();
-      _votdSearchResults=j.verses||[];
+      _votdSearchResults=Object.values(merged).sort((a,b)=>b.votes-a.votes);
       votdRender();
-      // Re-focus search input after render
       const si=document.getElementById('votdModalBody')?.querySelector('input[placeholder*="theme"]');
-      if(si){ si.value=topic; si.focus(); }
+      if(si){ si.value=raw; si.focus(); }
     }catch(e){ resultsDiv.innerHTML='<div class="bible-error">'+e.message+'</div>'; }
   };
   sBtn.onclick=doSearch;
