@@ -4811,6 +4811,55 @@ body.edit-mode .gh-add-row { display: flex; }
 .apod-setting-row{display:flex;align-items:center;gap:8px;}
 .apod-setting-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:80px;}
 
+
+/* ── Drink Tracker widget ─────────────────────────────── */
+.drinks-widget{display:flex;flex-direction:column;gap:8px;}
+.drinks-hdr{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;}
+.drinks-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.drinks-btn-wrap{display:flex;align-items:center;gap:3px;}
+.drinks-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:5px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:background .2s,border-color .2s;font-size:12.5px;font-weight:600;color:var(--text-head);white-space:nowrap;}
+.drinks-btn:hover{filter:brightness(1.1);}
+.drinks-btn.status-neutral{border-color:var(--border);background:var(--surface2);}
+.drinks-btn.status-green{border-color:#3db87a;background:rgba(61,184,122,.15);color:#3db87a;}
+.drinks-btn.status-yellow{border-color:#d4a017;background:rgba(212,160,23,.13);color:#d4a017;}
+.drinks-btn.status-red{border-color:#cc3333;background:rgba(204,51,51,.13);color:#cc3333;}
+.drinks-count{font-family:'Share Tech Mono',monospace;font-size:11px;opacity:.85;}
+.drinks-minus{background:none;border:1px solid var(--border);border-radius:3px;color:var(--text-dim);cursor:pointer;font-size:12px;line-height:1;padding:2px 6px;transition:all .15s;flex-shrink:0;}
+.drinks-minus:hover{border-color:var(--del-color);color:var(--del-color);}
+.drinks-how-btn{font-size:10.5px;padding:4px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;transition:all .15s;margin-top:2px;}
+.drinks-how-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+/* Settings */
+.drinks-settings{border-top:1px solid var(--border);padding-top:10px;margin-top:2px;display:flex;flex-direction:column;gap:10px;}
+.drinks-cat-block{border:1px solid var(--border);border-radius:5px;padding:8px 10px;background:var(--surface2);}
+.drinks-cat-hdr{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
+.drinks-cat-lbl{font-size:12px;font-weight:600;color:var(--text-head);flex:1;}
+.drinks-cat-cfg{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+.drinks-cfg-row{display:flex;align-items:center;gap:7px;}
+.drinks-cfg-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:70px;}
+/* Modal */
+.drinks-modal-overlay{position:fixed;inset:0;z-index:9520;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;}
+.drinks-modal-overlay.open{display:flex;}
+.drinks-modal{background:var(--modal-bg);border:1px solid var(--border);border-radius:10px;width:min(680px,95vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.drinks-modal-hdr{display:flex;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.drinks-modal-hdr h3{margin:0;font-size:13px;color:var(--text-head);flex:1;}
+.drinks-modal-body{overflow-y:auto;padding:14px 16px;}
+.drinks-history-table{width:100%;border-collapse:collapse;font-size:12px;}
+.drinks-history-table th{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;padding:5px 8px;border-bottom:1px solid var(--border);text-align:center;}
+.drinks-history-table th:first-child{text-align:left;}
+.drinks-history-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.05);text-align:center;}
+.drinks-history-table td:first-child{text-align:left;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);}
+.drinks-history-table tr.avg-row td{border-top:1px solid var(--border);font-weight:600;color:var(--text-head);}
+.drinks-cell-green{color:#3db87a;font-weight:600;}
+.drinks-cell-yellow{color:#d4a017;font-weight:600;}
+.drinks-cell-red{color:#cc3333;font-weight:600;}
+.drinks-cell-neutral{color:var(--text-dim);}
+.drinks-modal-footer{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+.drinks-summary{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+.drinks-summary-tile{flex:1;min-width:100px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;text-align:center;}
+.drinks-summary-emoji{font-size:18px;display:block;margin-bottom:3px;}
+.drinks-summary-val{font-size:16px;font-weight:700;font-family:'Share Tech Mono',monospace;}
+.drinks-summary-lbl{font-size:10px;color:var(--text-dim);margin-top:2px;}
+
 </style>
 </head>
 <body>
@@ -5346,6 +5395,9 @@ body.edit-mode .gh-add-row { display: flex; }
         </button>
         <button class="sec-type-card" id="swApod"     onclick="selectWidgetType('apod')">
           🔭 NASA APOD<span>Astronomy Picture of the Day</span>
+        </button>
+        <button class="sec-type-card" id="swDrinks"   onclick="selectWidgetType('drinks')">
+          💧 Drink Tracker<span>Water, coffee &amp; more</span>
         </button>
       </div>
       <!-- Network Engineering widgets -->
@@ -5889,6 +5941,16 @@ function _applyTabAlertClasses(){
 }
 
 // Widget constants — must be declared before init IIFE runs renderAll
+
+const DRINK_CATS = [
+  { key:'water',  emoji:'💧', label:'Water',  defaultTarget:8,  defaultUnit:'glasses', moreIsBetter:true  },
+  { key:'coffee', emoji:'☕', label:'Coffee', defaultTarget:2,  defaultUnit:'cups',    moreIsBetter:false },
+  { key:'tea',    emoji:'🍵', label:'Tea',    defaultTarget:3,  defaultUnit:'cups',    moreIsBetter:false },
+  { key:'soda',   emoji:'🥤', label:'Soda',   defaultTarget:1,  defaultUnit:'cans',    moreIsBetter:false },
+];
+
+// ── Storage ──────────────────────────────────────────────
+
 
 // ── Curated word list (200 words) ─────────────────────────
 const WOTD_LIST = [
@@ -6769,6 +6831,7 @@ function buildWidgetBody(sec, tabId){
     case 'bible':    return buildBibleWidget(sec);
     case 'wotd':     return buildWotdWidget(sec);
     case 'apod':     return buildApodWidget(sec);
+    case 'drinks':   return buildDrinksWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -13175,6 +13238,333 @@ function buildApodWidget(sec){
 
   fetchApod();
   scheduleRefresh();
+  return wrap;
+}
+
+
+/* ════════════════════════════════════════════════════════
+   DRINK TRACKER WIDGET
+   ════════════════════════════════════════════════════════ */
+
+function drinksKey(secId){ return 'salty_drinks_'+secId; }
+
+function loadDrinksLog(secId){
+  try{ return JSON.parse(localStorage.getItem(drinksKey(secId))||'[]'); }
+  catch(e){ return []; }
+}
+function saveDrinksLog(secId, log){
+  localStorage.setItem(drinksKey(secId), JSON.stringify(log));
+}
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+// Returns totals for a specific date from the log
+function dayTotals(log, dateStr){
+  const totals = {};
+  DRINK_CATS.forEach(c=>{ totals[c.key]=0; });
+  log.filter(e=>e.d===dateStr).forEach(e=>{ totals[e.k]=(totals[e.k]||0)+1; });
+  return totals;
+}
+
+// Prune entries older than 7 days
+function pruneDrinksLog(log){
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-7);
+  const cutStr  = cutoff.toISOString().slice(0,10);
+  return log.filter(e=>e.d >= cutStr);
+}
+
+// ── Status calc ───────────────────────────────────────────
+// Returns 'green'|'yellow'|'red'|'neutral'
+function drinkStatus(count, target, moreIsBetter){
+  if(target <= 0) return 'neutral';
+  if(moreIsBetter){
+    if(count >= target)          return 'green';
+    if(count >= target * 0.5)   return 'yellow';
+    return 'red';
+  } else {
+    if(count <= target)          return 'green';
+    if(count < target * 2)      return 'yellow';
+    return 'red';
+  }
+}
+
+// ── Modal ─────────────────────────────────────────────────
+function openDrinksModal(secId, cfg){
+  const overlayId = 'drinksModal_'+secId;
+  let ov = document.getElementById(overlayId);
+  if(!ov){
+    ov = el('div','drinks-modal-overlay'); ov.id=overlayId;
+    ov.addEventListener('click',e=>{ if(e.target===ov) closeDrinksModal(secId); });
+    const modal = el('div','drinks-modal');
+    const hdr   = el('div','drinks-modal-hdr');
+    const h3    = el('h3'); h3.textContent='📊 How am I doing?';
+    const xBtn  = el('button','clock-style-btn'); xBtn.textContent='✕';
+    xBtn.onclick=()=>closeDrinksModal(secId);
+    xBtn.style.cssText='padding:3px 10px;font-size:13px;';
+    hdr.append(h3,xBtn);
+    const body = el('div','drinks-modal-body'); body.id='drinksModalBody_'+secId;
+    const footer = el('div','drinks-modal-footer');
+    const clearBtn = el('button','mbtn mbtn-cancel');
+    clearBtn.style.cssText='font-size:11px;padding:5px 14px;';
+    clearBtn.textContent='🗑 Clear Today';
+    clearBtn.onclick=()=>{
+      if(!confirm('Clear all drink entries for today?')) return;
+      const log = pruneDrinksLog(loadDrinksLog(secId));
+      const today = todayStr();
+      saveDrinksLog(secId, log.filter(e=>e.d!==today));
+      renderDrinksModal(secId,cfg);
+      if(window._drinksWidgetRefresh_'+secId+') window[\'_drinksWidgetRefresh_'+secId+'\'](';
+    };
+    const doneBtn = el('button','mbtn mbtn-primary');
+    doneBtn.style.cssText='font-size:11px;padding:5px 14px;';
+    doneBtn.textContent='Done';
+    doneBtn.onclick=()=>closeDrinksModal(secId);
+    footer.append(clearBtn, doneBtn);
+    modal.append(hdr, body, footer);
+    ov.appendChild(modal);
+    document.body.appendChild(ov);
+  }
+  renderDrinksModal(secId, cfg);
+  ov.classList.add('open');
+}
+
+function closeDrinksModal(secId){
+  const ov = document.getElementById('drinksModal_'+secId);
+  if(ov) ov.classList.remove('open');
+  // Refresh widget buttons after modal closes
+  if(window['_drinksWidgetRefresh_'+secId]) window['_drinksWidgetRefresh_'+secId]();
+}
+
+function renderDrinksModal(secId, cfg){
+  const body = document.getElementById('drinksModalBody_'+secId);
+  if(!body) return;
+  body.innerHTML='';
+
+  const log      = pruneDrinksLog(loadDrinksLog(secId));
+  const today    = todayStr();
+  const enabled  = DRINK_CATS.filter(c=>cfg[c.key]?.enabled);
+  if(!enabled.length){
+    body.innerHTML='<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:10px 0;">No drink categories enabled. Enable some in edit mode.</div>';
+    return;
+  }
+
+  // Last 7 days (newest first)
+  const days=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().slice(0,10));
+  }
+
+  // Today summary tiles
+  const todayTotals = dayTotals(log, today);
+  const summary = el('div','drinks-summary');
+  enabled.forEach(c=>{
+    const catCfg = cfg[c.key];
+    const count  = todayTotals[c.key]||0;
+    const target = catCfg.target||c.defaultTarget;
+    const status = drinkStatus(count, target, c.moreIsBetter);
+    const tile   = el('div','drinks-summary-tile');
+    const emoji  = el('span','drinks-summary-emoji'); emoji.textContent=c.emoji;
+    const val    = el('div','drinks-summary-val');
+    val.textContent=count+' / '+target;
+    val.style.color=status==='green'?'#3db87a':status==='yellow'?'#d4a017':status==='red'?'#cc3333':'var(--text)';
+    const lbl  = el('div','drinks-summary-lbl'); lbl.textContent=catCfg.label||c.label;
+    tile.append(emoji,val,lbl); summary.appendChild(tile);
+  });
+  body.appendChild(summary);
+
+  // 7-day history table
+  const table = el('table','drinks-history-table');
+  const thead = el('thead'); const hrow = el('tr');
+  const th0=el('th'); th0.textContent='Date'; hrow.appendChild(th0);
+  enabled.forEach(c=>{
+    const th=el('th'); th.textContent=(cfg[c.key].label||c.label)+' / '+(cfg[c.key].target||c.defaultTarget);
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow); table.appendChild(thead);
+
+  const tbody=el('tbody');
+  const avgAccum={};
+  enabled.forEach(c=>{ avgAccum[c.key]=0; });
+
+  days.forEach((d,i)=>{
+    const totals=dayTotals(log,d);
+    const tr=el('tr');
+    const tdDate=el('td');
+    const label=i===0?'Today':i===1?'Yesterday':new Date(d+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+    tdDate.textContent=label;
+    tr.appendChild(tdDate);
+    enabled.forEach(c=>{
+      const count=totals[c.key]||0;
+      const target=cfg[c.key].target||c.defaultTarget;
+      avgAccum[c.key]+=count;
+      const status=drinkStatus(count,target,c.moreIsBetter);
+      const td=el('td');
+      td.textContent=count;
+      td.className='drinks-cell-'+status;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  // Average row
+  const avgRow=el('tr'); avgRow.className='avg-row';
+  const avgLabel=el('td'); avgLabel.textContent='7-Day Avg';
+  avgRow.appendChild(avgLabel);
+  enabled.forEach(c=>{
+    const avg=(avgAccum[c.key]/7);
+    const target=cfg[c.key].target||c.defaultTarget;
+    const status=drinkStatus(avg,target,c.moreIsBetter);
+    const td=el('td');
+    td.textContent=avg.toFixed(1);
+    td.className='drinks-cell-'+status;
+    avgRow.appendChild(td);
+  });
+  tbody.appendChild(avgRow);
+  table.appendChild(tbody);
+  body.appendChild(table);
+}
+
+/* ── buildDrinksWidget ────────────────────────────────── */
+function buildDrinksWidget(sec){
+  const secId = sec.id;
+  const cfg   = sec.widgetConfig||(sec.widgetConfig={});
+
+  // Init each category config
+  DRINK_CATS.forEach(c=>{
+    if(!cfg[c.key]) cfg[c.key]={};
+    const cc=cfg[c.key];
+    if(cc.enabled===undefined) cc.enabled = (c.key==='water'||c.key==='coffee');
+    if(!cc.label)  cc.label  = c.label;
+    if(!cc.target) cc.target = c.defaultTarget;
+    if(!cc.unit)   cc.unit   = c.defaultUnit;
+  });
+
+  const wrap=el('div','drinks-widget');
+  const hdr=el('div','drinks-hdr'); hdr.textContent='Drink Tracker';
+  wrap.appendChild(hdr);
+
+  const btnRow=el('div','drinks-row');
+  wrap.appendChild(btnRow);
+
+  const actRow=el('div');
+  actRow.style.cssText='display:flex;gap:6px;margin-top:2px;';
+  const howBtn=el('button','drinks-how-btn'); howBtn.textContent='📊 How am I doing?';
+  howBtn.onclick=()=>openDrinksModal(secId,cfg);
+  actRow.appendChild(howBtn);
+  wrap.appendChild(actRow);
+
+  function renderButtons(){
+    btnRow.innerHTML='';
+    const log=pruneDrinksLog(loadDrinksLog(secId));
+    const today=todayStr();
+    const totals=dayTotals(log,today);
+
+    DRINK_CATS.forEach(c=>{
+      const cc=cfg[c.key];
+      if(!cc?.enabled) return;
+      const count=totals[c.key]||0;
+      const target=cc.target||c.defaultTarget;
+      const status=drinkStatus(count,target,c.moreIsBetter);
+
+      const wrap2=el('div','drinks-btn-wrap');
+      const btn=el('button','drinks-btn status-'+status);
+      const emojiSp=el('span'); emojiSp.textContent=c.emoji;
+      const lblSp=el('span'); lblSp.textContent=(cc.label||c.label);
+      const cntSp=el('span','drinks-count'); cntSp.textContent=count;
+      btn.append(emojiSp,lblSp,cntSp);
+      btn.title='Log a '+(cc.label||c.label);
+      btn.onclick=()=>{
+        const log2=pruneDrinksLog(loadDrinksLog(secId));
+        log2.push({k:c.key, d:todayStr(), t:Date.now()});
+        saveDrinksLog(secId,log2);
+        renderButtons();
+      };
+
+      const minusBtn=el('button','drinks-minus'); minusBtn.textContent='−';
+      minusBtn.title='Remove last '+( cc.label||c.label);
+      minusBtn.onclick=()=>{
+        const log2=pruneDrinksLog(loadDrinksLog(secId));
+        const today2=todayStr();
+        // Find last entry of this type today and remove it
+        for(let i=log2.length-1;i>=0;i--){
+          if(log2[i].k===c.key && log2[i].d===today2){ log2.splice(i,1); break; }
+        }
+        saveDrinksLog(secId,log2);
+        renderButtons();
+      };
+
+      wrap2.append(btn,minusBtn);
+      btnRow.appendChild(wrap2);
+    });
+
+    if(!btnRow.children.length){
+      const hint=el('div'); hint.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;';
+      hint.textContent='Enable drink categories in edit mode.';
+      btnRow.appendChild(hint);
+    }
+  }
+
+  // Register refresh hook for modal
+  window['_drinksWidgetRefresh_'+secId]=renderButtons;
+
+  // ── Settings (edit mode) ──────────────────────────────
+  const settings=el('div','drinks-settings');
+
+  DRINK_CATS.forEach(c=>{
+    const cc=cfg[c.key];
+    const block=el('div','drinks-cat-block');
+
+    const catHdr=el('div','drinks-cat-hdr');
+    const chk=el('input'); chk.type='checkbox'; chk.checked=!!cc.enabled;
+    chk.style.cssText='width:14px;height:14px;cursor:pointer;flex-shrink:0;';
+    const catLbl=el('label','drinks-cat-lbl');
+    catLbl.textContent=c.emoji+' '+c.label;
+    catLbl.style.cursor='pointer';
+    catHdr.append(chk,catLbl);
+    block.appendChild(catHdr);
+
+    const catCfg=el('div','drinks-cat-cfg');
+    catCfg.style.display=cc.enabled?'':'none';
+
+    // Label
+    const lr=el('div','drinks-cfg-row');
+    const ll=el('label','drinks-cfg-lbl'); ll.textContent='Label';
+    const li=el('input','search-widget-input'); li.value=cc.label||c.label; li.style.flex='1'; li.style.fontSize='11px';
+    li.onblur=()=>{ cc.label=li.value.trim()||c.label; persist(); renderButtons(); };
+    lr.append(ll,li); catCfg.appendChild(lr);
+
+    // Target
+    const tr2=el('div','drinks-cfg-row');
+    const tl=el('label','drinks-cfg-lbl'); tl.textContent='Daily target';
+    const ti=el('input','search-widget-input'); ti.type='number'; ti.min='1'; ti.max='99';
+    ti.value=cc.target||c.defaultTarget; ti.style.cssText='width:54px;font-size:11px;padding:3px 6px;text-align:center;';
+    const tu=el('input','search-widget-input'); tu.value=cc.unit||c.defaultUnit; tu.placeholder='unit…'; tu.style.cssText='width:70px;font-size:11px;';
+    ti.onchange=()=>{ cc.target=Math.max(1,parseInt(ti.value)||c.defaultTarget); persist(); renderButtons(); };
+    tu.onblur=()=>{ cc.unit=tu.value.trim()||c.defaultUnit; persist(); };
+    tr2.append(tl,ti,tu); catCfg.appendChild(tr2);
+
+    chk.onchange=()=>{ cc.enabled=chk.checked; catCfg.style.display=chk.checked?'':'none'; persist(); renderButtons(); };
+    catHdr.onclick=e=>{ if(e.target===chk) return; chk.checked=!chk.checked; chk.onchange(); };
+    block.appendChild(catCfg);
+    settings.appendChild(block);
+  });
+
+  const applyVis=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obs=new MutationObserver(applyVis);
+  obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyVis();
+  wrap.appendChild(settings);
+
+  const obsC=new MutationObserver(()=>{
+    if(!document.contains(wrap)){
+      obs.disconnect(); obsC.disconnect();
+      delete window['_drinksWidgetRefresh_'+secId];
+    }
+  });
+  obsC.observe(document.body,{childList:true,subtree:true});
+
+  renderButtons();
   return wrap;
 }
 
