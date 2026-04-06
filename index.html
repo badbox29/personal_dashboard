@@ -12483,6 +12483,12 @@ function buildBibleWidget(sec){
       const verses=await bibleLoadChapter(cfg,bookIdx,chapter,trans);
       const v=verses.find(x=>x.verse===verse)||verses[0];
       verseText.textContent=v?v.text:'Verse not found';
+      // If translation groups verses (e.g. MSG), update label & position to match what was returned
+      if(v && v.verse !== verse){
+        _votdPos = { bookIdx, chapter, verse: v.verse, trans };
+        const bookName = BIBLE_CANON[bookIdx][0];
+        verseRef.textContent = bookName+' '+chapter+':'+v.verse+'  ·  '+trans;
+      }
     }catch(e){ verseText.textContent='⚠ '+e.message; }
   }
 
@@ -12558,16 +12564,28 @@ function buildBibleWidget(sec){
     cfg.lastChapter = _votdPos.chapter;
     cfg.lastTrans   = _votdPos.trans;
     openBibleModal(cfg);
-    // After modal loads the chapter, scroll to and select the verse
-    setTimeout(()=>{
-      const row = document.querySelector('#bmTextPanel [data-verse="'+_votdPos.verse+'"]');
+    // Retry loop: wait for chapter to load then scroll to verse
+    // Handles slow API.Bible worker calls and verse-span translations
+    (function tryScroll(verse, attempts){
+      const row = document.querySelector('#bmTextPanel [data-verse="'+verse+'"]');
       if(row){
-        if(_bm) _bm.verse = _votdPos.verse;
+        if(_bm) _bm.verse = verse;
         bmApplyHighlightClasses();
         row.scrollIntoView({ behavior:'smooth', block:'center' });
         bmRenderNotesPanel();
+      } else if(attempts > 0){
+        setTimeout(()=>tryScroll(verse, attempts-1), 400);
+      } else {
+        // Final fallback: verse not in DOM (span translation) — select verse 1
+        const first = document.querySelector('#bmTextPanel [data-verse]');
+        if(first && _bm){
+          _bm.verse = parseInt(first.dataset.verse);
+          bmApplyHighlightClasses();
+          first.scrollIntoView({ behavior:'smooth', block:'center' });
+          bmRenderNotesPanel();
+        }
       }
-    }, 600);
+    })(_votdPos.verse, 5);
   });
 
   // Action row
