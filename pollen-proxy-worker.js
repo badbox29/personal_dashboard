@@ -7,6 +7,8 @@
  *   POST /rss     — Fetch & normalize any RSS/Atom feed (returns raw XML)
  *   POST /nvd     — Proxy NVD CVE API (adds apiKey header server-side)
  *   POST /sports  — Fetch & normalize sports scores from TheSportsDB
+ *   POST /bible   — Proxy API.Bible (adds api-key header server-side, aggressive caching)
+ *   POST /topics  — Fetch & parse OpenBible.info topical verse search (no key required)
  *
  * All routes add CORS headers so browser-side fetch() calls work.
  * Results are cached to minimise upstream API hits.
@@ -31,6 +33,24 @@
  * view: "upcoming" | "final" | "today" | "live"
  * Returns: { league, sport, view, generatedAt, games: [...] }
  * Cache: 60s (live) | 5min (today) | 10min (final/upcoming)
+ *
+ * ── BIBLE (/bible) ───────────────────────────────────────────
+ * Body: { apiKey, path, params? }
+ *   path:   API.Bible relative path, e.g. "/v1/bibles" or
+ *           "/v1/bibles/{bibleId}/chapters/{chapterId}"
+ *   params: optional object of query-string key/value pairs
+ *           e.g. { "content-type": "text", "include-verse-numbers": "true" }
+ * Returns: raw API.Bible JSON response
+ * Cache: 7 days (metadata) | 30 days (chapter/verse content — Bible text never changes)
+ * Note: API.Bible requests fair-use attribution (FUMS). For personal non-commercial
+ *       use this is informational; see https://docs.api.bible for details.
+ *
+ * ── TOPICS (/topics) ─────────────────────────────────────────
+ * Body: { topic }
+ *   topic: free-text topic string e.g. "hope", "anxiety", "forgiveness"
+ * Returns: { topic, url, verses: [{ reference, votes }] }
+ *   Verses are sorted by vote count descending (community-ranked relevance).
+ * Cache: 24 hours (topic rankings update infrequently)
  */
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
@@ -46,6 +66,9 @@ const json = (data, status=200) => new Response(JSON.stringify(data), {
   status,
   headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
 });
+
+// Simple non-cryptographic hash for cache key generation (keeps keys out of URLs)
+const hashStr = s => [...s].reduce((h,c) => (Math.imul(31,h) + c.charCodeAt(0)) | 0, 0);
 
 // ── Pollen normalizers ───────────────────────────────────────────────────────
 
@@ -214,76 +237,59 @@ async function handleSports(body, ctx) {
   const cached   = await cache.match(cacheKey);
   if(cached) return json({ ...(await cached.json()), _cached: true });
 
+  const leagueId = leagueCfg.id;
   let events = [];
 
-  try {
-    if(resolvedView === 'live') {
-      // Live scores — requires paid key; free key (123) returns empty gracefully
-      const r = await fetch(`${TSDB_BASE}/${key}/livescore.php?l=${leagueCfg.id}`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      const j  = await r.json();
-      events   = j.events || j.livescores || [];
+  if(resolvedView === 'live') {
+    const r = await fetch(`${TSDB_BASE}/${key}/livescore.php?l=${leagueId}`);
+    const d = await r.json();
+    events = d?.events || [];
 
-    } else if(resolvedView === 'upcoming') {
-      const r = await fetch(`${TSDB_BASE}/${key}/eventsnextleague.php?id=${leagueCfg.id}`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      const j  = await r.json();
-      events   = j.events || [];
+  } else if(resolvedView === 'today') {
+    const dateStr = localDate || new Date().toISOString().split('T')[0];
+    const r = await fetch(`${TSDB_BASE}/${key}/eventsday.php?d=${dateStr}&l=${leagueId}`);
+    const d = await r.json();
+    events = d?.events || [];
 
-    } else if(resolvedView === 'final') {
-      const r = await fetch(`${TSDB_BASE}/${key}/eventspastleague.php?id=${leagueCfg.id}`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      const j  = await r.json();
-      events   = j.events || [];
+  } else if(resolvedView === 'final') {
+    const r = await fetch(`${TSDB_BASE}/${key}/eventspastleague.php?id=${leagueId}`);
+    const d = await r.json();
+    events = d?.events || [];
 
-    } else {
-      // today — merge past + upcoming, filter to today's date
-      const [pastR, nextR] = await Promise.all([
-        fetch(`${TSDB_BASE}/${key}/eventspastleague.php?id=${leagueCfg.id}`, { headers: { 'Accept': 'application/json' } }),
-        fetch(`${TSDB_BASE}/${key}/eventsnextleague.php?id=${leagueCfg.id}`, { headers: { 'Accept': 'application/json' } }),
-      ]);
-      const [pastJ, nextJ] = await Promise.all([pastR.json(), nextR.json()]);
-      const all   = [...(pastJ.events || []), ...(nextJ.events || [])];
-      // Use browser-provided local date if available; fall back to UTC
-      const today = (localDate && /^\d{4}-\d{2}-\d{2}$/.test(localDate))
-        ? localDate
-        : new Date().toISOString().slice(0, 10);
-      const todayEvents = all.filter(ev => (ev.dateEvent || '').slice(0, 10) === today);
-      if(todayEvents.length){
-        events = todayEvents;
-      } else {
-        // Nothing today — find the single next upcoming game
-        const upcoming = all
-          .filter(ev => (ev.dateEvent || '') > today)
-          .sort((a,b) => (a.dateEvent||'').localeCompare(b.dateEvent||''));
-        events = upcoming.length ? [{ ...upcoming[0], _nextMatchFallback: true }] : [];
-      }
-    }
-  } catch(e) {
-    return json({ error: `Sports data fetch failed: ${e.message}` }, 502);
+  } else if(resolvedView === 'upcoming') {
+    const r = await fetch(`${TSDB_BASE}/${key}/eventsnextleague.php?id=${leagueId}`);
+    const d = await r.json();
+    events = d?.events || [];
   }
 
-  let games = events.map(normalizeSportsEvent);
-
-  // Optional team filter — only applied if it returns results
-  if(team && team.trim()) {
+  // Filter by team if specified
+  if(team && events.length) {
     const t = team.toLowerCase();
-    const filtered = games.filter(g =>
-      g.homeTeam.toLowerCase().includes(t) || g.awayTeam.toLowerCase().includes(t)
+    events = events.filter(e =>
+      (e.strHomeTeam||'').toLowerCase().includes(t) ||
+      (e.strAwayTeam||'').toLowerCase().includes(t)
     );
-    if(filtered.length) games = filtered;
+
+    // If upcoming and filtered team has no events, try next-event endpoint
+    if(!events.length && resolvedView === 'upcoming') {
+      const r2 = await fetch(`${TSDB_BASE}/${key}/searchevents.php?e=${encodeURIComponent(team)}&s=${new Date().getFullYear()}-${(new Date().getFullYear()+1)}`);
+      const d2 = await r2.json();
+      const fallback = (d2?.event || [])
+        .filter(e =>
+          (e.strHomeTeam||'').toLowerCase().includes(t) ||
+          (e.strAwayTeam||'').toLowerCase().includes(t)
+        )
+        .map(e => ({ ...e, _nextMatchFallback: true }));
+      events = fallback.slice(0, 5);
+    }
   }
 
   const result = {
     league:      leagueCfg.name,
-    leagueKey:   leagueKey.toLowerCase(),
     sport:       leagueCfg.sport,
     view:        resolvedView,
     generatedAt: new Date().toISOString(),
-    games,
+    games:       events.map(normalizeSportsEvent),
   };
 
   ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(result), {
@@ -296,11 +302,220 @@ async function handleSports(body, ctx) {
   return json(result);
 }
 
-// ── Route handlers ───────────────────────────────────────────────────────────
+// ── Cache TTLs ───────────────────────────────────────────────────────────────
 
-const POLLEN_CACHE_TTL = 4 * 60 * 60;  // 4 hours
-const RSS_CACHE_TTL    = 30 * 60;       // 30 minutes
-const NVD_CACHE_TTL    = 10 * 60;       // 10 minutes
+const POLLEN_CACHE_TTL  = 4  * 60 * 60;  // 4 hours
+const RSS_CACHE_TTL     = 30 * 60;        // 30 minutes
+const NVD_CACHE_TTL     = 10 * 60;        // 10 minutes
+
+// Bible — text is immutable so we cache very aggressively
+const BIBLE_CONTENT_TTL = 30 * 24 * 60 * 60;  // 30 days  (chapter/verse content)
+const BIBLE_META_TTL    =  7 * 24 * 60 * 60;  // 7 days   (translation/book lists)
+
+// Topics — OpenBible rankings update infrequently
+const TOPICS_CACHE_TTL  = 24 * 60 * 60;  // 24 hours
+
+// API.Bible base URL (as provided by API.Bible account dashboard)
+const BIBLE_BASE = 'https://rest.api.bible';
+
+// ── Bible handler (/bible) ───────────────────────────────────────────────────
+//
+// Generic proxy for API.Bible. The widget sends the relative path and optional
+// query params; the worker injects the api-key header and caches the result.
+//
+// Example body:
+//   { apiKey: "abc123",
+//     path:   "/v1/bibles",
+//     params: {} }
+//
+//   { apiKey: "abc123",
+//     path:   "/v1/bibles/65eec8e0b60e656b-01/chapters/JHN.3",
+//     params: { "content-type": "text", "include-verse-numbers": "true",
+//               "include-titles": "false", "include-chapter-numbers": "false" } }
+
+async function handleBible(body, ctx) {
+  const { apiKey, path, params = {} } = body;
+
+  if(!apiKey)
+    return json({ error: 'Required field: apiKey' }, 400);
+  if(!path || !path.startsWith('/v1/'))
+    return json({ error: 'Required field: path (must start with /v1/)' }, 400);
+
+  // Validate path doesn't contain anything unexpected
+  if(!/^\/v1\/[a-zA-Z0-9/_\-\.]+$/.test(path))
+    return json({ error: 'Invalid path format' }, 400);
+
+  // Build upstream URL with any query params the widget wants to pass
+  const qs  = Object.keys(params).length
+    ? '?' + new URLSearchParams(params).toString()
+    : '';
+  const url = `${BIBLE_BASE}${path}${qs}`;
+
+  // Cache key: hash the API key (don't expose it) + path + params
+  const keyHash  = hashStr(apiKey);
+  const cacheKey = `https://bible-cache.internal/${keyHash}${path}${qs}`;
+  const cache    = caches.default;
+  const cached   = await cache.match(cacheKey);
+  if(cached) return json({ ...(await cached.json()), _cached: true });
+
+  let upstream;
+  try {
+    upstream = await fetch(url, {
+      method: 'GET',
+      headers: { 'api-key': apiKey, 'Accept': 'application/json' },
+    });
+  } catch(e) { return json({ error: `Bible API fetch failed: ${e.message}` }, 502); }
+
+  let data;
+  try { data = await upstream.json(); }
+  catch(e) { return json({ error: 'Bible API returned non-JSON' }, 502); }
+
+  if(!upstream.ok) {
+    const msg = data?.message || data?.error || `HTTP ${upstream.status}`;
+    return json({ error: `Bible API error: ${msg}` }, upstream.status);
+  }
+
+  // Use longer TTL for actual Scripture content, shorter for metadata lists
+  const isContent = path.includes('/chapters/') || path.includes('/verses/') || path.includes('/passages/');
+  const ttl = isContent ? BIBLE_CONTENT_TTL : BIBLE_META_TTL;
+
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(data), {
+    headers: {
+      'Content-Type':  'application/json',
+      'Cache-Control': `public, max-age=${ttl}`,
+    },
+  })));
+
+  return json(data);
+}
+
+// ── Topics handler (/topics) ─────────────────────────────────────────────────
+//
+// Fetches OpenBible.info topical Bible search results server-side (bypasses
+// CORS) and returns a clean JSON list of verse references with vote counts.
+// No API key required — OpenBible.info is a free public resource.
+//
+// Example body:  { topic: "hope" }
+// Returns:
+//   { topic: "hope",
+//     url: "https://www.openbible.info/topics/hope",
+//     verses: [
+//       { reference: "Romans 8:24-25", votes: 1423 },
+//       { reference: "Hebrews 11:1",   votes: 1187 },
+//       ...
+//     ]
+//   }
+//
+// Verses are sorted by vote count descending (highest community relevance first).
+// Parsing strategy: primary regex targeting OpenBible's link+votes HTML structure;
+// fallback to a broad Bible-reference regex if the layout changes.
+
+// Full list of canonical book names for the fallback parser
+const BIBLE_BOOKS = [
+  'Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth',
+  '1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles',
+  'Ezra','Nehemiah','Esther','Job','Psalms','Psalm','Proverbs','Ecclesiastes',
+  'Song of Solomon','Song of Songs','Isaiah','Jeremiah','Lamentations','Ezekiel',
+  'Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk',
+  'Zephaniah','Haggai','Zechariah','Malachi',
+  'Matthew','Mark','Luke','John','Acts','Romans',
+  '1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians',
+  '1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon',
+  'Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation',
+];
+
+// Escape special regex chars in book names
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const BOOK_PATTERN = BIBLE_BOOKS.map(escRe).join('|');
+const BIBLE_REF_RE = new RegExp(`((?:${BOOK_PATTERN})\\s+\\d+:\\d+(?:-\\d+)?)`, 'g');
+
+async function handleTopics(body, ctx) {
+  const { topic } = body;
+
+  if(!topic || typeof topic !== 'string' || !topic.trim())
+    return json({ error: 'Required field: topic (non-empty string)' }, 400);
+
+  // Normalise topic for URL: lowercase, spaces → underscores
+  const slug     = topic.trim().toLowerCase().replace(/\s+/g, '_');
+  const topicUrl = `https://www.openbible.info/topics/${encodeURIComponent(slug)}`;
+
+  const cacheKey = `https://topics-cache.internal/${slug}`;
+  const cache    = caches.default;
+  const cached   = await cache.match(cacheKey);
+  if(cached) return json({ ...(await cached.json()), _cached: true });
+
+  let upstream;
+  try {
+    upstream = await fetch(topicUrl, {
+      headers: {
+        'Accept':     'text/html,application/xhtml+xml',
+        'User-Agent': 'Mozilla/5.0 (compatible; salty-start-dashboard/1.0)',
+      },
+    });
+  } catch(e) { return json({ error: `Topics fetch failed: ${e.message}` }, 502); }
+
+  if(!upstream.ok)
+    return json({ error: `OpenBible returned HTTP ${upstream.status}` }, upstream.status);
+
+  const html = await upstream.text();
+
+  // ── Primary parser ───────────────────────────────────────────────────────
+  // OpenBible.info topic pages list each verse as an anchor to esv.org or
+  // similar, followed by a vote-count element.
+  // Target pattern (simplified):
+  //   <a href="https://www.esv.org/...">Romans 8:28</a> ... <span ...>1234</span>
+  //
+  // We capture: [1] reference text  [2] vote count
+  const verses = [];
+  const seen   = new Set();
+
+  // Match a Bible-looking link followed within ~300 chars by a digit-only span
+  const primaryRe = /href="https?:\/\/(?:www\.)?(?:esv\.org|bible\.com|biblegateway\.com)[^"]*">([^<]+)<\/a>[\s\S]{0,300}?(\d{2,})/g;
+  let m;
+  while((m = primaryRe.exec(html)) !== null) {
+    const ref   = m[1].trim();
+    const votes = parseInt(m[2], 10);
+    // Must look like a Bible reference (contains colon)
+    if(ref.includes(':') && !seen.has(ref)) {
+      seen.add(ref);
+      verses.push({ reference: ref, votes });
+    }
+  }
+
+  // ── Fallback parser ──────────────────────────────────────────────────────
+  // If the primary regex found nothing (layout change / blocked), extract any
+  // canonical Bible reference patterns from the page text.
+  if(verses.length === 0) {
+    let fb;
+    while((fb = BIBLE_REF_RE.exec(html)) !== null) {
+      const ref = fb[1].trim();
+      if(!seen.has(ref)) {
+        seen.add(ref);
+        verses.push({ reference: ref, votes: 0 });
+      }
+    }
+  }
+
+  // Sort by votes descending (fallback refs will all be 0 — order preserved)
+  verses.sort((a, b) => b.votes - a.votes);
+
+  const result = {
+    topic:  topic.trim(),
+    url:    topicUrl,
+    verses,
+  };
+
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(result), {
+    headers: {
+      'Content-Type':  'application/json',
+      'Cache-Control': `public, max-age=${TOPICS_CACHE_TTL}`,
+    },
+  })));
+
+  return json(result);
+}
+
+// ── Pollen handler (/pollen) ─────────────────────────────────────────────────
 
 async function handlePollen(body, ctx) {
   const { service, apiKey, lat, lon } = body;
@@ -308,12 +523,12 @@ async function handlePollen(body, ctx) {
   if(!service || !apiKey || lat == null || lon == null)
     return json({ error: 'Required fields: service, apiKey, lat, lon' }, 400);
 
-  const svc = POLLEN_SERVICES[service];
+  const svc = POLLEN_SERVICES[service.toLowerCase()];
   if(!svc)
     return json({ error: `Unknown service: ${service}. Valid: ${Object.keys(POLLEN_SERVICES).join(', ')}` }, 400);
 
-  const keyHash  = [...apiKey].reduce((h,c) => (Math.imul(31,h) + c.charCodeAt(0)) | 0, 0);
-  const cacheKey = `https://pollen-cache.internal/${service}/${lat.toFixed(2)},${lon.toFixed(2)}/${keyHash}`;
+  const keyHash  = hashStr(apiKey);
+  const cacheKey = `https://pollen-cache.internal/${service}/${(+lat).toFixed(2)},${(+lon).toFixed(2)}/${keyHash}`;
   const cache    = caches.default;
   const cached   = await cache.match(cacheKey);
   if(cached) return json({ ...(await cached.json()), _cached: true });
@@ -340,13 +555,15 @@ async function handlePollen(body, ctx) {
 
   ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(normalized), {
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type':  'application/json',
       'Cache-Control': `public, max-age=${POLLEN_CACHE_TTL}`,
     },
   })));
 
   return json(normalized);
 }
+
+// ── RSS handler (/rss) ───────────────────────────────────────────────────────
 
 async function handleRss(body, ctx) {
   const { url } = body;
@@ -380,7 +597,7 @@ async function handleRss(body, ctx) {
 
   ctx.waitUntil(cache.put(cacheKey, new Response(xml, {
     headers: {
-      'Content-Type': 'application/xml; charset=utf-8',
+      'Content-Type':  'application/xml; charset=utf-8',
       'Cache-Control': `public, max-age=${RSS_CACHE_TTL}`,
     },
   })));
@@ -389,6 +606,8 @@ async function handleRss(body, ctx) {
     headers: { ...CORS_HEADERS, 'Content-Type': 'application/xml; charset=utf-8' },
   });
 }
+
+// ── NVD handler (/nvd) ───────────────────────────────────────────────────────
 
 async function handleNvd(body, ctx) {
   const { endpoint, apiKey } = body;
@@ -420,13 +639,15 @@ async function handleNvd(body, ctx) {
 
   ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(data), {
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type':  'application/json',
       'Cache-Control': `public, max-age=${NVD_CACHE_TTL}`,
     },
   })));
 
   return json(data);
 }
+
+// ── OTX handler (/otx) ───────────────────────────────────────────────────────
 
 async function handleOtx(body, ctx) {
   const { apiKey, limit = 20 } = body;
@@ -435,9 +656,7 @@ async function handleOtx(body, ctx) {
     return json({ error: 'Required field: apiKey' }, 400);
 
   const safeLimit = Math.min(Math.max(parseInt(limit)||20, 1), 50);
-  const cacheKey  = `https://otx-cache.internal/${
-    [...apiKey].reduce((h,c)=>(Math.imul(31,h)+c.charCodeAt(0))|0,0)
-  }/${safeLimit}`;
+  const cacheKey  = `https://otx-cache.internal/${hashStr(apiKey)}/${safeLimit}`;
   const cache   = caches.default;
   const cached  = await cache.match(cacheKey);
   if(cached) return json({ ...(await cached.json()), _cached: true });
@@ -459,34 +678,32 @@ async function handleOtx(body, ctx) {
     return json({ error: `OTX API error: ${msg}` }, upstream.status);
   }
 
-  // Normalize to stable schema — only fields confirmed in sample data
   const normalized = {
     totalCount: data.count || 0,
     pulses: (data.results || []).map(p => ({
-      id:                p.id             || '',
-      name:              p.name           || '',
-      description:       p.description    || '',
-      adversary:         p.adversary      || '',
-      author:            p.author_name    || '',
-      created:           p.created        || null,
-      modified:          p.modified       || null,
-      tlp:               p.tlp            || 'white',
-      tags:              p.tags           || [],
+      id:                 p.id             || '',
+      name:               p.name           || '',
+      description:        p.description    || '',
+      adversary:          p.adversary      || '',
+      author:             p.author_name    || '',
+      created:            p.created        || null,
+      modified:           p.modified       || null,
+      tlp:                p.tlp            || 'white',
+      tags:               p.tags           || [],
       targeted_countries: p.targeted_countries || [],
-      malware_families:  p.malware_families   || [],
-      industries:        p.industries     || [],
-      attack_ids:        p.attack_ids     || [],
-      references:        p.references     || [],
-      indicatorCount:    (p.indicators||[]).length,
-      // Include indicators so client can do IOC type breakdown
-      indicators:        (p.indicators||[]).map(i=>({ type: i.type, indicator: i.indicator })),
+      malware_families:   p.malware_families   || [],
+      industries:         p.industries     || [],
+      attack_ids:         p.attack_ids     || [],
+      references:         p.references     || [],
+      indicatorCount:     (p.indicators||[]).length,
+      indicators:         (p.indicators||[]).map(i=>({ type: i.type, indicator: i.indicator })),
     })),
   };
 
   const OTX_CACHE_TTL = 15 * 60; // 15 minutes
   ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(normalized), {
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type':  'application/json',
       'Cache-Control': `public, max-age=${OTX_CACHE_TTL}`,
     },
   })));
@@ -516,11 +733,13 @@ export default {
     if(path === '/nvd')    return handleNvd(body, ctx);
     if(path === '/sports') return handleSports(body, ctx);
     if(path === '/otx')    return handleOtx(body, ctx);
+    if(path === '/bible')  return handleBible(body, ctx);
+    if(path === '/topics') return handleTopics(body, ctx);
 
     // Legacy: detect from body fields (backwards compat)
     if(body.service) return handlePollen(body, ctx);
     if(body.url)     return handleRss(body, ctx);
 
-    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, or /sports' }, 404);
+    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /sports, /otx, /bible, or /topics' }, 404);
   }
 };
