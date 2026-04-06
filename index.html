@@ -1067,6 +1067,22 @@ body:not(.edit-mode) .lofi-edit-btn { display: none; }
   align-items: stretch;
   gap: 0;
 }
+/* Mobile pill — hidden on desktop */
+.w-pill { display: none; }
+.w-pill-loc { color: var(--gold); text-transform: uppercase; letter-spacing: 0.08em; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex-shrink: 1; }
+.w-pill-sep { color: var(--text-dim); opacity: 0.5; flex-shrink: 0; }
+.w-pill-temp { color: var(--text-head); font-weight: 700; flex-shrink: 0; }
+.w-pill-emoji { flex-shrink: 0; }
+.w-pill-aqi { flex-shrink: 0; font-size: 11px; }
+.w-pill-pollen { flex-shrink: 0; font-size: 11px; }
+.w-pill-chevron { margin-left: auto; color: var(--text-dim); flex-shrink: 0; transition: transform 0.2s ease; font-size: 13px; padding-left: 6px; }
+.w-card.expanded .w-pill-chevron { transform: rotate(180deg); }
+/* Expanded forecast block — desktop only shows hover tooltip */
+.w-forecast-mobile { display: none; }
+/* All-types pollen detail — desktop uses hover tooltip instead */
+.w-pollen-all { display: none; }
+/* Weather tray tab — mobile only */
+.weather-tray-tab { display: none; }
 /* Forecast tooltip on wx side */
 .w-card-wx {
   flex: 1;
@@ -1800,18 +1816,130 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
   .tab-bottom-row {
     flex-direction: column;     /* stack weather above quote */
     gap: 0;
+    position: relative;         /* anchor for the tray tab */
   }
+  /* Tray tab — sits centered on the top border line */
+  .weather-tray-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    padding: 2px 16px 0;
+    cursor: pointer;
+    z-index: 5;
+    user-select: none;
+  }
+  .weather-tray-emoji { font-size: 12px; line-height: 1.5; }
+  .weather-tray-icon {
+    font-size: 10px;
+    color: var(--text-dim);
+    transition: transform 0.25s ease;
+    line-height: 1.5;
+  }
+  .tab-bottom-row.tray-open .weather-tray-icon { transform: rotate(180deg); }
+  /* Weather strip collapsed by default on mobile */
   .weather-strip {
-    gap: 7px;
-    padding: 8px 10px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 8px;
+    align-items: stretch;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+  }
+  .tab-bottom-row.tray-open .weather-strip {
+    max-height: 600px;
+    padding: 6px 8px;
   }
   .w-card {
-    min-width: 110px;
-    padding: 4px 9px;
-    flex: 1 1 110px;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+    padding: 0;
+    cursor: pointer;
+    flex: none;
   }
+  .w-card:active { background: rgba(255,255,255,0.05); }
+  /* Pill row */
+  .w-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 10px;
+    font-size: 11.5px;
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    white-space: nowrap;
+    user-select: none;
+  }
+  /* Hide non-pill content by default on mobile */
+  .w-card > .w-card-wx,
+  .w-card > .w-aqi,
+  .w-card > .w-pollen,
+  .w-card > .w-forecast-mobile { display: none; }
+  /* Expanded: wrap layout — pill, then wx, then aqi+pollen row, then forecast */
+  .w-card.expanded { flex-wrap: wrap; }
+  .w-card.expanded > .w-pill     { flex: 1 1 100%; }
+  .w-card.expanded > .w-card-wx  {
+    display: block;
+    flex: 1 1 100%;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+    min-width: 0;
+  }
+  .w-card.expanded > .w-card-wx .wloc { display: none; }
   .w-card .wtemp { font-size: 18px; }
+  /* AQI compact left, pollen takes the rest */
+  .w-card.expanded > .w-aqi,
+  .w-card.expanded > .w-pollen {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    margin-left: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding: 6px 8px 4px;
+    justify-content: center;
+  }
+  .w-card.expanded > .w-aqi { flex: 0 0 auto; min-width: 0; }
+  .w-card.expanded > .w-pollen {
+    flex: 1;
+    border-left: 1px solid var(--border);
+    justify-content: flex-start;
+    gap: 0;
+  }
+  /* In expanded pollen: hide dominant-only elements, show all-types */
+  .w-card.expanded .w-pollen-icon,
+  .w-card.expanded .w-pollen-label,
+  .w-card.expanded .w-pollen-tag { display: none; }
+  .w-card.expanded .w-pollen-all {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  /* Expanded forecast */
+  .w-card.expanded > .w-forecast-mobile {
+    display: block;
+    flex: 1 1 100%;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+  }
+  /* Suppress hover-only elements on mobile */
+  .w-forecast-tooltip { display: none !important; }
+  .w-aqi-tooltip { display: none !important; }
+  .w-pollen-tooltip { display: none !important; }
 
   /* Quote in weather — move below weather, left-align */
   .quote-in-weather {
@@ -5752,6 +5880,16 @@ const WMO = {
   77:'Snow Grains',80:'Light Showers',81:'Showers',82:'Heavy Showers',
   85:'Snow Showers',86:'Heavy Snow Showers',95:'Thunderstorm',96:'Tstorm + Hail',99:'Severe Tstorm'
 };
+const WMO_EMOJI = {
+  0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️',
+  45:'🌫️', 48:'🌫️',
+  51:'🌦️', 53:'🌦️', 55:'🌧️',
+  61:'🌧️', 63:'🌧️', 65:'🌧️',
+  71:'🌨️', 73:'🌨️', 75:'❄️', 77:'🌨️',
+  80:'🌦️', 81:'🌧️', 82:'⛈️',
+  85:'🌨️', 86:'❄️',
+  95:'⛈️', 96:'⛈️', 99:'⛈️',
+};
 
 /* ================================================================
    STATE
@@ -6548,6 +6686,16 @@ function renderContents(){
     if(hasWeatherBar){
       const bottomRow = el('div','tab-bottom-row');
       bottomRow.id = 'tbr_'+tab.id;
+
+      // Tray tab handle (mobile only — CSS hides on desktop)
+      const trayTab = el('div','weather-tray-tab');
+      trayTab.innerHTML = '<span class="weather-tray-emoji">⛅</span><span class="weather-tray-icon">▲</span>';
+      trayTab.addEventListener('click', e => {
+        e.stopPropagation();
+        const isOpen = bottomRow.classList.toggle('tray-open');
+        if(!isOpen) document.querySelectorAll('.w-card.expanded').forEach(c => c.classList.remove('expanded'));
+      });
+      bottomRow.appendChild(trayTab);
       const ws = el('div','weather-strip'); ws.id = 'ws_'+tab.id;
       bottomRow.appendChild(ws);
       const qp = el('div','quote-in-weather'); qp.id = 'qiw_'+tab.id;
@@ -14286,7 +14434,14 @@ function populateQuoteInWeather(container){
 function buildWeatherCard(loc){
   const card = el('div','w-card');
   card.id = 'wc_'+loc.id;
-  card.innerHTML = `<div class="wloc">${loc.label}</div><div class="wload">Loading…</div>`;
+  card.innerHTML = `
+    <div class="w-pill">
+      <span class="w-pill-loc">${loc.label}</span>
+      <span class="w-pill-sep">·</span>
+      <span class="w-pill-temp" style="font-style:italic;color:var(--text-dim)">Loading…</span>
+      <span class="w-pill-chevron">▾</span>
+    </div>
+    <div class="w-card-wx"><div class="wloc">${loc.label}</div><div class="wload">Loading…</div></div>`;
   return card;
 }
 
@@ -14366,17 +14521,19 @@ function paintWeather(loc){
         </div>
       </div>` : '';
 
-    // Pollen data from WeatherAPI.com (text: "Low","Moderate","High","Very High")
+    const wmoEmoji = WMO_EMOJI[c.weather_code] || '🌡️';
+
+    // Pollen helpers
     const pollenColor = (v) => {
       if(!v || v === 'None') return 'var(--text-dim)';
       if(v === 'Low')       return '#44cc88';
       if(v === 'Moderate')  return '#ffcc00';
       if(v === 'High')      return '#ff8844';
-      return '#ff4444'; // Very High
+      return '#ff4444';
     };
     const pollenRank = (v) => ({ 'None':0,'Low':1,'Moderate':2,'High':3,'Very High':4 }[v] ?? -1);
-
     const pl = loc._pollen;
+    let pillPollenHtml = '';
     let pollenPanel = '';
     if(pl && (pl.tree || pl.grass || pl.weed)){
       const types = [
@@ -14387,6 +14544,7 @@ function paintWeather(loc){
 
       if(types.length){
         const dominant = types.reduce((a,b) => pollenRank(b.val) > pollenRank(a.val) ? b : a);
+        pillPollenHtml = `<span class="w-pill-sep">·</span><span class="w-pill-pollen" style="color:${pollenColor(dominant.val)}">🌿 ${dominant.val}</span>`;
         pollenPanel = `
           <div class="w-pollen">
             <div class="w-pollen-icon">🌿</div>
@@ -14397,21 +14555,55 @@ function paintWeather(loc){
               <div class="w-pollen-tooltip-row"><span>🌿 Grass</span><span style="color:${pollenColor(pl.grass)}">${pl.grass||'—'}</span></div>
               <div class="w-pollen-tooltip-row"><span>🌾 Weed</span><span style="color:${pollenColor(pl.weed)}">${pl.weed||'—'}</span></div>
             </div>
+            <div class="w-pollen-all">
+              <span style="color:${pollenColor(pl.tree)}">🌲 ${pl.tree||'—'}</span>
+              <span style="color:${pollenColor(pl.grass)}">🌿 ${pl.grass||'—'}</span>
+              <span style="color:${pollenColor(pl.weed)}">🌾 ${pl.weed||'—'}</span>
+            </div>
           </div>`;
       }
     }
 
     card.innerHTML = `
+      <div class="w-pill">
+        <span class="w-pill-loc">${loc.label}</span>
+        <span class="w-pill-sep">·</span>
+        <span class="w-pill-temp">${t}°F</span>
+        <span class="w-pill-emoji">${wmoEmoji}</span>
+        ${aqi !== null ? `<span class="w-pill-sep">·</span><span class="w-pill-aqi" style="color:${info.color}">${aqi} ${info.label}</span>` : ''}
+        ${pillPollenHtml}
+        <span class="w-pill-chevron">▾</span>
+      </div>
       <div class="w-card-wx">
         <div class="wloc">${loc.label}</div>
         <div class="wtemp">${t}°<span style="font-size:14px;font-weight:400">F</span></div>
         <div class="wdesc">${cd}</div>
         <div class="whilo">H ${hi}° / L ${lo}° &nbsp;·&nbsp; Feels ${fl}°</div>
         ${forecastTooltip}
-      </div>${aqiPanel}${pollenPanel}
+      </div>${aqiPanel}${pollenPanel}${forecastRows ? `<div class="w-forecast-mobile">${forecastRows}</div>` : ''}
     `;
+
+    // Tap handler — only one card expanded at a time
+    const pill = card.querySelector('.w-pill');
+    if(pill){
+      pill.addEventListener('click', () => {
+        const isOpen = card.classList.contains('expanded');
+        document.querySelectorAll('.w-card.expanded').forEach(c => c.classList.remove('expanded'));
+        if(!isOpen) card.classList.add('expanded');
+      });
+    }
   });
 }
+
+// Collapse expanded weather pills + tray when tapping outside them
+document.addEventListener('click', e => {
+  if(!e.target.closest('.w-card')){
+    document.querySelectorAll('.w-card.expanded').forEach(c => c.classList.remove('expanded'));
+  }
+  if(!e.target.closest('.tab-bottom-row')){
+    document.querySelectorAll('.tab-bottom-row.tray-open').forEach(r => r.classList.remove('tray-open'));
+  }
+});
 
 /* Weather settings modal */
 function openWorkerModal(){
