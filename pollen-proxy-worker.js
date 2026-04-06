@@ -460,22 +460,28 @@ async function handleTopics(body, ctx) {
   const html = await upstream.text();
 
   // ── Primary parser ───────────────────────────────────────────────────────
-  // OpenBible.info topic pages list each verse as an anchor to esv.org or
-  // similar, followed by a vote-count element.
-  // Target pattern (simplified):
-  //   <a href="https://www.esv.org/...">Romans 8:28</a> ... <span ...>1234</span>
+  // OpenBible.info topic pages use this structure per verse:
   //
-  // We capture: [1] reference text  [2] vote count
+  //   <div class="verse">
+  //     <h3>
+  //       <a href="https://www.biblegateway.com/..." class="bibleref">Romans 15:13</a>
+  //       <span class="note">
+  //         ESV / 14,320 helpful votes
+  //       </span>
+  //     </h3>
+  //     <p>verse text...</p>
+  //   </div>
+  //
+  // We capture: [1] reference from class="bibleref"  [2] vote count from class="note"
   const verses = [];
   const seen   = new Set();
 
-  // Match a Bible-looking link followed within ~300 chars by a digit-only span
-  const primaryRe = /href="https?:\/\/(?:www\.)?(?:esv\.org|bible\.com|biblegateway\.com)[^"]*">([^<]+)<\/a>[\s\S]{0,300}?(\d{2,})/g;
+  // Match bibleref anchor then note span containing "/ N helpful votes" within ~400 chars
+  const primaryRe = /<a[^>]+class="bibleref"[^>]*>([^<]+)<\/a>[\s\S]{0,400}?<span class="note">[\s\S]{0,150}?\/([\d,]+)\s*helpful/g;
   let m;
   while((m = primaryRe.exec(html)) !== null) {
     const ref   = m[1].trim();
-    const votes = parseInt(m[2], 10);
-    // Must look like a Bible reference (contains colon)
+    const votes = parseInt(m[2].replace(/,/g, ''), 10);
     if(ref.includes(':') && !seen.has(ref)) {
       seen.add(ref);
       verses.push({ reference: ref, votes });
