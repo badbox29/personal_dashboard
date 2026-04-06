@@ -12460,8 +12460,12 @@ function buildBibleWidget(sec){
     return VOTD_REFS[Math.floor(Date.now()/86400000)%VOTD_REFS.length];
   }
 
+  // Stores last resolved position so click handler can open Browse at exact verse
+  let _votdPos = null;
+
   async function loadVotd(){
     verseText.textContent='Loading…'; verseRef.textContent='';
+    _votdPos = null;
     const ref=getTodayRef();
     const trans=cfg.defaultTrans||'NKJV';
     try{
@@ -12475,6 +12479,7 @@ function buildBibleWidget(sec){
         bookIdx=ref.b-1; chapter=ref.c; verse=ref.v;
         verseRef.textContent=ref.r+'  ·  '+trans;
       }
+      _votdPos = { bookIdx, chapter, verse, trans };
       const verses=await bibleLoadChapter(cfg,bookIdx,chapter,trans);
       const v=verses.find(x=>x.verse===verse)||verses[0];
       verseText.textContent=v?v.text:'Verse not found';
@@ -12535,10 +12540,35 @@ function buildBibleWidget(sec){
 
   // Verse display
   const vBox=el('div','bible-votd-box');
+  vBox.title='Click to open in Bible Browser';
+  vBox.style.cursor='pointer';
+  vBox.style.transition='border-color .15s';
+  vBox.addEventListener('mouseenter',()=>{ vBox.style.borderColor='var(--gold)'; });
+  vBox.addEventListener('mouseleave',()=>{ vBox.style.borderColor=''; });
   const verseText=el('div','bible-votd-text'); verseText.textContent='Loading…';
   const verseRef=el('div','bible-votd-ref');
   vBox.append(verseText,verseRef);
   wrap.appendChild(vBox);
+
+  // Click verse box → open Browse modal at that exact verse
+  vBox.addEventListener('click',()=>{
+    if(!_votdPos) return;
+    // Pre-set modal state so it opens at the right spot
+    cfg.lastBook    = BIBLE_CANON[_votdPos.bookIdx][1];
+    cfg.lastChapter = _votdPos.chapter;
+    cfg.lastTrans   = _votdPos.trans;
+    openBibleModal(cfg);
+    // After modal loads the chapter, scroll to and select the verse
+    setTimeout(()=>{
+      const row = document.querySelector('#bmTextPanel [data-verse="'+_votdPos.verse+'"]');
+      if(row){
+        if(_bm) _bm.verse = _votdPos.verse;
+        bmApplyHighlightClasses();
+        row.scrollIntoView({ behavior:'smooth', block:'center' });
+        bmRenderNotesPanel();
+      }
+    }, 600);
+  });
 
   // Action row
   const actRow=el('div','bible-action-row');
