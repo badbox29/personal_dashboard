@@ -4614,6 +4614,96 @@ body.edit-mode .gh-add-row { display: flex; }
   font-style: italic;
   padding: 4px 0;
 }
+
+/* ── Bible Widget ─────────────────────────────────────────────── */
+.bible-widget{display:flex;flex-direction:column;gap:6px;}
+.bible-widget-hdr{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.bible-widget-title{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;flex:1;}
+.bible-trans-badge{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 6px;flex-shrink:0;}
+.bible-votd-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;cursor:default;}
+.bible-votd-text{font-size:13px;line-height:1.65;color:var(--text-head);margin-bottom:5px;font-style:italic;}
+.bible-votd-ref{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--gold);}
+.bible-action-row{display:flex;gap:6px;}
+.bible-browse-btn{font-size:11px;padding:4px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--gold);cursor:pointer;transition:all .15s;}
+.bible-browse-btn:hover{border-color:var(--gold);background:rgba(221,176,75,.12);}
+.bible-settings-wrap{border-top:1px solid var(--border);padding-top:8px;margin-top:4px;display:flex;flex-direction:column;gap:7px;}
+.bible-setting-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bible-setting-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:88px;}
+.bible-plan-section{display:flex;flex-direction:column;gap:4px;}
+.bible-plan-textarea{width:100%;font-size:11px;font-family:'Share Tech Mono',monospace;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);padding:6px 8px;resize:vertical;outline:none;}
+.bible-plan-textarea:focus{border-color:var(--gold);}
+.bible-trans-sel{flex:1;font-size:11px;padding:3px 6px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;min-width:0;}
+/* Modal overlay */
+.bible-modal-overlay{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;}
+.bible-modal-overlay.open{display:flex;}
+.bible-modal{background:var(--modal-bg);border:1px solid var(--border);border-radius:10px;width:min(1120px,96vw);height:min(800px,92vh);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.bible-modal-hdr{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+.bible-modal-hdr h3{margin:0;font-size:14px;color:var(--text-head);flex:1;min-width:120px;}
+.bible-nav{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.bible-nav-sel{font-size:11.5px;padding:4px 7px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;cursor:pointer;}
+.bible-nav-sel:focus{border-color:var(--gold);}
+.bible-modal-body{display:flex;flex:1;overflow:hidden;}
+/* Left: text */
+.bible-text-panel{flex:1 1 62%;overflow-y:auto;padding:14px 16px;border-right:1px solid var(--border);}
+.bible-chapter-title{font-size:11.5px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em;}
+.bible-verse-row{display:flex;gap:8px;padding:3px 6px;border-radius:4px;cursor:pointer;transition:background .1s;align-items:flex-start;user-select:text;}
+.bible-verse-row:hover{background:rgba(255,255,255,.04);}
+.bible-verse-row.selected{background:rgba(221,176,75,.1);outline:1px solid rgba(221,176,75,.4);}
+.bible-verse-num{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);min-width:22px;padding-top:3px;flex-shrink:0;user-select:none;}
+.bible-verse-text{font-size:13.5px;line-height:1.72;color:var(--text);}
+.bh-yellow{background:rgba(240,210,40,.22)!important;}
+.bh-green {background:rgba(60,185,100,.20)!important;}
+.bh-blue  {background:rgba(50,140,240,.18)!important;}
+.bh-pink  {background:rgba(240,80,160,.20)!important;}
+.bh-purple{background:rgba(160,70,240,.20)!important;}
+/* Highlight toolbar */
+.bible-hl-toolbar{display:none;position:fixed;z-index:9600;background:var(--modal-bg);border:1px solid var(--border);border-radius:7px;padding:5px 9px;gap:5px;align-items:center;box-shadow:0 4px 18px rgba(0,0,0,.45);}
+.bible-hl-toolbar.visible{display:flex;}
+.bible-hl-swatch{width:19px;height:19px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .1s,border-color .1s;flex-shrink:0;}
+.bible-hl-swatch:hover{transform:scale(1.25);}
+.bible-hl-swatch.active{border-color:#fff;}
+.bible-hl-clear{font-size:10.5px;color:var(--text-dim);background:none;border:none;cursor:pointer;padding:0 3px;white-space:nowrap;}
+.bible-hl-clear:hover{color:var(--del-color);}
+/* Right: notes */
+.bible-notes-panel{flex:0 0 37%;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0;}
+.bible-selected-ref{font-size:11px;color:var(--gold);font-family:'Share Tech Mono',monospace;margin-bottom:5px;}
+.bible-note-inp{width:100%;font-size:12px;line-height:1.5;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);padding:6px 8px;resize:vertical;outline:none;min-height:68px;}
+.bible-note-inp:focus{border-color:var(--gold);}
+.bible-note-actions{display:flex;gap:5px;margin-top:4px;}
+.bible-ch-notes-title{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:6px;}
+.bible-note-item{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;cursor:pointer;transition:background .1s;}
+.bible-note-item:hover{background:rgba(255,255,255,.05);}
+.bible-note-item-hdr{display:flex;align-items:center;margin-bottom:3px;}
+.bible-note-item-ref{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);flex:1;}
+.bible-note-item-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11px;padding:0 2px;line-height:1;}
+.bible-note-item-del:hover{color:var(--del-color);}
+.bible-note-item-txt{font-size:11.5px;line-height:1.5;color:var(--text);}
+.bible-panel-hint{font-size:11px;color:var(--text-dim);font-style:italic;padding:2px 0;}
+/* Collapsible sections */
+.bible-collapsible{border-top:1px solid var(--border);padding-top:8px;margin-top:4px;}
+.bible-collapsible-hdr{display:flex;align-items:center;cursor:pointer;padding:2px 0;user-select:none;}
+.bible-collapsible-hdr h4{font-size:10.5px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin:0;flex:1;}
+.bible-coll-arrow{font-size:9px;color:var(--text-dim);transition:transform .2s;margin-left:4px;}
+.bible-coll-arrow.open{transform:rotate(90deg);}
+.bible-collapsible-body{display:none;padding-top:8px;}
+.bible-collapsible-body.open{display:block;}
+/* Topic search */
+.bible-topic-row{display:flex;gap:5px;margin-bottom:6px;}
+.bible-topic-results{display:flex;flex-direction:column;gap:3px;max-height:200px;overflow-y:auto;}
+.bible-topic-item{display:flex;align-items:center;gap:6px;padding:4px 7px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;transition:background .1s;}
+.bible-topic-item:hover{background:rgba(255,255,255,.06);}
+.bible-topic-ref{font-family:'Share Tech Mono',monospace;color:var(--text-head);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bible-topic-votes{font-size:10px;color:var(--text-dim);flex-shrink:0;white-space:nowrap;}
+.bible-topic-add{font-size:10px;color:var(--gold);background:none;border:none;cursor:pointer;padding:0 3px;flex-shrink:0;white-space:nowrap;}
+.bible-topic-add:hover{color:var(--link-hover);}
+/* Source links */
+.bible-source-links{display:flex;flex-direction:column;gap:4px;}
+.bible-src-link{display:flex;align-items:baseline;gap:8px;font-size:11px;color:var(--link);text-decoration:none;border:1px solid var(--border);border-radius:4px;padding:4px 8px;transition:all .15s;}
+.bible-src-link:hover{border-color:var(--link-hover);color:var(--link-hover);}
+.bible-src-link-desc{font-size:10px;color:var(--text-dim);margin-left:auto;white-space:nowrap;}
+.bible-loading{font-size:12px;color:var(--text-dim);font-style:italic;padding:8px 2px;}
+.bible-error{font-size:12px;color:var(--del-color);padding:6px 2px;}
+
 </style>
 </head>
 <body>
@@ -5140,6 +5230,9 @@ body.edit-mode .gh-add-row { display: flex; }
         </button>
         <button class="sec-type-card" id="swEnergy"    onclick="selectWidgetType('energy')">
           ⚡ Energy Tracker<span>Log &amp; spot patterns</span>
+        </button>
+        <button class="sec-type-card" id="swBible"    onclick="selectWidgetType('bible')">
+          📖 Bible<span>Daily verse &amp; browser</span>
         </button>
       </div>
       <!-- Network Engineering widgets -->
@@ -6382,6 +6475,7 @@ function buildWidgetBody(sec, tabId){
     case 'sports':    return buildSportsWidget(sec);
     case 'energy':    return buildEnergyWidget(sec, tabId);
     case 'compose':   return buildComposeWidget(sec);
+    case 'bible':    return buildBibleWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -11300,6 +11394,713 @@ function buildDiceWidget(sec){
   return wrap;
 }
 
+
+
+/* ════════════════════════════════════════════════════════════════════
+   BIBLE WIDGET — data, helpers, modal, mini-widget
+   ════════════════════════════════════════════════════════════════════ */
+
+// ── Canon (name, bollsId 1-66, osisId) ───────────────────────────────────────
+const BIBLE_CANON = [
+  ['Genesis',1,'GEN'],['Exodus',2,'EXO'],['Leviticus',3,'LEV'],['Numbers',4,'NUM'],
+  ['Deuteronomy',5,'DEU'],['Joshua',6,'JOS'],['Judges',7,'JDG'],['Ruth',8,'RUT'],
+  ['1 Samuel',9,'1SA'],['2 Samuel',10,'2SA'],['1 Kings',11,'1KI'],['2 Kings',12,'2KI'],
+  ['1 Chronicles',13,'1CH'],['2 Chronicles',14,'2CH'],['Ezra',15,'EZR'],
+  ['Nehemiah',16,'NEH'],['Esther',17,'EST'],['Job',18,'JOB'],['Psalms',19,'PSA'],
+  ['Proverbs',20,'PRO'],['Ecclesiastes',21,'ECC'],['Song of Solomon',22,'SNG'],
+  ['Isaiah',23,'ISA'],['Jeremiah',24,'JER'],['Lamentations',25,'LAM'],
+  ['Ezekiel',26,'EZK'],['Daniel',27,'DAN'],['Hosea',28,'HOS'],['Joel',29,'JOL'],
+  ['Amos',30,'AMO'],['Obadiah',31,'OBA'],['Jonah',32,'JON'],['Micah',33,'MIC'],
+  ['Nahum',34,'NAM'],['Habakkuk',35,'HAB'],['Zephaniah',36,'ZEP'],
+  ['Haggai',37,'HAG'],['Zechariah',38,'ZEC'],['Malachi',39,'MAL'],
+  ['Matthew',40,'MAT'],['Mark',41,'MRK'],['Luke',42,'LUK'],['John',43,'JHN'],
+  ['Acts',44,'ACT'],['Romans',45,'ROM'],['1 Corinthians',46,'1CO'],
+  ['2 Corinthians',47,'2CO'],['Galatians',48,'GAL'],['Ephesians',49,'EPH'],
+  ['Philippians',50,'PHP'],['Colossians',51,'COL'],['1 Thessalonians',52,'1TH'],
+  ['2 Thessalonians',53,'2TH'],['1 Timothy',54,'1TI'],['2 Timothy',55,'2TI'],
+  ['Titus',56,'TIT'],['Philemon',57,'PHM'],['Hebrews',58,'HEB'],['James',59,'JAS'],
+  ['1 Peter',60,'1PE'],['2 Peter',61,'2PE'],['1 John',62,'1JN'],
+  ['2 John',63,'2JN'],['3 John',64,'3JN'],['Jude',65,'JUD'],['Revelation',66,'REV'],
+];
+const BIBLE_CHAPTERS = [
+  50,40,27,36,34,24,21,4,31,24,22,25,29,36,10,13,10,42,150,31,12,8,
+  66,52,5,48,12,14,3,9,1,4,7,3,3,3,2,14,4,
+  28,16,24,21,28,16,16,13,6,6,4,4,5,3,6,4,3,1,13,5,5,3,5,1,1,1,22,
+];
+// Curated VOTD {b:bollsId, c:chapter, v:verse, r:'display ref'}
+const VOTD_REFS = [
+  {b:43,c:3,v:16,r:'John 3:16'},{b:19,c:23,v:1,r:'Psalm 23:1'},
+  {b:45,c:8,v:28,r:'Romans 8:28'},{b:24,c:29,v:11,r:'Jeremiah 29:11'},
+  {b:50,c:4,v:13,r:'Philippians 4:13'},{b:20,c:3,v:5,r:'Proverbs 3:5'},
+  {b:23,c:40,v:31,r:'Isaiah 40:31'},{b:49,c:2,v:8,r:'Ephesians 2:8'},
+  {b:45,c:12,v:2,r:'Romans 12:2'},{b:19,c:46,v:1,r:'Psalm 46:1'},
+  {b:19,c:119,v:105,r:'Psalm 119:105'},{b:58,c:11,v:1,r:'Hebrews 11:1'},
+  {b:45,c:5,v:8,r:'Romans 5:8'},{b:43,c:14,v:6,r:'John 14:6'},
+  {b:49,c:6,v:10,r:'Ephesians 6:10'},{b:19,c:34,v:18,r:'Psalm 34:18'},
+  {b:45,c:15,v:13,r:'Romans 15:13'},{b:43,c:16,v:33,r:'John 16:33'},
+  {b:50,c:4,v:6,r:'Philippians 4:6'},{b:62,c:4,v:8,r:'1 John 4:8'},
+  {b:43,c:15,v:5,r:'John 15:5'},{b:19,c:27,v:1,r:'Psalm 27:1'},
+  {b:23,c:41,v:10,r:'Isaiah 41:10'},{b:23,c:26,v:3,r:'Isaiah 26:3'},
+  {b:51,c:3,v:23,r:'Colossians 3:23'},{b:23,c:53,v:5,r:'Isaiah 53:5'},
+  {b:19,c:91,v:1,r:'Psalm 91:1'},{b:45,c:8,v:38,r:'Romans 8:38'},
+  {b:40,c:11,v:28,r:'Matthew 11:28'},{b:40,c:6,v:33,r:'Matthew 6:33'},
+  {b:40,c:28,v:20,r:'Matthew 28:20'},{b:19,c:37,v:4,r:'Psalm 37:4'},
+  {b:20,c:31,v:25,r:'Proverbs 31:25'},{b:46,c:13,v:4,r:'1 Corinthians 13:4'},
+  {b:43,c:8,v:32,r:'John 8:32'},{b:62,c:1,v:9,r:'1 John 1:9'},
+  {b:23,c:55,v:8,r:'Isaiah 55:8'},{b:45,c:6,v:23,r:'Romans 6:23'},
+  {b:19,c:139,v:14,r:'Psalm 139:14'},{b:58,c:4,v:12,r:'Hebrews 4:12'},
+  {b:43,c:10,v:10,r:'John 10:10'},{b:45,c:8,v:1,r:'Romans 8:1'},
+  {b:50,c:4,v:7,r:'Philippians 4:7'},{b:19,c:34,v:8,r:'Psalm 34:8'},
+  {b:25,c:3,v:22,r:'Lamentations 3:22'},{b:49,c:4,v:32,r:'Ephesians 4:32'},
+  {b:43,c:4,v:24,r:'John 4:24'},{b:45,c:10,v:17,r:'Romans 10:17'},
+  {b:40,c:5,v:16,r:'Matthew 5:16'},{b:43,c:14,v:27,r:'John 14:27'},
+  {b:48,c:5,v:22,r:'Galatians 5:22'},{b:20,c:16,v:9,r:'Proverbs 16:9'},
+  {b:58,c:12,v:2,r:'Hebrews 12:2'},{b:43,c:1,v:1,r:'John 1:1'},
+  {b:45,c:3,v:23,r:'Romans 3:23'},{b:19,c:103,v:12,r:'Psalm 103:12'},
+  {b:40,c:22,v:37,r:'Matthew 22:37'},{b:60,c:5,v:7,r:'1 Peter 5:7'},
+  {b:19,c:150,v:6,r:'Psalm 150:6'},{b:43,c:13,v:34,r:'John 13:34'},
+  {b:49,c:3,v:20,r:'Ephesians 3:20'},{b:55,c:1,v:7,r:'2 Timothy 1:7'},
+  {b:45,c:8,v:31,r:'Romans 8:31'},{b:19,c:121,v:1,r:'Psalm 121:1'},
+  {b:43,c:11,v:25,r:'John 11:25'},{b:19,c:46,v:7,r:'Psalm 46:7'},
+  {b:46,c:10,v:31,r:'1 Corinthians 10:31'},{b:43,c:3,v:30,r:'John 3:30'},
+  {b:19,c:1,v:1,r:'Psalm 1:1'},{b:20,c:18,v:10,r:'Proverbs 18:10'},
+];
+const BOLLS_FREE_SET = new Set(['NKJV','KJV','WEB','NET','ASV','YLT']);
+function isBollsTrans(t){ return BOLLS_FREE_SET.has((t||'').toUpperCase()); }
+
+// ── Notes storage ─────────────────────────────────────────────────────────────
+function loadBibleNotes(){ try{return JSON.parse(localStorage.getItem('salty_bible_notes')||'{}');}catch(e){return{};} }
+function saveBibleNotes(n){ localStorage.setItem('salty_bible_notes', JSON.stringify(n)); }
+function bibleNoteKey(osisId,ch,v){ return osisId+':'+ch+':'+v; }
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+async function bibleWorkerCall(cfg, path, params){
+  const w = getWorkerUrl(cfg.workerUrl);
+  if(!w) throw new Error('Worker URL not set in widget or global settings');
+  if(!cfg.apiKey) throw new Error('API.Bible key not configured — add it in edit mode');
+  const r = await fetch(w.replace(/\/+$/,'')+'/bible',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({apiKey:cfg.apiKey, path, params:params||{}}),
+  });
+  const j = await r.json();
+  if(j.error) throw new Error(j.error);
+  return j;
+}
+async function bibleGetApiBibleId(cfg, trans){
+  const t = trans.toUpperCase();
+  if(cfg.apiBibleIds && cfg.apiBibleIds[t]) return cfg.apiBibleIds[t];
+  const j = await bibleWorkerCall(cfg, '/v1/bibles', {language:'eng'});
+  const list = j.data||[];
+  // Match by abbreviation or name
+  const needles = { MSG:['MESSAGE','MSG'], CSB:['CHRISTIAN STANDARD','CSB'], NLT:['NEW LIVING','NLT'] };
+  const terms = needles[t] || [t];
+  const match = list.find(b=>{
+    const abbr = (b.abbreviation||b.abbreviationLocal||'').toUpperCase();
+    const name = (b.name||b.nameLocal||'').toUpperCase();
+    return terms.some(term => abbr===term || abbr.includes(term) || name.includes(term));
+  });
+  if(!match) throw new Error('Translation '+trans+' not found — check your API.Bible account');
+  if(!cfg.apiBibleIds) cfg.apiBibleIds={};
+  cfg.apiBibleIds[t] = match.id;
+  persist();
+  return match.id;
+}
+async function fetchChapterBolls(bookId, chapter, trans){
+  const t = (trans||'NKJV').toUpperCase();
+  const r = await fetch('https://bolls.life/get-chapter/'+t+'/'+bookId+'/'+chapter+'/');
+  if(!r.ok) throw new Error('bolls.life error '+r.status);
+  const j = await r.json();
+  if(!Array.isArray(j)) throw new Error('Unexpected response from bolls.life');
+  return j.map(v=>({verse:v.verse, text:v.text.replace(/<[^>]+>/g,'').trim()}));
+}
+function parseApiBibleHtml(html){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  tmp.querySelectorAll('.note, sup, .nd, .add').forEach(n=>n.remove());
+  const vSpans = tmp.querySelectorAll('[data-number]');
+  if(vSpans.length){
+    const verses=[];
+    vSpans.forEach(span=>{
+      const vNum=parseInt(span.getAttribute('data-number'));
+      if(isNaN(vNum)) return;
+      let text='', node=span.nextSibling;
+      while(node && !(node.nodeType===1 && node.getAttribute && node.getAttribute('data-number'))){
+        text += node.textContent||'';
+        node = node.nextSibling;
+      }
+      verses.push({verse:vNum, text:text.replace(/\s+/g,' ').trim()});
+    });
+    return verses.filter(v=>v.text);
+  }
+  // fallback
+  return [{verse:1, text:tmp.textContent.replace(/\s+/g,' ').trim()}].filter(v=>v.text);
+}
+async function fetchChapterApiBible(cfg, osisId, chapter, trans){
+  const bibleId = await bibleGetApiBibleId(cfg, trans);
+  const j = await bibleWorkerCall(cfg, '/v1/bibles/'+bibleId+'/chapters/'+osisId+'.'+chapter, {
+    'content-type':'html','include-verse-numbers':'true',
+    'include-titles':'false','include-chapter-numbers':'false',
+  });
+  return parseApiBibleHtml(j.data?.content||'');
+}
+async function bibleLoadChapter(cfg, bookIdx, chapter, trans){
+  if(isBollsTrans(trans)){
+    return fetchChapterBolls(BIBLE_CANON[bookIdx][1], chapter, trans);
+  } else {
+    return fetchChapterApiBible(cfg, BIBLE_CANON[bookIdx][2], chapter, trans);
+  }
+}
+// Parse "Book Ch:V" → {bookIdx, chapter, verse}
+function bibleParseRef(ref){
+  const m = ref.match(/^(.+?)\s+(\d+):(\d+)/);
+  if(!m) return null;
+  const name = m[1].trim().toLowerCase();
+  const idx  = BIBLE_CANON.findIndex(b=>
+    b[0].toLowerCase()===name ||
+    b[0].toLowerCase().startsWith(name) ||
+    b[2].toLowerCase()===name
+  );
+  if(idx<0) return null;
+  return {bookIdx:idx, chapter:parseInt(m[2]), verse:parseInt(m[3])};
+}
+
+// ── Bible modal state (module-level so nav closures stay in sync) ─────────────
+let _bm = null; // { cfg, bookIdx, chapter, trans, verse, verses }
+
+function openBibleModal(cfg){
+  // ── Build DOM (once) ─────────────────────────────────────────────
+  if(!document.getElementById('bibleModalOverlay')){
+    const ov = el('div','bible-modal-overlay'); ov.id='bibleModalOverlay';
+    ov.addEventListener('click',e=>{ if(e.target===ov) closeBibleModal(); });
+
+    const modal = el('div','bible-modal');
+
+    // Header
+    const hdr = el('div','bible-modal-hdr');
+    const h3  = el('h3'); h3.textContent='📖 Bible Browser';
+    const nav = el('div','bible-nav');
+
+    const tSel = el('select','bible-nav-sel'); tSel.id='bmTransSel'; tSel.title='Translation';
+    const bSel = el('select','bible-nav-sel'); bSel.id='bmBookSel';  bSel.title='Book';
+    bSel.style.maxWidth='160px';
+    const cSel = el('select','bible-nav-sel'); cSel.id='bmChapSel';  cSel.title='Chapter';
+    const pBtn = el('button','clock-style-btn'); pBtn.id='bmPrevBtn'; pBtn.textContent='◀'; pBtn.title='Prev chapter'; pBtn.style.cssText='padding:3px 9px;font-size:12px;';
+    const nBtn = el('button','clock-style-btn'); nBtn.id='bmNextBtn'; nBtn.textContent='▶'; nBtn.title='Next chapter'; nBtn.style.cssText='padding:3px 9px;font-size:12px;';
+    const xBtn = el('button','clock-style-btn'); xBtn.textContent='✕'; xBtn.onclick=closeBibleModal; xBtn.style.cssText='padding:3px 10px;font-size:13px;';
+
+    nav.append(tSel, bSel, cSel, pBtn, nBtn, xBtn);
+    hdr.append(h3, nav);
+    modal.appendChild(hdr);
+
+    const body = el('div','bible-modal-body');
+    const tp = el('div','bible-text-panel'); tp.id='bmTextPanel';
+    const np = el('div','bible-notes-panel'); np.id='bmNotesPanel';
+    body.append(tp, np);
+    modal.appendChild(body);
+    ov.appendChild(modal);
+    document.body.appendChild(ov);
+
+    // Highlight toolbar
+    const hlTb = el('div','bible-hl-toolbar'); hlTb.id='bmHlToolbar';
+    [{id:'yellow',hex:'#f5d642'},{id:'green',hex:'#4dc878'},{id:'blue',hex:'#4a9ef5'},{id:'pink',hex:'#f564b5'},{id:'purple',hex:'#b44ff5'}].forEach(c=>{
+      const sw=el('div','bible-hl-swatch'); sw.dataset.color=c.id; sw.style.background=c.hex; sw.title=c.id;
+      sw.onclick=e=>{ e.stopPropagation(); bmApplyHighlight(c.id); };
+      hlTb.appendChild(sw);
+    });
+    const hlClr = el('button','bible-hl-clear'); hlClr.textContent='✕ clear';
+    hlClr.onclick=e=>{ e.stopPropagation(); bmApplyHighlight(null); };
+    hlTb.appendChild(hlClr);
+    document.body.appendChild(hlTb);
+
+    // Wire nav events (reference _bm directly)
+    tSel.onchange=()=>{ if(!_bm) return; _bm.trans=tSel.value; _bm.cfg.lastTrans=_bm.trans; persist(); bmLoadChapter(); };
+    bSel.onchange=()=>{ if(!_bm) return; _bm.bookIdx=parseInt(bSel.value); _bm.chapter=1; bmRebuildChapSel(); bmLoadChapter(); };
+    cSel.onchange=()=>{ if(!_bm) return; _bm.chapter=parseInt(cSel.value); bmLoadChapter(); };
+    pBtn.onclick=()=>{
+      if(!_bm) return;
+      if(_bm.chapter>1){ _bm.chapter--; } else if(_bm.bookIdx>0){ _bm.bookIdx--; _bm.chapter=BIBLE_CHAPTERS[_bm.bookIdx]||1; bSel.value=_bm.bookIdx; }
+      bmRebuildChapSel(); bmLoadChapter();
+    };
+    nBtn.onclick=()=>{
+      if(!_bm) return;
+      const mx=BIBLE_CHAPTERS[_bm.bookIdx]||1;
+      if(_bm.chapter<mx){ _bm.chapter++; } else if(_bm.bookIdx<65){ _bm.bookIdx++; _bm.chapter=1; bSel.value=_bm.bookIdx; }
+      bmRebuildChapSel(); bmLoadChapter();
+    };
+    // Hide toolbar on outside click
+    document.addEventListener('click', e=>{
+      const tb=document.getElementById('bmHlToolbar');
+      if(tb && tb.classList.contains('visible') && !tb.contains(e.target) && !e.target.closest('.bible-verse-row')){
+        tb.classList.remove('visible');
+      }
+    });
+  }
+
+  // ── (Re-)initialize state ────────────────────────────────────────
+  _bm = {
+    cfg,
+    bookIdx: Math.max(0, (cfg.lastBook||43) - 1),
+    chapter: cfg.lastChapter || 3,
+    trans:   cfg.lastTrans || cfg.defaultTrans || 'NKJV',
+    verse:   null,
+    verses:  [],
+  };
+
+  // Populate translation selector
+  const tSel = document.getElementById('bmTransSel');
+  tSel.innerHTML='';
+  const fg=document.createElement('optgroup'); fg.label='Free — bolls.life';
+  ['NKJV','KJV','WEB','NET','ASV'].forEach(t=>{
+    const o=document.createElement('option'); o.value=t; o.textContent=t;
+    if(t===_bm.trans) o.selected=true;
+    fg.appendChild(o);
+  });
+  tSel.appendChild(fg);
+  if(cfg.apiKey){
+    const ag=document.createElement('optgroup'); ag.label='API.Bible';
+    [...new Set(['CSB','NLT','MSG',...Object.keys(cfg.apiBibleIds||{})])].forEach(t=>{
+      const o=document.createElement('option'); o.value=t; o.textContent=t;
+      if(t===_bm.trans) o.selected=true;
+      ag.appendChild(o);
+    });
+    tSel.appendChild(ag);
+  }
+
+  // Populate book selector
+  const bSel=document.getElementById('bmBookSel');
+  bSel.innerHTML='';
+  BIBLE_CANON.forEach((b,i)=>{
+    const o=document.createElement('option'); o.value=i; o.textContent=b[0];
+    if(i===_bm.bookIdx) o.selected=true;
+    bSel.appendChild(o);
+  });
+
+  bmRebuildChapSel();
+  document.getElementById('bibleModalOverlay').classList.add('open');
+  bmLoadChapter();
+}
+
+function closeBibleModal(){
+  const ov=document.getElementById('bibleModalOverlay');
+  if(ov) ov.classList.remove('open');
+  const tb=document.getElementById('bmHlToolbar');
+  if(tb) tb.classList.remove('visible');
+}
+
+function bmRebuildChapSel(){
+  const cSel=document.getElementById('bmChapSel');
+  cSel.innerHTML='';
+  const count=BIBLE_CHAPTERS[_bm.bookIdx]||1;
+  for(let i=1;i<=count;i++){
+    const o=document.createElement('option'); o.value=i; o.textContent='Ch '+i;
+    if(i===_bm.chapter) o.selected=true;
+    cSel.appendChild(o);
+  }
+}
+
+async function bmLoadChapter(){
+  if(!_bm) return;
+  _bm.cfg.lastBook    = BIBLE_CANON[_bm.bookIdx][1];
+  _bm.cfg.lastChapter = _bm.chapter;
+  persist();
+  _bm.verse  = null;
+  _bm.verses = [];
+  const tb=document.getElementById('bmHlToolbar');
+  if(tb) tb.classList.remove('visible');
+
+  const tp=document.getElementById('bmTextPanel');
+  tp.innerHTML='<div class="bible-loading">Loading…</div>';
+  bmRenderNotesPanel();
+
+  try {
+    _bm.verses = await bibleLoadChapter(_bm.cfg, _bm.bookIdx, _bm.chapter, _bm.trans);
+    bmRenderChapter();
+    bmRenderNotesPanel();
+  } catch(e){
+    tp.innerHTML='<div class="bible-error">'+e.message+'</div>';
+  }
+}
+
+function bmRenderChapter(){
+  const tp=document.getElementById('bmTextPanel');
+  tp.innerHTML='';
+  const title=el('div','bible-chapter-title');
+  title.textContent=BIBLE_CANON[_bm.bookIdx][0]+' '+_bm.chapter+'  ·  '+_bm.trans;
+  tp.appendChild(title);
+
+  const notes=loadBibleNotes();
+  _bm.verses.forEach(v=>{
+    const row=el('div','bible-verse-row');
+    row.dataset.verse=v.verse;
+    const key=bibleNoteKey(BIBLE_CANON[_bm.bookIdx][2],_bm.chapter,v.verse);
+    if(notes[key]?.highlight) row.classList.add('bh-'+notes[key].highlight);
+    if(v.verse===_bm.verse) row.classList.add('selected');
+    const num=el('span','bible-verse-num'); num.textContent=v.verse;
+    const txt=el('span','bible-verse-text'); txt.textContent=v.text;
+    row.append(num,txt);
+    row.onclick=e=>{
+      _bm.verse=v.verse;
+      bmApplyHighlightClasses();
+      // Show toolbar near click
+      const tb=document.getElementById('bmHlToolbar');
+      if(tb){
+        const bx=Math.min(e.clientX+12,window.innerWidth-210);
+        const by=Math.min(e.clientY+12,window.innerHeight-55);
+        tb.style.left=bx+'px'; tb.style.top=by+'px';
+        tb.classList.add('visible');
+      }
+      bmRenderNotesPanel();
+    };
+    tp.appendChild(row);
+  });
+}
+
+function bmApplyHighlightClasses(){
+  const notes=loadBibleNotes();
+  document.querySelectorAll('#bmTextPanel .bible-verse-row').forEach(row=>{
+    const v=parseInt(row.dataset.verse);
+    const key=bibleNoteKey(BIBLE_CANON[_bm.bookIdx][2],_bm.chapter,v);
+    row.className='bible-verse-row'+(v===_bm.verse?' selected':'');
+    if(notes[key]?.highlight) row.classList.add('bh-'+notes[key].highlight);
+  });
+}
+
+function bmApplyHighlight(color){
+  if(!_bm || _bm.verse==null) return;
+  const notes=loadBibleNotes();
+  const key=bibleNoteKey(BIBLE_CANON[_bm.bookIdx][2],_bm.chapter,_bm.verse);
+  if(color){ if(!notes[key]) notes[key]={}; notes[key].highlight=color; }
+  else { if(notes[key]){ delete notes[key].highlight; if(!notes[key].note) delete notes[key]; } }
+  saveBibleNotes(notes);
+  bmApplyHighlightClasses();
+  document.getElementById('bmHlToolbar')?.classList.remove('visible');
+}
+
+function bmRenderNotesPanel(){
+  const np=document.getElementById('bmNotesPanel');
+  np.innerHTML='';
+  const notes=loadBibleNotes();
+
+  // Selected verse note input
+  if(_bm && _bm.verse!=null){
+    const key=bibleNoteKey(BIBLE_CANON[_bm.bookIdx][2],_bm.chapter,_bm.verse);
+    const refEl=el('div','bible-selected-ref');
+    refEl.textContent=BIBLE_CANON[_bm.bookIdx][0]+' '+_bm.chapter+':'+_bm.verse+'  ('+_bm.trans+')';
+    np.appendChild(refEl);
+    const ta=el('textarea','bible-note-inp');
+    ta.placeholder='Add a note for this verse…';
+    ta.value=notes[key]?.note||'';
+    np.appendChild(ta);
+    const btnRow=el('div','bible-note-actions');
+    const saveBtn=el('button','search-widget-go'); saveBtn.style.cssText='font-size:10.5px;padding:3px 12px;'; saveBtn.textContent='Save Note';
+    const clrBtn=el('button','monitor-check-btn');  clrBtn.style.cssText='font-size:10px;padding:2px 8px;';  clrBtn.textContent='Clear';
+    saveBtn.onclick=()=>{
+      const txt=ta.value.trim();
+      const n=loadBibleNotes();
+      if(!n[key]) n[key]={};
+      if(txt){ n[key].note=txt; } else { delete n[key].note; if(!n[key].highlight) delete n[key]; }
+      saveBibleNotes(n);
+      bmRenderNotesPanel();
+      bmApplyHighlightClasses();
+    };
+    clrBtn.onclick=()=>{
+      ta.value='';
+      const n=loadBibleNotes();
+      if(n[key]){ delete n[key].note; if(!n[key].highlight) delete n[key]; saveBibleNotes(n); }
+      bmRenderNotesPanel();
+    };
+    btnRow.append(saveBtn,clrBtn);
+    np.appendChild(btnRow);
+  } else {
+    const hint=el('div','bible-panel-hint'); hint.textContent='Tap a verse to add a note or highlight.';
+    np.appendChild(hint);
+  }
+
+  // Chapter notes list
+  if(_bm){
+    const prefix=BIBLE_CANON[_bm.bookIdx][2]+':'+_bm.chapter+':';
+    const chNotes=Object.entries(notes)
+      .filter(([k,v])=>k.startsWith(prefix)&&v?.note)
+      .sort((a,b)=>parseInt(a[0].split(':')[2])-parseInt(b[0].split(':')[2]));
+    if(chNotes.length){
+      const title=el('div','bible-ch-notes-title'); title.textContent='Notes in this chapter';
+      np.appendChild(title);
+      chNotes.forEach(([key,data])=>{
+        const vNum=key.split(':')[2];
+        const item=el('div','bible-note-item');
+        const itemHdr=el('div','bible-note-item-hdr');
+        const refSpan=el('span','bible-note-item-ref'); refSpan.textContent=BIBLE_CANON[_bm.bookIdx][0]+' '+_bm.chapter+':'+vNum;
+        const delBtn=el('button','bible-note-item-del'); delBtn.textContent='✕'; delBtn.title='Delete note';
+        delBtn.onclick=e=>{
+          e.stopPropagation();
+          const n=loadBibleNotes();
+          if(n[key]){ delete n[key].note; if(!n[key].highlight) delete n[key]; saveBibleNotes(n); }
+          bmRenderNotesPanel();
+        };
+        itemHdr.append(refSpan,delBtn);
+        const txt=el('div','bible-note-item-txt'); txt.textContent=data.note;
+        item.append(itemHdr,txt);
+        item.onclick=()=>{
+          _bm.verse=parseInt(vNum);
+          bmApplyHighlightClasses();
+          const row=document.querySelector('#bmTextPanel [data-verse="'+vNum+'"]');
+          if(row) row.scrollIntoView({behavior:'smooth',block:'center'});
+          bmRenderNotesPanel();
+        };
+        np.appendChild(item);
+      });
+    }
+  }
+
+  // Collapsible: Find by Topic
+  np.appendChild(bmBuildCollapsible('🔍 Find by Topic', bmBuildTopicSearch()));
+  // Collapsible: Sources
+  np.appendChild(bmBuildCollapsible('📚 Reading Plan Sources', bmBuildSourceLinks()));
+}
+
+function bmBuildCollapsible(label, content){
+  const wrap=el('div','bible-collapsible');
+  const hdr=el('div','bible-collapsible-hdr');
+  const h4=el('h4'); h4.textContent=label;
+  const arrow=el('span','bible-coll-arrow'); arrow.textContent='▶';
+  hdr.append(h4,arrow);
+  const body=el('div','bible-collapsible-body');
+  body.appendChild(content);
+  hdr.onclick=()=>{ const open=body.classList.toggle('open'); arrow.classList.toggle('open',open); };
+  wrap.append(hdr,body);
+  return wrap;
+}
+
+function bmBuildTopicSearch(){
+  const wrap=el('div');
+  const row=el('div','bible-topic-row');
+  const inp=el('input','search-widget-input');
+  inp.placeholder='hope, anxiety, forgiveness…'; inp.style.flex='1'; inp.style.fontSize='11px';
+  const goBtn=el('button','search-widget-go'); goBtn.style.cssText='font-size:10.5px;padding:3px 10px;'; goBtn.textContent='Search';
+  row.append(inp,goBtn);
+  wrap.appendChild(row);
+  const results=el('div','bible-topic-results');
+  wrap.appendChild(results);
+
+  const doSearch=async()=>{
+    const topic=inp.value.trim(); if(!topic) return;
+    results.innerHTML='<div class="bible-loading">Searching OpenBible…</div>';
+    const w=getWorkerUrl(_bm?.cfg?.workerUrl);
+    if(!w){ results.innerHTML='<div class="bible-error">Worker URL not set</div>'; return; }
+    try{
+      const r=await fetch(w.replace(/\/+$/,'')+'/topics',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({topic}),
+      });
+      const j=await r.json();
+      results.innerHTML='';
+      if(!j.verses?.length){ results.innerHTML='<div class="bible-loading">No results found</div>'; return; }
+      j.verses.slice(0,25).forEach(v=>{
+        const item=el('div','bible-topic-item');
+        const refSp=el('span','bible-topic-ref'); refSp.textContent=v.reference;
+        const vSp=el('span','bible-topic-votes'); vSp.textContent=v.votes?v.votes.toLocaleString()+'✓':'';
+        const addBtn=el('button','bible-topic-add'); addBtn.textContent='+ Plan'; addBtn.title='Add to reading plan';
+        addBtn.onclick=e=>{
+          e.stopPropagation();
+          if(!_bm?.cfg) return;
+          if(!_bm.cfg.plan) _bm.cfg.plan=[];
+          if(!_bm.cfg.plan.includes(v.reference)){
+            _bm.cfg.plan.push(v.reference); persist();
+            addBtn.textContent='✓'; addBtn.style.color='var(--gold)';
+            setTimeout(()=>{ addBtn.textContent='+ Plan'; addBtn.style.color=''; },1600);
+          }
+        };
+        item.append(refSp,vSp,addBtn);
+        item.onclick=e=>{
+          if(e.target===addBtn) return;
+          const parsed=bibleParseRef(v.reference);
+          if(!parsed||!_bm) return;
+          _bm.bookIdx=parsed.bookIdx; _bm.chapter=parsed.chapter; _bm.verse=parsed.verse;
+          document.getElementById('bmBookSel').value=_bm.bookIdx;
+          bmRebuildChapSel();
+          bmLoadChapter().then(()=>{
+            setTimeout(()=>{
+              const row=document.querySelector('#bmTextPanel [data-verse="'+parsed.verse+'"]');
+              if(row){ row.scrollIntoView({behavior:'smooth',block:'center'}); bmApplyHighlightClasses(); }
+            },150);
+          });
+        };
+        results.appendChild(item);
+      });
+    }catch(e){ results.innerHTML='<div class="bible-error">'+e.message+'</div>'; }
+  };
+  goBtn.onclick=doSearch;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') doSearch(); });
+  return wrap;
+}
+
+function bmBuildSourceLinks(){
+  const wrap=el('div','bible-source-links');
+  [
+    ['Bible Gateway Reading Plans','https://www.biblegateway.com/reading-plans/','Many translations'],
+    ['YouVersion Plans','https://www.bible.com/reading-plans','10,000+ plans'],
+    ['OpenBible Topics','https://www.openbible.info/topics/','Topical verse search'],
+    ['BibleStudyTools Topics','https://www.biblestudytools.com/topical-verses/','By subject'],
+    ['Crosswalk Devotionals','https://www.crosswalk.com/devotionals/',"Women's & daily"],
+    ['Bible Study for Her','https://www.biblestudyforher.com/','Women\'s plans (PDF)'],
+  ].forEach(([label,url,desc])=>{
+    const a=el('a','bible-src-link');
+    a.href=url; a.target='_blank'; a.rel='noopener noreferrer';
+    const l=el('span'); l.textContent=label;
+    const d=el('span','bible-src-link-desc'); d.textContent=desc;
+    a.append(l,d);
+    wrap.appendChild(a);
+  });
+  return wrap;
+}
+
+/* ── buildBibleWidget — mini widget ──────────────────────────────────────── */
+function buildBibleWidget(sec){
+  const cfg=sec.widgetConfig||(sec.widgetConfig={});
+  if(!cfg.apiKey)       cfg.apiKey='';
+  if(!cfg.defaultTrans) cfg.defaultTrans='NKJV';
+  if(!cfg.mode)         cfg.mode='votd';
+  if(!cfg.plan)         cfg.plan=[];
+  if(!cfg.apiBibleIds)  cfg.apiBibleIds={};
+  if(cfg.lastBook   ==null) cfg.lastBook=43;
+  if(cfg.lastChapter==null) cfg.lastChapter=3;
+  if(!cfg.lastTrans)    cfg.lastTrans=cfg.defaultTrans;
+
+  function getTodayRef(){
+    if(cfg.mode==='plan'&&cfg.plan?.length)
+      return cfg.plan[Math.floor(Date.now()/86400000)%cfg.plan.length];
+    return VOTD_REFS[Math.floor(Date.now()/86400000)%VOTD_REFS.length];
+  }
+
+  async function loadVotd(){
+    verseText.textContent='Loading…'; verseRef.textContent='';
+    const ref=getTodayRef();
+    const trans=cfg.defaultTrans||'NKJV';
+    transBadge.textContent=trans;
+    try{
+      let bookIdx, chapter, verse;
+      if(typeof ref==='string'){
+        const p=bibleParseRef(ref);
+        if(!p){ verseText.textContent='⚠ Invalid: '+ref; return; }
+        bookIdx=p.bookIdx; chapter=p.chapter; verse=p.verse;
+        verseRef.textContent=ref+'  ·  '+trans;
+      } else {
+        bookIdx=ref.b-1; chapter=ref.c; verse=ref.v;
+        verseRef.textContent=ref.r+'  ·  '+trans;
+      }
+      const verses=await bibleLoadChapter(cfg,bookIdx,chapter,trans);
+      const v=verses.find(x=>x.verse===verse)||verses[0];
+      verseText.textContent=v?v.text:'Verse not found';
+    }catch(e){ verseText.textContent='⚠ '+e.message; }
+  }
+
+  // DOM
+  const wrap=el('div','bible-widget');
+
+  const hdr=el('div','bible-widget-hdr');
+  const icon=el('span'); icon.textContent='📖 ';
+  const titleSp=el('span','bible-widget-title'); titleSp.textContent='Daily Verse';
+  const transBadge=el('span','bible-trans-badge'); transBadge.textContent=cfg.defaultTrans;
+  hdr.append(icon,titleSp,transBadge);
+  wrap.appendChild(hdr);
+
+  const vBox=el('div','bible-votd-box');
+  const verseText=el('div','bible-votd-text'); verseText.textContent='Loading…';
+  const verseRef=el('div','bible-votd-ref');
+  vBox.append(verseText,verseRef);
+  wrap.appendChild(vBox);
+
+  const actRow=el('div','bible-action-row');
+  const browseBtn=el('button','bible-browse-btn'); browseBtn.textContent='📖 Browse';
+  browseBtn.onclick=()=>openBibleModal(cfg);
+  actRow.appendChild(browseBtn);
+  wrap.appendChild(actRow);
+
+  // Edit-mode settings
+  const settings=el('div','bible-settings-wrap');
+
+  // API Key
+  const kr=el('div','bible-setting-row');
+  const kl=el('label','bible-setting-lbl'); kl.textContent='API.Bible Key';
+  const ki=el('input','search-widget-input'); ki.type='password';
+  ki.placeholder='Paste key…'; ki.value=cfg.apiKey; ki.style.flex='1';
+  ki.onblur=()=>{ cfg.apiKey=ki.value.trim(); cfg.apiBibleIds={}; persist(); };
+  kr.append(kl,ki); settings.appendChild(kr);
+
+  // Translation
+  const tr=el('div','bible-setting-row');
+  const tl=el('label','bible-setting-lbl'); tl.textContent='Translation';
+  const ts=el('select','bible-trans-sel');
+  function rebuildTs(){
+    ts.innerHTML='';
+    const fg=document.createElement('optgroup'); fg.label='Free';
+    ['NKJV','KJV','WEB','NET','ASV'].forEach(t=>{
+      const o=document.createElement('option'); o.value=t; o.textContent=t;
+      if(t===cfg.defaultTrans) o.selected=true; fg.appendChild(o);
+    });
+    ts.appendChild(fg);
+    if(cfg.apiKey){
+      const ag=document.createElement('optgroup'); ag.label='API.Bible';
+      [...new Set(['CSB','NLT','MSG',...Object.keys(cfg.apiBibleIds||{})])].forEach(t=>{
+        const o=document.createElement('option'); o.value=t; o.textContent=t;
+        if(t===cfg.defaultTrans) o.selected=true; ag.appendChild(o);
+      });
+      ts.appendChild(ag);
+    }
+  }
+  rebuildTs();
+  ts.onchange=()=>{ cfg.defaultTrans=ts.value; cfg.lastTrans=ts.value; persist(); transBadge.textContent=cfg.defaultTrans; loadVotd(); };
+  tr.append(tl,ts); settings.appendChild(tr);
+
+  // Mode
+  const mr=el('div','bible-setting-row');
+  const ml=el('label','bible-setting-lbl'); ml.textContent='VOTD Mode';
+  const vb=el('button','clock-style-btn'); vb.style.cssText='font-size:10px;padding:2px 10px;'; vb.textContent='Curated';
+  const pb=el('button','clock-style-btn'); pb.style.cssText='font-size:10px;padding:2px 10px;'; pb.textContent='My Plan';
+  const upd=()=>{ vb.classList.toggle('active',cfg.mode==='votd'); pb.classList.toggle('active',cfg.mode==='plan'); };
+  upd();
+  vb.onclick=()=>{ cfg.mode='votd'; persist(); upd(); loadVotd(); };
+  pb.onclick=()=>{ cfg.mode='plan'; persist(); upd(); loadVotd(); };
+  mr.append(ml,vb,pb); settings.appendChild(mr);
+
+  // Reading plan textarea
+  const ps=el('div','bible-plan-section');
+  const pl=el('div','bible-setting-lbl'); pl.textContent='Reading Plan (one ref per line)';
+  const pa=el('textarea','bible-plan-textarea');
+  pa.placeholder='John 3:16\nPsalm 23:1\nRomans 8:28\n…';
+  pa.value=(cfg.plan||[]).join('\n'); pa.rows=5;
+  pa.onblur=()=>{ cfg.plan=pa.value.split('\n').map(l=>l.trim()).filter(Boolean); persist(); loadVotd(); };
+  ps.append(pl,pa); settings.appendChild(ps);
+
+  // Export notes
+  const er=el('div','bible-setting-row'); er.style.marginTop='2px';
+  const eb=el('button','monitor-check-btn'); eb.textContent='Export Notes JSON';
+  eb.onclick=()=>{
+    const blob=new Blob([JSON.stringify(loadBibleNotes(),null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='bible-notes-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  };
+  er.appendChild(eb); settings.appendChild(er);
+
+  // Worker override
+  const wr=el('div','bible-setting-row');
+  const wl=el('label','bible-setting-lbl'); wl.textContent='Worker URL';
+  const wi=el('input','search-widget-input');
+  wi.placeholder='Override global Worker URL…'; wi.value=cfg.workerUrl||''; wi.style.flex='1'; wi.style.fontSize='10px';
+  wi.onblur=()=>{ cfg.workerUrl=wi.value.trim(); persist(); };
+  wr.append(wl,wi); settings.appendChild(wr);
+
+  const applyVis=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obs=new MutationObserver(applyVis);
+  obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyVis();
+  wrap.appendChild(settings);
+  const obsC=new MutationObserver(()=>{ if(!document.contains(wrap)){ obs.disconnect(); obsC.disconnect(); } });
+  obsC.observe(document.body,{childList:true,subtree:true});
+
+  loadVotd();
+  return wrap;
+}
 
 function buildItem(tabId, colId, secId, item, parentId){
   if(item.type === 'heading') return buildHeadingItem(tabId, colId, secId, item);
