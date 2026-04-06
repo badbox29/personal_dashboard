@@ -171,39 +171,31 @@ body {
   100% { box-shadow: 0 0 0 1.5px rgba(255,80,80,0.9), 0 0 6px 2px rgba(255,80,80,0.3); }
 }
 @keyframes tabGlowSoft {
+  0%   { box-shadow: 0 0 0 1.5px rgba(221,176,75,0.8), 0 0 6px 2px rgba(221,176,75,0.25); }
+  50%  { box-shadow: 0 0 0 2px   rgba(221,176,75,1),   0 0 14px 5px rgba(221,176,75,0.45); }
+  100% { box-shadow: 0 0 0 1.5px rgba(221,176,75,0.8), 0 0 6px 2px rgba(221,176,75,0.25); }
+}
+@keyframes tabGlowInfo {
   0%   { box-shadow: 0 0 0 1.5px rgba(68,204,136,0.8), 0 0 6px 2px rgba(68,204,136,0.25); }
   50%  { box-shadow: 0 0 0 2px   rgba(68,204,136,1),   0 0 14px 5px rgba(68,204,136,0.45); }
   100% { box-shadow: 0 0 0 1.5px rgba(68,204,136,0.8), 0 0 6px 2px rgba(68,204,136,0.25); }
 }
-.tab-btn.alert-critical {
-  animation: tabGlowCritical 1.8s ease-in-out infinite;
-  position: relative;
-}
-.tab-btn.alert-soft {
-  animation: tabGlowSoft 2.4s ease-in-out infinite;
-  position: relative;
-}
-/* Indicator dot in top-right corner */
+.tab-btn.alert-critical { animation: tabGlowCritical 1.8s ease-in-out infinite; position: relative; }
+.tab-btn.alert-soft     { animation: tabGlowSoft 2.4s ease-in-out infinite; position: relative; }
+.tab-btn.alert-info     { animation: tabGlowInfo 2.8s ease-in-out infinite; position: relative; }
 .tab-btn.alert-critical::after,
-.tab-btn.alert-soft::after {
-  content: '';
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(0,0,0,0.35);
+.tab-btn.alert-soft::after,
+.tab-btn.alert-info::after {
+  content: ''; position: absolute; top: 4px; right: 4px;
+  width: 6px; height: 6px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.35);
 }
 .tab-btn.alert-critical::after { background: #ff5050; }
-.tab-btn.alert-soft::after     { background: #44cc88; }
-/* Don't double-animate with drag shadows */
+.tab-btn.alert-soft::after     { background: var(--gold); }
+.tab-btn.alert-info::after     { background: #44cc88; }
 .tab-btn.alert-critical.drop-left,
 .tab-btn.alert-critical.drop-right,
 .tab-btn.alert-soft.drop-left,
-.tab-btn.alert-soft.drop-right {
-  animation: none;
-}
+.tab-btn.alert-soft.drop-right { animation: none; }
 
 .toolbar {
   margin-left: auto;
@@ -4405,6 +4397,52 @@ body.edit-mode .gh-add-row { display: flex; }
 .dns-type-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(255,200,0,0.08); }
 
 /* ============================================================
+   WIDGET — OTX Threat Intelligence
+   ============================================================ */
+.otx-summary-strip { display:flex; gap:5px; margin-bottom:10px; }
+.otx-stat { flex:1; padding:7px 8px; background:var(--inp-bg); border:1px solid var(--border); border-radius:5px; display:flex; flex-direction:column; gap:2px; min-width:0; }
+.otx-stat-value { font-size:16px; font-weight:700; font-family:'Share Tech Mono',monospace; color:var(--gold); line-height:1; }
+.otx-stat-label { font-size:9px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; }
+.otx-elevated-banner { display:flex; align-items:center; gap:6px; padding:5px 8px; background:rgba(255,136,68,0.08); border:1px solid rgba(255,136,68,0.4); border-radius:4px; font-size:11px; font-family:'Share Tech Mono',monospace; color:#ff8844; margin-bottom:8px; animation:otxElevatedPulse 2.5s ease-in-out infinite alternate; }
+@keyframes otxElevatedPulse { from { border-color:rgba(255,136,68,0.3); } to { border-color:rgba(255,136,68,0.7); } }
+.otx-section-hdr { font-size:9.5px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px; margin-top:8px; }
+.otx-pulse-list { display:flex; flex-direction:column; gap:4px; max-height:240px; overflow-y:auto; }
+.otx-pulse-row { display:flex; flex-direction:column; gap:3px; padding:6px 8px; background:var(--inp-bg); border:1px solid var(--border); border-radius:4px; cursor:pointer; transition:border-color 0.15s; }
+.otx-pulse-row:hover { border-color:var(--cyan); }
+.otx-pulse-top { display:flex; align-items:center; gap:6px; }
+.otx-adversary-chip { font-size:9px; font-family:'Share Tech Mono',monospace; font-weight:700; padding:1px 6px; border-radius:3px; background:rgba(255,80,80,0.12); border:1px solid rgba(255,80,80,0.4); color:#ff8888; flex-shrink:0; white-space:nowrap; max-width:110px; overflow:hidden; text-overflow:ellipsis; }
+.otx-tlp-chip { font-size:9px; font-family:'Share Tech Mono',monospace; font-weight:700; padding:1px 5px; border-radius:3px; flex-shrink:0; }
+.otx-tlp-white { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.25); color:var(--text-dim); }
+.otx-tlp-green { background:rgba(68,204,136,0.12); border:1px solid rgba(68,204,136,0.4); color:#44cc88; }
+.otx-tlp-amber { background:rgba(255,200,0,0.12); border:1px solid rgba(255,200,0,0.4); color:var(--gold); }
+.otx-tlp-red   { background:rgba(255,80,80,0.12); border:1px solid rgba(255,80,80,0.4); color:#ff5050; }
+.otx-new-badge { font-size:8.5px; font-family:'Share Tech Mono',monospace; font-weight:700; padding:1px 5px; border-radius:3px; background:rgba(68,204,136,0.12); border:1px solid rgba(68,204,136,0.4); color:#44cc88; flex-shrink:0; }
+.otx-updated-badge { font-size:8.5px; font-family:'Share Tech Mono',monospace; padding:1px 5px; border-radius:3px; background:rgba(221,176,75,0.1); border:1px solid rgba(221,176,75,0.3); color:var(--gold); flex-shrink:0; }
+.otx-pulse-name { font-size:11px; color:var(--text); line-height:1.35; flex:1; min-width:0; }
+.otx-pulse-meta { font-size:9.5px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); display:flex; gap:8px; align-items:center; }
+.otx-ioc-count { color:var(--cyan); }
+.otx-chip-row { display:flex; flex-wrap:wrap; gap:3px; margin-top:3px; }
+.otx-tag-chip { font-size:9px; font-family:'Share Tech Mono',monospace; padding:1px 5px; border-radius:3px; background:rgba(180,170,150,0.08); border:1px solid rgba(180,170,150,0.22); color:rgba(180,170,150,0.75); }
+.otx-industry-watched { border-color:rgba(221,176,75,0.45) !important; }
+.otx-adversary-strip { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+.otx-adversary-strip-chip { font-size:9.5px; font-family:'Share Tech Mono',monospace; padding:2px 7px; border-radius:3px; background:rgba(255,80,80,0.08); border:1px solid rgba(255,80,80,0.3); color:#ff9999; cursor:default; }
+.otx-filter-row { display:flex; gap:5px; margin-bottom:7px; flex-wrap:wrap; }
+.otx-modal-pulse { padding:10px 12px; background:var(--inp-bg); border:1px solid var(--border); border-radius:6px; margin-bottom:8px; }
+.otx-modal-desc { font-size:11.5px; color:var(--text-dim); line-height:1.6; margin-bottom:8px; }
+.otx-modal-grid { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.otx-modal-tile { flex:1; min-width:80px; padding:5px 8px; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:4px; }
+.otx-modal-tile-lbl { font-size:9px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; }
+.otx-modal-tile-val { font-size:11px; font-family:'Share Tech Mono',monospace; color:var(--text); }
+.otx-ioc-breakdown { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }
+.otx-ioc-badge { font-size:9.5px; font-family:'Share Tech Mono',monospace; padding:2px 7px; border-radius:3px; background:var(--inp-bg); border:1px solid var(--border); color:var(--text-dim); }
+.otx-ioc-badge span { color:var(--gold); font-weight:700; margin-right:3px; }
+.otx-ref-link { font-size:11px; font-family:'Share Tech Mono',monospace; color:var(--cyan); text-decoration:none; display:inline-block; margin-top:4px; opacity:0.85; transition:opacity 0.15s; }
+.otx-ref-link:hover { opacity:1; }
+.otx-api-required { padding:14px 10px; background:var(--inp-bg); border:1px solid var(--border); border-radius:6px; text-align:center; }
+.otx-api-required-title { font-size:12px; font-family:'Share Tech Mono',monospace; color:var(--gold); font-weight:700; margin-bottom:4px; }
+.otx-api-required-sub { font-size:11px; color:var(--text-dim); }
+
+/* ============================================================
    WIDGET — BGP / ASN Lookup
    ============================================================ */
 .bgp-mode-tabs {
@@ -4576,6 +4614,144 @@ body.edit-mode .gh-add-row { display: flex; }
   font-style: italic;
   padding: 4px 0;
 }
+
+/* ── Bible Widget ─────────────────────────────────────────────── */
+.bible-widget{display:flex;flex-direction:column;gap:6px;}
+.bible-widget-hdr{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.bible-widget-title{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;flex:1;}
+.bible-trans-badge{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 6px;flex-shrink:0;}
+.bible-votd-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;cursor:default;}
+.bible-votd-text{font-size:13px;line-height:1.65;color:var(--text-head);margin-bottom:5px;font-style:italic;}
+.bible-votd-ref{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--gold);}
+.bible-action-row{display:flex;gap:6px;}
+.bible-browse-btn{font-size:11px;padding:4px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--gold);cursor:pointer;transition:all .15s;}
+.bible-browse-btn:hover{border-color:var(--gold);background:rgba(221,176,75,.12);}
+.bible-settings-wrap{border-top:1px solid var(--border);padding-top:8px;margin-top:4px;display:flex;flex-direction:column;gap:7px;}
+.bible-setting-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bible-setting-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:88px;}
+.bible-plan-section{display:flex;flex-direction:column;gap:4px;}
+.bible-plan-textarea{width:100%;font-size:11px;font-family:'Share Tech Mono',monospace;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);padding:6px 8px;resize:vertical;outline:none;}
+.bible-plan-textarea:focus{border-color:var(--gold);}
+.bible-trans-sel{flex:1;font-size:11px;padding:3px 6px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;min-width:0;}
+/* Modal overlay */
+.bible-modal-overlay{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;}
+.bible-modal-overlay.open{display:flex;}
+.bible-modal{background:var(--modal-bg);border:1px solid var(--border);border-radius:10px;width:min(1120px,96vw);height:min(800px,92vh);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.bible-modal-hdr{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+.bible-modal-hdr h3{margin:0;font-size:14px;color:var(--text-head);flex:1;min-width:120px;}
+.bible-nav{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
+.bible-nav-sel{font-size:11.5px;padding:4px 7px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;cursor:pointer;}
+.bible-nav-sel:focus{border-color:var(--gold);}
+.bible-modal-body{display:flex;flex:1;overflow:hidden;}
+/* Left: text */
+.bible-text-panel{flex:1 1 62%;overflow-y:auto;padding:14px 16px;border-right:1px solid var(--border);}
+.bible-chapter-title{font-size:11.5px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em;}
+.bible-verse-row{display:flex;gap:8px;padding:3px 6px;border-radius:4px;cursor:pointer;transition:background .1s;align-items:flex-start;user-select:text;}
+.bible-verse-row:hover{background:rgba(255,255,255,.04);}
+.bible-verse-row.selected{background:rgba(221,176,75,.1);outline:1px solid rgba(221,176,75,.4);}
+.bible-verse-num{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);min-width:22px;padding-top:3px;flex-shrink:0;user-select:none;}
+.bible-verse-text{font-size:13.5px;line-height:1.72;color:var(--text);}
+.bh-yellow{background:rgba(240,210,40,.22)!important;}
+.bh-green {background:rgba(60,185,100,.20)!important;}
+.bh-blue  {background:rgba(50,140,240,.18)!important;}
+.bh-pink  {background:rgba(240,80,160,.20)!important;}
+.bh-purple{background:rgba(160,70,240,.20)!important;}
+/* Highlight toolbar */
+.bible-hl-toolbar{display:none;position:fixed;z-index:9600;background:var(--modal-bg);border:1px solid var(--border);border-radius:7px;padding:5px 9px;gap:5px;align-items:center;box-shadow:0 4px 18px rgba(0,0,0,.45);}
+.bible-hl-toolbar.visible{display:flex;}
+.bible-hl-swatch{width:19px;height:19px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .1s,border-color .1s;flex-shrink:0;}
+.bible-hl-swatch:hover{transform:scale(1.25);}
+.bible-hl-swatch.active{border-color:#fff;}
+.bible-hl-clear{font-size:10.5px;color:var(--text-dim);background:none;border:none;cursor:pointer;padding:0 3px;white-space:nowrap;}
+.bible-hl-clear:hover{color:var(--del-color);}
+/* Right: notes */
+.bible-notes-panel{flex:0 0 37%;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px;min-width:0;}
+.bible-selected-ref{font-size:11px;color:var(--gold);font-family:'Share Tech Mono',monospace;margin-bottom:5px;}
+.bible-note-inp{width:100%;font-size:12px;line-height:1.5;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);padding:6px 8px;resize:vertical;outline:none;min-height:68px;}
+.bible-note-inp:focus{border-color:var(--gold);}
+.bible-note-actions{display:flex;gap:5px;margin-top:4px;}
+.bible-ch-notes-title{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-top:6px;}
+.bible-note-item{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:8px 10px;cursor:pointer;transition:background .1s;}
+.bible-note-item:hover{background:rgba(255,255,255,.05);}
+.bible-note-item-hdr{display:flex;align-items:center;margin-bottom:3px;}
+.bible-note-item-ref{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);flex:1;}
+.bible-note-item-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11px;padding:0 2px;line-height:1;}
+.bible-note-item-del:hover{color:var(--del-color);}
+.bible-note-item-txt{font-size:11.5px;line-height:1.5;color:var(--text);}
+.bible-panel-hint{font-size:11px;color:var(--text-dim);font-style:italic;padding:2px 0;}
+/* Collapsible sections */
+.bible-collapsible{border-top:1px solid var(--border);padding-top:8px;margin-top:4px;}
+.bible-collapsible-hdr{display:flex;align-items:center;cursor:pointer;padding:2px 0;user-select:none;}
+.bible-collapsible-hdr h4{font-size:10.5px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin:0;flex:1;}
+.bible-coll-arrow{font-size:9px;color:var(--text-dim);transition:transform .2s;margin-left:4px;}
+.bible-coll-arrow.open{transform:rotate(90deg);}
+.bible-collapsible-body{display:none;padding-top:8px;}
+.bible-collapsible-body.open{display:block;}
+/* Topic search */
+.bible-topic-row{display:flex;gap:5px;margin-bottom:6px;}
+.bible-topic-results{display:flex;flex-direction:column;gap:3px;max-height:200px;overflow-y:auto;}
+.bible-topic-item{display:flex;align-items:center;gap:6px;padding:4px 7px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;transition:background .1s;}
+.bible-topic-item:hover{background:rgba(255,255,255,.06);}
+.bible-topic-ref{font-family:'Share Tech Mono',monospace;color:var(--text-head);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bible-topic-votes{font-size:10px;color:var(--text-dim);flex-shrink:0;white-space:nowrap;}
+.bible-topic-add{font-size:10px;color:var(--gold);background:none;border:none;cursor:pointer;padding:0 3px;flex-shrink:0;white-space:nowrap;}
+.bible-topic-add:hover{color:var(--link-hover);}
+/* Source links */
+.bible-source-links{display:flex;flex-direction:column;gap:4px;}
+.bible-src-link{display:flex;align-items:baseline;gap:8px;font-size:11px;color:var(--link);text-decoration:none;border:1px solid var(--border);border-radius:4px;padding:4px 8px;transition:all .15s;}
+.bible-src-link:hover{border-color:var(--link-hover);color:var(--link-hover);}
+.bible-src-link-desc{font-size:10px;color:var(--text-dim);margin-left:auto;white-space:nowrap;}
+.bible-loading{font-size:12px;color:var(--text-dim);font-style:italic;padding:8px 2px;}
+.bible-error{font-size:12px;color:var(--del-color);padding:6px 2px;}
+
+
+/* ── Bible v2 additions ───────────────────────────────────────── */
+.bible-trans-sel-widget{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--gold);border:1px solid var(--border);border-radius:3px;padding:1px 5px;background:var(--inp-bg);cursor:pointer;outline:none;}
+.bible-trans-sel-widget:focus{border-color:var(--gold);}
+.bible-action-row{flex-wrap:wrap;}
+.bible-opts-btn{font-size:11px;padding:4px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;transition:all .15s;}
+.bible-opts-btn:hover{border-color:var(--text-dim);color:var(--text);}
+/* VOTD modal */
+.votd-modal-overlay{position:fixed;inset:0;z-index:9510;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;}
+.votd-modal-overlay.open{display:flex;}
+.votd-modal{background:var(--modal-bg);border:1px solid var(--border);border-radius:10px;width:min(680px,95vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+.votd-modal-hdr{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.votd-modal-hdr h3{margin:0;font-size:13px;color:var(--text-head);flex:1;}
+.votd-modal-body{overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:14px;}
+/* Mode row */
+.votd-mode-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.votd-mode-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-right:4px;white-space:nowrap;}
+.votd-mode-btn{font-size:11px;padding:3px 11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px;}
+.votd-mode-btn:hover{border-color:var(--text);color:var(--text);}
+.votd-mode-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(221,176,75,.1);}
+.votd-mode-del{font-size:10px;color:var(--text-dim);background:none;border:none;cursor:pointer;padding:0;line-height:1;margin-left:2px;}
+.votd-mode-del:hover{color:var(--del-color);}
+/* Plan display */
+.votd-plan-display{border:1px solid var(--border);border-radius:5px;padding:10px 12px;background:var(--surface2);}
+.votd-plan-display-title{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.votd-plan-hint{font-size:12px;color:var(--text-dim);font-style:italic;}
+.votd-add-row{display:flex;gap:6px;margin-bottom:8px;}
+.votd-chips{display:flex;flex-wrap:wrap;gap:5px;max-height:130px;overflow-y:auto;}
+.votd-chip{display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:2px 7px;font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text);}
+.votd-chip-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11px;padding:0;line-height:1;}
+.votd-chip-del:hover{color:var(--del-color);}
+/* Builder */
+.votd-builder{border:1px solid var(--border);border-radius:6px;padding:12px;background:var(--surface2);}
+.votd-builder-title{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.votd-search-row{display:flex;gap:5px;margin-bottom:8px;}
+.votd-builder-results{display:flex;flex-direction:column;gap:3px;max-height:160px;overflow-y:auto;margin-bottom:10px;}
+.votd-builder-result{display:flex;align-items:center;gap:6px;padding:3px 7px;background:var(--surface);border:1px solid var(--border);border-radius:3px;font-size:11px;}
+.votd-builder-result-ref{font-family:'Share Tech Mono',monospace;color:var(--text-head);flex:1;}
+.votd-builder-result-votes{font-size:10px;color:var(--text-dim);white-space:nowrap;}
+.votd-builder-result-add{font-size:10px;color:var(--gold);background:none;border:none;cursor:pointer;padding:0 3px;white-space:nowrap;}
+.votd-builder-result-add:hover{color:var(--link-hover);}
+.votd-staging-label{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.votd-staging-chips{display:flex;flex-wrap:wrap;gap:4px;min-height:30px;margin-bottom:8px;padding:6px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;}
+.votd-staging-empty{font-size:11px;color:var(--text-dim);font-style:italic;align-self:center;}
+.votd-finalize-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px;}
+.votd-plan-name-inp{flex:1;min-width:140px;font-size:11px;padding:4px 8px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;}
+.votd-plan-name-inp:focus{border-color:var(--gold);}
+
 </style>
 </head>
 <body>
@@ -5103,6 +5279,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swEnergy"    onclick="selectWidgetType('energy')">
           ⚡ Energy Tracker<span>Log &amp; spot patterns</span>
         </button>
+        <button class="sec-type-card" id="swBible"    onclick="selectWidgetType('bible')">
+          📖 Bible<span>Daily verse &amp; browser</span>
+        </button>
       </div>
       <!-- Network Engineering widgets -->
       <div class="widget-cat-panel" id="wcPanelNetwork">
@@ -5126,6 +5305,9 @@ body.edit-mode .gh-add-row { display: flex; }
         </button>
         <button class="sec-type-card" id="swSubnet"    onclick="selectWidgetType('subnet')">
           🌐 Subnet Calc<span>IPv4 &amp; IPv6 calculator</span>
+        </button>
+        <button class="sec-type-card" id="swOtx"       onclick="selectWidgetType('otx')">
+          🛰 Threat Intel<span>LevelBlue OTX feed — API required</span>
         </button>
       </div>
       <!-- Coding widgets -->
@@ -5266,6 +5448,8 @@ const DEFAULTS = {
   sportsTeamLists: {},
   defaultSportsLeague: '',
   energyEntries: [],
+  otxIndustries: [],
+  otxAlarmHistory: [],
   pollenKey: '',
   pollenEnabled: false,
   pollenService: 'weatherapi',
@@ -5572,34 +5756,6 @@ const QUOTES = [
 let D          = null;
 let activeTab  = null;
 let editMode   = false;
-
-// ── Tab Alert System ─────────────────────────────────────────────────────────
-// Any widget can call setTabAlert(tabId, 'critical'|'soft') / clearTabAlert(tabId)
-// Tabs auto-clear when navigated to.
-const tabAlerts = new Map(); // tabId → 'critical' | 'soft'
-
-function setTabAlert(tabId, level='soft'){
-  if(!tabId) return;
-  // Don't downgrade critical to soft
-  if(tabAlerts.get(tabId)==='critical' && level==='soft') return;
-  tabAlerts.set(tabId, level);
-  _applyTabAlertClasses();
-}
-
-function clearTabAlert(tabId){
-  if(!tabId) return;
-  tabAlerts.delete(tabId);
-  _applyTabAlertClasses();
-}
-
-function _applyTabAlertClasses(){
-  document.querySelectorAll('.tab-btn').forEach(btn=>{
-    const id = btn.dataset.tabId;
-    btn.classList.remove('alert-critical','alert-soft');
-    const level = tabAlerts.get(id);
-    if(level) btn.classList.add('alert-'+level);
-  });
-}
 let editLink   = null;
 let editTab    = null;
 let editService = null;  // {tabId, colId, secId, serviceId} or serviceId null for new
@@ -5613,7 +5769,121 @@ let bgCtx         = null;
 const statusState = {};
 const cveWatchTimers = {}; // secId → intervalId for CVE watchlist polling
 
+// ── Tab Alert System ──────────────────────────────────────────────────────────
+// Widgets call setTabAlert(tabId, 'critical'|'soft') / clearTabAlert(tabId)
+// Tabs auto-clear when navigated to.
+const tabAlerts = new Map(); // tabId → 'critical' | 'soft'
+
+function setTabAlert(tabId, level='info'){
+  if(!tabId) return;
+  const priority = { critical:3, soft:2, info:1 };
+  const current  = tabAlerts.get(tabId);
+  // Don't downgrade to a lower priority level
+  if(current && (priority[current]||0) >= (priority[level]||0)) return;
+  tabAlerts.set(tabId, level);
+  _applyTabAlertClasses();
+}
+
+function clearTabAlert(tabId){
+  if(!tabId) return;
+  tabAlerts.delete(tabId);
+  _applyTabAlertClasses();
+}
+
+function _applyTabAlertClasses(){
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    const id = btn.dataset.tabId;
+    btn.classList.remove('alert-critical','alert-soft','alert-info');
+    const level = tabAlerts.get(id);
+    if(level) btn.classList.add('alert-'+level);
+  });
+}
+
 // Widget constants — must be declared before init IIFE runs renderAll
+
+// ── Canon (name, bollsId 1-66, osisId) ───────────────────────────────────────
+const BIBLE_CANON = [
+  ['Genesis',1,'GEN'],['Exodus',2,'EXO'],['Leviticus',3,'LEV'],['Numbers',4,'NUM'],
+  ['Deuteronomy',5,'DEU'],['Joshua',6,'JOS'],['Judges',7,'JDG'],['Ruth',8,'RUT'],
+  ['1 Samuel',9,'1SA'],['2 Samuel',10,'2SA'],['1 Kings',11,'1KI'],['2 Kings',12,'2KI'],
+  ['1 Chronicles',13,'1CH'],['2 Chronicles',14,'2CH'],['Ezra',15,'EZR'],
+  ['Nehemiah',16,'NEH'],['Esther',17,'EST'],['Job',18,'JOB'],['Psalms',19,'PSA'],
+  ['Proverbs',20,'PRO'],['Ecclesiastes',21,'ECC'],['Song of Solomon',22,'SNG'],
+  ['Isaiah',23,'ISA'],['Jeremiah',24,'JER'],['Lamentations',25,'LAM'],
+  ['Ezekiel',26,'EZK'],['Daniel',27,'DAN'],['Hosea',28,'HOS'],['Joel',29,'JOL'],
+  ['Amos',30,'AMO'],['Obadiah',31,'OBA'],['Jonah',32,'JON'],['Micah',33,'MIC'],
+  ['Nahum',34,'NAM'],['Habakkuk',35,'HAB'],['Zephaniah',36,'ZEP'],
+  ['Haggai',37,'HAG'],['Zechariah',38,'ZEC'],['Malachi',39,'MAL'],
+  ['Matthew',40,'MAT'],['Mark',41,'MRK'],['Luke',42,'LUK'],['John',43,'JHN'],
+  ['Acts',44,'ACT'],['Romans',45,'ROM'],['1 Corinthians',46,'1CO'],
+  ['2 Corinthians',47,'2CO'],['Galatians',48,'GAL'],['Ephesians',49,'EPH'],
+  ['Philippians',50,'PHP'],['Colossians',51,'COL'],['1 Thessalonians',52,'1TH'],
+  ['2 Thessalonians',53,'2TH'],['1 Timothy',54,'1TI'],['2 Timothy',55,'2TI'],
+  ['Titus',56,'TIT'],['Philemon',57,'PHM'],['Hebrews',58,'HEB'],['James',59,'JAS'],
+  ['1 Peter',60,'1PE'],['2 Peter',61,'2PE'],['1 John',62,'1JN'],
+  ['2 John',63,'2JN'],['3 John',64,'3JN'],['Jude',65,'JUD'],['Revelation',66,'REV'],
+];
+const BIBLE_CHAPTERS = [
+  50,40,27,36,34,24,21,4,31,24,22,25,29,36,10,13,10,42,150,31,12,8,
+  66,52,5,48,12,14,3,9,1,4,7,3,3,3,2,14,4,
+  28,16,24,21,28,16,16,13,6,6,4,4,5,3,6,4,3,1,13,5,5,3,5,1,1,1,22,
+];
+// Curated VOTD {b:bollsId, c:chapter, v:verse, r:'display ref'}
+const VOTD_REFS = [
+  {b:43,c:3,v:16,r:'John 3:16'},{b:19,c:23,v:1,r:'Psalm 23:1'},
+  {b:45,c:8,v:28,r:'Romans 8:28'},{b:24,c:29,v:11,r:'Jeremiah 29:11'},
+  {b:50,c:4,v:13,r:'Philippians 4:13'},{b:20,c:3,v:5,r:'Proverbs 3:5'},
+  {b:23,c:40,v:31,r:'Isaiah 40:31'},{b:49,c:2,v:8,r:'Ephesians 2:8'},
+  {b:45,c:12,v:2,r:'Romans 12:2'},{b:19,c:46,v:1,r:'Psalm 46:1'},
+  {b:19,c:119,v:105,r:'Psalm 119:105'},{b:58,c:11,v:1,r:'Hebrews 11:1'},
+  {b:45,c:5,v:8,r:'Romans 5:8'},{b:43,c:14,v:6,r:'John 14:6'},
+  {b:49,c:6,v:10,r:'Ephesians 6:10'},{b:19,c:34,v:18,r:'Psalm 34:18'},
+  {b:45,c:15,v:13,r:'Romans 15:13'},{b:43,c:16,v:33,r:'John 16:33'},
+  {b:50,c:4,v:6,r:'Philippians 4:6'},{b:62,c:4,v:8,r:'1 John 4:8'},
+  {b:43,c:15,v:5,r:'John 15:5'},{b:19,c:27,v:1,r:'Psalm 27:1'},
+  {b:23,c:41,v:10,r:'Isaiah 41:10'},{b:23,c:26,v:3,r:'Isaiah 26:3'},
+  {b:51,c:3,v:23,r:'Colossians 3:23'},{b:23,c:53,v:5,r:'Isaiah 53:5'},
+  {b:19,c:91,v:1,r:'Psalm 91:1'},{b:45,c:8,v:38,r:'Romans 8:38'},
+  {b:40,c:11,v:28,r:'Matthew 11:28'},{b:40,c:6,v:33,r:'Matthew 6:33'},
+  {b:40,c:28,v:20,r:'Matthew 28:20'},{b:19,c:37,v:4,r:'Psalm 37:4'},
+  {b:20,c:31,v:25,r:'Proverbs 31:25'},{b:46,c:13,v:4,r:'1 Corinthians 13:4'},
+  {b:43,c:8,v:32,r:'John 8:32'},{b:62,c:1,v:9,r:'1 John 1:9'},
+  {b:23,c:55,v:8,r:'Isaiah 55:8'},{b:45,c:6,v:23,r:'Romans 6:23'},
+  {b:19,c:139,v:14,r:'Psalm 139:14'},{b:58,c:4,v:12,r:'Hebrews 4:12'},
+  {b:43,c:10,v:10,r:'John 10:10'},{b:45,c:8,v:1,r:'Romans 8:1'},
+  {b:50,c:4,v:7,r:'Philippians 4:7'},{b:19,c:34,v:8,r:'Psalm 34:8'},
+  {b:25,c:3,v:22,r:'Lamentations 3:22'},{b:49,c:4,v:32,r:'Ephesians 4:32'},
+  {b:43,c:4,v:24,r:'John 4:24'},{b:45,c:10,v:17,r:'Romans 10:17'},
+  {b:40,c:5,v:16,r:'Matthew 5:16'},{b:43,c:14,v:27,r:'John 14:27'},
+  {b:48,c:5,v:22,r:'Galatians 5:22'},{b:20,c:16,v:9,r:'Proverbs 16:9'},
+  {b:58,c:12,v:2,r:'Hebrews 12:2'},{b:43,c:1,v:1,r:'John 1:1'},
+  {b:45,c:3,v:23,r:'Romans 3:23'},{b:19,c:103,v:12,r:'Psalm 103:12'},
+  {b:40,c:22,v:37,r:'Matthew 22:37'},{b:60,c:5,v:7,r:'1 Peter 5:7'},
+  {b:19,c:150,v:6,r:'Psalm 150:6'},{b:43,c:13,v:34,r:'John 13:34'},
+  {b:49,c:3,v:20,r:'Ephesians 3:20'},{b:55,c:1,v:7,r:'2 Timothy 1:7'},
+  {b:45,c:8,v:31,r:'Romans 8:31'},{b:19,c:121,v:1,r:'Psalm 121:1'},
+  {b:43,c:11,v:25,r:'John 11:25'},{b:19,c:46,v:7,r:'Psalm 46:7'},
+  {b:46,c:10,v:31,r:'1 Corinthians 10:31'},{b:43,c:3,v:30,r:'John 3:30'},
+  {b:19,c:1,v:1,r:'Psalm 1:1'},{b:20,c:18,v:10,r:'Proverbs 18:10'},
+];
+const BOLLS_FREE_SET = new Set(['NKJV','KJV','WEB','NET','ASV','YLT']);
+
+function isBollsTrans(t){ return BOLLS_FREE_SET.has((t||'').toUpperCase()); }
+
+// ── Seed plan: Doubt, Unbelief & Fear (top OpenBible community-ranked refs) ──
+const BIBLE_SEED_PLAN = {
+  name: 'Doubt, Unbelief & Fear',
+  key:  'doubt_unbelief_fear',
+  refs: [
+    'Matthew 14:31','James 1:6','Matthew 21:21','Mark 9:24',
+    'Matthew 17:20','John 20:27','Jude 1:22','Romans 14:23',
+    'Hebrews 3:12','Mark 6:6','Matthew 17:17','Isaiah 41:10',
+    '2 Timothy 1:7','Psalm 56:3','Joshua 1:9','1 John 4:18',
+    'Psalm 34:4','Psalm 27:1','Deuteronomy 31:6','Romans 8:15',
+    'Isaiah 43:1','Proverbs 3:5','Psalm 23:4','Philippians 4:6',
+  ],
+};
+
 const SEARCH_ENGINES = [
   { id:'google',  label:'Google',     url:'https://www.google.com/search?q=' },
   { id:'bing',    label:'Bing',       url:'https://www.bing.com/search?q=' },
@@ -5623,7 +5893,7 @@ const SEARCH_ENGINES = [
 ];
 
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
-                      'ports','myip','rfc','cve','bgp','dns','subnet',
+                      'ports','myip','rfc','cve','bgp','dns','subnet','otx',
                       'github','regex',
                       'compose'];
 
@@ -5873,6 +6143,8 @@ const PORT_COMBOS = {
   if(typeof D.sportsTeamLists !== 'object' || Array.isArray(D.sportsTeamLists)) D.sportsTeamLists = {};
   if(D.defaultSportsLeague === undefined) D.defaultSportsLeague = '';
   if(!Array.isArray(D.energyEntries)) D.energyEntries = [];
+  if(!Array.isArray(D.otxIndustries))    D.otxIndustries    = [];
+  if(!Array.isArray(D.otxAlarmHistory))  D.otxAlarmHistory  = [];
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -6032,8 +6304,6 @@ function renderTabBar(){
   atb.textContent = '＋ Tab';
   atb.onclick = promptAddTab;
   bar.insertBefore(atb, toolbar);
-  // Re-apply any active alerts after tab bar is rebuilt
-  _applyTabAlertClasses();
 }
 
 /* ---- TAB CONTENTS ---- */
@@ -6327,6 +6597,7 @@ function buildWidgetBody(sec, tabId){
     case 'bgp':       return buildBgpWidget(sec);
     case 'dns':       return buildDnsWidget(sec);
     case 'subnet':    return buildSubnetWidget(sec);
+    case 'otx':       return buildOtxWidget(sec, tabId);
     case 'github':    return buildGithubWidget(sec);
     case 'regex':     return buildRegexWidget(sec);
     case 'rss':       return buildRssWidget(sec);
@@ -6336,6 +6607,7 @@ function buildWidgetBody(sec, tabId){
     case 'sports':    return buildSportsWidget(sec);
     case 'energy':    return buildEnergyWidget(sec, tabId);
     case 'compose':   return buildComposeWidget(sec);
+    case 'bible':    return buildBibleWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -7625,6 +7897,460 @@ function buildDnsWidget(sec){
   return wrap;
 }
 
+/* ---- OTX ALARM SOUND ---- */
+// Distinct from CVE alarm: lower tone, slower triplet pattern — intelligence alert feel
+function otxAlarmSound(){
+  try {
+    const ctx = getAudioCtx();
+    const play = ()=>{
+      const now = ctx.currentTime;
+      // Three descending pulses — slower, more deliberate than CVE's rapid quad
+      [[660,0],[520,0.35],[660,0.7]].forEach(([freq,offset])=>{
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now+offset);
+        gain.gain.setValueAtTime(0, now+offset);
+        gain.gain.linearRampToValueAtTime(0.12, now+offset+0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now+offset+0.3);
+        osc.start(now+offset); osc.stop(now+offset+0.35);
+      });
+    };
+    if(ctx.state === 'suspended') ctx.resume().then(play);
+    else play();
+  } catch(e){}
+}
+
+/* ---- OTX THREAT INTELLIGENCE ---- */
+function buildOtxWidget(sec, tabId){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.otxKey)            cfg.otxKey            = '';
+  if(!cfg.otxWorker)         cfg.otxWorker         = '';
+  if(!cfg.refreshMins)       cfg.refreshMins       = 30;
+  if(!cfg.maxPulses)         cfg.maxPulses         = 20;
+  if(!cfg.watchedIndustries) cfg.watchedIndustries = [];
+  if(cfg.alarmSound === undefined) cfg.alarmSound  = false;
+
+  const OTX_HISTORY_MAX = 200;
+  let isFirstLoad = true; // suppress audio on initial page render
+
+  // ── Helpers ────────────────────────────────────────────
+  function relativeTime(iso){
+    if(!iso) return '';
+    const diff=Date.now()-new Date(iso).getTime(), h=Math.floor(diff/3600000);
+    if(h<1) return 'just now'; if(h<24) return h+'h ago'; return Math.floor(h/24)+'d ago';
+  }
+  function tlpClass(tlp){
+    const t=(tlp||'').toLowerCase();
+    if(t==='green') return 'otx-tlp-green'; if(t==='amber') return 'otx-tlp-amber'; if(t==='red') return 'otx-tlp-red'; return 'otx-tlp-white';
+  }
+  function countIocTypes(indicators){
+    const counts={};
+    (indicators||[]).forEach(ind=>{ const t=ind.type||'Unknown'; counts[t]=(counts[t]||0)+1; });
+    return counts;
+  }
+  // 7-day rolling average, threshold 1.5x
+  function isElevated(pulses){
+    if(!pulses||pulses.length<3) return false;
+    const now=Date.now(), dayMs=86400000, weekMs=7*dayMs;
+    const weekPulses=pulses.filter(p=>now-new Date(p.modified).getTime()<weekMs);
+    if(!weekPulses.length) return false;
+    const dailyAvg=weekPulses.length/7;
+    const todayCount=pulses.filter(p=>now-new Date(p.modified).getTime()<dayMs).length;
+    return todayCount>0 && dailyAvg>0 && todayCount>dailyAvg*1.5;
+  }
+  function topAdversaries(pulses){
+    const counts={};
+    (pulses||[]).forEach(p=>{ if(p.adversary){ counts[p.adversary]=(counts[p.adversary]||0)+1; } });
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([name])=>name);
+  }
+  function isWatchedIndustry(pulse){
+    if(!cfg.watchedIndustries.length) return false;
+    return (pulse.industries||[]).some(ind=>cfg.watchedIndustries.includes(ind));
+  }
+
+  const wrap=el('div');
+
+  // ── Watched-industry hits panel (mirrors CVE watchlist hits) ──
+  const otxHitsPanel=el('div'); otxHitsPanel.style.cssText='display:none;margin-bottom:8px;';
+  const otxHitsHdr=el('div');
+  otxHitsHdr.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(255,68,68,0.1);border:1px solid #ff4444;border-radius:5px 5px 0 0;cursor:pointer;user-select:none;animation:cveAlertPulse 1.8s ease-in-out infinite alternate;';
+  const otxHitsIcon=el('span'); otxHitsIcon.textContent='\uD83D\uDEA8'; otxHitsIcon.style.cssText='font-size:13px;flex-shrink:0;';
+  const otxHitsTitle=el('span'); otxHitsTitle.style.cssText='font-size:10.5px;font-family:Share Tech Mono,monospace;color:#ff8888;font-weight:700;letter-spacing:0.05em;flex:1;'; otxHitsTitle.textContent='INDUSTRY ALERTS';
+  const otxHitsChevron=el('span'); otxHitsChevron.style.cssText='font-size:9px;color:#ff8888;transition:transform 0.2s;'; otxHitsChevron.textContent='\u25bc';
+  const otxHitsDismiss=el('button','cve-alert-dismiss'); otxHitsDismiss.textContent='Dismiss';
+  otxHitsDismiss.onclick=e=>{
+    e.stopPropagation();
+    const now=Date.now();
+    otxHitsBody.querySelectorAll('[data-otxid]').forEach(tile=>{
+      const id=tile.dataset.otxid;
+      if(!D.otxAlarmHistory.find(h=>h.id===id)){
+        D.otxAlarmHistory.unshift({ id, name:tile.dataset.otxname||'', industry:tile.dataset.otxindustry||'', dismissedAt:now });
+      }
+    });
+    if(D.otxAlarmHistory.length>OTX_HISTORY_MAX) D.otxAlarmHistory=D.otxAlarmHistory.slice(0,OTX_HISTORY_MAX);
+    persist();
+    otxHitsPanel.style.display='none';
+    clearTabAlert(tabId);
+  };
+  otxHitsHdr.append(otxHitsIcon,otxHitsTitle,otxHitsChevron,otxHitsDismiss);
+  const otxHitsBody=el('div');
+  otxHitsBody.style.cssText='display:flex;flex-direction:column;gap:4px;border:1px solid #ff4444;border-top:none;border-radius:0 0 5px 5px;max-height:220px;overflow-y:auto;padding:6px 8px;';
+  otxHitsHdr.addEventListener('click',()=>{
+    const open=otxHitsBody.style.display!=='none';
+    otxHitsBody.style.display=open?'none':'';
+    otxHitsChevron.style.transform=open?'rotate(-90deg)':'';
+  });
+  otxHitsPanel.append(otxHitsHdr,otxHitsBody);
+  const apiRequiredEl=el('div','otx-api-required');
+  const arTitle=el('div','otx-api-required-title'); arTitle.textContent='⚠ API Key Required';
+  const arSub=el('div','otx-api-required-sub'); arSub.textContent='Enter your LevelBlue OTX key in edit mode to enable this widget.';
+  apiRequiredEl.append(arTitle,arSub);
+
+  // ── Summary strip ──────────────────────────────────────
+  const summaryStrip=el('div','otx-summary-strip');
+  const makeStat=(value,label)=>{
+    const tile=el('div','otx-stat');
+    const val=el('div','otx-stat-value'); val.textContent=value;
+    const lbl=el('div','otx-stat-label'); lbl.textContent=label;
+    tile.append(val,lbl); summaryStrip.appendChild(tile); return val;
+  };
+  const statTotal=makeStat('—','Total Pulses');
+  const statToday=makeStat('—','New Today');
+  const statWeek=makeStat('—','This Week');
+
+  // ── Elevated activity banner ───────────────────────────
+  const elevBanner=el('div','otx-elevated-banner'); elevBanner.style.display='none';
+  elevBanner.innerHTML='⚡ Elevated activity — above 7-day daily average';
+
+  // ── Top adversaries strip ──────────────────────────────
+  const adversaryStrip=el('div','otx-adversary-strip');
+
+  // ── Filter row ─────────────────────────────────────────
+  const filterRow=el('div','otx-filter-row');
+  const searchInp=el('input','search-widget-input');
+  searchInp.placeholder='Search pulses\u2026'; searchInp.style.cssText='flex:1;min-width:0;font-size:11px;padding:4px 8px;';
+  searchInp.oninput=()=>applyFilters();
+  const adversaryFilter=el('select','sports-select'); adversaryFilter.style.cssText='flex:1;min-width:80px;font-size:11px;';
+  adversaryFilter.onchange=()=>applyFilters();
+  filterRow.append(searchInp,adversaryFilter);
+
+  // ── Header row ─────────────────────────────────────────
+  const hdrRow=el('div'); hdrRow.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:5px;';
+  const hdrLbl=el('div','otx-section-hdr'); hdrLbl.style.cssText='margin:0;flex:1;'; hdrLbl.textContent='Recent Pulses';
+  const tsEl=el('div'); tsEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);';
+  const histBtn=el('button','monitor-check-btn'); histBtn.textContent='\uD83D\uDCCB'; histBtn.title='Dismissed alert history'; histBtn.style.cssText='font-size:10px;padding:2px 7px;';
+  histBtn.onclick=()=>openOtxHistoryModal();
+  const rfBtn=el('button','monitor-check-btn'); rfBtn.textContent='\u21ba'; rfBtn.title='Refresh'; rfBtn.onclick=()=>refresh();
+  hdrRow.append(hdrLbl,tsEl,histBtn,rfBtn);
+
+  // ── Pulse list ─────────────────────────────────────────
+  const pulseList=el('div','otx-pulse-list');
+
+  // ── Edit mode ──────────────────────────────────────────
+  const editSec=el('div'); editSec.style.cssText='display:none;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;';
+
+  const indLbl=el('div','sports-edit-section-lbl'); indLbl.textContent='Watched Industries';
+  const indChips=el('div','sports-fav-chips');
+  const renderIndChips=()=>{
+    indChips.innerHTML='';
+    cfg.watchedIndustries.forEach((ind,i)=>{
+      const chip=el('div','sports-fav-chip');
+      const lbl2=el('span'); lbl2.textContent=ind;
+      const del=el('button'); del.textContent='\u2715';
+      del.onclick=()=>{ cfg.watchedIndustries.splice(i,1); persist(); renderIndChips(); if(lastData) renderData(lastData); };
+      chip.append(lbl2,del); indChips.appendChild(chip);
+    });
+  };
+  const indAddRow=el('div'); indAddRow.style.cssText='display:flex;gap:5px;margin-bottom:8px;';
+  const indSel=el('select','sports-select'); indSel.style.cssText='flex:1;font-size:11px;';
+  const indAddBtn=el('button','todo-add-btn'); indAddBtn.textContent='\uFF0B Add';
+  indAddBtn.onclick=()=>{
+    const ind=indSel.value; if(!ind||cfg.watchedIndustries.includes(ind)) return;
+    cfg.watchedIndustries.push(ind); persist(); renderIndChips(); if(lastData) renderData(lastData);
+  };
+  indAddRow.append(indSel,indAddBtn);
+  const updateIndDropdown=()=>{
+    indSel.innerHTML='';
+    if(!D.otxIndustries.length){
+      const o=document.createElement('option'); o.textContent='No industries loaded yet'; o.disabled=true; indSel.appendChild(o);
+    } else {
+      const ph=document.createElement('option'); ph.value=''; ph.textContent='Select industry\u2026'; ph.disabled=true; ph.selected=true; indSel.appendChild(ph);
+      D.otxIndustries.forEach(ind=>{ const o=document.createElement('option'); o.value=ind; o.textContent=ind; indSel.appendChild(o); });
+    }
+  };
+  updateIndDropdown();
+
+  const apiLbl=el('div','sports-edit-section-lbl'); apiLbl.style.marginTop='8px'; apiLbl.textContent='API Settings';
+  // Alarm sound toggle — same pattern as CVE widget
+  const alarmRow=el('div','cve-watch-options');
+  const alarmLbl=el('label','cve-watch-opt-label');
+  const alarmChk=el('input'); alarmChk.type='checkbox'; alarmChk.id='otxAlarmChk_'+sec.id; alarmChk.checked=!!cfg.alarmSound;
+  alarmChk.onchange=()=>{ cfg.alarmSound=alarmChk.checked; persist(); };
+  alarmLbl.append(alarmChk, document.createTextNode(' Alarm sound'));
+  alarmRow.appendChild(alarmLbl);
+  const keyInp=el('input','cve-interval-inp'); keyInp.type='password';
+  keyInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-bottom:4px;';
+  keyInp.placeholder='OTX API key (stored locally)'; keyInp.value=cfg.otxKey||'';
+  const workerInp=el('input','cve-interval-inp'); workerInp.type='text';
+  workerInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-bottom:4px;';
+  workerInp.placeholder='Override global Worker URL (optional)'; workerInp.value=cfg.otxWorker||'';
+  const saveRow=el('div'); saveRow.style.cssText='display:flex;align-items:center;gap:6px;';
+  const saveBtn=el('button','todo-add-btn'); saveBtn.textContent='Save';
+  const saveStatus=el('span'); saveStatus.style.cssText='font-size:10px;color:var(--cyan);';
+  saveBtn.onclick=()=>{ cfg.otxKey=keyInp.value.trim(); cfg.otxWorker=workerInp.value.trim(); persist(); saveStatus.textContent='\u2713 Saved'; setTimeout(()=>saveStatus.textContent='',2000); refresh(); };
+  saveRow.append(saveBtn,saveStatus);
+  const editNote=el('div'); editNote.style.cssText='font-size:10px;color:var(--text-dim);margin-top:5px;line-height:1.5;';
+  editNote.innerHTML='Get your free OTX key at <a href="https://otx.alienvault.com" target="_blank" rel="noopener" style="color:var(--cyan);">otx.alienvault.com</a>';
+  editSec.append(indLbl,indChips,indAddRow,apiLbl,alarmRow,keyInp,workerInp,saveRow,editNote);
+  wrap.appendChild(editSec);
+
+  const applyEdit=()=>{ editSec.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obsEdit=new MutationObserver(applyEdit);
+  obsEdit.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyEdit();
+
+  // ── DOM assembly ───────────────────────────────────────
+  wrap.insertBefore(apiRequiredEl,  editSec);
+  wrap.insertBefore(otxHitsPanel,   editSec);
+  wrap.insertBefore(summaryStrip,   editSec);
+  wrap.insertBefore(elevBanner,     editSec);
+  wrap.insertBefore(adversaryStrip, editSec);
+  wrap.insertBefore(filterRow,      editSec);
+  wrap.insertBefore(hdrRow,         editSec);
+  wrap.insertBefore(pulseList,      editSec);
+
+  let lastData=null, allPulses=[];
+
+  // ── Filter + render ────────────────────────────────────
+  function applyFilters(){
+    const q=(searchInp.value||'').toLowerCase().trim();
+    const advFilter=adversaryFilter.value;
+    let filtered=[...allPulses];
+    if(q) filtered=filtered.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.adversary||'').toLowerCase().includes(q)||(p.tags||[]).some(t=>t.toLowerCase().includes(q)));
+    if(advFilter) filtered=filtered.filter(p=>p.adversary===advFilter);
+    renderPulses(filtered);
+  }
+
+  function renderPulses(pulses){
+    pulseList.innerHTML='';
+    if(!pulses||!pulses.length){ const e=el('div','dns-status'); e.textContent='No pulses match current filters.'; pulseList.appendChild(e); return; }
+    pulses.forEach(pulse=>{
+      const watched=isWatchedIndustry(pulse);
+      const row=el('div','otx-pulse-row'+(watched?' otx-industry-watched':''));
+      row.onclick=()=>openOtxModal(pulse);
+      const topRow=el('div','otx-pulse-top');
+      if(pulse.adversary){ const adv=el('span','otx-adversary-chip'); adv.textContent=pulse.adversary; adv.title=pulse.adversary; topRow.appendChild(adv); }
+      const tlp=el('span','otx-tlp-chip '+tlpClass(pulse.tlp)); tlp.textContent='TLP:'+(pulse.tlp||'WHITE').toUpperCase();
+      const revBadge=el('span',pulse.revision<=1?'otx-new-badge':'otx-updated-badge'); revBadge.textContent=pulse.revision<=1?'NEW':'UPD'; revBadge.title=pulse.revision<=1?'New pulse':'Revised (v'+pulse.revision+')';
+      const age=el('span'); age.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-left:auto;flex-shrink:0;'; age.textContent=relativeTime(pulse.modified);
+      topRow.append(tlp,revBadge,age);
+      const name=el('div','otx-pulse-name'); name.textContent=pulse.name||'Unnamed pulse';
+      const meta=el('div','otx-pulse-meta');
+      if(pulse.indicatorCount){ const iocEl=el('span','otx-ioc-count'); iocEl.textContent=pulse.indicatorCount+' IOC'+(pulse.indicatorCount!==1?'s':''); meta.appendChild(iocEl); }
+      if(pulse.industries&&pulse.industries.length){ const ind=el('span'); ind.textContent=pulse.industries.slice(0,2).join(', '); meta.appendChild(ind); }
+      const chips=el('div','otx-chip-row');
+      (pulse.tags||[]).slice(0,4).forEach(t=>{ const c=el('span','otx-tag-chip'); c.textContent=t; chips.appendChild(c); });
+      row.append(topRow,name,meta);
+      if(chips.children.length) row.appendChild(chips);
+      pulseList.appendChild(row);
+    });
+  }
+
+  function renderData(data){
+    const {totalCount,pulses}=data;
+    const now=Date.now(), dayMs=86400000, weekMs=7*dayMs;
+    allPulses=pulses||[];
+    const todayCount=allPulses.filter(p=>now-new Date(p.modified).getTime()<dayMs).length;
+    const weekCount =allPulses.filter(p=>now-new Date(p.modified).getTime()<weekMs).length;
+    statTotal.textContent=totalCount?totalCount.toLocaleString():'—';
+    statToday.textContent=todayCount;
+    statWeek.textContent=weekCount;
+    elevBanner.style.display=isElevated(allPulses)?'':'none';
+
+    // Top adversaries strip
+    adversaryStrip.innerHTML='';
+    const advNames=topAdversaries(allPulses);
+    if(advNames.length){
+      const stripLbl=el('div','otx-section-hdr'); stripLbl.style.cssText='margin:0 0 5px;font-size:9px;'; stripLbl.textContent='Top Adversaries';
+      const chipsWrap=el('div'); chipsWrap.style.cssText='display:flex;flex-wrap:wrap;gap:4px;';
+      advNames.slice(0,8).forEach(name=>{ const c=el('span','otx-adversary-strip-chip'); c.textContent=name; chipsWrap.appendChild(c); });
+      adversaryStrip.append(stripLbl,chipsWrap);
+    }
+
+    // Adversary filter dropdown
+    const prevAdv=adversaryFilter.value;
+    adversaryFilter.innerHTML='';
+    const allOpt=document.createElement('option'); allOpt.value=''; allOpt.textContent='All adversaries'; adversaryFilter.appendChild(allOpt);
+    advNames.forEach(name=>{ const o=document.createElement('option'); o.value=name; o.textContent=name; adversaryFilter.appendChild(o); });
+    if(prevAdv&&advNames.includes(prevAdv)) adversaryFilter.value=prevAdv;
+
+    // Persist industries
+    const indSet=new Set(D.otxIndustries);
+    allPulses.forEach(p=>(p.industries||[]).forEach(ind=>indSet.add(ind)));
+    D.otxIndustries=[...indSet].sort(); persist(); updateIndDropdown();
+
+    // ── Industry hit detection ─────────────────────────
+    const dismissed=new Set(D.otxAlarmHistory.map(h=>h.id));
+    const hitPulses=allPulses.filter(p=>isWatchedIndustry(p) && !dismissed.has(p.id));
+    if(hitPulses.length){
+      otxHitsBody.innerHTML='';
+      otxHitsTitle.textContent='INDUSTRY ALERTS ('+hitPulses.length+')';
+      hitPulses.forEach(pulse=>{
+        const matchedIndustries=(pulse.industries||[]).filter(i=>cfg.watchedIndustries.includes(i));
+        const tile=el('div'); tile.style.cssText='padding:5px 7px;background:rgba(255,68,68,0.06);border:1px solid rgba(255,68,68,0.3);border-radius:4px;cursor:pointer;';
+        tile.dataset.otxid=pulse.id;
+        tile.dataset.otxname=pulse.name||'';
+        tile.dataset.otxindustry=matchedIndustries.join(', ');
+        tile.onclick=()=>openOtxModal(pulse);
+        const tname=el('div'); tname.style.cssText='font-size:11px;color:var(--text);line-height:1.35;margin-bottom:3px;'; tname.textContent=pulse.name||'Unnamed pulse';
+        const tmeta=el('div'); tmeta.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:#ff8888;';
+        tmeta.textContent=(pulse.adversary?pulse.adversary+' · ':'')+matchedIndustries.join(', ');
+        tile.append(tname,tmeta); otxHitsBody.appendChild(tile);
+      });
+      otxHitsPanel.style.display=''; otxHitsBody.style.display=''; otxHitsChevron.style.transform='';
+      setTabAlert(tabId,'critical');
+      if(cfg.alarmSound && !isFirstLoad) otxAlarmSound();
+    } else {
+      otxHitsPanel.style.display='none';
+      clearTabAlert(tabId);
+    }
+    isFirstLoad=false;
+
+    applyFilters();
+    tsEl.textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  }
+
+  // ── Fetch ──────────────────────────────────────────────
+  async function refresh(){
+    const workerUrl=getWorkerUrl(cfg.otxWorker);
+    if(!cfg.otxKey){
+      apiRequiredEl.style.display='';
+      [summaryStrip,elevBanner,adversaryStrip,filterRow,hdrRow,pulseList].forEach(e=>e.style.display='none');
+      return;
+    }
+    apiRequiredEl.style.display='none';
+    [summaryStrip,adversaryStrip,filterRow,hdrRow,pulseList].forEach(e=>e.style.display='');
+    pulseList.innerHTML='<div class="dns-status">Loading\u2026</div>';
+    if(!workerUrl){ pulseList.innerHTML='<div class="dns-status" style="color:var(--del-color);">Worker URL required. Set it via the \u26A1 button.</div>'; return; }
+    try {
+      const r=await fetch(workerUrl.replace(/\/+$/,'')+'/otx',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:cfg.otxKey,limit:cfg.maxPulses})});
+      const j=await r.json();
+      if(j.error){ pulseList.innerHTML=`<div class="dns-status" style="color:var(--del-color);">${j.error}</div>`; return; }
+      lastData=j; renderData(j);
+    } catch(e){ pulseList.innerHTML=`<div class="dns-status" style="color:var(--del-color);">Failed: ${e.message}</div>`; }
+  }
+
+  // ── Detail modal ───────────────────────────────────────
+  function openOtxModal(pulse){
+    let overlay=document.getElementById('otxPulseOverlay');
+    if(!overlay){
+      overlay=el('div','overlay'); overlay.id='otxPulseOverlay';
+      const modal=el('div','modal'); modal.style.cssText='width:560px;max-height:84vh;display:flex;flex-direction:column;';
+      const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+      const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;font-size:13px;'; mtitle.id='otxModalTitle';
+      mhdr.appendChild(mtitle);
+      const body=el('div'); body.id='otxModalBody'; body.style.cssText='flex:1;overflow-y:auto;';
+      const actions=el('div','modal-actions');
+      const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close'; closeBtn.onclick=()=>closeOverlay('otxPulseOverlay');
+      actions.appendChild(closeBtn); modal.append(mhdr,body,actions); overlay.appendChild(modal); document.body.appendChild(overlay);
+    }
+    document.getElementById('otxModalTitle').textContent=pulse.name||'Pulse Detail';
+    const body=document.getElementById('otxModalBody'); body.innerHTML='';
+    const card=el('div','otx-modal-pulse');
+    const chipRow=el('div'); chipRow.style.cssText='display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;align-items:center;';
+    if(pulse.adversary){ const c=el('span','otx-adversary-chip'); c.textContent=pulse.adversary; chipRow.appendChild(c); }
+    const tlp=el('span','otx-tlp-chip '+tlpClass(pulse.tlp)); tlp.textContent='TLP:'+(pulse.tlp||'WHITE').toUpperCase(); chipRow.appendChild(tlp);
+    const rev=el('span',pulse.revision<=1?'otx-new-badge':'otx-updated-badge'); rev.textContent=pulse.revision<=1?'NEW':'Revision '+pulse.revision; chipRow.appendChild(rev);
+    const age=el('span'); age.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-left:auto;'; age.textContent='Modified '+relativeTime(pulse.modified); chipRow.appendChild(age);
+    const desc=el('div','otx-modal-desc'); desc.textContent=pulse.description||'No description available.';
+    const grid=el('div','otx-modal-grid');
+    const makeTile=(lbl,items)=>{
+      if(!items||!items.length) return;
+      const t=el('div','otx-modal-tile');
+      const tl=el('div','otx-modal-tile-lbl'); tl.textContent=lbl;
+      const tv=el('div','otx-modal-tile-val'); tv.textContent=items.join(', ')||'—';
+      t.append(tl,tv); grid.appendChild(t);
+    };
+    makeTile('Industries',pulse.industries); makeTile('Countries',pulse.targeted_countries); makeTile('Malware',pulse.malware_families);
+    if(pulse.attack_ids&&pulse.attack_ids.length){
+      const mt=el('div','otx-modal-tile'); mt.style.flex='100%';
+      const ml=el('div','otx-modal-tile-lbl'); ml.textContent='MITRE ATT\u0026CK';
+      const mv=el('div'); mv.style.cssText='display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;';
+      pulse.attack_ids.slice(0,12).forEach(id=>{ const c=el('span','otx-tag-chip'); c.textContent=id; mv.appendChild(c); });
+      mt.append(ml,mv); grid.appendChild(mt);
+    }
+    const iocCounts=countIocTypes(pulse.indicators);
+    card.append(chipRow,desc,grid);
+    if(Object.keys(iocCounts).length){
+      const iocSec=el('div'); iocSec.style.marginBottom='8px';
+      const il=el('div','otx-section-hdr'); il.style.marginTop='6px'; il.textContent='IOC Breakdown';
+      const iocRow=el('div','otx-ioc-breakdown');
+      Object.entries(iocCounts).sort((a,b)=>b[1]-a[1]).forEach(([type,count])=>{ const badge=el('div','otx-ioc-badge'); const n=el('span'); n.textContent=count; badge.append(n,document.createTextNode(type)); iocRow.appendChild(badge); });
+      iocSec.append(il,iocRow); card.appendChild(iocSec);
+    }
+    if(pulse.references&&pulse.references.length){
+      const refSec=el('div');
+      const rl=el('div','otx-section-hdr'); rl.textContent='References'; refSec.appendChild(rl);
+      pulse.references.forEach(ref=>{ const a=el('a','otx-ref-link'); a.href=ref; a.target='_blank'; a.rel='noopener'; a.textContent='\u2197 '+ref.replace(/^https?:\/\//,'').slice(0,60)+(ref.length>60?'\u2026':''); refSec.appendChild(a); });
+      card.appendChild(refSec);
+    }
+    body.appendChild(card);
+    openOverlay('otxPulseOverlay');
+  }
+
+  // ── Dismissed history modal ────────────────────────────
+  function openOtxHistoryModal(){
+    let overlay=document.getElementById('otxHistoryOverlay');
+    if(!overlay){
+      overlay=el('div','overlay'); overlay.id='otxHistoryOverlay';
+      const modal=el('div','modal'); modal.style.cssText='width:520px;max-height:80vh;display:flex;flex-direction:column;';
+      const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+      const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='Industry Alert History';
+      const clearBtn=el('button','mbtn'); clearBtn.style.cssText='font-size:11px;padding:4px 10px;';
+      clearBtn.textContent='Clear All';
+      clearBtn.onclick=()=>{ if(confirm('Clear all OTX alert history?')){ D.otxAlarmHistory=[]; persist(); renderHist(); } };
+      mhdr.append(mtitle,clearBtn);
+      const body=el('div'); body.id='otxHistoryBody'; body.style.cssText='flex:1;overflow-y:auto;';
+      const actions=el('div','modal-actions');
+      const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close'; closeBtn.onclick=()=>closeOverlay('otxHistoryOverlay');
+      actions.appendChild(closeBtn); modal.append(mhdr,body,actions); overlay.appendChild(modal); document.body.appendChild(overlay);
+    }
+    function renderHist(){
+      const body=document.getElementById('otxHistoryBody'); body.innerHTML='';
+      if(!D.otxAlarmHistory.length){
+        const e=el('div'); e.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;padding:8px 0;'; e.textContent='No dismissed alerts yet.'; body.appendChild(e); return;
+      }
+      const list=el('div'); list.style.cssText='display:flex;flex-direction:column;gap:5px;';
+      D.otxAlarmHistory.forEach((h,i)=>{
+        const row=el('div'); row.style.cssText='display:flex;flex-direction:column;gap:3px;padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;';
+        const top=el('div'); top.style.cssText='display:flex;align-items:center;gap:6px;';
+        const name=el('div'); name.style.cssText='font-size:11px;color:var(--text);flex:1;line-height:1.3;'; name.textContent=h.name||h.id;
+        const ts=el('span'); ts.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);flex-shrink:0;'; ts.textContent=h.dismissedAt?new Date(h.dismissedAt).toLocaleString():'';
+        const del=el('button'); del.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:2px 4px;flex-shrink:0;'; del.textContent='\u2715';
+        del.onclick=()=>{ D.otxAlarmHistory.splice(i,1); persist(); renderHist(); };
+        top.append(name,ts,del);
+        const meta=el('div'); meta.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:#ff8888;'; meta.textContent=h.industry||'';
+        row.append(top,meta); list.appendChild(row);
+      });
+      body.appendChild(list);
+    }
+    renderHist();
+    openOverlay('otxHistoryOverlay');
+  }
+  if(!cfg.otxKey){
+    [summaryStrip,elevBanner,adversaryStrip,filterRow,hdrRow,pulseList].forEach(e=>e.style.display='none');
+  } else { apiRequiredEl.style.display='none'; }
+
+  renderIndChips();
+  refresh();
+  const timer=setInterval(refresh,(cfg.refreshMins||30)*60*1000);
+  const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(timer); obsEdit.disconnect(); obsClean.disconnect(); } });
+  obsClean.observe(document.body,{childList:true,subtree:true});
+  return wrap;
+}
+
 /* ---- BGP / ASN LOOKUP ---- */
 function buildBgpWidget(sec){
   const wrap = el('div');
@@ -8459,6 +9185,7 @@ function buildEnergyWidget(sec, tabId){
     cfg.snoozeUntil = Date.now() + SNOOZE_MS;
     persist();
     reminderBanner.style.display = 'none';
+    clearTabAlert(tabId);
   };
   logNowBtn.onclick = ()=>{
     // Dismiss banner and focus the note input to invite logging
@@ -8596,7 +9323,7 @@ function buildEnergyWidget(sec, tabId){
     const due      = elapsed >= cfg.reminderFreqMs;
     const active   = due && !snoozed;
     reminderBanner.style.display = active ? '' : 'none';
-    if(active) setTabAlert(tabId, 'soft');
+    if(active) setTabAlert(tabId, 'info');
     else clearTabAlert(tabId);
   }
 
@@ -9970,7 +10697,7 @@ function cveAlarmSound(){
   } catch(e){}
 }
 
-function buildCveWidget(sec, tabId){
+function buildCveWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
   if(!cfg.watchlist)    cfg.watchlist    = [];
   if(cfg.alarmSound === undefined) cfg.alarmSound = false;
@@ -10011,7 +10738,6 @@ function buildCveWidget(sec, tabId){
     if(D.cveAlarmHistory.length > HISTORY_MAX) D.cveAlarmHistory = D.cveAlarmHistory.slice(0,HISTORY_MAX);
     persist();
     hitsPanel.style.display='none';
-    clearTabAlert(tabId);
   };
   const hitsCopy = el('button','cve-alert-dismiss');
   hitsCopy.textContent='\uD83D\uDCCB'; hitsCopy.title='Copy CVE IDs and URLs';
@@ -10284,7 +11010,6 @@ function buildCveWidget(sec, tabId){
             .forEach(h=>hitsBody.appendChild(buildCveItem(h.cve, h.term)));
           hitsPanel.style.display=''; hitsBody.style.display=''; hitsChevron.style.transform='';
           if(cfg.alarmSound) cveAlarmSound();
-          setTabAlert(tabId, 'critical');
         }
         // Update last-checked timestamp for all terms
         const ts=new Date().toLocaleTimeString();
@@ -10802,6 +11527,941 @@ function buildDiceWidget(sec){
 }
 
 
+
+/* ════════════════════════════════════════════════════════════════════
+   BIBLE WIDGET — data, helpers, modal, mini-widget
+   ════════════════════════════════════════════════════════════════════ */
+
+// ── Notes storage ─────────────────────────────────────────────────────────────
+function loadBibleNotes(){ try{return JSON.parse(localStorage.getItem('salty_bible_notes')||'{}');}catch(e){return{};} }
+function saveBibleNotes(n){ localStorage.setItem('salty_bible_notes', JSON.stringify(n)); }
+function bibleNoteKey(osisId,ch,v){ return osisId+':'+ch+':'+v; }
+
+// ── API helpers ───────────────────────────────────────────────────────────────
+async function bibleWorkerCall(cfg, path, params){
+  const w = getWorkerUrl(cfg.workerUrl);
+  if(!w) throw new Error('Worker URL not set in widget or global settings');
+  if(!cfg.apiKey) throw new Error('API.Bible key not configured — add it in edit mode');
+  const r = await fetch(w.replace(/\/+$/,'')+'/bible',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({apiKey:cfg.apiKey, path, params:params||{}}),
+  });
+  const j = await r.json();
+  if(j.error) throw new Error(j.error);
+  return j;
+}
+async function bibleGetApiBibleId(cfg, trans){
+  const t = trans.toUpperCase();
+  if(cfg.apiBibleIds && cfg.apiBibleIds[t]) return cfg.apiBibleIds[t];
+  const j = await bibleWorkerCall(cfg, '/v1/bibles', {language:'eng'});
+  const list = j.data||[];
+  // Match by abbreviation or name
+  const needles = { MSG:['MESSAGE','MSG'], CSB:['CHRISTIAN STANDARD','CSB'], NLT:['NEW LIVING','NLT'] };
+  const terms = needles[t] || [t];
+  const match = list.find(b=>{
+    const abbr = (b.abbreviation||b.abbreviationLocal||'').toUpperCase();
+    const name = (b.name||b.nameLocal||'').toUpperCase();
+    return terms.some(term => abbr===term || abbr.includes(term) || name.includes(term));
+  });
+  if(!match) throw new Error('Translation '+trans+' not found — check your API.Bible account');
+  if(!cfg.apiBibleIds) cfg.apiBibleIds={};
+  cfg.apiBibleIds[t] = match.id;
+  persist();
+  return match.id;
+}
+async function fetchChapterBolls(bookId, chapter, trans){
+  const t = (trans||'NKJV').toUpperCase();
+  const r = await fetch('https://bolls.life/get-chapter/'+t+'/'+bookId+'/'+chapter+'/');
+  if(!r.ok) throw new Error('bolls.life error '+r.status);
+  const j = await r.json();
+  if(!Array.isArray(j)) throw new Error('Unexpected response from bolls.life');
+  return j.map(v=>({verse:v.verse, text:v.text.replace(/<[^>]+>/g,'').trim()}));
+}
+function parseApiBibleHtml(html){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  tmp.querySelectorAll('.note, sup, .nd, .add').forEach(n=>n.remove());
+  const vSpans = tmp.querySelectorAll('[data-number]');
+  if(vSpans.length){
+    const verses=[];
+    vSpans.forEach(span=>{
+      const vNum=parseInt(span.getAttribute('data-number'));
+      if(isNaN(vNum)) return;
+      let text='', node=span.nextSibling;
+      while(node && !(node.nodeType===1 && node.getAttribute && node.getAttribute('data-number'))){
+        text += node.textContent||'';
+        node = node.nextSibling;
+      }
+      verses.push({verse:vNum, text:text.replace(/\s+/g,' ').trim()});
+    });
+    return verses.filter(v=>v.text);
+  }
+  // fallback
+  return [{verse:1, text:tmp.textContent.replace(/\s+/g,' ').trim()}].filter(v=>v.text);
+}
+async function fetchChapterApiBible(cfg, osisId, chapter, trans){
+  const bibleId = await bibleGetApiBibleId(cfg, trans);
+  const j = await bibleWorkerCall(cfg, '/v1/bibles/'+bibleId+'/chapters/'+osisId+'.'+chapter, {
+    'content-type':'html','include-verse-numbers':'true',
+    'include-titles':'false','include-chapter-numbers':'false',
+  });
+  return parseApiBibleHtml(j.data?.content||'');
+}
+async function bibleLoadChapter(cfg, bookIdx, chapter, trans){
+  if(isBollsTrans(trans)){
+    return fetchChapterBolls(BIBLE_CANON[bookIdx][1], chapter, trans);
+  } else {
+    return fetchChapterApiBible(cfg, BIBLE_CANON[bookIdx][2], chapter, trans);
+  }
+}
+// Parse "Book Ch:V" → {bookIdx, chapter, verse}
+function bibleParseRef(ref){
+  const m = ref.match(/^(.+?)\s+(\d+):(\d+)/);
+  if(!m) return null;
+  const name = m[1].trim().toLowerCase();
+  const idx  = BIBLE_CANON.findIndex(b=>
+    b[0].toLowerCase()===name ||
+    b[0].toLowerCase().startsWith(name) ||
+    b[2].toLowerCase()===name
+  );
+  if(idx<0) return null;
+  return {bookIdx:idx, chapter:parseInt(m[2]), verse:parseInt(m[3])};
+}
+
+// ── Bible modal state (module-level so nav closures stay in sync) ─────────────
+let _bm = null; // { cfg, bookIdx, chapter, trans, verse, verses }
+
+function openBibleModal(cfg){
+  // ── Build DOM (once) ─────────────────────────────────────────────
+  if(!document.getElementById('bibleModalOverlay')){
+    const ov = el('div','bible-modal-overlay'); ov.id='bibleModalOverlay';
+    ov.addEventListener('click',e=>{ if(e.target===ov) closeBibleModal(); });
+
+    const modal = el('div','bible-modal');
+
+    // Header
+    const hdr = el('div','bible-modal-hdr');
+    const h3  = el('h3'); h3.textContent='📖 Bible Browser';
+    const nav = el('div','bible-nav');
+
+    const tSel = el('select','bible-nav-sel'); tSel.id='bmTransSel'; tSel.title='Translation';
+    const bSel = el('select','bible-nav-sel'); bSel.id='bmBookSel';  bSel.title='Book';
+    bSel.style.maxWidth='160px';
+    const cSel = el('select','bible-nav-sel'); cSel.id='bmChapSel';  cSel.title='Chapter';
+    const pBtn = el('button','clock-style-btn'); pBtn.id='bmPrevBtn'; pBtn.textContent='◀'; pBtn.title='Prev chapter'; pBtn.style.cssText='padding:3px 9px;font-size:12px;';
+    const nBtn = el('button','clock-style-btn'); nBtn.id='bmNextBtn'; nBtn.textContent='▶'; nBtn.title='Next chapter'; nBtn.style.cssText='padding:3px 9px;font-size:12px;';
+    const xBtn = el('button','clock-style-btn'); xBtn.textContent='✕'; xBtn.onclick=closeBibleModal; xBtn.style.cssText='padding:3px 10px;font-size:13px;';
+
+    nav.append(tSel, bSel, cSel, pBtn, nBtn, xBtn);
+    hdr.append(h3, nav);
+    modal.appendChild(hdr);
+
+    const body = el('div','bible-modal-body');
+    const tp = el('div','bible-text-panel'); tp.id='bmTextPanel';
+    const np = el('div','bible-notes-panel'); np.id='bmNotesPanel';
+    body.append(tp, np);
+    modal.appendChild(body);
+    ov.appendChild(modal);
+    document.body.appendChild(ov);
+
+    // Highlight toolbar
+    const hlTb = el('div','bible-hl-toolbar'); hlTb.id='bmHlToolbar';
+    [{id:'yellow',hex:'#f5d642'},{id:'green',hex:'#4dc878'},{id:'blue',hex:'#4a9ef5'},{id:'pink',hex:'#f564b5'},{id:'purple',hex:'#b44ff5'}].forEach(c=>{
+      const sw=el('div','bible-hl-swatch'); sw.dataset.color=c.id; sw.style.background=c.hex; sw.title=c.id;
+      sw.onclick=e=>{ e.stopPropagation(); bmApplyHighlight(c.id); };
+      hlTb.appendChild(sw);
+    });
+    const hlClr = el('button','bible-hl-clear'); hlClr.textContent='✕ clear';
+    hlClr.onclick=e=>{ e.stopPropagation(); bmApplyHighlight(null); };
+    hlTb.appendChild(hlClr);
+    document.body.appendChild(hlTb);
+
+    // Wire nav events (reference _bm directly)
+    tSel.onchange=()=>{ if(!_bm) return; _bm.trans=tSel.value; _bm.cfg.lastTrans=_bm.trans; persist(); bmLoadChapter(); };
+    bSel.onchange=()=>{ if(!_bm) return; _bm.bookIdx=parseInt(bSel.value); _bm.chapter=1; bmRebuildChapSel(); bmLoadChapter(); };
+    cSel.onchange=()=>{ if(!_bm) return; _bm.chapter=parseInt(cSel.value); bmLoadChapter(); };
+    pBtn.onclick=()=>{
+      if(!_bm) return;
+      if(_bm.chapter>1){ _bm.chapter--; } else if(_bm.bookIdx>0){ _bm.bookIdx--; _bm.chapter=BIBLE_CHAPTERS[_bm.bookIdx]||1; bSel.value=_bm.bookIdx; }
+      bmRebuildChapSel(); bmLoadChapter();
+    };
+    nBtn.onclick=()=>{
+      if(!_bm) return;
+      const mx=BIBLE_CHAPTERS[_bm.bookIdx]||1;
+      if(_bm.chapter<mx){ _bm.chapter++; } else if(_bm.bookIdx<65){ _bm.bookIdx++; _bm.chapter=1; bSel.value=_bm.bookIdx; }
+      bmRebuildChapSel(); bmLoadChapter();
+    };
+    // Hide toolbar on outside click
+    document.addEventListener('click', e=>{
+      const tb=document.getElementById('bmHlToolbar');
+      if(tb && tb.classList.contains('visible') && !tb.contains(e.target) && !e.target.closest('.bible-verse-row')){
+        tb.classList.remove('visible');
+      }
+    });
+  }
+
+  // ── (Re-)initialize state ────────────────────────────────────────
+  _bm = {
+    cfg,
+    bookIdx: Math.max(0, (cfg.lastBook||43) - 1),
+    chapter: cfg.lastChapter || 3,
+    trans:   cfg.lastTrans || cfg.defaultTrans || 'NKJV',
+    verse:   null,
+    verses:  [],
+  };
+
+  // Populate translation selector
+  const tSel = document.getElementById('bmTransSel');
+  tSel.innerHTML='';
+  const fg=document.createElement('optgroup'); fg.label='Free — bolls.life';
+  ['NKJV','KJV','WEB','NET','ASV'].forEach(t=>{
+    const o=document.createElement('option'); o.value=t; o.textContent=t;
+    if(t===_bm.trans) o.selected=true;
+    fg.appendChild(o);
+  });
+  tSel.appendChild(fg);
+  if(cfg.apiKey){
+    const ag=document.createElement('optgroup'); ag.label='API.Bible';
+    [...new Set(['CSB','NLT','MSG',...Object.keys(cfg.apiBibleIds||{})])].forEach(t=>{
+      const o=document.createElement('option'); o.value=t; o.textContent=t;
+      if(t===_bm.trans) o.selected=true;
+      ag.appendChild(o);
+    });
+    tSel.appendChild(ag);
+  }
+
+  // Populate book selector
+  const bSel=document.getElementById('bmBookSel');
+  bSel.innerHTML='';
+  BIBLE_CANON.forEach((b,i)=>{
+    const o=document.createElement('option'); o.value=i; o.textContent=b[0];
+    if(i===_bm.bookIdx) o.selected=true;
+    bSel.appendChild(o);
+  });
+
+  bmRebuildChapSel();
+  document.getElementById('bibleModalOverlay').classList.add('open');
+  bmLoadChapter();
+}
+
+function closeBibleModal(){
+  const ov=document.getElementById('bibleModalOverlay');
+  if(ov) ov.classList.remove('open');
+  const tb=document.getElementById('bmHlToolbar');
+  if(tb) tb.classList.remove('visible');
+}
+
+function bmRebuildChapSel(){
+  const cSel=document.getElementById('bmChapSel');
+  cSel.innerHTML='';
+  const count=BIBLE_CHAPTERS[_bm.bookIdx]||1;
+  for(let i=1;i<=count;i++){
+    const o=document.createElement('option'); o.value=i; o.textContent='Ch '+i;
+    if(i===_bm.chapter) o.selected=true;
+    cSel.appendChild(o);
+  }
+}
+
+async function bmLoadChapter(){
+  if(!_bm) return;
+  _bm.cfg.lastBook    = BIBLE_CANON[_bm.bookIdx][1];
+  _bm.cfg.lastChapter = _bm.chapter;
+  persist();
+  _bm.verse  = null;
+  _bm.verses = [];
+  const tb=document.getElementById('bmHlToolbar');
+  if(tb) tb.classList.remove('visible');
+
+  const tp=document.getElementById('bmTextPanel');
+  tp.innerHTML='<div class="bible-loading">Loading…</div>';
+  bmRenderNotesPanel();
+
+  try {
+    _bm.verses = await bibleLoadChapter(_bm.cfg, _bm.bookIdx, _bm.chapter, _bm.trans);
+    bmRenderChapter();
+    bmRenderNotesPanel();
+  } catch(e){
+    tp.innerHTML='<div class="bible-error">'+e.message+'</div>';
+  }
+}
+
+function bmRenderChapter(){
+  const tp=document.getElementById('bmTextPanel');
+  tp.innerHTML='';
+  const title=el('div','bible-chapter-title');
+  title.textContent=BIBLE_CANON[_bm.bookIdx][0]+' '+_bm.chapter+'  ·  '+_bm.trans;
+  tp.appendChild(title);
+
+  const notes=loadBibleNotes();
+  _bm.verses.forEach(v=>{
+    const row=el('div','bible-verse-row');
+    row.dataset.verse=v.verse;
+    const key=bibleNoteKey(BIBLE_CANON[_bm.bookIdx][2],_bm.chapter,v.verse);
+    if(notes[key]?.highlight) row.classList.add('bh-'+notes[key].highlight);
+    if(v.verse===_bm.verse) row.classList.add('selected');
+    const num=el('span','bible-verse-num'); num.textContent=v.verse;
+    const txt=el('span','bible-verse-text'); txt.textContent=v.text;
+    row.append(num,txt);
+    row.onclick=e=>{
+      _bm.verse=v.verse;
+      bmApplyHighlightClasses();
+      // Show toolbar near click
+      const tb=document.getElementById('bmHlToolbar');
+      if(tb){
+        const bx=Math.min(e.clientX+12,window.innerWidth-210);
+        const by=Math.min(e.clientY+12,window.innerHeight-55);
+        tb.style.left=bx+'px'; tb.style.top=by+'px';
+        tb.classList.add('visible');
+      }
+      bmRenderNotesPanel();
+    };
+    tp.appendChild(row);
+  });
+}
+
+function bmApplyHighlightClasses(){
+  const notes=loadBibleNotes();
+  document.querySelectorAll('#bmTextPanel .bible-verse-row').forEach(row=>{
+    const v=parseInt(row.dataset.verse);
+    const key=bibleNoteKey(BIBLE_CANON[_bm.bookIdx][2],_bm.chapter,v);
+    row.className='bible-verse-row'+(v===_bm.verse?' selected':'');
+    if(notes[key]?.highlight) row.classList.add('bh-'+notes[key].highlight);
+  });
+}
+
+function bmApplyHighlight(color){
+  if(!_bm || _bm.verse==null) return;
+  const notes=loadBibleNotes();
+  const key=bibleNoteKey(BIBLE_CANON[_bm.bookIdx][2],_bm.chapter,_bm.verse);
+  if(color){ if(!notes[key]) notes[key]={}; notes[key].highlight=color; }
+  else { if(notes[key]){ delete notes[key].highlight; if(!notes[key].note) delete notes[key]; } }
+  saveBibleNotes(notes);
+  bmApplyHighlightClasses();
+  document.getElementById('bmHlToolbar')?.classList.remove('visible');
+}
+
+function bmRenderNotesPanel(){
+  const np=document.getElementById('bmNotesPanel');
+  np.innerHTML='';
+  const notes=loadBibleNotes();
+
+  // Selected verse note input
+  if(_bm && _bm.verse!=null){
+    const key=bibleNoteKey(BIBLE_CANON[_bm.bookIdx][2],_bm.chapter,_bm.verse);
+    const refEl=el('div','bible-selected-ref');
+    refEl.textContent=BIBLE_CANON[_bm.bookIdx][0]+' '+_bm.chapter+':'+_bm.verse+'  ('+_bm.trans+')';
+    np.appendChild(refEl);
+    const ta=el('textarea','bible-note-inp');
+    ta.placeholder='Add a note for this verse…';
+    ta.value=notes[key]?.note||'';
+    np.appendChild(ta);
+    const btnRow=el('div','bible-note-actions');
+    const saveBtn=el('button','search-widget-go'); saveBtn.style.cssText='font-size:10.5px;padding:3px 12px;'; saveBtn.textContent='Save Note';
+    const clrBtn=el('button','monitor-check-btn');  clrBtn.style.cssText='font-size:10px;padding:2px 8px;';  clrBtn.textContent='Clear';
+    saveBtn.onclick=()=>{
+      const txt=ta.value.trim();
+      const n=loadBibleNotes();
+      if(!n[key]) n[key]={};
+      if(txt){ n[key].note=txt; } else { delete n[key].note; if(!n[key].highlight) delete n[key]; }
+      saveBibleNotes(n);
+      bmRenderNotesPanel();
+      bmApplyHighlightClasses();
+    };
+    clrBtn.onclick=()=>{
+      ta.value='';
+      const n=loadBibleNotes();
+      if(n[key]){ delete n[key].note; if(!n[key].highlight) delete n[key]; saveBibleNotes(n); }
+      bmRenderNotesPanel();
+    };
+    btnRow.append(saveBtn,clrBtn);
+    np.appendChild(btnRow);
+  } else {
+    const hint=el('div','bible-panel-hint'); hint.textContent='Tap a verse to add a note or highlight.';
+    np.appendChild(hint);
+  }
+
+  // Chapter notes list
+  if(_bm){
+    const prefix=BIBLE_CANON[_bm.bookIdx][2]+':'+_bm.chapter+':';
+    const chNotes=Object.entries(notes)
+      .filter(([k,v])=>k.startsWith(prefix)&&v?.note)
+      .sort((a,b)=>parseInt(a[0].split(':')[2])-parseInt(b[0].split(':')[2]));
+    if(chNotes.length){
+      const title=el('div','bible-ch-notes-title'); title.textContent='Notes in this chapter';
+      np.appendChild(title);
+      chNotes.forEach(([key,data])=>{
+        const vNum=key.split(':')[2];
+        const item=el('div','bible-note-item');
+        const itemHdr=el('div','bible-note-item-hdr');
+        const refSpan=el('span','bible-note-item-ref'); refSpan.textContent=BIBLE_CANON[_bm.bookIdx][0]+' '+_bm.chapter+':'+vNum;
+        const delBtn=el('button','bible-note-item-del'); delBtn.textContent='✕'; delBtn.title='Delete note';
+        delBtn.onclick=e=>{
+          e.stopPropagation();
+          const n=loadBibleNotes();
+          if(n[key]){ delete n[key].note; if(!n[key].highlight) delete n[key]; saveBibleNotes(n); }
+          bmRenderNotesPanel();
+        };
+        itemHdr.append(refSpan,delBtn);
+        const txt=el('div','bible-note-item-txt'); txt.textContent=data.note;
+        item.append(itemHdr,txt);
+        item.onclick=()=>{
+          _bm.verse=parseInt(vNum);
+          bmApplyHighlightClasses();
+          const row=document.querySelector('#bmTextPanel [data-verse="'+vNum+'"]');
+          if(row) row.scrollIntoView({behavior:'smooth',block:'center'});
+          bmRenderNotesPanel();
+        };
+        np.appendChild(item);
+      });
+    }
+  }
+
+  // Collapsible: Find by Topic
+  np.appendChild(bmBuildCollapsible('🔍 Find by Topic', bmBuildTopicSearch()));
+  // Collapsible: Sources
+  np.appendChild(bmBuildCollapsible('📚 Reading Plan Sources', bmBuildSourceLinks()));
+}
+
+function bmBuildCollapsible(label, content){
+  const wrap=el('div','bible-collapsible');
+  const hdr=el('div','bible-collapsible-hdr');
+  const h4=el('h4'); h4.textContent=label;
+  const arrow=el('span','bible-coll-arrow'); arrow.textContent='▶';
+  hdr.append(h4,arrow);
+  const body=el('div','bible-collapsible-body');
+  body.appendChild(content);
+  hdr.onclick=()=>{ const open=body.classList.toggle('open'); arrow.classList.toggle('open',open); };
+  wrap.append(hdr,body);
+  return wrap;
+}
+
+function bmBuildTopicSearch(){
+  const wrap=el('div');
+  const row=el('div','bible-topic-row');
+  const inp=el('input','search-widget-input');
+  inp.placeholder='hope, anxiety, forgiveness…'; inp.style.flex='1'; inp.style.fontSize='11px';
+  const goBtn=el('button','search-widget-go'); goBtn.style.cssText='font-size:10.5px;padding:3px 10px;'; goBtn.textContent='Search';
+  row.append(inp,goBtn);
+  wrap.appendChild(row);
+  const results=el('div','bible-topic-results');
+  wrap.appendChild(results);
+
+  const doSearch=async()=>{
+    const topic=inp.value.trim(); if(!topic) return;
+    results.innerHTML='<div class="bible-loading">Searching OpenBible…</div>';
+    const w=getWorkerUrl(_bm?.cfg?.workerUrl);
+    if(!w){ results.innerHTML='<div class="bible-error">Worker URL not set</div>'; return; }
+    try{
+      const r=await fetch(w.replace(/\/+$/,'')+'/topics',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({topic}),
+      });
+      const j=await r.json();
+      results.innerHTML='';
+      if(!j.verses?.length){ results.innerHTML='<div class="bible-loading">No results found</div>'; return; }
+      j.verses.slice(0,25).forEach(v=>{
+        const item=el('div','bible-topic-item');
+        const refSp=el('span','bible-topic-ref'); refSp.textContent=v.reference;
+        const vSp=el('span','bible-topic-votes'); vSp.textContent=v.votes?v.votes.toLocaleString()+'✓':'';
+        const addBtn=el('button','bible-topic-add'); addBtn.textContent='+ Plan'; addBtn.title='Add to reading plan';
+        addBtn.onclick=e=>{
+          e.stopPropagation();
+          if(!_bm?.cfg) return;
+          if(!_bm.cfg.plan) _bm.cfg.plan=[];
+          if(!_bm.cfg.plan.includes(v.reference)){
+            _bm.cfg.plan.push(v.reference); persist();
+            addBtn.textContent='✓'; addBtn.style.color='var(--gold)';
+            setTimeout(()=>{ addBtn.textContent='+ Plan'; addBtn.style.color=''; },1600);
+          }
+        };
+        item.append(refSp,vSp,addBtn);
+        item.onclick=e=>{
+          if(e.target===addBtn) return;
+          const parsed=bibleParseRef(v.reference);
+          if(!parsed||!_bm) return;
+          _bm.bookIdx=parsed.bookIdx; _bm.chapter=parsed.chapter; _bm.verse=parsed.verse;
+          document.getElementById('bmBookSel').value=_bm.bookIdx;
+          bmRebuildChapSel();
+          bmLoadChapter().then(()=>{
+            setTimeout(()=>{
+              const row=document.querySelector('#bmTextPanel [data-verse="'+parsed.verse+'"]');
+              if(row){ row.scrollIntoView({behavior:'smooth',block:'center'}); bmApplyHighlightClasses(); }
+            },150);
+          });
+        };
+        results.appendChild(item);
+      });
+    }catch(e){ results.innerHTML='<div class="bible-error">'+e.message+'</div>'; }
+  };
+  goBtn.onclick=doSearch;
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') doSearch(); });
+  return wrap;
+}
+
+function bmBuildSourceLinks(){
+  const wrap=el('div','bible-source-links');
+  [
+    ['Bible Gateway Reading Plans','https://www.biblegateway.com/reading-plans/','Many translations'],
+    ['YouVersion Plans','https://www.bible.com/reading-plans','10,000+ plans'],
+    ['OpenBible Topics','https://www.openbible.info/topics/','Topical verse search'],
+    ['BibleStudyTools Topics','https://www.biblestudytools.com/topical-verses/','By subject'],
+    ['Crosswalk Devotionals','https://www.crosswalk.com/devotionals/',"Women's & daily"],
+    ['Bible Study for Her','https://www.biblestudyforher.com/','Women\'s plans (PDF)'],
+  ].forEach(([label,url,desc])=>{
+    const a=el('a','bible-src-link');
+    a.href=url; a.target='_blank'; a.rel='noopener noreferrer';
+    const l=el('span'); l.textContent=label;
+    const d=el('span','bible-src-link-desc'); d.textContent=desc;
+    a.append(l,d);
+    wrap.appendChild(a);
+  });
+  return wrap;
+}
+
+/* ── buildBibleWidget — mini widget ──────────────────────────────────────── */
+
+
+// ── VOTD Options modal ────────────────────────────────────────────────────────
+let _votdCfg = null;          // cfg reference while modal is open
+let _votdStaging = [];         // refs being built into a new topic plan
+let _votdSearchResults = [];   // last search result set
+
+function openVotdModal(cfg){
+  _votdCfg = cfg;
+  // Seed plan on first use
+  if(!cfg.topicPlans) cfg.topicPlans = [];
+  if(cfg.topicPlans.length === 0){
+    cfg.topicPlans.push({...BIBLE_SEED_PLAN});
+    if(cfg.mode !== 'votd' && cfg.mode !== 'plan') cfg.mode = 'tp_0';
+    persist();
+  }
+
+  // Build modal DOM (once)
+  if(!document.getElementById('votdModalOverlay')){
+    const ov = el('div','votd-modal-overlay'); ov.id='votdModalOverlay';
+    ov.addEventListener('click', e=>{ if(e.target===ov) closeVotdModal(); });
+    const modal = el('div','votd-modal');
+    const hdr   = el('div','votd-modal-hdr');
+    const h3    = el('h3'); h3.textContent='⚙ VOTD Options';
+    const xBtn  = el('button','clock-style-btn'); xBtn.textContent='✕'; xBtn.onclick=closeVotdModal; xBtn.style.cssText='padding:3px 10px;font-size:13px;';
+    hdr.append(h3, xBtn);
+    const body  = el('div','votd-modal-body'); body.id='votdModalBody';
+    modal.append(hdr, body);
+    ov.appendChild(modal);
+    document.body.appendChild(ov);
+  }
+
+  _votdStaging = [];
+  _votdSearchResults = [];
+  votdRender();
+  document.getElementById('votdModalOverlay').classList.add('open');
+}
+
+function closeVotdModal(){
+  const ov = document.getElementById('votdModalOverlay');
+  if(ov) ov.classList.remove('open');
+  // Refresh mini-widget verse after any plan changes
+  if(window._bibleWidgetRefresh) window._bibleWidgetRefresh();
+}
+
+function votdRender(){
+  const body = document.getElementById('votdModalBody');
+  if(!body) return;
+  body.innerHTML = '';
+  const cfg = _votdCfg;
+
+  // ── Section 1: Mode buttons ────────────────────────────────────
+  const modeWrap = el('div');
+  const modeRow  = el('div','votd-mode-row');
+  const modeLbl  = el('span','votd-mode-lbl'); modeLbl.textContent='Mode:';
+  modeRow.appendChild(modeLbl);
+
+  // Curated
+  const cBtn = el('button','votd-mode-btn'); cBtn.textContent='Curated';
+  cBtn.classList.toggle('active', cfg.mode==='votd');
+  cBtn.onclick=()=>{ cfg.mode='votd'; persist(); votdRender(); };
+  modeRow.appendChild(cBtn);
+
+  // My Plan
+  const pBtn = el('button','votd-mode-btn'); pBtn.textContent='My Plan';
+  pBtn.classList.toggle('active', cfg.mode==='plan');
+  pBtn.onclick=()=>{ cfg.mode='plan'; persist(); votdRender(); };
+  modeRow.appendChild(pBtn);
+
+  // Topic plans
+  (cfg.topicPlans||[]).forEach((tp,i)=>{
+    const tBtn  = el('button','votd-mode-btn');
+    const tKey  = 'tp_'+i;
+    tBtn.classList.toggle('active', cfg.mode===tKey);
+    const nameSp = el('span'); nameSp.textContent = tp.name.length>22 ? tp.name.slice(0,20)+'…' : tp.name;
+    nameSp.title = tp.name;
+    const delBtn = el('button','votd-mode-del'); delBtn.textContent='✕'; delBtn.title='Delete this plan';
+    delBtn.onclick=e=>{
+      e.stopPropagation();
+      if(!confirm('Delete plan "'+tp.name+'"?')) return;
+      cfg.topicPlans.splice(i,1);
+      if(cfg.mode===tKey || cfg.mode==='tp_'+i) cfg.mode='votd';
+      // Re-index any tp_ modes after deleted index
+      const mNum=parseInt(cfg.mode.replace('tp_',''));
+      if(!isNaN(mNum) && mNum>i) cfg.mode='tp_'+(mNum-1);
+      persist(); votdRender();
+    };
+    tBtn.append(nameSp, delBtn);
+    tBtn.onclick=e=>{
+      if(e.target===delBtn) return;
+      cfg.mode=tKey; persist(); votdRender();
+    };
+    modeRow.appendChild(tBtn);
+  });
+
+  modeWrap.appendChild(modeRow);
+  body.appendChild(modeWrap);
+
+  // ── Section 2: Current plan display ───────────────────────────
+  const display = el('div','votd-plan-display');
+
+  if(cfg.mode==='votd'){
+    const dt = el('div','votd-plan-display-title'); dt.textContent='Curated Plan';
+    const dh = el('div','votd-plan-hint');
+    dh.textContent = VOTD_REFS.length+' built-in verses · rotates daily at midnight · no editing needed';
+    display.append(dt, dh);
+
+  } else if(cfg.mode==='plan'){
+    const dt = el('div','votd-plan-display-title'); dt.textContent='My Plan  ('+((cfg.plan||[]).length)+' verses)';
+    display.appendChild(dt);
+
+    // Add row
+    const addRow = el('div','votd-add-row');
+    const addInp = el('input','search-widget-input');
+    addInp.placeholder='e.g. John 3:16 or Psalm 23:1-3'; addInp.style.flex='1'; addInp.style.fontSize='11px';
+    const addBtn = el('button','search-widget-go'); addBtn.style.cssText='font-size:10.5px;padding:3px 10px;'; addBtn.textContent='＋ Add';
+    const doAdd=()=>{
+      const ref=addInp.value.trim(); if(!ref) return;
+      if(!cfg.plan) cfg.plan=[];
+      const parsed=bibleParseRef(ref);
+      const displayRef=parsed ? BIBLE_CANON[parsed.bookIdx][0]+' '+parsed.chapter+':'+parsed.verse : ref;
+      if(!cfg.plan.includes(displayRef)){ cfg.plan.push(displayRef); persist(); votdRender(); }
+      addInp.value=''; addInp.focus();
+    };
+    addBtn.onclick=doAdd;
+    addInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doAdd(); });
+    addRow.append(addInp, addBtn);
+    display.appendChild(addRow);
+
+    // Chips
+    const chips = el('div','votd-chips');
+    if(!(cfg.plan||[]).length){
+      const empty=el('span'); empty.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;'; empty.textContent='No verses yet — add one above or use the builder below.';
+      chips.appendChild(empty);
+    } else {
+      (cfg.plan||[]).forEach((ref,i)=>{
+        const chip=el('div','votd-chip');
+        const rSp=el('span','votd-chip-ref'); rSp.textContent=ref;
+        const dBtn=el('button','votd-chip-del'); dBtn.textContent='✕';
+        dBtn.onclick=()=>{ cfg.plan.splice(i,1); persist(); votdRender(); };
+        chip.append(rSp,dBtn); chips.appendChild(chip);
+      });
+    }
+    display.appendChild(chips);
+
+  } else if(cfg.mode && cfg.mode.startsWith('tp_')){
+    const tpIdx=parseInt(cfg.mode.replace('tp_',''));
+    const tp=(cfg.topicPlans||[])[tpIdx];
+    if(tp){
+      const dt=el('div','votd-plan-display-title'); dt.textContent=tp.name+'  ('+tp.refs.length+' verses · rotates daily)';
+      display.appendChild(dt);
+      const chips=el('div','votd-chips');
+      tp.refs.forEach(ref=>{
+        const chip=el('div','votd-chip');
+        const rSp=el('span','votd-chip-ref'); rSp.textContent=ref;
+        chip.appendChild(rSp); chips.appendChild(chip);
+      });
+      display.appendChild(chips);
+    }
+  }
+
+  body.appendChild(display);
+
+  // ── Section 3: Plan Builder ────────────────────────────────────
+  const builder = el('div','votd-builder');
+  const bTitle  = el('div','votd-builder-title'); bTitle.textContent='Build a New Topic Plan';
+  builder.appendChild(bTitle);
+
+  // Search row
+  const sRow = el('div','votd-search-row');
+  const sInp = el('input','search-widget-input');
+  sInp.placeholder='Search a theme: hope, courage, patience…'; sInp.style.flex='1'; sInp.style.fontSize='11px';
+  const sBtn = el('button','search-widget-go'); sBtn.style.cssText='font-size:10.5px;padding:3px 10px;'; sBtn.textContent='Search';
+  sRow.append(sInp, sBtn);
+  builder.appendChild(sRow);
+
+  // Results
+  const resultsDiv = el('div','votd-builder-results');
+  if(_votdSearchResults.length){
+    _votdSearchResults.forEach(v=>{
+      const row=el('div','votd-builder-result');
+      const ref=el('span','votd-builder-result-ref'); ref.textContent=v.reference;
+      const vc=el('span','votd-builder-result-votes'); vc.textContent=v.votes?v.votes.toLocaleString()+'✓':'';
+      const aBtn=el('button','votd-builder-result-add'); aBtn.textContent='+ Add';
+      aBtn.onclick=()=>{
+        if(!_votdStaging.includes(v.reference)){
+          _votdStaging.push(v.reference);
+          aBtn.textContent='✓'; aBtn.disabled=true;
+          aBtn.style.color='var(--gold)';
+          // update staging display without full re-render
+          updateStagingDisplay();
+        }
+      };
+      // Mark already-staged
+      if(_votdStaging.includes(v.reference)){ aBtn.textContent='✓'; aBtn.disabled=true; aBtn.style.color='var(--gold)'; }
+      row.append(ref, vc, aBtn);
+      resultsDiv.appendChild(row);
+    });
+  }
+  builder.appendChild(resultsDiv);
+
+  // Staging area
+  const stgLabel = el('div','votd-staging-label'); stgLabel.textContent='Staging Area ('+_votdStaging.length+' verses)';
+  builder.appendChild(stgLabel);
+  const stgChips = el('div','votd-staging-chips'); stgChips.id='votdStagingChips';
+  renderStagingChips(stgChips);
+  builder.appendChild(stgChips);
+
+  // Finalize row
+  const finRow = el('div','votd-finalize-row');
+  const nameInp = el('input','votd-plan-name-inp'); nameInp.placeholder='Plan name…'; nameInp.id='votdPlanNameInp';
+  const createBtn = el('button','search-widget-go'); createBtn.textContent='Create Plan'; createBtn.style.cssText='font-size:10.5px;padding:4px 12px;';
+  const addToMyBtn = el('button','monitor-check-btn'); addToMyBtn.textContent='→ My Plan'; addToMyBtn.style.cssText='font-size:10px;padding:3px 9px;'; addToMyBtn.title='Add all staged refs to My Plan';
+  const clrBtn = el('button','monitor-check-btn'); clrBtn.textContent='Clear'; clrBtn.style.cssText='font-size:10px;padding:3px 9px;';
+
+  createBtn.onclick=()=>{
+    const name=(nameInp.value||'').trim();
+    if(!name){ nameInp.style.borderColor='var(--del-color)'; nameInp.focus(); setTimeout(()=>{ nameInp.style.borderColor=''; },1500); return; }
+    if(!_votdStaging.length){ sInp.focus(); return; }
+    if(!cfg.topicPlans) cfg.topicPlans=[];
+    const deduped=[...new Set(_votdStaging)];
+    cfg.topicPlans.push({ name, key: name.toLowerCase().replace(/\s+/g,'_'), refs: deduped });
+    cfg.mode='tp_'+(cfg.topicPlans.length-1);
+    persist();
+    _votdStaging=[]; _votdSearchResults=[];
+    votdRender();
+  };
+
+  addToMyBtn.onclick=()=>{
+    if(!_votdStaging.length) return;
+    if(!cfg.plan) cfg.plan=[];
+    const before=cfg.plan.length;
+    _votdStaging.forEach(r=>{ if(!cfg.plan.includes(r)) cfg.plan.push(r); });
+    persist();
+    _votdStaging=[]; _votdSearchResults=[];
+    const added=cfg.plan.length-before;
+    cfg.mode='plan';
+    votdRender();
+  };
+
+  clrBtn.onclick=()=>{ _votdStaging=[]; _votdSearchResults=[]; votdRender(); };
+
+  finRow.append(nameInp, createBtn, addToMyBtn, clrBtn);
+  builder.appendChild(finRow);
+  body.appendChild(builder);
+
+  // Wire search
+  const doSearch=async()=>{
+    const topic=sInp.value.trim(); if(!topic) return;
+    resultsDiv.innerHTML='<div class="bible-loading">Searching…</div>';
+    const w=getWorkerUrl(_votdCfg?.workerUrl);
+    if(!w){ resultsDiv.innerHTML='<div class="bible-error">Worker URL not set — check widget settings</div>'; return; }
+    try{
+      const r=await fetch(w.replace(/\/+$/,'')+'/topics',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({topic}),
+      });
+      const j=await r.json();
+      _votdSearchResults=j.verses||[];
+      votdRender();
+      // Re-focus search input after render
+      const si=document.getElementById('votdModalBody')?.querySelector('input[placeholder*="theme"]');
+      if(si){ si.value=topic; si.focus(); }
+    }catch(e){ resultsDiv.innerHTML='<div class="bible-error">'+e.message+'</div>'; }
+  };
+  sBtn.onclick=doSearch;
+  sInp.addEventListener('keydown',e=>{ if(e.key==='Enter') doSearch(); });
+}
+
+function renderStagingChips(container){
+  container.innerHTML='';
+  if(!_votdStaging.length){
+    const empty=el('span','votd-staging-empty'); empty.textContent='Add verses from search results above…';
+    container.appendChild(empty);
+    return;
+  }
+  _votdStaging.forEach((ref,i)=>{
+    const chip=el('div','votd-chip');
+    const rSp=el('span','votd-chip-ref'); rSp.textContent=ref;
+    const dBtn=el('button','votd-chip-del'); dBtn.textContent='✕';
+    dBtn.onclick=()=>{ _votdStaging.splice(i,1); updateStagingDisplay(); };
+    chip.append(rSp,dBtn); container.appendChild(chip);
+  });
+}
+
+function updateStagingDisplay(){
+  const sc=document.getElementById('votdStagingChips');
+  if(sc) renderStagingChips(sc);
+  const lbl=sc?.previousElementSibling;
+  if(lbl) lbl.textContent='Staging Area ('+_votdStaging.length+' verses)';
+}
+
+/* ── buildBibleWidget v2 ─────────────────────────────────────────────────── */
+function buildBibleWidget(sec){
+  const cfg=sec.widgetConfig||(sec.widgetConfig={});
+  if(!cfg.apiKey)       cfg.apiKey='';
+  if(!cfg.defaultTrans) cfg.defaultTrans='NKJV';
+  if(!cfg.mode)         cfg.mode='votd';
+  if(!cfg.plan)         cfg.plan=[];
+  if(!cfg.topicPlans)   cfg.topicPlans=[];
+  if(!cfg.apiBibleIds)  cfg.apiBibleIds={};
+  if(cfg.lastBook   ==null) cfg.lastBook=43;
+  if(cfg.lastChapter==null) cfg.lastChapter=3;
+  if(!cfg.lastTrans)    cfg.lastTrans=cfg.defaultTrans;
+
+  function getTodayRef(){
+    // Topic plan
+    if(cfg.mode && cfg.mode.startsWith('tp_')){
+      const idx=parseInt(cfg.mode.replace('tp_',''));
+      const tp=(cfg.topicPlans||[])[idx];
+      if(tp?.refs?.length) return tp.refs[Math.floor(Date.now()/86400000)%tp.refs.length];
+    }
+    // My plan
+    if(cfg.mode==='plan'&&cfg.plan?.length)
+      return cfg.plan[Math.floor(Date.now()/86400000)%cfg.plan.length];
+    // Curated
+    return VOTD_REFS[Math.floor(Date.now()/86400000)%VOTD_REFS.length];
+  }
+
+  async function loadVotd(){
+    verseText.textContent='Loading…'; verseRef.textContent='';
+    const ref=getTodayRef();
+    const trans=cfg.defaultTrans||'NKJV';
+    try{
+      let bookIdx,chapter,verse;
+      if(typeof ref==='string'){
+        const p=bibleParseRef(ref);
+        if(!p){ verseText.textContent='⚠ Invalid: '+ref; return; }
+        bookIdx=p.bookIdx; chapter=p.chapter; verse=p.verse;
+        verseRef.textContent=ref+'  ·  '+trans;
+      } else {
+        bookIdx=ref.b-1; chapter=ref.c; verse=ref.v;
+        verseRef.textContent=ref.r+'  ·  '+trans;
+      }
+      const verses=await bibleLoadChapter(cfg,bookIdx,chapter,trans);
+      const v=verses.find(x=>x.verse===verse)||verses[0];
+      verseText.textContent=v?v.text:'Verse not found';
+    }catch(e){ verseText.textContent='⚠ '+e.message; }
+  }
+
+  // ── DOM ───────────────────────────────────────────────────────
+  const wrap=el('div','bible-widget');
+
+  // Header — title + translation dropdown
+  const hdr=el('div','bible-widget-hdr');
+  const icon=el('span'); icon.textContent='📖 ';
+  const titleSp=el('span','bible-widget-title'); titleSp.textContent='Daily Verse';
+
+  // Translation as functional dropdown
+  const transSel=el('select','bible-trans-sel-widget');
+  transSel.title='Change translation';
+  function rebuildTransSel(){
+    transSel.innerHTML='';
+    const fg=document.createElement('optgroup'); fg.label='Free';
+    ['NKJV','KJV','WEB','NET','ASV'].forEach(t=>{
+      const o=document.createElement('option'); o.value=t; o.textContent=t;
+      if(t===cfg.defaultTrans) o.selected=true; fg.appendChild(o);
+    });
+    transSel.appendChild(fg);
+    if(cfg.apiKey){
+      const ag=document.createElement('optgroup'); ag.label='API.Bible';
+      [...new Set(['CSB','NLT','MSG',...Object.keys(cfg.apiBibleIds||{})])].forEach(t=>{
+        const o=document.createElement('option'); o.value=t; o.textContent=t;
+        if(t===cfg.defaultTrans) o.selected=true; ag.appendChild(o);
+      });
+      transSel.appendChild(ag);
+    }
+  }
+  rebuildTransSel();
+  transSel.onchange=()=>{
+    cfg.defaultTrans=transSel.value; cfg.lastTrans=transSel.value;
+    persist(); loadVotd();
+  };
+
+  hdr.append(icon,titleSp,transSel);
+  wrap.appendChild(hdr);
+
+  // Verse display
+  const vBox=el('div','bible-votd-box');
+  const verseText=el('div','bible-votd-text'); verseText.textContent='Loading…';
+  const verseRef=el('div','bible-votd-ref');
+  vBox.append(verseText,verseRef);
+  wrap.appendChild(vBox);
+
+  // Action row
+  const actRow=el('div','bible-action-row');
+  const browseBtn=el('button','bible-browse-btn'); browseBtn.textContent='📖 Browse';
+  browseBtn.onclick=()=>openBibleModal(cfg);
+  const optsBtn=el('button','bible-opts-btn'); optsBtn.textContent='⚙ VOTD Options';
+  optsBtn.onclick=()=>openVotdModal(cfg);
+  actRow.append(browseBtn,optsBtn);
+  wrap.appendChild(actRow);
+
+  // ── Edit mode: API key only ───────────────────────────────────
+  const settings=el('div','bible-settings-wrap');
+
+  const kr=el('div','bible-setting-row');
+  const kl=el('label','bible-setting-lbl'); kl.textContent='API.Bible Key';
+  const ki=el('input','search-widget-input'); ki.type='password';
+  ki.placeholder='Paste key for CSB / NLT / MSG…'; ki.value=cfg.apiKey; ki.style.flex='1';
+  const ksBtn=el('button','search-widget-go'); ksBtn.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;'; ksBtn.textContent='Save';
+  ksBtn.onclick=()=>{
+    cfg.apiKey=ki.value.trim(); cfg.apiBibleIds={}; persist();
+    rebuildTransSel();
+    ksBtn.textContent='✓'; setTimeout(()=>{ ksBtn.textContent='Save'; },1500);
+  };
+  kr.append(kl,ki,ksBtn); settings.appendChild(kr);
+
+  // Worker URL (small, secondary)
+  const wr=el('div','bible-setting-row');
+  const wl=el('label','bible-setting-lbl'); wl.textContent='Worker URL';
+  const wi=el('input','search-widget-input');
+  wi.placeholder='Override global Worker URL…'; wi.value=cfg.workerUrl||''; wi.style.flex='1'; wi.style.fontSize='10px';
+  wi.onblur=()=>{ cfg.workerUrl=wi.value.trim(); persist(); };
+  wr.append(wl,wi); settings.appendChild(wr);
+
+  // Export notes
+  const er=el('div','bible-setting-row');
+  const eb=el('button','monitor-check-btn'); eb.textContent='Export Notes JSON'; eb.style.fontSize='10px';
+  eb.onclick=()=>{
+    const blob=new Blob([JSON.stringify(loadBibleNotes(),null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='bible-notes-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+  };
+  er.appendChild(eb); settings.appendChild(er);
+
+  const applyVis=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obs=new MutationObserver(applyVis);
+  obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyVis();
+  wrap.appendChild(settings);
+
+  const obsC=new MutationObserver(()=>{ if(!document.contains(wrap)){ obs.disconnect(); obsC.disconnect(); delete window._bibleWidgetRefresh; } });
+  obsC.observe(document.body,{childList:true,subtree:true});
+
+  // Register refresh hook so VOTD modal can trigger reload
+  window._bibleWidgetRefresh = loadVotd;
+
+  loadVotd();
+  return wrap;
+}
+
+
 function buildItem(tabId, colId, secId, item, parentId){
   if(item.type === 'heading') return buildHeadingItem(tabId, colId, secId, item);
   return buildLinkItem(tabId, colId, secId, item, parentId);
@@ -11065,7 +12725,10 @@ function performDrop(destTabId, destColId, destSecId, destParentId, targetId, dr
    ================================================================ */
 function switchTab(id){
   activeTab = id;
-  clearTabAlert(id); // visiting a tab clears its alert
+  // Auto-clear critical and soft alerts on tab visit (you've seen them).
+  // Info alerts (e.g. energy reminder) require explicit action to dismiss.
+  const alertLevel = tabAlerts.get(id);
+  if(alertLevel === 'critical' || alertLevel === 'soft') clearTabAlert(id);
   clearSearch();
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('searching'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tabId===id));
@@ -11521,9 +13184,8 @@ function statusUpdateSubtitle(secId){
   if(!sub) return;
   // Find section by id across all tabs/cols
   let services = [];
-  let alertTabId = null;
   D.tabs.forEach(t=>(t.columns||[]).forEach(c=>(c.sections||[]).forEach(s=>{
-    if(s.id===secId){ services = s.services||[]; alertTabId = t.id; }
+    if(s.id===secId) services = s.services||[];
   })));
   if(!services.length){ sub.textContent = 'no services'; return; }
   const green   = services.filter(s=>(statusState[s.id]?.status)==='green').length;
@@ -11536,12 +13198,6 @@ function statusUpdateSubtitle(secId){
   if(yellow)  parts.push(`${yellow} checking`);
   if(blocked) parts.push(`${blocked} blocked`);
   sub.textContent = parts.join(' · ');
-
-  // Tab alert: critical if any service is down, clear if all green/blocked
-  if(alertTabId){
-    if(red > 0) setTabAlert(alertTabId, 'critical');
-    else clearTabAlert(alertTabId);
-  }
 }
 
 function statusCheckAll(tabId, colId, secId){
