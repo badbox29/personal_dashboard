@@ -5866,7 +5866,7 @@ const VOTD_REFS = [
   {b:46,c:10,v:31,r:'1 Corinthians 10:31'},{b:43,c:3,v:30,r:'John 3:30'},
   {b:19,c:1,v:1,r:'Psalm 1:1'},{b:20,c:18,v:10,r:'Proverbs 18:10'},
 ];
-const BOLLS_FREE_SET = new Set(['NKJV','KJV','WEB','NET','ASV','YLT']);
+const BOLLS_FREE_SET = new Set(['NKJV','KJV','GNV','ASV','RSV','YLT','ESV','NASB','NET','WEB','NIV','NLT','CJB','TLV']);
 
 function isBollsTrans(t){ return BOLLS_FREE_SET.has((t||'').toUpperCase()); }
 
@@ -11713,13 +11713,28 @@ function openBibleModal(cfg){
   // Populate translation selector
   const tSel = document.getElementById('bmTransSel');
   tSel.innerHTML='';
-  const fg=document.createElement('optgroup'); fg.label='Free — bolls.life';
-  ['NKJV','KJV','WEB','NET','ASV'].forEach(t=>{
-    const o=document.createElement('option'); o.value=t; o.textContent=t;
-    if(t===_bm.trans) o.selected=true;
-    fg.appendChild(o);
-  });
-  tSel.appendChild(fg);
+
+    const fg=document.createElement('optgroup'); fg.label='Free — bolls.life';
+    [
+      {c:'NKJV',l:'NKJV — New King James (1982)'},
+      {c:'KJV', l:'KJV — King James (1769)'},
+      {c:'GNV', l:'GNV — Geneva Bible (1599)'},
+      {c:'ASV', l:'ASV — American Standard (1901)'},
+      {c:'RSV', l:'RSV — Revised Standard (1952)'},
+      {c:'YLT', l:'YLT — Young's Literal (1898)'},
+      {c:'ESV', l:'ESV — English Standard (2001)'},
+      {c:'NASB',l:'NASB — New American Standard (1995)'},
+      {c:'NET', l:'NET — New English Translation'},
+      {c:'WEB', l:'WEB — World English Bible'},
+      {c:'NIV', l:'NIV — New International (1984)'},
+      {c:'NLT', l:'NLT — New Living Translation (2015)'},
+      {c:'CJB', l:'CJB — Complete Jewish Bible (1998)'},
+      {c:'TLV', l:'TLV — Tree of Life Version'},
+    ].forEach(({c,l})=>{
+      const o=document.createElement('option'); o.value=c; o.textContent=l;
+      if(c===_bm.trans) o.selected=true; fg.appendChild(o);
+    });
+    tSel.appendChild(fg);
   if(cfg.apiKey){
     const ag=document.createElement('optgroup'); ag.label='API.Bible';
     [...new Set(['CSB','NLT','MSG',...Object.keys(cfg.apiBibleIds||{})])].forEach(t=>{
@@ -11961,6 +11976,8 @@ function bmBuildTopicSearch(){
       if(!j.verses?.length){ results.innerHTML='<div class="bible-loading">No results found</div>'; return; }
       j.verses.slice(0,25).forEach(v=>{
         const item=el('div','bible-topic-item');
+        item.addEventListener('mouseenter', ()=>showVerseTooltip(v.reference, item));
+        item.addEventListener('mouseleave', hideVerseTooltip);
         const refSp=el('span','bible-topic-ref'); refSp.textContent=v.reference;
         const vSp=el('span','bible-topic-votes'); vSp.textContent=v.votes?v.votes.toLocaleString()+'✓':'';
         const addBtn=el('button','bible-topic-add'); addBtn.textContent='+ Plan'; addBtn.title='Add to reading plan';
@@ -12200,6 +12217,7 @@ function votdRender(){
   if(_votdSearchResults.length){
     _votdSearchResults.forEach(v=>{
       const row=el('div','votd-builder-result');
+      row.style.cursor='default';
       const ref=el('span','votd-builder-result-ref'); ref.textContent=v.reference;
       const vc=el('span','votd-builder-result-votes'); vc.textContent=v.votes?v.votes.toLocaleString()+'✓':'';
       const aBtn=el('button','votd-builder-result-add'); aBtn.textContent='+ Add';
@@ -12208,17 +12226,37 @@ function votdRender(){
           _votdStaging.push(v.reference);
           aBtn.textContent='✓'; aBtn.disabled=true;
           aBtn.style.color='var(--gold)';
-          // update staging display without full re-render
           updateStagingDisplay();
         }
       };
-      // Mark already-staged
       if(_votdStaging.includes(v.reference)){ aBtn.textContent='✓'; aBtn.disabled=true; aBtn.style.color='var(--gold)'; }
+      // Hover preview
+      row.addEventListener('mouseenter', ()=>showVerseTooltip(v.reference, row));
+      row.addEventListener('mouseleave', hideVerseTooltip);
       row.append(ref, vc, aBtn);
       resultsDiv.appendChild(row);
     });
   }
   builder.appendChild(resultsDiv);
+
+  // Add All button (only shown when results exist)
+  if(_votdSearchResults.length){
+    const addAllRow = el('div'); addAllRow.style.cssText='display:flex;justify-content:flex-end;margin-bottom:6px;';
+    const addAllBtn = el('button','monitor-check-btn'); addAllBtn.style.cssText='font-size:10px;padding:3px 10px;';
+    addAllBtn.textContent='+ Add All ('+_votdSearchResults.length+')';
+    addAllBtn.onclick=()=>{
+      _votdSearchResults.forEach(v=>{
+        if(!_votdStaging.includes(v.reference)) _votdStaging.push(v.reference);
+      });
+      updateStagingDisplay();
+      resultsDiv.querySelectorAll('.votd-builder-result-add').forEach(btn=>{
+        btn.textContent='✓'; btn.disabled=true; btn.style.color='var(--gold)';
+      });
+      addAllBtn.textContent='✓ All Added'; addAllBtn.disabled=true;
+    };
+    addAllRow.appendChild(addAllBtn);
+    builder.appendChild(addAllRow);
+  }
 
   // Staging area
   const stgLabel = el('div','votd-staging-label'); stgLabel.textContent='Staging Area ('+_votdStaging.length+' verses)';
@@ -12312,6 +12350,51 @@ function updateStagingDisplay(){
 }
 
 /* ── buildBibleWidget v2 ─────────────────────────────────────────────────── */
+
+// ── Verse preview tooltip ────────────────────────────────────────────────────
+const _vpCache = {};
+
+function showVerseTooltip(refStr, nearEl){
+  let tip = document.getElementById('bibleVerseTip');
+  if(!tip){
+    tip = document.createElement('div'); tip.id='bibleVerseTip';
+    tip.style.cssText='position:fixed;z-index:9700;background:var(--modal-bg);border:1px solid var(--gold);border-radius:7px;padding:10px 14px;max-width:300px;font-size:12.5px;line-height:1.6;color:var(--text);box-shadow:0 6px 24px rgba(0,0,0,.55);pointer-events:none;display:none;font-style:italic;';
+    document.body.appendChild(tip);
+  }
+  // Position: prefer right of element, fall back to left
+  const rect = nearEl.getBoundingClientRect();
+  const tipW = 300;
+  let left = rect.right + 12;
+  if(left + tipW > window.innerWidth - 10) left = rect.left - tipW - 12;
+  const top = Math.max(10, Math.min(rect.top, window.innerHeight - 160));
+  tip.style.left = Math.max(8, left) + 'px';
+  tip.style.top  = top + 'px';
+  tip.style.display = 'block';
+
+  if(_vpCache[refStr]){ tip.innerHTML = _vpCache[refStr]; return; }
+  tip.textContent = 'Loading…';
+
+  const parsed = bibleParseRef(refStr);
+  if(!parsed){ tip.textContent = refStr; return; }
+  const bookId = BIBLE_CANON[parsed.bookIdx][1];
+  fetch('https://bolls.life/get-verse/NKJV/'+bookId+'/'+parsed.chapter+'/'+parsed.verse+'/')
+    .then(r=>r.json())
+    .then(j=>{
+      const text = (j.text||'').replace(/<[^>]+>/g,'').trim();
+      if(text){
+        _vpCache[refStr] = text + '<span style="display:block;margin-top:5px;font-size:10.5px;font-style:normal;color:var(--gold);font-family:Share Tech Mono,monospace;">— '+refStr+' (NKJV)</span>';
+        if(document.getElementById('bibleVerseTip')?.style.display!=='none')
+          document.getElementById('bibleVerseTip').innerHTML = _vpCache[refStr];
+      }
+    })
+    .catch(()=>{ const t=document.getElementById('bibleVerseTip'); if(t) t.textContent=refStr; });
+}
+
+function hideVerseTooltip(){
+  const tip = document.getElementById('bibleVerseTip');
+  if(tip) tip.style.display = 'none';
+}
+
 function buildBibleWidget(sec){
   const cfg=sec.widgetConfig||(sec.widgetConfig={});
   if(!cfg.apiKey)       cfg.apiKey='';
@@ -12372,10 +12455,25 @@ function buildBibleWidget(sec){
   transSel.title='Change translation';
   function rebuildTransSel(){
     transSel.innerHTML='';
-    const fg=document.createElement('optgroup'); fg.label='Free';
-    ['NKJV','KJV','WEB','NET','ASV'].forEach(t=>{
-      const o=document.createElement('option'); o.value=t; o.textContent=t;
-      if(t===cfg.defaultTrans) o.selected=true; fg.appendChild(o);
+    const fg=document.createElement('optgroup'); fg.label='Free — bolls.life';
+    [
+      {c:'NKJV',l:'NKJV — New King James (1982)'},
+      {c:'KJV', l:'KJV — King James (1769)'},
+      {c:'GNV', l:'GNV — Geneva Bible (1599)'},
+      {c:'ASV', l:'ASV — American Standard (1901)'},
+      {c:'RSV', l:'RSV — Revised Standard (1952)'},
+      {c:'YLT', l:'YLT — Young's Literal (1898)'},
+      {c:'ESV', l:'ESV — English Standard (2001)'},
+      {c:'NASB',l:'NASB — New American Standard (1995)'},
+      {c:'NET', l:'NET — New English Translation'},
+      {c:'WEB', l:'WEB — World English Bible'},
+      {c:'NIV', l:'NIV — New International (1984)'},
+      {c:'NLT', l:'NLT — New Living Translation (2015)'},
+      {c:'CJB', l:'CJB — Complete Jewish Bible (1998)'},
+      {c:'TLV', l:'TLV — Tree of Life Version'},
+    ].forEach(({c,l})=>{
+      const o=document.createElement('option'); o.value=c; o.textContent=l;
+      if(c===cfg.defaultTrans) o.selected=true; fg.appendChild(o);
     });
     transSel.appendChild(fg);
     if(cfg.apiKey){
