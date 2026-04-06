@@ -5864,6 +5864,64 @@ function _applyTabAlertClasses(){
 
 // Widget constants — must be declared before init IIFE runs renderAll
 
+// ── Curated word list (200 words) ─────────────────────────
+const WOTD_LIST = [
+  'ephemeral','luminous','serendipity','mellifluous','eloquent',
+  'laconic','perspicacious','sanguine','eloquent','serene',
+  'abstruse','acumen','alacrity','altruism','ambiguous',
+  'ameliorate','anachronism','anecdote','anomaly','antiquated',
+  'apathy','archaic','ardent','arduous','articulate',
+  'ascetic','audacious','auspicious','austere','avant-garde',
+  'benevolent','bequeath','bereft','blithe','bombastic',
+  'brevity','bucolic','cacophony','candor','capricious',
+  'caustic','chicanery','circumspect','clandestine','cogent',
+  'colloquial','complacent','conundrum','copious','corroborate',
+  'credulous','culpable','dauntless','debilitate','decorum',
+  'deferential','deleterious','demure','denigrate','desolate',
+  'didactic','diffident','diligent','discern','disparate',
+  'dissemble','distraught','dogmatic','dubious','ebullient',
+  'eccentric','egregious','elusive','emulate','endemic',
+  'enigmatic','equanimity','equivocal','erudite','esoteric',
+  'euphemism','evanescent','exacerbate','excoriate','exemplary',
+  'exhaustive','exorbitant','expedient','explicit','exuberant',
+  'facetious','fallacious','fastidious','fatuous','feckless',
+  'felicitous','fervent','flippant','fortuitous','frugal',
+  'garrulous','germane','grandiose','gregarious','guile',
+  'hapless','harbinger','hegemony','hubris','hyperbole',
+  'iconoclast','idiosyncrasy','ignominious','immutable','impetuous',
+  'implicit','impudent','incisive','indefatigable','indolent',
+  'ineffable','inept','inexorable','ingenuous','inimical',
+  'insidious','insouciant','intrepid','inveterate','irascible',
+  'jocular','judicious','juxtapose','laconic','languid',
+  'lassitude','laud','loquacious','lucid','lugubrious',
+  'magnanimous','malapropism','malleable','mendacious','mercurial',
+  'metamorphosis','meticulous','mnemonic','morose','mundane',
+  'nebulous','nefarious','nonchalant','nuance','obfuscate',
+  'obsequious','obstinate','occlude','opulent','orthodox',
+  'ostensible','ostentatious','paradox','pariah','parsimonious',
+  'paucity','pedantic','penchant','penitent','perfidious',
+  'pervasive','phlegmatic','piety','plaintive','platitude',
+  'plausible','poignant','pragmatic','precipitate','preclude',
+  'predilection','preempt','prerogative','prescient','presumptuous',
+  'profligate','prolific','propitious','prosaic','prudent',
+  'pungent','quandary','querulous','quixotic','rancor',
+  'rarefied','recalcitrant','reclusive','reticent','rhetoric',
+  'sagacious','sanctimonious','sardonic','satiate','scrupulous',
+  'solace','solemn','solicitous','solipsism','soporific',
+  'specious','spurious','stoic','strident','subjugate',
+  'succinct','superfluous','sycophant','tacit','tangential',
+  'temerity','tenacious','timorous','tortuous','tractable',
+  'transient','truculent','tumultuous','ubiquitous','unctuous',
+  'vacuous','vapid','verbose','vicarious','vindictive',
+  'virtuoso','vitriolic','vivacious','vociferous','volatile',
+  'wistful','zealous','zenith','zeal','ardor',
+];
+
+// De-dupe and fix the list
+const _WOTD_DEDUPED = [...new Set(WOTD_LIST)];
+
+
+
 // ── Canon (name, bollsId 1-66, osisId) ───────────────────────────────────────
 const BIBLE_CANON = [
   ['Genesis',1,'GEN'],['Exodus',2,'EXO'],['Leviticus',3,'LEV'],['Numbers',4,'NUM'],
@@ -12716,62 +12774,6 @@ function buildBibleWidget(sec){
 /* ════════════════════════════════════════════════════════
    WORD OF THE DAY WIDGET
    ════════════════════════════════════════════════════════ */
-
-// ── Curated word list (200 words) ─────────────────────────
-const WOTD_LIST = [
-  'ephemeral','luminous','serendipity','mellifluous','eloquent',
-  'laconic','perspicacious','sanguine','eloquent','serene',
-  'abstruse','acumen','alacrity','altruism','ambiguous',
-  'ameliorate','anachronism','anecdote','anomaly','antiquated',
-  'apathy','archaic','ardent','arduous','articulate',
-  'ascetic','audacious','auspicious','austere','avant-garde',
-  'benevolent','bequeath','bereft','blithe','bombastic',
-  'brevity','bucolic','cacophony','candor','capricious',
-  'caustic','chicanery','circumspect','clandestine','cogent',
-  'colloquial','complacent','conundrum','copious','corroborate',
-  'credulous','culpable','dauntless','debilitate','decorum',
-  'deferential','deleterious','demure','denigrate','desolate',
-  'didactic','diffident','diligent','discern','disparate',
-  'dissemble','distraught','dogmatic','dubious','ebullient',
-  'eccentric','egregious','elusive','emulate','endemic',
-  'enigmatic','equanimity','equivocal','erudite','esoteric',
-  'euphemism','evanescent','exacerbate','excoriate','exemplary',
-  'exhaustive','exorbitant','expedient','explicit','exuberant',
-  'facetious','fallacious','fastidious','fatuous','feckless',
-  'felicitous','fervent','flippant','fortuitous','frugal',
-  'garrulous','germane','grandiose','gregarious','guile',
-  'hapless','harbinger','hegemony','hubris','hyperbole',
-  'iconoclast','idiosyncrasy','ignominious','immutable','impetuous',
-  'implicit','impudent','incisive','indefatigable','indolent',
-  'ineffable','inept','inexorable','ingenuous','inimical',
-  'insidious','insouciant','intrepid','inveterate','irascible',
-  'jocular','judicious','juxtapose','laconic','languid',
-  'lassitude','laud','loquacious','lucid','lugubrious',
-  'magnanimous','malapropism','malleable','mendacious','mercurial',
-  'metamorphosis','meticulous','mnemonic','morose','mundane',
-  'nebulous','nefarious','nonchalant','nuance','obfuscate',
-  'obsequious','obstinate','occlude','opulent','orthodox',
-  'ostensible','ostentatious','paradox','pariah','parsimonious',
-  'paucity','pedantic','penchant','penitent','perfidious',
-  'pervasive','phlegmatic','piety','plaintive','platitude',
-  'plausible','poignant','pragmatic','precipitate','preclude',
-  'predilection','preempt','prerogative','prescient','presumptuous',
-  'profligate','prolific','propitious','prosaic','prudent',
-  'pungent','quandary','querulous','quixotic','rancor',
-  'rarefied','recalcitrant','reclusive','reticent','rhetoric',
-  'sagacious','sanctimonious','sardonic','satiate','scrupulous',
-  'solace','solemn','solicitous','solipsism','soporific',
-  'specious','spurious','stoic','strident','subjugate',
-  'succinct','superfluous','sycophant','tacit','tangential',
-  'temerity','tenacious','timorous','tortuous','tractable',
-  'transient','truculent','tumultuous','ubiquitous','unctuous',
-  'vacuous','vapid','verbose','vicarious','vindictive',
-  'virtuoso','vitriolic','vivacious','vociferous','volatile',
-  'wistful','zealous','zenith','zeal','ardor',
-];
-
-// De-dupe and fix the list
-const _WOTD_DEDUPED = [...new Set(WOTD_LIST)];
 
 function wotdTodayWord(){
   const day = Math.floor(Date.now() / 86400000);
