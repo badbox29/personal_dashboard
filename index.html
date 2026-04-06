@@ -6239,7 +6239,7 @@ const PORT_COMBOS = {
     const mins = Math.max(5, parseInt(D.weatherRefreshMins)||30);
     window._weatherRefreshTimer = setTimeout(async ()=>{
       await fetchAllWeather();
-      paintAllWeather();
+      D.weather.forEach(loc => paintWeather(loc));
       scheduleWeatherRefresh(); // reschedule (picks up any interval change)
     }, mins * 60 * 1000);
   })();
@@ -13751,8 +13751,13 @@ function paintAllWeather(){
     rfBtn.title = 'Refresh weather tiles';
     rfBtn.onclick = async ()=>{
       rfBtn.classList.add('spinning'); rfBtn.disabled=true;
+      // Fetch fresh data then repaint each tile in place —
+      // do NOT call paintAllWeather() which rebuilds the strip
+      // (causes Loading… flash) and rotates the quote.
       await fetchAllWeather();
-      paintAllWeather(); // rebuilds strip, no need to reset button
+      D.weather.forEach(loc => paintWeather(loc));
+      rfBtn.classList.remove('spinning');
+      rfBtn.disabled = false;
     };
     strip.appendChild(rfBtn);
     // Populate the quote-in-weather placeholder
@@ -13989,7 +13994,7 @@ async function forceWeatherRefresh(btn){
   if(icon){ icon.style.display='inline-block'; icon.classList.add('spinning'); }
   if(btn) btn.disabled = true;
   await fetchAllWeather();
-  paintAllWeather();
+  D.weather.forEach(loc => paintWeather(loc));
   if(icon){ icon.classList.remove('spinning'); }
   if(btn){ btn.disabled = false; btn.style.color='var(--gold)'; setTimeout(()=>{ btn.style.color=''; },1500); }
 }
@@ -14003,7 +14008,7 @@ function saveWeatherRefreshMins(){
   (function scheduleWeatherRefresh(){
     window._weatherRefreshTimer = setTimeout(async ()=>{
       await fetchAllWeather();
-      paintAllWeather();
+      D.weather.forEach(loc => paintWeather(loc));
       scheduleWeatherRefresh();
     }, mins * 60 * 1000);
   })();
