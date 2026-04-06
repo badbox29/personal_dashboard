@@ -1341,6 +1341,7 @@ body.edit-mode .quote-bar.hidden .quote-right { visibility: hidden; }
 .quote-refresh:hover { border-color: var(--gold); color: var(--gold); }
 .quote-refresh.spinning { animation: spin 0.6s ease-in-out; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+#wRefreshIcon.spinning { animation: spin 0.7s linear infinite; display:inline-block; }
 
 .quote-toggle-wrap { display: none; }
 body.edit-mode .quote-toggle-wrap { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
@@ -4759,6 +4760,11 @@ body.edit-mode .gh-add-row { display: flex; }
 .votd-term-badge{font-size:9px;font-family:'Share Tech Mono',monospace;padding:1px 5px;border-radius:3px;border:1px solid var(--border);color:var(--text-dim);white-space:nowrap;}
 .votd-term-badge.multi{border-color:var(--gold);color:var(--gold);background:rgba(221,176,75,.08);}
 
+
+.weather-strip-refresh{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:15px;padding:2px 4px;line-height:1;align-self:flex-start;margin-top:5px;transition:color .15s,transform .15s;opacity:0.6;}
+.weather-strip-refresh:hover{color:var(--gold);opacity:1;}
+.weather-strip-refresh.spinning{animation:spin 0.7s linear infinite;display:inline-block;color:var(--gold);opacity:1;}
+
 </style>
 </head>
 <body>
@@ -5376,6 +5382,25 @@ body.edit-mode .gh-add-row { display: flex; }
     </div>
     <div id="wSearchResults" style="margin-top:8px;max-height:180px;overflow-y:auto;"></div>
 
+    <!-- Auto-refresh interval -->
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
+      <label style="font-size:11.5px;font-weight:600;display:block;margin-bottom:6px;">
+        Tile Auto-Refresh Interval
+        <span style="font-weight:400;color:var(--text-dim);"> — how often weather tiles re-fetch data</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="number" id="wRefreshMins" min="5" max="1440"
+               style="width:72px;font-size:13px;padding:5px 8px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;"
+               oninput="this.value=Math.max(5,Math.min(1440,parseInt(this.value)||30))">
+        <span style="font-size:12px;color:var(--text-dim);">minutes</span>
+        <button class="mbtn mbtn-primary" onclick="saveWeatherRefreshMins()" style="padding:5px 14px;font-size:12px;margin-left:4px;">Save</button>
+        <span id="wRefreshStatus" style="font-size:11px;color:var(--gold);display:none;">✓ Saved</span>
+      </div>
+      <p style="font-size:11px;color:var(--text-dim);margin:5px 0 0 0;line-height:1.5;">
+        Minimum 5 minutes. If tiles show "Loading…" on startup they will recover at the next refresh cycle, or reload the page.
+      </p>
+    </div>
+
     <!-- Pollen API settings -->
     <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -5424,7 +5449,11 @@ body.edit-mode .gh-add-row { display: flex; }
       <div id="wPollenStatus" style="font-size:11px;color:var(--text-dim);margin-top:5px;min-height:16px;"></div>
     </div>
 
-    <div class="modal-actions">
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="mbtn mbtn-cancel" id="wRefreshNowBtn" onclick="forceWeatherRefresh(this)"
+              style="display:flex;align-items:center;gap:6px;">
+        <span id="wRefreshIcon">↻</span> Refresh Tiles
+      </button>
       <button class="mbtn mbtn-cancel" onclick="closeOverlay('weatherOverlay')">Done</button>
     </div>
   </div>
@@ -5458,6 +5487,7 @@ const DEFAULTS = {
   otxIndustries: [],
   otxAlarmHistory: [],
   pollenKey: '',
+  weatherRefreshMins: 30,
   pollenEnabled: false,
   pollenService: 'weatherapi',
   pollenProxy: '',
@@ -6202,6 +6232,18 @@ const PORT_COMBOS = {
   applyWeatherPin();
   fetchQuote();
   fetchAllWeather();
+
+  // Auto-refresh weather tiles — default 30 min, configurable via D.weatherRefreshMins
+  // Prevents tiles getting permanently stuck on "Loading…" after a failed initial fetch
+  (function scheduleWeatherRefresh(){
+    const mins = Math.max(5, parseInt(D.weatherRefreshMins)||30);
+    window._weatherRefreshTimer = setTimeout(async ()=>{
+      await fetchAllWeather();
+      paintAllWeather();
+      scheduleWeatherRefresh(); // reschedule (picks up any interval change)
+    }, mins * 60 * 1000);
+  })();
+
   } catch(err) {
     console.error('INIT ERROR:', err);
     document.getElementById('tabContents').innerHTML =
@@ -13596,13 +13638,20 @@ async function fetchAllWeather(){
 }
 
 async function fetchWeather(loc){
+  // Timeout helper — prevents a hung API call from blocking all other locations
+  const fetchWithTimeout = (url, ms=10000) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(()=>ctrl.abort(), ms);
+    return fetch(url, {signal:ctrl.signal}).finally(()=>clearTimeout(timer));
+  };
   try{
     const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,apparent_temperature,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max&temperature_unit=fahrenheit&timezone=auto&forecast_days=7`;
     const aqUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${loc.lat}&longitude=${loc.lon}&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide`;
 
-    const [wxRes, aqRes] = await Promise.all([fetch(wxUrl), fetch(aqUrl)]);
+    const [wxRes, aqRes] = await Promise.all([fetchWithTimeout(wxUrl), fetchWithTimeout(aqUrl)]);
     const [wx, aq] = await Promise.all([wxRes.json(), aqRes.json()]);
 
+    loc._fetchFailed = false;
     loc._wx = wx;
     const cur = aq?.current || {};
     loc._aq = {
@@ -13612,7 +13661,7 @@ async function fetchWeather(loc){
       ozone:            cur.ozone            ?? null,
       nitrogen_dioxide: cur.nitrogen_dioxide ?? null,
     };
-  } catch(e){ /* offline — silent */ }
+  } catch(e){ loc._fetchFailed = true; /* offline — silent */ }
 
   // Pollen fetch — worker handles all provider logic and normalization
   // Dashboard just sends {service, apiKey, lat, lon} and gets {tree, grass, weed} back
@@ -13696,6 +13745,16 @@ function paintAllWeather(){
       const card = buildWeatherCard(loc);
       strip.appendChild(card);
     });
+    // Refresh button — top-aligned, immediately after last tile
+    const rfBtn = el('button','weather-strip-refresh');
+    rfBtn.textContent = '↻';
+    rfBtn.title = 'Refresh weather tiles';
+    rfBtn.onclick = async ()=>{
+      rfBtn.classList.add('spinning'); rfBtn.disabled=true;
+      await fetchAllWeather();
+      paintAllWeather(); // rebuilds strip, no need to reset button
+    };
+    strip.appendChild(rfBtn);
     // Populate the quote-in-weather placeholder
     const qiw = document.getElementById('qiw_'+tab.id);
     if(qiw) populateQuoteInWeather(qiw);
@@ -13745,7 +13804,13 @@ function paintWeather(loc){
   };
 
   document.querySelectorAll('#wc_'+loc.id).forEach(card => {
-    if(!loc._wx){ return; }
+    if(!loc._wx){
+      // Only update if still showing the initial Loading… placeholder
+      // so a previous good paint isn't wiped by a transient failed refresh
+      const wload = card.querySelector('.wload');
+      if(wload) wload.textContent = loc._fetchFailed ? 'Unavailable' : 'Loading…';
+      return;
+    }
     const c  = loc._wx.current;
     const d  = loc._wx.daily;
     const t  = Math.round(c.temperature_2m);
@@ -13873,6 +13938,8 @@ function openWeatherModal(){
   document.getElementById('wPollenKey').value = D.pollenKey || '';
   document.getElementById('wPollenProxy').value = D.pollenProxy || '';
   document.getElementById('wPollenStatus').textContent = '';
+  document.getElementById('wRefreshMins').value = D.weatherRefreshMins || 30;
+  document.getElementById('wRefreshStatus').style.display = 'none';
   updatePollenServiceInfo();
   openOverlay('weatherOverlay');
 }
@@ -13915,6 +13982,34 @@ function updatePollenServiceInfo(){
     `<strong style="color:var(--text)">${svc.name}</strong> — `+
     `${svc.cost} ${svc.note} `+
     `<a href="${svc.url}" target="_blank" rel="noopener" style="color:var(--cyan);">Sign up / pricing ↗</a>`;
+}
+
+async function forceWeatherRefresh(btn){
+  const icon = document.getElementById('wRefreshIcon');
+  if(icon){ icon.style.display='inline-block'; icon.classList.add('spinning'); }
+  if(btn) btn.disabled = true;
+  await fetchAllWeather();
+  paintAllWeather();
+  if(icon){ icon.classList.remove('spinning'); }
+  if(btn){ btn.disabled = false; btn.style.color='var(--gold)'; setTimeout(()=>{ btn.style.color=''; },1500); }
+}
+
+function saveWeatherRefreshMins(){
+  const mins = Math.max(5, Math.min(1440, parseInt(document.getElementById('wRefreshMins').value)||30));
+  D.weatherRefreshMins = mins;
+  persist();
+  // Reschedule the refresh timer with new interval
+  if(window._weatherRefreshTimer) clearTimeout(window._weatherRefreshTimer);
+  (function scheduleWeatherRefresh(){
+    window._weatherRefreshTimer = setTimeout(async ()=>{
+      await fetchAllWeather();
+      paintAllWeather();
+      scheduleWeatherRefresh();
+    }, mins * 60 * 1000);
+  })();
+  const status = document.getElementById('wRefreshStatus');
+  status.style.display = '';
+  setTimeout(()=>{ status.style.display = 'none'; }, 2000);
 }
 
 function savePollenSettings(){
