@@ -864,6 +864,17 @@ body.edit-mode .weather-pin-wrap { display: flex; }
   align-items: center;
   gap: 6px;
 }
+.lofi-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lofi-vol-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 2px;
+}
 
 .lofi-select-wrap {
   position: relative;
@@ -944,6 +955,7 @@ body.edit-mode .weather-pin-wrap { display: flex; }
 }
 .lofi-btn:hover { border-color: var(--cyan); color: var(--cyan); }
 .lofi-btn.playing { border-color: var(--gold); color: var(--gold); }
+.lofi-btn.active  { border-color: var(--gold); color: var(--gold); }
 .lofi-edit-btn { border-style: dashed; }
 body:not(.edit-mode) .lofi-edit-btn { display: none; }
 
@@ -4995,24 +5007,33 @@ body.edit-mode .gh-add-row { display: flex; }
 
     <!-- Row 2: Lo-fi player -->
     <div class="focus-row lofi-row">
-      <div class="lofi-group">
-        <span class="noise-label">Lo‑fi</span>
-        <div class="lofi-select-wrap" id="lofiSelectWrap">
-          <button class="lofi-select-btn" id="lofiSelectBtn" onclick="toggleLofiDropdown()">
-            <span id="lofiSelectLabel">— select track —</span>
-            <span class="lofi-select-arrow">▾</span>
-          </button>
-          <ul class="lofi-dropdown" id="lofiDropdown"></ul>
+      <div class="lofi-col">
+        <div class="lofi-group">
+          <span class="noise-label">Lo‑fi</span>
+          <div class="lofi-select-wrap" id="lofiSelectWrap">
+            <button class="lofi-select-btn" id="lofiSelectBtn" onclick="toggleLofiDropdown()">
+              <span id="lofiSelectLabel">— select track —</span>
+              <span class="lofi-select-arrow">▾</span>
+            </button>
+            <ul class="lofi-dropdown" id="lofiDropdown"></ul>
+          </div>
+          <button class="lofi-btn" id="lofiPrevBtn" onclick="lofiPrev()" title="Previous track" style="display:none">⏮</button>
+          <button class="lofi-btn" id="lofiPlayBtn" onclick="lofiPlay()" title="Play / Pause">▶</button>
+          <button class="lofi-btn" id="lofiNextBtn" onclick="lofiNext()" title="Next track" style="display:none">⏭</button>
+          <button class="lofi-btn" id="lofiShuffleBtn" onclick="lofiToggleShuffle()" title="Shuffle playlist" style="display:none">⇄</button>
+          <button class="lofi-btn" onclick="lofiStop()" title="Stop">■</button>
+          <button class="lofi-btn" onclick="lofiShuffle()" title="Shuffle">↻</button>
+          <button class="lofi-btn lofi-edit-btn" id="lofiEditBtn" onclick="openLofiModal()" title="Edit playlist">✎</button>
         </div>
-        <button class="lofi-btn" id="lofiPrevBtn" onclick="lofiPrev()" title="Previous track" style="display:none">⏮</button>
-        <button class="lofi-btn" id="lofiPlayBtn" onclick="lofiPlay()" title="Play / Pause">▶</button>
-        <button class="lofi-btn" id="lofiNextBtn" onclick="lofiNext()" title="Next track" style="display:none">⏭</button>
-        <button class="lofi-btn" onclick="lofiStop()" title="Stop">■</button>
-        <button class="lofi-btn" onclick="lofiShuffle()" title="Shuffle">↻</button>
-        <button class="lofi-btn lofi-edit-btn" id="lofiEditBtn" onclick="openLofiModal()" title="Edit playlist">✎</button>
+        <div class="lofi-vol-row">
+          <span class="vol-label">YT Vol</span>
+          <input type="range" class="vol-slider" id="lofiVolSlider" min="0" max="100" value="80"
+                 oninput="lofiSetVolume(this.value)">
+          <span class="vol-label" id="lofiVolVal">80</span>
+          <span class="lofi-status" id="lofiStatus">idle</span>
+          <button class="lofi-edge-help" onclick="openOverlay('edgeHelpOverlay')" title="Can't play in MS Edge?">⚠ Edge?</button>
+        </div>
       </div>
-      <span class="lofi-status" id="lofiStatus">idle</span>
-      <button class="lofi-edge-help" onclick="openOverlay('edgeHelpOverlay')" title="Can't play in MS Edge?">⚠ Edge?</button>
     </div>
 
     <!-- Row 3: Pomodoro Timer -->
@@ -6536,6 +6557,12 @@ function renderAll(){
   renderTabBar();
   renderContents();
   lofiPopulateSelect();
+  // Init lofi volume slider from persisted value
+  const lofiVol = D.lofi?.volume ?? 80;
+  const lofiVolSlider = document.getElementById('lofiVolSlider');
+  const lofiVolVal    = document.getElementById('lofiVolVal');
+  if(lofiVolSlider) lofiVolSlider.value = lofiVol;
+  if(lofiVolVal)    lofiVolVal.textContent = lofiVol;
   updateQuoteBarVisibility();
   applyWeatherPin();
 }
@@ -15542,6 +15569,7 @@ let ytPendingType   = 'video';// type of pending item
 let lofiPlaying     = false;
 let lofiCurrentId   = null;   // track id in D.lofi
 let lofiCurrentType = 'video';// 'video' or 'playlist'
+let lofiShuffleOn   = false;  // playlist shuffle state
 
 // Load YouTube IFrame API once
 (function loadYTApi(){
@@ -15559,6 +15587,7 @@ window.onYouTubeIframeAPIReady = function(){
     playerVars:{ autoplay:0, controls:0, rel:0, fs:0, modestbranding:1 },
     events:{
       onReady: ()=>{
+        lofiApplyVolume();
         if(ytPendingVid){
           if(ytPendingType==='playlist') ytPlayer.loadPlaylist({list:ytPendingVid, listType:'playlist', index:0});
           else ytPlayer.loadVideoById(ytPendingVid);
@@ -15567,6 +15596,7 @@ window.onYouTubeIframeAPIReady = function(){
       },
       onStateChange: e=>{
         if(e.data === YT.PlayerState.PLAYING){
+          lofiApplyVolume();
           lofiPlaying = true;
           lofiSetStatus('playing');
           document.getElementById('lofiPlayBtn').textContent = '⏸';
@@ -15659,7 +15689,10 @@ function lofiSelectTrack(vid, label, type='video'){
   lofiCurrentId = track?.id || null;
   lofiSetStatus('loading…');
   if(!ytReady || !ytPlayer){ ytPendingVid = vid; ytPendingType = type; return; }
-  if(type==='playlist') ytPlayer.loadPlaylist({list:vid, listType:'playlist', index:0});
+  if(type==='playlist'){
+    ytPlayer.loadPlaylist({list:vid, listType:'playlist', index:0});
+    if(lofiShuffleOn) ytPlayer.setShuffle(true);
+  }
   else ytPlayer.loadVideoById(vid);
 }
 
@@ -15734,12 +15767,38 @@ function lofiSetSkipButtons(show){
   const d = show ? '' : 'none';
   const p = document.getElementById('lofiPrevBtn');
   const n = document.getElementById('lofiNextBtn');
+  const s = document.getElementById('lofiShuffleBtn');
   if(p) p.style.display = d;
   if(n) n.style.display = d;
+  if(s) s.style.display = d;
+  // Reset shuffle state when hiding
+  if(!show){ lofiShuffleOn = false; if(s) s.classList.remove('active'); }
+}
+
+function lofiToggleShuffle(){
+  lofiShuffleOn = !lofiShuffleOn;
+  const btn = document.getElementById('lofiShuffleBtn');
+  if(btn) btn.classList.toggle('active', lofiShuffleOn);
+  if(ytReady && ytPlayer) ytPlayer.setShuffle(lofiShuffleOn);
 }
 
 function lofiPrev(){ ytPlayer?.previousVideo(); }
 function lofiNext(){ ytPlayer?.nextVideo(); }
+
+function lofiApplyVolume(){
+  const vol = D.lofi?.volume ?? 80;
+  if(ytReady && ytPlayer) ytPlayer.setVolume(vol);
+}
+
+function lofiSetVolume(val){
+  val = parseInt(val);
+  if(!D.lofi) D.lofi = [];
+  D.lofi.volume = val;
+  persist();
+  const lbl = document.getElementById('lofiVolVal');
+  if(lbl) lbl.textContent = val;
+  if(ytReady && ytPlayer) ytPlayer.setVolume(val);
+}
 
 function lofiParseSource(input){
   input = input.trim();
