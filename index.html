@@ -1692,6 +1692,13 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
   flex-shrink: 1;
   min-width: 0;
 }
+.np-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+  overflow: hidden;
+}
 .np-icon {
   font-size: 13px;
   flex-shrink: 0;
@@ -1712,6 +1719,18 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
   max-width: 380px;
 }
 .np-label.playing { color: var(--gold); }
+.np-song {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 380px;
+  display: none;
+}
+.np-song.visible { display: block; }
 
 /* ============================================================
    MOBILE OVERFLOW MENU  (hidden everywhere by default,
@@ -4985,7 +5004,9 @@ body.edit-mode .gh-add-row { display: flex; }
           </button>
           <ul class="lofi-dropdown" id="lofiDropdown"></ul>
         </div>
+        <button class="lofi-btn" id="lofiPrevBtn" onclick="lofiPrev()" title="Previous track" style="display:none">⏮</button>
         <button class="lofi-btn" id="lofiPlayBtn" onclick="lofiPlay()" title="Play / Pause">▶</button>
+        <button class="lofi-btn" id="lofiNextBtn" onclick="lofiNext()" title="Next track" style="display:none">⏭</button>
         <button class="lofi-btn" onclick="lofiStop()" title="Stop">■</button>
         <button class="lofi-btn" onclick="lofiShuffle()" title="Shuffle">↻</button>
         <button class="lofi-btn lofi-edit-btn" id="lofiEditBtn" onclick="openLofiModal()" title="Edit playlist">✎</button>
@@ -5157,7 +5178,10 @@ body.edit-mode .gh-add-row { display: flex; }
   <!-- Now Playing -->
   <div class="now-playing">
     <span class="np-icon" id="npIcon">♫</span>
-    <span class="np-label" id="npLabel">No track selected</span>
+    <div class="np-text">
+      <span class="np-label" id="npLabel">No track selected</span>
+      <span class="np-song" id="npSong"></span>
+    </div>
   </div>
 
 </div>
@@ -5355,7 +5379,7 @@ body.edit-mode .gh-add-row { display: flex; }
       <input type="text" id="lofiAddLabel" placeholder="Track label…" style="flex:1">
     </div>
     <div style="display:flex;gap:7px;">
-      <input type="text" id="lofiAddVid" placeholder="YouTube URL or video ID…" style="flex:1">
+      <input type="text" id="lofiAddVid" placeholder="YouTube video URL, playlist URL, or video ID…" style="flex:1">
       <button class="mbtn mbtn-primary" onclick="lofiAddTrack()" style="flex-shrink:0;">Add</button>
     </div>
     <div id="lofiAddError" style="display:none;margin-top:8px;padding:6px 10px;background:rgba(204,50,50,0.15);border:1px solid #cc3333;border-radius:4px;color:#ff8888;font-size:12px;"></div>
@@ -15512,10 +15536,12 @@ function toggleFocusPanel(){
    LO-FI YOUTUBE PLAYER
    ================================================================ */
 let ytPlayer      = null;
-let ytReady       = false;
-let ytPendingVid  = null;   // vid to load once API ready
-let lofiPlaying   = false;
-let lofiCurrentId = null;   // track id in D.lofi
+let ytReady         = false;
+let ytPendingVid    = null;   // vid/listId to load once API ready
+let ytPendingType   = 'video';// type of pending item
+let lofiPlaying     = false;
+let lofiCurrentId   = null;   // track id in D.lofi
+let lofiCurrentType = 'video';// 'video' or 'playlist'
 
 // Load YouTube IFrame API once
 (function loadYTApi(){
@@ -15533,7 +15559,11 @@ window.onYouTubeIframeAPIReady = function(){
     playerVars:{ autoplay:0, controls:0, rel:0, fs:0, modestbranding:1 },
     events:{
       onReady: ()=>{
-        if(ytPendingVid){ ytPlayer.loadVideoById(ytPendingVid); ytPendingVid=null; }
+        if(ytPendingVid){
+          if(ytPendingType==='playlist') ytPlayer.loadPlaylist({list:ytPendingVid, listType:'playlist', index:0});
+          else ytPlayer.loadVideoById(ytPendingVid);
+          ytPendingVid=null; ytPendingType='video';
+        }
       },
       onStateChange: e=>{
         if(e.data === YT.PlayerState.PLAYING){
@@ -15554,11 +15584,12 @@ window.onYouTubeIframeAPIReady = function(){
   });
 };
 
-function lofiCueTrack(vid){
+function lofiCueTrack(vid, type='video'){
   if(!ytReady || !ytPlayer){
-    ytPendingVid = vid; return;
+    ytPendingVid = vid; ytPendingType = type; return;
   }
-  ytPlayer.cueVideoById(vid);
+  if(type==='playlist') ytPlayer.cuePlaylist({list:vid, listType:'playlist', index:0});
+  else ytPlayer.cueVideoById(vid);
 }
 
 function lofiCurrentVid(){
@@ -15572,12 +15603,19 @@ function lofiPlay(){
   if(lofiPlaying){
     ytPlayer?.pauseVideo();
   } else {
-    if(!ytReady || !ytPlayer){ lofiSetStatus('loading…'); ytPendingVid=vid; return; }
+    if(!ytReady || !ytPlayer){ lofiSetStatus('loading…'); ytPendingVid=vid; ytPendingType=lofiCurrentType; return; }
     try{
-      const cur = ytPlayer.getVideoData()?.video_id;
-      if(cur === vid){ ytPlayer.playVideo(); }
-      else { ytPlayer.loadVideoById(vid); }
-    } catch(e){ ytPlayer.loadVideoById(vid); }
+      if(lofiCurrentType==='playlist'){
+        ytPlayer.playVideo();
+      } else {
+        const cur = ytPlayer.getVideoData()?.video_id;
+        if(cur === vid){ ytPlayer.playVideo(); }
+        else { ytPlayer.loadVideoById(vid); }
+      }
+    } catch(e){
+      if(lofiCurrentType==='playlist') ytPlayer.loadPlaylist({list:vid, listType:'playlist', index:0});
+      else ytPlayer.loadVideoById(vid);
+    }
   }
 }
 
@@ -15593,7 +15631,7 @@ function lofiShuffle(){
   if(!D.lofi?.length) return;
   const pool = D.lofi.filter(t => t.id !== lofiCurrentId);
   const pick = pool.length ? pool[Math.floor(Math.random()*pool.length)] : D.lofi[0];
-  lofiSelectTrack(pick.vid, pick.label);
+  lofiSelectTrack(pick.vid, pick.label, pick.type||'video');
 }
 
 function toggleLofiDropdown(){
@@ -15608,9 +15646,11 @@ document.addEventListener('click', e => {
   }
 });
 
-function lofiSelectTrack(vid, label){
+function lofiSelectTrack(vid, label, type='video'){
   document.getElementById('lofiDropdown').classList.remove('open');
   document.getElementById('lofiSelectLabel').textContent = label;
+  lofiCurrentType = type;
+  lofiSetSkipButtons(type === 'playlist');
   // Mark active
   document.querySelectorAll('.lofi-dropdown li').forEach(li => {
     li.classList.toggle('active', li.dataset.vid === vid);
@@ -15618,8 +15658,9 @@ function lofiSelectTrack(vid, label){
   const track = D.lofi.find(t => t.vid === vid);
   lofiCurrentId = track?.id || null;
   lofiSetStatus('loading…');
-  if(!ytReady || !ytPlayer){ ytPendingVid = vid; return; }
-  ytPlayer.loadVideoById(vid);
+  if(!ytReady || !ytPlayer){ ytPendingVid = vid; ytPendingType = type; return; }
+  if(type==='playlist') ytPlayer.loadPlaylist({list:vid, listType:'playlist', index:0});
+  else ytPlayer.loadVideoById(vid);
 }
 
 function lofiSetStatus(state){
@@ -15631,8 +15672,9 @@ function lofiSetStatus(state){
   }
   // Mirror to bottom bar
   const trackLabel = document.getElementById('lofiSelectLabel')?.textContent || '';
-  if(state === 'playing')       npUpdate('playing', trackLabel);
-  else if(state === 'paused')   npUpdate('paused',  trackLabel);
+  const songTitle  = (lofiCurrentType === 'playlist') ? (ytPlayer?.getVideoData()?.title || '') : '';
+  if(state === 'playing')       npUpdate('playing', trackLabel, songTitle);
+  else if(state === 'paused')   npUpdate('paused',  trackLabel, songTitle);
   else                          npUpdate('idle',    '');
 }
 
@@ -15649,10 +15691,12 @@ function lofiPopulateSelect(){
   ul.appendChild(ph);
   (D.lofi||[]).forEach(t => {
     const li = document.createElement('li');
-    li.textContent = t.label;
+    const typeTag = (t.type==='playlist') ? ' <span style="font-size:10px;opacity:0.6;">[playlist]</span>' : '';
+    li.innerHTML = t.label + typeTag;
     li.dataset.vid = t.vid;
+    li.dataset.type = t.type||'video';
     if(t.vid === curVid) li.classList.add('active');
-    li.onclick = ()=> lofiSelectTrack(t.vid, t.label);
+    li.onclick = ()=> lofiSelectTrack(t.vid, t.label, t.type||'video');
     ul.appendChild(li);
   });
 }
@@ -15676,7 +15720,8 @@ function renderLofiList(){
   D.lofi.forEach((t,i)=>{
     const row = document.createElement('div');
     row.className = 'wloc-row';
-    row.innerHTML = `<span style="font-size:12px;">${t.label} <span style="color:var(--text-dim);font-size:10px;font-family:Share Tech Mono,monospace;">${t.vid}</span></span>`;
+    const typeTag = (t.type==='playlist') ? '<span style="margin-left:5px;padding:1px 4px;background:rgba(var(--cyan-rgb,100,200,220),0.15);border:1px solid var(--cyan);border-radius:3px;font-size:9px;color:var(--cyan);">PLAYLIST</span>' : '';
+    row.innerHTML = `<span style="font-size:12px;">${t.label}${typeTag} <span style="color:var(--text-dim);font-size:10px;font-family:Share Tech Mono,monospace;">${t.vid}</span></span>`;
     const db = document.createElement('button');
     db.className='wloc-del'; db.textContent='✕'; db.title='Remove';
     db.onclick=()=>{ D.lofi.splice(i,1); persist(); renderLofiList(); lofiPopulateSelect(); };
@@ -15685,13 +15730,27 @@ function renderLofiList(){
   });
 }
 
-function lofiExtractVid(input){
+function lofiSetSkipButtons(show){
+  const d = show ? '' : 'none';
+  const p = document.getElementById('lofiPrevBtn');
+  const n = document.getElementById('lofiNextBtn');
+  if(p) p.style.display = d;
+  if(n) n.style.display = d;
+}
+
+function lofiPrev(){ ytPlayer?.previousVideo(); }
+function lofiNext(){ ytPlayer?.nextVideo(); }
+
+function lofiParseSource(input){
   input = input.trim();
-  // Full URL patterns
-  const m = input.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
-  if(m) return m[1];
-  // Raw 11-char ID
-  if(/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
+  if(/music\.youtube\.com/.test(input)){
+    return { error: 'YouTube Music links cannot be embedded. Use the regular YouTube playlist URL instead (youtube.com/playlist?list=\u2026).' };
+  }
+  const lm = input.match(/[?&]list=([A-Za-z0-9_-]+)/);
+  if(lm) return { type:'playlist', id:lm[1] };
+  const vm = input.match(/(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+  if(vm) return { type:'video', id:vm[1] };
+  if(/^[A-Za-z0-9_-]{11}$/.test(input)) return { type:'video', id:input };
   return null;
 }
 
@@ -15701,10 +15760,11 @@ function lofiAddTrack(){
   const err   = document.getElementById('lofiAddError');
   err.style.display='none';
   if(!label){ err.textContent='Please enter a label.'; err.style.display='block'; return; }
-  const vid = lofiExtractVid(raw);
-  if(!vid){ err.textContent='Could not find a valid YouTube video ID in that URL.'; err.style.display='block'; return; }
-  if(D.lofi.find(t=>t.vid===vid)){ err.textContent='That video is already in the playlist.'; err.style.display='block'; return; }
-  D.lofi.push({ id:'lf_'+Date.now(), label, vid });
+  const parsed = lofiParseSource(raw);
+  if(!parsed){ err.textContent='Could not find a valid YouTube video ID or playlist URL.'; err.style.display='block'; return; }
+  if(parsed.error){ err.textContent=parsed.error; err.style.display='block'; return; }
+  if(D.lofi.find(t=>t.vid===parsed.id)){ err.textContent='That video or playlist is already in the list.'; err.style.display='block'; return; }
+  D.lofi.push({ id:'lf_'+Date.now(), label, vid:parsed.id, type:parsed.type });
   persist();
   renderLofiList();
   lofiPopulateSelect();
@@ -16487,9 +16547,10 @@ function closeMobileMenu(){
 /* ================================================================
    NOW PLAYING STATUS (bottom bar)
    ================================================================ */
-function npUpdate(state, trackLabel){
+function npUpdate(state, trackLabel, songTitle){
   const icon  = document.getElementById('npIcon');
   const label = document.getElementById('npLabel');
+  const song  = document.getElementById('npSong');
   if(!icon||!label) return;
 
   if(state === 'playing'){
@@ -16504,6 +16565,16 @@ function npUpdate(state, trackLabel){
     icon.classList.remove('active');
     label.classList.remove('playing');
     label.textContent = 'No track selected';
+  }
+
+  if(song){
+    if(songTitle){
+      song.textContent = songTitle;
+      song.classList.add('visible');
+    } else {
+      song.textContent = '';
+      song.classList.remove('visible');
+    }
   }
 }
 
