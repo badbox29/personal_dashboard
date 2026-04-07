@@ -9,6 +9,7 @@
  *   POST /sports  — Fetch & normalize sports scores from TheSportsDB
  *   POST /bible   — Proxy API.Bible (adds api-key header server-side, aggressive caching)
  *   POST /topics  — Fetch & parse OpenBible.info topical verse search (no key required)
+ *   POST /unsplash — Proxy Unsplash random photo API (adds Authorization header server-side)
  *
  * All routes add CORS headers so browser-side fetch() calls work.
  * Results are cached to minimise upstream API hits.
@@ -56,6 +57,15 @@
  * Returns: { topic, url, verses: [{ reference, votes }] }
  *   Verses are sorted by vote count descending (community-ranked relevance).
  * Cache: 24 hours (topic rankings update infrequently)
+ *
+ * ── UNSPLASH (/unsplash) ──────────────────────────────────────
+ * Body: { apiKey, query?, orientation? }
+ *   query:       optional search term (e.g. "texture", "landscape") — omit for purely random
+ *   orientation: optional "landscape" | "portrait" | "squarish" (default: "landscape")
+ * Returns: { id, url, thumbUrl, fullUrl, description, altDescription,
+ *            photographer, photographerProfile, color, width, height,
+ *            downloadLocation, unsplashLink }
+ * Cache: 1 hour, keyed by query+orientation+hour bucket (rotates each hour)
  */
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
@@ -779,6 +789,124 @@ async function handleWotd(body, ctx) {
   return json(data);
 }
 
+// ── Unsplash handler (/unsplash) ─────────────────────────────────────────────
+//
+// Proxies the Unsplash random photo API, injecting the Authorization header
+// server-side so the API key is never exposed to the browser.
+//
+// Cache strategy: 1-hour buckets keyed by query+orientation. All users with
+// the same query see the same photo within a given hour — then a fresh one
+// rolls in. Keeps usage well within free-tier limits for a shared dashboard.
+
+const UNSPLASH_CACHE_TTL = 60 * 60; // 1 hour
+
+async function handleUnsplash(body, ctx) {
+  const { apiKey, query = '', orientation = 'landscape', mode = 'photo' } = body;
+
+  if(!apiKey)
+    return json({ error: 'Required field: apiKey' }, 400);
+
+  const cache = caches.default;
+
+  // ── Topics mode ──────────────────────────────────────────
+  if(mode === 'topics') {
+    const topicsCacheKey = `https://unsplash-topics-cache.internal/${hashStr(apiKey)}`;
+    const cached = await cache.match(topicsCacheKey);
+    if(cached) return json({ ...(await cached.json()), _cached: true });
+
+    let upstream;
+    try {
+      upstream = await fetch('https://api.unsplash.com/topics?per_page=30&order_by=featured', {
+        headers: { 'Authorization': `Client-ID ${apiKey}`, 'Accept-Version': 'v1' },
+      });
+    } catch(e) { return json({ error: `Unsplash topics fetch failed: ${e.message}` }, 502); }
+
+    let data;
+    try { data = await upstream.json(); }
+    catch(e) { return json({ error: 'Unsplash returned non-JSON' }, 502); }
+
+    if(!upstream.ok) {
+      const msg = data?.errors?.[0] || data?.error || `HTTP ${upstream.status}`;
+      return json({ error: `Unsplash API error: ${msg}` }, upstream.status);
+    }
+
+    const seen = new Set();
+    const result = {
+      topics: data
+        .filter(t => t.slug && !seen.has(t.slug) && seen.add(t.slug))
+        .map(t => ({ slug: t.slug, title: t.title })),
+    };
+
+    ctx.waitUntil(cache.put(topicsCacheKey, new Response(JSON.stringify(result), {
+      headers: {
+        'Content-Type':  'application/json',
+        'Cache-Control': `public, max-age=86400`, // 24 hours
+      },
+    })));
+
+    return json(result);
+  }
+
+  // ── Photo mode (default) ─────────────────────────────────
+  const validOrientations = ['landscape', 'portrait', 'squarish'];
+  const safeOrientation   = validOrientations.includes(orientation) ? orientation : 'landscape';
+
+  // Hour bucket — cache rotates every hour
+  const hourBucket = Math.floor(Date.now() / (1000 * 60 * 60));
+  const cacheKey   = `https://unsplash-cache.internal/${hashStr(apiKey)}/${encodeURIComponent(query.trim())}/${safeOrientation}/${hourBucket}`;
+  const cached     = await cache.match(cacheKey);
+  if(cached) return json({ ...(await cached.json()), _cached: true });
+
+  const params = new URLSearchParams({ orientation: safeOrientation });
+  if(query.trim()) params.set('query', query.trim());
+
+  const url = `https://api.unsplash.com/photos/random?${params.toString()}`;
+
+  let upstream;
+  try {
+    upstream = await fetch(url, {
+      headers: {
+        'Authorization': `Client-ID ${apiKey}`,
+        'Accept-Version': 'v1',
+      },
+    });
+  } catch(e) { return json({ error: `Unsplash fetch failed: ${e.message}` }, 502); }
+
+  let data;
+  try { data = await upstream.json(); }
+  catch(e) { return json({ error: 'Unsplash returned non-JSON' }, 502); }
+
+  if(!upstream.ok) {
+    const msg = data?.errors?.[0] || data?.error || `HTTP ${upstream.status}`;
+    return json({ error: `Unsplash API error: ${msg}` }, upstream.status);
+  }
+
+  const normalized = {
+    id:                 data.id                           || '',
+    url:                data.urls?.regular               || data.urls?.full || '',
+    thumbUrl:           data.urls?.thumb                 || '',
+    fullUrl:            data.urls?.full                  || '',
+    description:        data.description                 || data.alt_description || '',
+    altDescription:     data.alt_description             || '',
+    photographer:       data.user?.name                  || '',
+    photographerProfile: data.user?.links?.html          || '',
+    color:              data.color                       || '#888888',
+    width:              data.width                       || 0,
+    height:             data.height                      || 0,
+    downloadLocation:   data.links?.download_location    || '',
+    unsplashLink:       data.links?.html                 || '',
+  };
+
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(normalized), {
+    headers: {
+      'Content-Type':  'application/json',
+      'Cache-Control': `public, max-age=${UNSPLASH_CACHE_TTL}`,
+    },
+  })));
+
+  return json(normalized);
+}
+
 // ── Main dispatcher ──────────────────────────────────────────────────────────
 
 export default {
@@ -804,11 +932,12 @@ export default {
     if(path === '/bible')  return handleBible(body, ctx);
     if(path === '/topics') return handleTopics(body, ctx);
     if(path === '/wotd')   return handleWotd(body, ctx);
+    if(path === '/unsplash') return handleUnsplash(body, ctx);
 
     // Legacy: detect from body fields (backwards compat)
     if(body.service) return handlePollen(body, ctx);
     if(body.url)     return handleRss(body, ctx);
 
-    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /sports, /otx, /bible, /topics, or /wotd' }, 404);
+    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /sports, /otx, /bible, /topics, /wotd, or /unsplash' }, 404);
   }
 };

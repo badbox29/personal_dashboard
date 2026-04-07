@@ -4969,6 +4969,69 @@ body.edit-mode .gh-add-row { display: flex; }
 .apod-settings{border-top:1px solid var(--border);padding-top:8px;margin-top:2px;display:flex;flex-direction:column;gap:7px;}
 .apod-setting-row{display:flex;align-items:center;gap:8px;}
 .apod-setting-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:80px;}
+/* ── Met Museum widget ─────────────────────────────────── */
+.met-widget{display:flex;flex-direction:column;gap:7px;}
+.met-hdr{display:flex;align-items:center;gap:6px;}
+.met-title-lbl{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;flex:1;}
+.met-dept{font-size:9px;border:1px solid var(--border);border-radius:3px;padding:1px 5px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;flex-shrink:0;}
+.met-img-wrap{position:relative;width:100%;border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;background:#111;transition:border-color .15s;}
+.met-img-wrap:hover{border-color:var(--gold);}
+.met-img{width:100%;display:block;object-fit:cover;max-height:260px;}
+.met-caption-title{font-size:13px;font-weight:600;color:var(--text-head);line-height:1.4;margin-top:4px;cursor:pointer;}
+.met-caption-title:hover{color:var(--gold);}
+.met-meta{font-size:10.5px;color:var(--text-dim);font-family:'Share Tech Mono',monospace;margin-top:2px;}
+.met-credit{font-size:10px;color:var(--text-dim);margin-top:2px;line-height:1.4;}
+.met-loading{font-size:12px;color:var(--text-dim);font-style:italic;padding:8px 2px;}
+.met-error{font-size:12px;color:var(--del-color);padding:6px 2px;}
+
+/* ── Artist Spotlight widget ────────────────────────────── */
+.artspot-widget{display:flex;flex-direction:column;gap:7px;}
+.artspot-hdr{display:flex;align-items:center;gap:6px;}
+.artspot-title-lbl{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;flex:1;}
+.artspot-nav{display:flex;gap:4px;}
+.artspot-nav-btn{font-size:11px;padding:2px 8px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text-dim);cursor:pointer;transition:border-color .12s,color .12s;font-family:inherit;}
+.artspot-nav-btn:hover{border-color:var(--gold);color:var(--gold);}
+.artspot-thumb-wrap{width:100%;border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;background:#111;display:flex;align-items:center;justify-content:center;transition:border-color .15s;}
+.artspot-thumb-wrap:hover{border-color:var(--gold);}
+.artspot-thumb{width:100%;display:block;object-fit:cover;max-height:200px;}
+.artspot-tag{display:inline-block;font-size:9px;font-family:'Share Tech Mono',monospace;text-transform:uppercase;letter-spacing:.04em;border:1px solid var(--border);border-radius:3px;padding:1px 5px;color:var(--text-dim);margin-bottom:4px;}
+.artspot-name{font-size:15px;font-weight:700;color:var(--text-head);line-height:1.3;margin-top:4px;cursor:pointer;}
+.artspot-name:hover{color:var(--gold);}
+.artspot-extract{font-size:11.5px;line-height:1.65;color:var(--text);margin-top:4px;}
+.artspot-link{display:inline-block;font-size:10.5px;color:var(--gold);margin-top:5px;text-decoration:none;}
+.artspot-link:hover{color:var(--link-hover);}
+.artspot-loading{font-size:12px;color:var(--text-dim);font-style:italic;padding:8px 2px;}
+.artspot-error{font-size:12px;color:var(--del-color);padding:6px 2px;}
+
+/* ── Unsplash widget ────────────────────────────────────── */
+.unsplash-widget{display:flex;flex-direction:column;gap:7px;}
+.unsplash-hdr{display:flex;align-items:center;gap:6px;}
+.unsplash-title-lbl{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;flex:1;}
+.unsplash-img-wrap{position:relative;width:100%;border-radius:6px;overflow:hidden;border:1px solid var(--border);cursor:pointer;background:#111;transition:border-color .15s;}
+.unsplash-img-wrap:hover{border-color:var(--gold);}
+.unsplash-img{width:100%;display:block;object-fit:cover;max-height:280px;}
+.unsplash-desc{font-size:11.5px;line-height:1.6;color:var(--text);margin-top:3px;font-style:italic;}
+.unsplash-credit{font-size:10px;color:var(--text-dim);margin-top:3px;}
+.unsplash-credit a{color:var(--gold);text-decoration:none;}
+.unsplash-credit a:hover{color:var(--link-hover);}
+.unsplash-loading{font-size:12px;color:var(--text-dim);font-style:italic;padding:8px 2px;}
+.unsplash-error{font-size:12px;color:var(--del-color);padding:6px 2px;}
+.unsplash-settings{border-top:1px solid var(--border);padding-top:8px;margin-top:2px;display:flex;flex-direction:column;gap:7px;}
+.unsplash-setting-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.unsplash-setting-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;min-width:80px;}
+.unsplash-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:1px;}
+.unsplash-chip{font-size:10px;padding:2px 9px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:none;color:var(--text-dim);transition:border-color .12s,color .12s;font-family:inherit;}
+.unsplash-chip:hover,.unsplash-chip.active{border-color:var(--gold);color:var(--gold);}
+.unsplash-chip-inner{display:flex;align-items:center;gap:4px;}
+.unsplash-chip-remove{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:10px;padding:0;line-height:1;transition:color .12s;font-family:inherit;}
+.unsplash-chip-remove:hover{color:var(--del-color);}
+.unsplash-topics-hdr{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.unsplash-topics-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;flex:1;}
+.unsplash-topics-rfbtn{font-size:10px;background:none;border:1px solid var(--border);border-radius:3px;color:var(--text-dim);cursor:pointer;padding:1px 6px;transition:border-color .12s,color .12s;font-family:inherit;}
+.unsplash-topics-rfbtn:hover{border-color:var(--gold);color:var(--gold);}
+.unsplash-add-row{display:flex;gap:5px;margin-top:5px;}
+.unsplash-no-topics{font-size:10.5px;color:var(--text-dim);font-style:italic;padding:3px 0;}
+
 /* ── Coding widgets shared ── */
 .json-area{width:100%;box-sizing:border-box;font-family:'Share Tech Mono',monospace;font-size:11.5px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);padding:7px 9px;resize:vertical;min-height:100px;outline:none;tab-size:2;}
 .json-area:focus{border-color:var(--cyan);}
@@ -5665,6 +5728,15 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swCompose"   onclick="selectWidgetType('compose')">
           🖼 Composition Gen<span>Abstract painting catalyst</span>
         </button>
+        <button class="sec-type-card" id="swMet"       onclick="selectWidgetType('met')">
+          🏛 Met Museum<span>Daily artwork from the collection</span>
+        </button>
+        <button class="sec-type-card" id="swArtspot"   onclick="selectWidgetType('artspot')">
+          🎨 Artist Spotlight<span>Movements &amp; artists via Wikipedia</span>
+        </button>
+        <button class="sec-type-card" id="swUnsplash"  onclick="selectWidgetType('unsplash')">
+          📷 Unsplash Photo<span>Random inspiration image — API key required</span>
+        </button>
       </div>
     </div>
     <div class="modal-actions">
@@ -6342,7 +6414,7 @@ const SEARCH_ENGINES = [
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
                       'ports','myip','rfc','cve','bgp','dns','subnet','otx',
                       'github','regex','jsonformat','base64','hash','jwt','drinks',
-                      'compose'];
+                      'compose','met','artspot','unsplash'];
 
 const UNIT_CATS = {
   Length:      { units:['mm','cm','m','km','in','ft','yd','mi'],                       toBase:{ mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344 } },
@@ -7082,6 +7154,9 @@ function buildWidgetBody(sec, tabId){
     case 'sports':    return buildSportsWidget(sec);
     case 'energy':    return buildEnergyWidget(sec, tabId);
     case 'compose':   return buildComposeWidget(sec);
+    case 'met':       return buildMetWidget(sec);
+    case 'artspot':   return buildArtspotWidget(sec);
+    case 'unsplash':  return buildUnsplashWidget(sec);
     case 'bible':    return buildBibleWidget(sec);
     case 'wotd':     return buildWotdWidget(sec);
     case 'apod':       return buildApodWidget(sec);
@@ -13832,6 +13907,583 @@ function buildApodWidget(sec){
   obsC.observe(document.body,{childList:true,subtree:true});
 
   fetchApod();
+  scheduleRefresh();
+  return wrap;
+}
+
+/* ================================================================
+   MET MUSEUM ARTWORK OF THE DAY
+   ================================================================ */
+function buildMetWidget(sec){
+  // Curated search terms rotate daily for visual variety
+  const SEARCH_TERMS = [
+    'impressionism','baroque','renaissance','watercolor portrait',
+    'landscape painting','still life flowers','japanese woodblock print',
+    'ancient greek sculpture','dutch golden age','rococo painting',
+    'romantic painting','american realism','ancient egypt',
+    'islamic geometric art','african sculpture','chinese ink painting',
+    'medieval illuminated manuscript','armor and weapons',
+    'mythological painting','pointillism','cubist painting','surrealism'
+  ];
+
+  let _objectIds = [];
+  let _searchTerm = '';
+  let _refreshTimer = null;
+
+  const wrap = el('div','met-widget');
+
+  const hdr = el('div','met-hdr');
+  const lbl = el('span','met-title-lbl'); lbl.textContent = '🏛 Met Museum';
+  const deptBadge = el('span','met-dept');
+  const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='↻'; rfBtn.title='New artwork';
+  hdr.append(lbl, deptBadge, rfBtn);
+  wrap.appendChild(hdr);
+
+  const content = el('div');
+  wrap.appendChild(content);
+
+  function showLoading(){ content.innerHTML='<div class="met-loading">Loading…</div>'; deptBadge.textContent=''; }
+  function showError(msg){ content.innerHTML='<div class="met-error">⚠ '+msg+'</div>'; }
+
+  function render(data){
+    content.innerHTML='';
+    deptBadge.textContent = data.department || '';
+
+    const imgSrc = data.primaryImageSmall || data.primaryImage;
+    if(imgSrc){
+      const imgWrap = el('div','met-img-wrap');
+      const img = el('img','met-img');
+      img.src=imgSrc; img.alt=data.title||'Met artwork'; img.loading='lazy';
+      imgWrap.appendChild(img);
+      imgWrap.onclick=()=> window.open(data.objectURL,'_blank','noopener');
+      imgWrap.title='View on metmuseum.org';
+      content.appendChild(imgWrap);
+    }
+
+    if(data.title){
+      const titleEl = el('div','met-caption-title');
+      titleEl.textContent = data.title;
+      if(data.objectURL) titleEl.onclick=()=> window.open(data.objectURL,'_blank','noopener');
+      content.appendChild(titleEl);
+    }
+
+    const metaParts = [];
+    if(data.artistDisplayName) metaParts.push(data.artistDisplayName);
+    else if(data.culture)       metaParts.push(data.culture);
+    if(data.objectDate)         metaParts.push(data.objectDate);
+    if(metaParts.length){
+      const metaEl = el('div','met-meta');
+      metaEl.textContent = metaParts.join(' · ');
+      content.appendChild(metaEl);
+    }
+
+    if(data.medium){
+      const medEl = el('div','met-credit');
+      medEl.textContent = data.medium;
+      content.appendChild(medEl);
+    }
+  }
+
+  async function fetchObject(id, tries=5){
+    try{
+      const r = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`);
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      const data = await r.json();
+      if(!data.primaryImageSmall && !data.primaryImage){
+        if(tries>1 && _objectIds.length>1){
+          const nextId = _objectIds[Math.floor(Math.random()*_objectIds.length)];
+          return fetchObject(nextId, tries-1);
+        }
+        throw new Error('No image available for this piece');
+      }
+      render(data);
+    } catch(e){ showError(e.message); }
+  }
+
+  async function fetchArtwork(){
+    showLoading();
+    try{
+      const today = new Date();
+      const doy = Math.floor((today - new Date(today.getFullYear(),0,0))/86400000);
+      const term = SEARCH_TERMS[doy % SEARCH_TERMS.length];
+
+      // Re-search if term has changed (new day)
+      if(!_objectIds.length || term !== _searchTerm){
+        _searchTerm = term;
+        const r = await fetch(
+          `https://collectionapi.metmuseum.org/public/collection/v1/search?hasImages=true&q=${encodeURIComponent(term)}`
+        );
+        if(!r.ok) throw new Error('Search failed: HTTP '+r.status);
+        const j = await r.json();
+        if(!j.objectIDs?.length) throw new Error('No results for: '+term);
+        _objectIds = j.objectIDs.slice(0,200);
+      }
+
+      const id = _objectIds[Math.floor(Math.random()*_objectIds.length)];
+      await fetchObject(id);
+    } catch(e){ showError(e.message); }
+  }
+
+  function scheduleDaily(){
+    if(_refreshTimer) clearTimeout(_refreshTimer);
+    const now = new Date();
+    const msTilMidnight = new Date(now.getFullYear(),now.getMonth(),now.getDate()+1) - now;
+    _refreshTimer = setTimeout(()=>{ _objectIds=[]; fetchArtwork(); scheduleDaily(); }, msTilMidnight);
+  }
+
+  rfBtn.onclick = fetchArtwork;
+
+  const obsC=new MutationObserver(()=>{
+    if(!document.contains(wrap)){ obsC.disconnect(); if(_refreshTimer) clearTimeout(_refreshTimer); }
+  });
+  obsC.observe(document.body,{childList:true,subtree:true});
+
+  fetchArtwork();
+  scheduleDaily();
+  return wrap;
+}
+
+/* ================================================================
+   ARTIST SPOTLIGHT
+   ================================================================ */
+function buildArtspotWidget(sec){
+  const TOPICS = [
+    {label:'Movement', title:'Impressionism'},
+    {label:'Artist',   title:'Claude Monet'},
+    {label:'Movement', title:'Cubism'},
+    {label:'Artist',   title:'Pablo Picasso'},
+    {label:'Movement', title:'Surrealism'},
+    {label:'Artist',   title:'Salvador Dalí'},
+    {label:'Movement', title:'Abstract expressionism'},
+    {label:'Artist',   title:'Jackson Pollock'},
+    {label:'Movement', title:'Art Nouveau'},
+    {label:'Artist',   title:'Gustav Klimt'},
+    {label:'Movement', title:'Bauhaus'},
+    {label:'Artist',   title:'Paul Klee'},
+    {label:'Movement', title:'Dadaism'},
+    {label:'Movement', title:'Fauvism'},
+    {label:'Artist',   title:'Henri Matisse'},
+    {label:'Movement', title:'Pointillism'},
+    {label:'Artist',   title:'Georges Seurat'},
+    {label:'Movement', title:'Expressionism'},
+    {label:'Artist',   title:'Egon Schiele'},
+    {label:'Movement', title:'Romanticism'},
+    {label:'Artist',   title:'Francisco Goya'},
+    {label:'Movement', title:'Baroque'},
+    {label:'Artist',   title:'Rembrandt'},
+    {label:'Artist',   title:'Johannes Vermeer'},
+    {label:'Movement', title:'Renaissance'},
+    {label:'Artist',   title:'Leonardo da Vinci'},
+    {label:'Artist',   title:'Michelangelo'},
+    {label:'Artist',   title:'Artemisia Gentileschi'},
+    {label:'Movement', title:'Pop art'},
+    {label:'Artist',   title:'Andy Warhol'},
+    {label:'Movement', title:'Minimalism'},
+    {label:'Movement', title:'De Stijl'},
+    {label:'Artist',   title:'Piet Mondrian'},
+    {label:'Movement', title:'Futurism'},
+    {label:'Movement', title:'Suprematism'},
+    {label:'Movement', title:'Photorealism'},
+    {label:'Movement', title:'Street art'},
+    {label:'Artist',   title:'Banksy'},
+    {label:'Artist',   title:'Frida Kahlo'},
+    {label:'Artist',   title:'Georgia O\'Keeffe'},
+    {label:'Artist',   title:'Jean-Michel Basquiat'},
+    {label:'Artist',   title:'Yayoi Kusama'},
+    {label:'Artist',   title:'Kara Walker'},
+    {label:'Artist',   title:'Kehinde Wiley'},
+    {label:'Artist',   title:'Vincent van Gogh'},
+    {label:'Artist',   title:'Paul Cézanne'},
+    {label:'Artist',   title:'Paul Gauguin'},
+    {label:'Artist',   title:'Édouard Manet'},
+    {label:'Artist',   title:'Édgar Degas'},
+    {label:'Artist',   title:'Auguste Renoir'},
+    {label:'Artist',   title:'Wassily Kandinsky'},
+    {label:'Artist',   title:'René Magritte'},
+    {label:'Artist',   title:'Joan Miró'},
+    {label:'Artist',   title:'Alexander Calder'},
+    {label:'Artist',   title:'Mark Rothko'},
+    {label:'Artist',   title:'Louise Bourgeois'},
+    {label:'Artist',   title:'David Hockney'},
+    {label:'Artist',   title:'Cindy Sherman'},
+    {label:'Artist',   title:'Hieronymus Bosch'},
+    {label:'Movement', title:'Conceptual art'},
+  ];
+
+  const today = new Date();
+  const doy = Math.floor((today - new Date(today.getFullYear(),0,0))/86400000);
+  let _idx = doy % TOPICS.length;
+  let _refreshTimer = null;
+
+  const wrap = el('div','artspot-widget');
+
+  const hdr = el('div','artspot-hdr');
+  const lbl = el('span','artspot-title-lbl'); lbl.textContent='🎨 Artist Spotlight';
+  const nav = el('div','artspot-nav');
+  const prevBtn = el('button','artspot-nav-btn'); prevBtn.textContent='←'; prevBtn.title='Previous';
+  const nextBtn = el('button','artspot-nav-btn'); nextBtn.textContent='→'; nextBtn.title='Next';
+  const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='↻'; rfBtn.title='Refresh';
+  nav.append(prevBtn, nextBtn);
+  hdr.append(lbl, nav, rfBtn);
+  wrap.appendChild(hdr);
+
+  const content = el('div');
+  wrap.appendChild(content);
+
+  function showLoading(){ content.innerHTML='<div class="artspot-loading">Loading…</div>'; }
+  function showError(msg){ content.innerHTML='<div class="artspot-error">⚠ '+msg+'</div>'; }
+
+  async function fetchSpotlight(){
+    const topic = TOPICS[_idx];
+    showLoading();
+    try{
+      const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic.title)}`;
+      const r = await fetch(url, {headers:{'Accept':'application/json'}});
+      if(!r.ok) throw new Error('Wikipedia HTTP '+r.status);
+      const data = await r.json();
+
+      content.innerHTML='';
+
+      const tag = el('span','artspot-tag'); tag.textContent=topic.label;
+      content.appendChild(tag);
+
+      const thumb = data.thumbnail || data.originalimage;
+      if(thumb?.source){
+        const imgWrap = el('div','artspot-thumb-wrap');
+        const img = el('img','artspot-thumb');
+        img.src=thumb.source; img.alt=data.title||''; img.loading='lazy';
+        imgWrap.appendChild(img);
+        imgWrap.onclick=()=> window.open(data.content_urls?.desktop?.page||'https://en.wikipedia.org','_blank','noopener');
+        content.appendChild(imgWrap);
+      }
+
+      const nameEl = el('div','artspot-name');
+      // displaytitle can contain HTML markup — strip tags, fall back to plain title
+      const rawTitle = data.displaytitle || data.title || topic.title;
+      const tmp = document.createElement('div'); tmp.innerHTML = rawTitle;
+      nameEl.textContent = tmp.textContent || tmp.innerText || topic.title;
+      nameEl.onclick=()=> window.open(data.content_urls?.desktop?.page||'https://en.wikipedia.org','_blank','noopener');
+      content.appendChild(nameEl);
+
+      const fullText = (data.extract||'').trim();
+      const shortText = fullText.length>300 ? fullText.slice(0,300).trimEnd()+'…' : fullText;
+      let expanded = false;
+      const extractEl = el('div','artspot-extract');
+      extractEl.textContent = shortText;
+      content.appendChild(extractEl);
+
+      if(fullText.length>300){
+        const expandBtn = el('button','apod-expand-btn');
+        expandBtn.textContent='▼ Read more';
+        expandBtn.onclick=()=>{
+          expanded=!expanded;
+          extractEl.textContent = expanded ? fullText : shortText;
+          expandBtn.textContent = expanded ? '▲ Show less' : '▼ Read more';
+        };
+        content.appendChild(expandBtn);
+      }
+
+      const link = el('a','artspot-link');
+      link.href = data.content_urls?.desktop?.page || 'https://en.wikipedia.org';
+      link.target='_blank'; link.rel='noopener';
+      link.textContent='↗ Read on Wikipedia';
+      content.appendChild(link);
+
+    } catch(e){ showError(e.message); }
+  }
+
+  prevBtn.onclick = ()=>{ _idx=(_idx-1+TOPICS.length)%TOPICS.length; fetchSpotlight(); };
+  nextBtn.onclick = ()=>{ _idx=(_idx+1)%TOPICS.length; fetchSpotlight(); };
+  rfBtn.onclick   = ()=> fetchSpotlight();
+
+  function scheduleDaily(){
+    if(_refreshTimer) clearTimeout(_refreshTimer);
+    const now = new Date();
+    const msTilMidnight = new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)-now;
+    _refreshTimer = setTimeout(()=>{
+      const t=new Date();
+      _idx = Math.floor((t-new Date(t.getFullYear(),0,0))/86400000)%TOPICS.length;
+      fetchSpotlight();
+      scheduleDaily();
+    }, msTilMidnight);
+  }
+
+  const obsC=new MutationObserver(()=>{
+    if(!document.contains(wrap)){ obsC.disconnect(); if(_refreshTimer) clearTimeout(_refreshTimer); }
+  });
+  obsC.observe(document.body,{childList:true,subtree:true});
+
+  fetchSpotlight();
+  scheduleDaily();
+  return wrap;
+}
+
+/* ================================================================
+   UNSPLASH RANDOM PHOTO
+   ================================================================ */
+function buildUnsplashWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig={});
+  if(!cfg.apiKey)           cfg.apiKey='';
+  if(!cfg.orientation)      cfg.orientation='landscape';
+  if(!cfg.refreshHours)     cfg.refreshHours=1;
+  if(!cfg.featuredTopics)   cfg.featuredTopics=[];
+  if(!cfg.featuredFetchedAt)cfg.featuredFetchedAt=0;
+  if(!cfg.myTopics)         cfg.myTopics=[];
+
+  let _refreshTimer = null;
+
+  function getActivePool(){
+    const pool=[];
+    cfg.featuredTopics.forEach(t=>{ if(t.active) pool.push(t.slug); });
+    cfg.myTopics.forEach(t=>{ if(t.active) pool.push(t.slug); });
+    return pool;
+  }
+
+  const wrap = el('div','unsplash-widget');
+
+  const hdr = el('div','unsplash-hdr');
+  const lbl = el('span','unsplash-title-lbl'); lbl.textContent='📷 Unsplash';
+  const rfBtn = el('button','monitor-check-btn'); rfBtn.textContent='↻'; rfBtn.title='New photo';
+  hdr.append(lbl, rfBtn);
+  wrap.appendChild(hdr);
+
+  const content = el('div');
+  wrap.appendChild(content);
+
+  function showLoading(){ content.innerHTML='<div class="unsplash-loading">Loading…</div>'; }
+  function showError(msg){ content.innerHTML='<div class="unsplash-error">⚠ '+msg+'</div>'; }
+
+  function render(data){
+    content.innerHTML='';
+    const imgWrap = el('div','unsplash-img-wrap');
+    const img = el('img','unsplash-img');
+    img.src=data.url; img.alt=data.altDescription||data.description||'Unsplash photo'; img.loading='lazy';
+    if(data.color) imgWrap.style.background=data.color;
+    imgWrap.appendChild(img);
+    imgWrap.onclick=()=> window.open((data.unsplashLink||'https://unsplash.com')+'?utm_source=salty_start&utm_medium=referral','_blank','noopener');
+    imgWrap.title='View on Unsplash';
+    content.appendChild(imgWrap);
+    if(data.description||data.altDescription){
+      const descEl=el('div','unsplash-desc');
+      descEl.textContent=data.description||data.altDescription;
+      content.appendChild(descEl);
+    }
+    const credit=el('div','unsplash-credit');
+    const pLink=el('a');
+    pLink.href=(data.photographerProfile||'https://unsplash.com')+'?utm_source=salty_start&utm_medium=referral';
+    pLink.target='_blank'; pLink.rel='noopener'; pLink.textContent=data.photographer||'Photographer';
+    const uLink=el('a');
+    uLink.href='https://unsplash.com?utm_source=salty_start&utm_medium=referral';
+    uLink.target='_blank'; uLink.rel='noopener'; uLink.textContent='Unsplash';
+    credit.append('Photo by ',pLink,' on ',uLink);
+    content.appendChild(credit);
+  }
+
+  async function fetchPhoto(){
+    const workerUrl=getWorkerUrl(cfg.workerUrl);
+    if(!cfg.apiKey){ showError('Add your Unsplash Access Key in edit mode'); return; }
+    if(!workerUrl){ showError('Worker URL not set — click ⚡ in the toolbar'); return; }
+    showLoading();
+    try{
+      const pool=getActivePool();
+      const query=pool.length ? pool[Math.floor(Math.random()*pool.length)] : '';
+      const r=await fetch(workerUrl.replace(/\/$/,'')+'/unsplash',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ apiKey:cfg.apiKey, mode:'photo', query, orientation:cfg.orientation||'landscape' }),
+      });
+      if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j?.error||'HTTP '+r.status); }
+      const data=await r.json();
+      if(data.error) throw new Error(data.error);
+      render(data);
+    } catch(e){ showError(e.message); }
+  }
+
+  function scheduleRefresh(){
+    if(_refreshTimer) clearTimeout(_refreshTimer);
+    const ms=Math.max(1,cfg.refreshHours)*60*60*1000;
+    _refreshTimer=setTimeout(()=>{ fetchPhoto(); scheduleRefresh(); },ms);
+  }
+
+  rfBtn.onclick=fetchPhoto;
+
+  // Settings panel
+  const settings=el('div','unsplash-settings');
+
+  // API Key
+  const kr=el('div','unsplash-setting-row');
+  const kl=el('label','unsplash-setting-lbl'); kl.textContent='Access Key';
+  const ki=el('input','search-widget-input'); ki.type='password';
+  ki.placeholder='Unsplash Access Key…'; ki.value=cfg.apiKey; ki.style.flex='1';
+  const ksBtn=el('button','search-widget-go');
+  ksBtn.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;';
+  ksBtn.textContent='Save';
+  ksBtn.onclick=()=>{
+    cfg.apiKey=ki.value.trim(); persist();
+    ksBtn.textContent='✓'; setTimeout(()=>{ ksBtn.textContent='Save'; },1500);
+    fetchFeaturedTopics(true);
+    fetchPhoto();
+  };
+  kr.append(kl,ki,ksBtn); settings.appendChild(kr);
+
+  // Orientation
+  const or=el('div','unsplash-setting-row');
+  const ol=el('label','unsplash-setting-lbl'); ol.textContent='Orientation';
+  const oSel=document.createElement('select');
+  oSel.className='search-widget-input'; oSel.style.cssText='font-size:11px;padding:3px 8px;flex:1;';
+  [['landscape','Landscape'],['portrait','Portrait'],['squarish','Square']].forEach(([v,t])=>{
+    const opt=document.createElement('option');
+    opt.value=v; opt.textContent=t; opt.selected=cfg.orientation===v;
+    oSel.appendChild(opt);
+  });
+  oSel.onchange=()=>{ cfg.orientation=oSel.value; persist(); fetchPhoto(); };
+  or.append(ol,oSel); settings.appendChild(or);
+
+  // Refresh interval
+  const rr=el('div','unsplash-setting-row');
+  const rl=el('label','unsplash-setting-lbl'); rl.textContent='Refresh';
+  const ri=el('input','search-widget-input'); ri.type='number'; ri.min='1'; ri.max='24';
+  ri.value=cfg.refreshHours; ri.style.cssText='width:54px;text-align:center;font-size:11px;padding:3px 6px;';
+  const rSuffix=el('span'); rSuffix.style.cssText='font-size:11px;color:var(--text-dim);white-space:nowrap;';
+  rSuffix.textContent='hours';
+  ri.onchange=()=>{
+    cfg.refreshHours=Math.max(1,Math.min(24,parseInt(ri.value)||1));
+    ri.value=cfg.refreshHours; persist(); scheduleRefresh();
+  };
+  rr.append(rl,ri,rSuffix); settings.appendChild(rr);
+
+  // Featured Topics section
+  const featHdr=el('div','unsplash-topics-hdr');
+  const featLbl=el('span','unsplash-topics-lbl'); featLbl.textContent='Featured Topics';
+  const featRfBtn=el('button','unsplash-topics-rfbtn'); featRfBtn.textContent='↻'; featRfBtn.title='Refresh from Unsplash';
+  featHdr.append(featLbl,featRfBtn);
+  settings.appendChild(featHdr);
+
+  const featChipsWrap=el('div','unsplash-chips');
+  settings.appendChild(featChipsWrap);
+
+  function renderFeaturedChips(){
+    featChipsWrap.innerHTML='';
+    if(!cfg.featuredTopics.length){
+      const note=el('div','unsplash-no-topics');
+      note.textContent=cfg.apiKey ? 'Loading…' : 'Save your Access Key to load featured topics';
+      featChipsWrap.appendChild(note); return;
+    }
+    cfg.featuredTopics.forEach((t,i)=>{
+      const chip=el('button','unsplash-chip');
+      chip.textContent=t.title;
+      if(t.active) chip.classList.add('active');
+      chip.onclick=()=>{
+        cfg.featuredTopics[i].active=!cfg.featuredTopics[i].active;
+        chip.classList.toggle('active',cfg.featuredTopics[i].active);
+        persist();
+      };
+      featChipsWrap.appendChild(chip);
+    });
+  }
+
+  featRfBtn.onclick=()=> fetchFeaturedTopics(true);
+  renderFeaturedChips();
+
+  // My Topics section
+  const myHdr=el('div','unsplash-topics-hdr');
+  const myLbl=el('span','unsplash-topics-lbl'); myLbl.textContent='My Topics';
+  myHdr.appendChild(myLbl);
+  settings.appendChild(myHdr);
+
+  const myChipsWrap=el('div','unsplash-chips');
+  settings.appendChild(myChipsWrap);
+
+  function renderMyChips(){
+    myChipsWrap.innerHTML='';
+    if(!cfg.myTopics.length){
+      const note=el('div','unsplash-no-topics'); note.textContent='No custom topics yet';
+      myChipsWrap.appendChild(note); return;
+    }
+    cfg.myTopics.forEach((t,i)=>{
+      const chip=el('button','unsplash-chip');
+      if(t.active) chip.classList.add('active');
+      const inner=el('span','unsplash-chip-inner');
+      const slugSpan=el('span'); slugSpan.textContent=t.slug;
+      const rmBtn=el('button','unsplash-chip-remove'); rmBtn.textContent='✕';
+      rmBtn.title='Remove'; rmBtn.type='button';
+      rmBtn.onclick=e=>{
+        e.stopPropagation();
+        cfg.myTopics.splice(i,1); persist(); renderMyChips();
+      };
+      inner.append(slugSpan,rmBtn);
+      chip.appendChild(inner);
+      chip.onclick=()=>{
+        cfg.myTopics[i].active=!cfg.myTopics[i].active;
+        chip.classList.toggle('active',cfg.myTopics[i].active);
+        persist();
+      };
+      myChipsWrap.appendChild(chip);
+    });
+  }
+
+  renderMyChips();
+
+  // Add topic input
+  const addRow=el('div','unsplash-add-row');
+  const addInput=el('input','search-widget-input'); addInput.type='text';
+  addInput.placeholder='Add topic… e.g. film grain'; addInput.style.flex='1'; addInput.style.fontSize='11px';
+  const addBtn=el('button','search-widget-go');
+  addBtn.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;';
+  addBtn.textContent='+';
+  const doAdd=()=>{
+    const slug=addInput.value.trim().toLowerCase();
+    if(!slug) return;
+    if(cfg.myTopics.some(t=>t.slug===slug)){ addInput.value=''; return; }
+    cfg.myTopics.push({slug,active:true});
+    persist(); renderMyChips();
+    addInput.value='';
+  };
+  addBtn.onclick=doAdd;
+  addInput.onkeydown=e=>{ if(e.key==='Enter') doAdd(); };
+  addRow.append(addInput,addBtn);
+  settings.appendChild(addRow);
+
+  // Featured topics fetcher
+  async function fetchFeaturedTopics(force=false){
+    const workerUrl=getWorkerUrl(cfg.workerUrl);
+    if(!cfg.apiKey||!workerUrl) return;
+    const age=Date.now()-(cfg.featuredFetchedAt||0);
+    if(!force && age<24*60*60*1000 && cfg.featuredTopics.length) return;
+    try{
+      const r=await fetch(workerUrl.replace(/\/$/,'')+'/unsplash',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({apiKey:cfg.apiKey,mode:'topics'}),
+      });
+      if(!r.ok) return;
+      const data=await r.json();
+      if(!data.topics?.length) return;
+      const existing={};
+      cfg.featuredTopics.forEach(t=>{ existing[t.slug]=t.active; });
+      cfg.featuredTopics=data.topics.map(t=>({
+        slug:t.slug, title:t.title,
+        active: existing.hasOwnProperty(t.slug) ? existing[t.slug] : true,
+      }));
+      cfg.featuredFetchedAt=Date.now();
+      persist();
+      renderFeaturedChips();
+    } catch(e){}
+  }
+
+  const applyVis=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obs=new MutationObserver(applyVis);
+  obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyVis();
+  wrap.appendChild(settings);
+
+  const obsC=new MutationObserver(()=>{
+    if(!document.contains(wrap)){ obs.disconnect(); obsC.disconnect(); if(_refreshTimer) clearTimeout(_refreshTimer); }
+  });
+  obsC.observe(document.body,{childList:true,subtree:true});
+
+  fetchFeaturedTopics();
+  fetchPhoto();
   scheduleRefresh();
   return wrap;
 }
