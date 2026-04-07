@@ -14461,7 +14461,10 @@ function buildUnsplashWidget(sec){
       if(!data.topics?.length) return;
       const existing={};
       cfg.featuredTopics.forEach(t=>{ existing[t.slug]=t.active; });
-      cfg.featuredTopics=data.topics.map(t=>({
+      const seenSlugs=new Set();
+      cfg.featuredTopics=data.topics
+        .filter(t=> t.slug && !seenSlugs.has(t.slug) && seenSlugs.add(t.slug))
+        .map(t=>({
         slug:t.slug, title:t.title,
         active: existing.hasOwnProperty(t.slug) ? existing[t.slug] : true,
       }));
