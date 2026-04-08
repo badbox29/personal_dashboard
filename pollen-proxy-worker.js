@@ -907,6 +907,76 @@ async function handleUnsplash(body, ctx) {
   return json(normalized);
 }
 
+// ── Status handler (/status) ─────────────────────────────────────────────────
+//
+// Checks reachability of any URL server-side, returning the real HTTP status
+// code. Tries HEAD first, falls back to GET.
+//
+// Semantics: `ok: true` means the server responded with ANY status code —
+// the service is reachable. `ok: false` with `status: null` means we could
+// not reach the server at all (DNS failure, timeout, connection refused).
+// This lets the dashboard distinguish "up but auth required (401)" from
+// "completely unreachable."
+//
+// Cloudflare's own 52x/53x error codes (returned when CF can't reach the
+// origin) are treated as "unreachable" and result in status: null so that
+// the dashboard cascade falls through to the next available path (local proxy
+// or direct browser check).
+//
+// Body: { url }
+// Returns: { ok: bool, status: int|null, via: "worker" }
+
+async function handleStatus(body) {
+  try {
+    const { url } = body;
+
+    if(!url || typeof url !== 'string')
+      return json({ ok: false, status: null, via: 'worker', error: 'Required field: url' }, 400);
+
+    let parsed;
+    try {
+      parsed = new URL(url);
+      if(!['http:', 'https:'].includes(parsed.protocol))
+        return json({ ok: false, status: null, via: 'worker', error: 'Only http/https URLs are supported' }, 400);
+    } catch(e) {
+      return json({ ok: false, status: null, via: 'worker', error: 'Invalid URL' }, 400);
+    }
+
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (compatible; salty-start-dashboard/1.0; status-checker)',
+      'Accept': '*/*',
+    };
+
+    // Cloudflare uses 520-530 for "origin unreachable" — not real server responses.
+    // Treat these as network failures so the dashboard cascade falls through.
+    const isCfError = s => s >= 520 && s <= 530;
+
+    // Try HEAD first — cheaper, avoids downloading body
+    try {
+      const res = await fetch(url, { method: 'HEAD', headers, redirect: 'follow' });
+      if(isCfError(res.status))
+        return json({ ok: false, status: null, via: 'worker', error: 'Origin unreachable from worker (CF ' + res.status + ')' });
+      // Any real server response = reachable (ok: true), even 4xx/5xx
+      return json({ ok: true, status: res.status, via: 'worker' });
+    } catch(e) {
+      // HEAD failed (DNS error, connection refused, TLS error, etc.) — try GET
+    }
+
+    try {
+      const res = await fetch(url, { method: 'GET', headers, redirect: 'follow' });
+      if(isCfError(res.status))
+        return json({ ok: false, status: null, via: 'worker', error: 'Origin unreachable from worker (CF ' + res.status + ')' });
+      return json({ ok: true, status: res.status, via: 'worker' });
+    } catch(e) {
+      return json({ ok: false, status: null, via: 'worker', error: e.message });
+    }
+
+  } catch(e) {
+    // Outer catch: handles Cloudflare runtime-level throws that escape inner blocks
+    return json({ ok: false, status: null, via: 'worker', error: 'Worker runtime error: ' + (e.message || 'unknown') });
+  }
+}
+
 // ── Main dispatcher ──────────────────────────────────────────────────────────
 
 export default {
@@ -933,11 +1003,15 @@ export default {
     if(path === '/topics') return handleTopics(body, ctx);
     if(path === '/wotd')   return handleWotd(body, ctx);
     if(path === '/unsplash') return handleUnsplash(body, ctx);
+    if(path === '/status') {
+      try { return await handleStatus(body); }
+      catch(e) { return json({ ok: false, status: null, via: 'worker', error: 'Unhandled worker error' }); }
+    }
 
     // Legacy: detect from body fields (backwards compat)
     if(body.service) return handlePollen(body, ctx);
     if(body.url)     return handleRss(body, ctx);
 
-    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /sports, /otx, /bible, /topics, /wotd, or /unsplash' }, 404);
+    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /sports, /otx, /bible, /topics, /wotd, /unsplash, or /status' }, 404);
   }
 };
