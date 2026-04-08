@@ -3574,6 +3574,239 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 }
 body.edit-mode .energy-edit-section { display: flex; }
 
+/* Energy tracker — dropdown selectors */
+.energy-select-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.energy-select {
+  flex: 1;
+  min-width: 0;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 4px 6px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, color 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23666'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+  padding-right: 20px;
+}
+.energy-select:focus { border-color: var(--cyan); }
+.energy-select.has-value { border-color: var(--border); color: var(--text); }
+
+/* Insights viewer modal */
+.energy-insights-modal {
+  width: 680px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+.energy-section-hdr {
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 14px 0 7px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+}
+.energy-section-hdr:first-child { margin-top: 0; }
+
+/* Trend tiles */
+.energy-trend-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.energy-trend-tile {
+  flex: 1;
+  min-width: 120px;
+  padding: 7px 10px;
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+}
+.energy-trend-label {
+  font-size: 9px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.energy-trend-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.energy-trend-val {
+  font-size: 13px;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 700;
+}
+.energy-trend-arrow {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Chart */
+.energy-chart-wrap {
+  background: var(--inp-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px;
+}
+.energy-chart-controls {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.energy-chart-btn {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 9px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.energy-chart-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.energy-chart-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
+.energy-chart-sep { flex: 1; }
+
+/* Correlation table */
+.energy-corr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+}
+.energy-corr-table th {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  padding: 5px 8px;
+  text-align: left;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.energy-corr-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  background: var(--inp-bg);
+  vertical-align: middle;
+}
+.energy-corr-table tr:last-child td { border-bottom: none; }
+.energy-corr-table td:first-child { color: var(--text); }
+.energy-corr-table td:not(:first-child) { text-align: center; }
+
+/* Day-of-week heatmap */
+.energy-dow-wrap {
+  display: flex;
+  gap: 4px;
+}
+.energy-dow-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.energy-dow-bar-outer {
+  width: 100%;
+  height: 44px;
+  background: var(--border);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+.energy-dow-bar-inner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s;
+}
+.energy-dow-lbl {
+  font-size: 9px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+}
+.energy-dow-avg {
+  font-size: 8.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+/* Full insights list */
+.energy-full-insight {
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.5;
+  padding: 4px 8px;
+  background: rgba(15,184,221,0.05);
+  border-left: 2px solid var(--cyan);
+  border-radius: 0 3px 3px 0;
+  margin-bottom: 4px;
+}
+
+/* Rotating insights row in history modal */
+.energy-insights-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.energy-insights-pool {
+  flex: 1;
+}
+.energy-insights-cycle-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 12px;
+  padding: 2px 7px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.energy-insights-cycle-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.energy-insights-open-btn {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 5px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.energy-insights-open-btn:hover { border-color: var(--gold); color: var(--gold); }
+
 
    ============================================================ */
 .sports-controls {
@@ -10227,7 +10460,7 @@ function buildEnergyWidget(sec, tabId){
   return wrap;
 }
 
-// ── Energy history + pattern modal ──────────────────────
+// \u2500\u2500 Energy history + pattern modal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function openEnergyModal(){
   const ENTRY_COLORS={
     Drained:'#ff8888', Low:'#ffaa88', Normal:'var(--cyan)', High:'#44cc88', Wired:'var(--gold)',
@@ -10245,7 +10478,6 @@ function openEnergyModal(){
     clearBtn.textContent='Clear All';
     clearBtn.onclick=()=>{ if(confirm('Clear all energy entries?')){ D.energyEntries=[]; persist(); renderModal(); } };
     mhdr.append(mtitle,clearBtn);
-
     const body=el('div'); body.id='energyModalBody'; body.style.cssText='flex:1;overflow-y:auto;';
     const actions=el('div','modal-actions');
     const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close';
@@ -10276,11 +10508,10 @@ function openEnergyModal(){
     const now=new Date();
     const todayStr=now.toLocaleDateString('en-CA');
     const sevenDaysAgo=Date.now()-7*24*60*60*1000;
-
     const todayEntries=D.energyEntries.filter(e=>e.timestamp.slice(0,10)===todayStr);
     const weekEntries=D.energyEntries.filter(e=>new Date(e.timestamp).getTime()>=sevenDaysAgo);
 
-    // ── Pattern summary (last 7 days) ──────────────────
+    // \u2500\u2500 Pattern summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     const patternSec=section('Pattern Summary \u2014 Last 7 Days');
 
     if(weekEntries.length<3){
@@ -10288,106 +10519,96 @@ function openEnergyModal(){
       note.textContent='Log a few more entries to see patterns here.';
       patternSec.appendChild(note);
     } else {
-      function mostCommon(entries, field){
-        const counts={};
-        entries.forEach(e=>{ if(e[field]){ counts[e[field]]=(counts[e[field]]||0)+1; } });
-        return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
-      }
-      function timeOfDay(ts){
-        const h=new Date(ts).getHours();
-        if(h>=5&&h<11)  return 'Morning';
-        if(h>=11&&h<17) return 'Afternoon';
-        if(h>=17&&h<22) return 'Evening';
-        return 'Late Night';
-      }
-      function bestTimeFor(entries, field, value){
-        const timeCounts={};
-        entries.filter(e=>e[field]===value).forEach(e=>{
-          const t=timeOfDay(e.timestamp);
-          timeCounts[t]=(timeCounts[t]||0)+1;
-        });
-        return Object.entries(timeCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
-      }
-      function worstTimeFor(entries, field, values){
-        // values = low-state values (e.g. Drained, Low)
-        const timeCounts={};
-        entries.filter(e=>values.includes(e[field])).forEach(e=>{
-          const t=timeOfDay(e.timestamp);
-          timeCounts[t]=(timeCounts[t]||0)+1;
-        });
-        return Object.entries(timeCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
-      }
+      const topEnergy   = energyMostCommon(weekEntries,'energy');
+      const topFocus    = energyMostCommon(weekEntries,'focus');
+      const topFriction = energyMostCommon(weekEntries,'friction');
 
-      const topEnergy   = mostCommon(weekEntries,'energy');
-      const topFocus    = mostCommon(weekEntries,'focus');
-      const topFriction = mostCommon(weekEntries,'friction');
+      // Summary tiles with trend arrows
+      const sevenDaysAgo2=Date.now()-7*24*60*60*1000;
+      const threeDaysAgo=Date.now()-3*24*60*60*1000;
+      const last3=D.energyEntries.filter(e=>new Date(e.timestamp).getTime()>=threeDaysAgo);
+      const prior4=D.energyEntries.filter(e=>{const t=new Date(e.timestamp).getTime(); return t>=sevenDaysAgo2&&t<threeDaysAgo;});
 
-      // Basic summary
       const summaryGrid=el('div'); summaryGrid.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;';
-      [['Energy',topEnergy],['Focus',topFocus],['Friction',topFriction]].forEach(([lbl,val])=>{
+      [['Energy','energy',topEnergy],['Focus','focus',topFocus],['Friction','friction',topFriction]].forEach(([lbl,field,val])=>{
         if(!val) return;
         const tile=el('div'); tile.style.cssText='flex:1;min-width:100px;padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;';
         const tl=el('div'); tl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;'; tl.textContent='Most common '+lbl;
+        const valRow=el('div'); valRow.style.cssText='display:flex;align-items:baseline;gap:5px;';
         const tv=el('div'); tv.style.cssText='font-size:13px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+(ENTRY_COLORS[val]||'var(--text)')+';'; tv.textContent=val;
-        tile.append(tl,tv); summaryGrid.appendChild(tile);
+        const arrow=energyTrendArrow(last3,prior4,field);
+        if(arrow){
+          const ta=el('span'); ta.style.cssText='font-size:13px;font-weight:700;color:'+energyTrendColor(arrow)+';'; ta.textContent=arrow;
+          valRow.append(tv,ta);
+        } else { valRow.appendChild(tv); }
+        tile.append(tl,valRow); summaryGrid.appendChild(tile);
       });
       patternSec.appendChild(summaryGrid);
 
-      // Derived insights (after ≥10 entries)
-      if(weekEntries.length>=10){
-        const insights=[];
-        if(topFocus){
-          const t=bestTimeFor(weekEntries,'focus',topFocus);
-          if(t) insights.push('You tend to be \u201c'+topFocus+'\u201d in the '+t.toLowerCase()+'.');
-        }
-        if(topEnergy){
-          const worstTime=worstTimeFor(weekEntries,'energy',['Drained','Low']);
-          if(worstTime) insights.push('Energy is lowest in the '+worstTime.toLowerCase()+'.');
-        }
-        const topCtx=mostCommon(weekEntries,'context');
-        if(topCtx) insights.push('Most entries are tagged \u201c'+topCtx+'\u201d.');
-        if(insights.length){
-          insights.forEach(ins=>{
-            const d=el('div','energy-insight'); d.textContent=ins; patternSec.appendChild(d);
-          });
+      // Rotating insights pool
+      if(weekEntries.length>=5){
+        const allInsights=energyGenerateInsights(D.energyEntries);
+        if(allInsights.length){
+          let insightIdx=0;
+          const insRow=el('div','energy-insights-row');
+          const insPool=el('div','energy-insights-pool');
+          const cycleBtn=el('button','energy-insights-cycle-btn'); cycleBtn.textContent='\u21BB'; cycleBtn.title='Next insight';
+
+          function showInsights(){
+            insPool.innerHTML='';
+            const visible=allInsights.slice(insightIdx, insightIdx+3);
+            visible.forEach(ins=>{ const d=el('div','energy-insight'); d.textContent=ins; insPool.appendChild(d); });
+          }
+          cycleBtn.onclick=()=>{ insightIdx=(insightIdx+3)%Math.max(allInsights.length,1); showInsights(); };
+          showInsights();
+          insRow.append(insPool,cycleBtn);
+          patternSec.appendChild(insRow);
+
+          const openInsBtn=el('button','energy-insights-open-btn');
+          openInsBtn.textContent='\u26A1 Open Insights Viewer \u2192';
+          openInsBtn.onclick=()=>openEnergyInsightsModal();
+          patternSec.appendChild(openInsBtn);
         }
       }
     }
     body.appendChild(patternSec);
 
-    // ── Today's entries ────────────────────────────────
+    // \u2500\u2500 Today's entries \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     const todaySec=section("Today's Log ("+todayEntries.length+' entr'+(todayEntries.length===1?'y':'ies')+')');
     if(!todayEntries.length){
       const empty=el('div'); empty.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;padding:4px 0;';
       empty.textContent='No entries logged today yet.'; todaySec.appendChild(empty);
     } else {
       const list=el('div'); list.style.cssText='display:flex;flex-direction:column;gap:5px;';
-      todayEntries.forEach((e,i)=>{
+      todayEntries.forEach(e=>{
+        const globalIdx=D.energyEntries.indexOf(e);
         const row=el('div','energy-history-entry');
+        const timeRow=el('div'); timeRow.style.cssText='display:flex;align-items:center;gap:4px;';
         const timeEl=el('div','energy-history-time');
+        timeEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);flex:1;';
         timeEl.textContent=new Date(e.timestamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})
-          +(e.context?' \u00b7 '+e.context:'');
+          +(e.context?' \u00b7 '+e.context:'')+(e.location?' \u00b7 '+e.location:'');
+        // Edit button
+        const editBtn=el('button','ic-btn ic-edit'); editBtn.textContent='\u270e'; editBtn.title='Edit entry';
+        editBtn.style.cssText='font-size:10px;padding:1px 5px;';
+        editBtn.onclick=()=>{ closeOverlay('energyHistoryOverlay'); openEnergyEditModal(globalIdx, renderModal); };
+        // Delete button
+        const del=el('button'); del.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:2px;';
+        del.textContent='\u2715'; del.title='Delete entry';
+        del.onclick=()=>{ D.energyEntries.splice(globalIdx,1); persist(); renderModal(); };
+        timeRow.append(timeEl,editBtn,del);
         const vals=el('div','energy-history-vals');
         if(e.energy)   vals.appendChild(badge(e.energy));
         if(e.focus)    vals.appendChild(badge(e.focus));
         if(e.friction) vals.appendChild(badge(e.friction));
-        row.append(timeEl,vals);
-        if(e.note){
-          const noteEl=el('div','energy-history-note'); noteEl.textContent=e.note; row.appendChild(noteEl);
-        }
-        // Delete button
-        const del=el('button'); del.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:2px;align-self:flex-start;margin-left:auto;';
-        del.textContent='\u2715'; del.title='Delete entry';
-        del.onclick=()=>{ D.energyEntries.splice(D.energyEntries.indexOf(e),1); persist(); renderModal(); };
-        timeEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);display:flex;align-items:center;';
-        timeEl.appendChild(del);
+        row.append(timeRow,vals);
+        if(e.note){ const noteEl=el('div','energy-history-note'); noteEl.textContent=e.note; row.appendChild(noteEl); }
         list.appendChild(row);
       });
       todaySec.appendChild(list);
     }
     body.appendChild(todaySec);
 
-    // ── All-time count ─────────────────────────────────
     const footer=el('div'); footer.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);';
     footer.textContent=D.energyEntries.length+' total entr'+(D.energyEntries.length===1?'y':'ies')+' stored.';
     body.appendChild(footer);
@@ -10395,6 +10616,474 @@ function openEnergyModal(){
 
   renderModal();
   openOverlay('energyHistoryOverlay');
+}
+
+// \u2500\u2500 Shared analytics helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function energyMostCommon(entries, field){
+  const counts={};
+  entries.forEach(e=>{ if(e[field]) counts[e[field]]=(counts[e[field]]||0)+1; });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null;
+}
+function energyFieldScore(field, val){
+  if(!val) return null;
+  const maps={
+    energy:{Drained:0,Low:1,Normal:2,High:3,Wired:4},
+    focus:{Scattered:0,Foggy:1,Steady:2,'Locked In':3},
+    friction:{Resistant:0,Neutral:1,Restless:1.5,Engaged:2},
+  };
+  const s=maps[field]?.[val]; return s===undefined?null:s;
+}
+function energyAvgScore(entries, field){
+  const scored=entries.map(e=>energyFieldScore(field,e[field])).filter(v=>v!==null);
+  if(!scored.length) return null;
+  return scored.reduce((a,b)=>a+b,0)/scored.length;
+}
+function energyTimeOfDay(ts){
+  const h=new Date(ts).getHours();
+  if(h>=5&&h<11) return 'Morning';
+  if(h>=11&&h<17) return 'Afternoon';
+  if(h>=17&&h<22) return 'Evening';
+  return 'Late Night';
+}
+function energyTrendArrow(last3, prior4, field){
+  const a=energyAvgScore(last3,field), b=energyAvgScore(prior4,field);
+  if(a===null||b===null) return null;
+  const d=a-b; return d>0.3?'\u2191':d<-0.3?'\u2193':'\u2192';
+}
+function energyTrendColor(arrow){
+  return arrow==='\u2191'?'#44cc88':arrow==='\u2193'?'#ff8888':'var(--text-dim)';
+}
+function energyGenerateInsights(allEntries){
+  const sevenDaysAgo=Date.now()-7*24*60*60*1000;
+  const entries=allEntries.filter(e=>new Date(e.timestamp).getTime()>=sevenDaysAgo);
+  const insights=[];
+  if(entries.length<5) return insights;
+
+  // Time-of-day basics
+  const topFocus=energyMostCommon(entries,'focus');
+  if(topFocus){
+    const tc={}; entries.filter(e=>e.focus===topFocus).forEach(e=>{ const t=energyTimeOfDay(e.timestamp); tc[t]=(tc[t]||0)+1; });
+    const best=Object.entries(tc).sort((a,b)=>b[1]-a[1])[0]?.[0];
+    if(best) insights.push('You tend to be \u201c'+topFocus+'\u201d in the '+best.toLowerCase()+'.');
+  }
+  const lowEnergyTc={};
+  entries.filter(e=>['Drained','Low'].includes(e.energy)).forEach(e=>{ const t=energyTimeOfDay(e.timestamp); lowEnergyTc[t]=(lowEnergyTc[t]||0)+1; });
+  const worstTime=Object.entries(lowEnergyTc).sort((a,b)=>b[1]-a[1])[0]?.[0];
+  if(worstTime) insights.push('Energy is lowest in the '+worstTime.toLowerCase()+'.');
+  const topCtx=energyMostCommon(entries,'context');
+  if(topCtx) insights.push('Most entries are tagged \u201c'+topCtx+'\u201d.');
+
+  if(entries.length>=15){
+    // Context correlations
+    const ctxs=[...new Set(entries.map(e=>e.context).filter(Boolean))];
+    let bestECtx=null,bestES=-1,worstECtx=null,worstES=99;
+    let bestFCtx=null,bestFS=-1,bestFrCtx=null,bestFrS=-1;
+    ctxs.forEach(ctx=>{
+      const ce=entries.filter(e=>e.context===ctx);
+      if(ce.length<3) return;
+      const ae=energyAvgScore(ce,'energy'),af=energyAvgScore(ce,'focus'),afr=energyAvgScore(ce,'friction');
+      if(ae!==null){ if(ae>bestES){bestES=ae;bestECtx=ctx;} if(ae<worstES){worstES=ae;worstECtx=ctx;} }
+      if(af!==null&&af>bestFS){ bestFS=af; bestFCtx=ctx; }
+      if(afr!==null&&afr>bestFrS){ bestFrS=afr; bestFrCtx=ctx; }
+    });
+    if(bestECtx) insights.push('Energy is highest when: '+bestECtx+'.');
+    if(worstECtx&&worstECtx!==bestECtx) insights.push('Energy dips most during: '+worstECtx+'.');
+    if(bestFCtx) insights.push('Focus is highest when: '+bestFCtx+'.');
+    if(bestFrCtx) insights.push('Most engaged when: '+bestFrCtx+'.');
+
+    // Location correlations
+    const locs=[...new Set(entries.map(e=>e.location).filter(Boolean))];
+    let bestLCtx=null,bestLS=-1,bestLFCtx=null,bestLFS=-1;
+    locs.forEach(loc=>{
+      const le=entries.filter(e=>e.location===loc);
+      if(le.length<3) return;
+      const ae=energyAvgScore(le,'energy'),af=energyAvgScore(le,'focus');
+      if(ae!==null&&ae>bestLS){ bestLS=ae; bestLCtx=loc; }
+      if(af!==null&&af>bestLFS){ bestLFS=af; bestLFCtx=loc; }
+    });
+    if(bestLCtx) insights.push('Energy peaks when '+bestLCtx.toLowerCase()+'.');
+    if(bestLFCtx&&bestLFCtx!==bestLCtx) insights.push('Focus is highest when '+bestLFCtx.toLowerCase()+'.');
+  }
+
+  if(entries.length>=21){
+    // Day-of-week
+    const DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const dowS={},dowC={};
+    entries.forEach(e=>{ const d=new Date(e.timestamp).getDay(); const s=energyFieldScore('energy',e.energy); if(s!==null){dowS[d]=(dowS[d]||0)+s;dowC[d]=(dowC[d]||0)+1;} });
+    const avgs=Object.keys(dowC).map(d=>({day:parseInt(d),name:DOW[d],avg:dowS[d]/dowC[d]})).sort((a,b)=>b.avg-a.avg);
+    if(avgs.length>=3&&avgs[0].avg-avgs[avgs.length-1].avg>0.5)
+      insights.push('Energy peaks on '+avgs[0].name+'s, dips on '+avgs[avgs.length-1].name+'s.');
+  }
+
+  return insights;
+}
+
+// \u2500\u2500 Entry edit modal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function openEnergyEditModal(entryIdx, onSave){
+  const entry=D.energyEntries[entryIdx];
+  if(!entry) return;
+
+  const ENERGY_OPTS   = ['Drained','Low','Normal','High','Wired'];
+  const FOCUS_OPTS    = ['Scattered','Foggy','Steady','Locked In'];
+  const FRICTION_OPTS = ['Resistant','Neutral','Engaged','Restless'];
+  const CONTEXT_TAGS  = ['Coding','Meetings','Exercise','Relaxing','Other'];
+  const LOCATION_OPTS = ['At Home','Working \u2013 In Office','Working \u2013 At Home','Out & About','Traveling','Other'];
+  const VAL_COLORS    = {Drained:'#ff8888',Low:'#ffaa88',Normal:'#0fb8dd',High:'#44cc88',Wired:'#ddb04b',Scattered:'#ff8888',Foggy:'#ffaa88',Steady:'#0fb8dd','Locked In':'#44cc88',Resistant:'#ff8888',Neutral:'#0fb8dd',Engaged:'#44cc88',Restless:'#ddb04b'};
+
+  let overlay=document.getElementById('energyEditOverlay');
+  if(overlay) overlay.remove();
+  overlay=el('div','overlay'); overlay.id='energyEditOverlay';
+  const modal=el('div','modal'); modal.style.cssText='width:420px;';
+  const h3=el('h3'); h3.textContent='\u270e Edit Entry';
+  modal.appendChild(h3);
+
+  const ts=el('div'); ts.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-bottom:12px;';
+  ts.textContent=new Date(entry.timestamp).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  modal.appendChild(ts);
+
+  function makeEditSelect(placeholder, opts, curVal, useColors){
+    const sel=el('select','energy-select'); sel.style.cssText='width:100%;margin-bottom:7px;';
+    const blank=document.createElement('option'); blank.value=''; blank.textContent=placeholder; sel.appendChild(blank);
+    opts.forEach(opt=>{ const o=document.createElement('option'); o.value=opt; o.textContent=opt; if(opt===curVal) o.selected=true; sel.appendChild(o); });
+    if(curVal&&useColors&&VAL_COLORS[curVal]) sel.style.color=VAL_COLORS[curVal];
+    sel.onchange=()=>{
+      if(useColors&&sel.value&&VAL_COLORS[sel.value]) sel.style.color=VAL_COLORS[sel.value];
+      else sel.style.color='';
+    };
+    return sel;
+  }
+
+  const row1=el('div','energy-select-row');
+  const eS=makeEditSelect('\u2014 Energy \u2014',   ENERGY_OPTS,   entry.energy,   true);
+  const fS=makeEditSelect('\u2014 Focus \u2014',     FOCUS_OPTS,    entry.focus,    true);
+  eS.style.flex='1'; fS.style.flex='1'; row1.append(eS,fS); modal.appendChild(row1);
+
+  const row2=el('div','energy-select-row');
+  const frS=makeEditSelect('\u2014 Friction \u2014', FRICTION_OPTS, entry.friction, true);
+  const cS=makeEditSelect('\u2014 Context \u2014',   CONTEXT_TAGS,  entry.context,  false);
+  frS.style.flex='1'; cS.style.flex='1'; row2.append(frS,cS); modal.appendChild(row2);
+
+  const lS=makeEditSelect('\u2014 Location \u2014',  LOCATION_OPTS, entry.location, false);
+  lS.style.cssText='width:100%;margin-bottom:7px;'; modal.appendChild(lS);
+
+  const noteInp=el('input','energy-note-inp'); noteInp.placeholder='Note\u2026'; noteInp.maxLength=200; noteInp.value=entry.note||'';
+  modal.appendChild(noteInp);
+
+  const actions=el('div','modal-actions');
+  const cancelBtn=el('button','mbtn mbtn-cancel'); cancelBtn.textContent='Cancel';
+  cancelBtn.onclick=()=>{ overlay.remove(); openEnergyModal(); };
+  const saveBtn=el('button','mbtn mbtn-primary'); saveBtn.textContent='Save';
+  saveBtn.onclick=()=>{
+    entry.energy   = eS.value||null;
+    entry.focus    = fS.value||null;
+    entry.friction = frS.value||null;
+    entry.context  = cS.value||null;
+    entry.location = lS.value||null;
+    entry.note     = noteInp.value.trim()||null;
+    persist();
+    overlay.remove();
+    openEnergyModal();
+  };
+  actions.append(cancelBtn,saveBtn);
+  modal.appendChild(actions);
+  overlay.appendChild(modal);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay){ overlay.remove(); openEnergyModal(); } });
+  document.body.appendChild(overlay);
+  overlay.classList.add('open');
+}
+
+// \u2500\u2500 Insights Viewer modal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function openEnergyInsightsModal(){
+  const ENTRY_COLORS={
+    Drained:'#ff8888',Low:'#ffaa88',Normal:'#0fb8dd',High:'#44cc88',Wired:'#ddb04b',
+    Scattered:'#ff8888',Foggy:'#ffaa88',Steady:'#0fb8dd','Locked In':'#44cc88',
+    Resistant:'#ff8888',Neutral:'#0fb8dd',Engaged:'#44cc88',Restless:'#ddb04b',
+  };
+
+  let overlay=document.getElementById('energyInsightsOverlay');
+  if(overlay) overlay.remove();
+  overlay=el('div','overlay'); overlay.id='energyInsightsOverlay';
+  const modal=el('div','modal energy-insights-modal');
+
+  const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-shrink:0;';
+  const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='\u26A1 Insights Viewer';
+  const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.style.cssText='font-size:11px;padding:4px 10px;';
+  closeBtn.textContent='Close'; closeBtn.onclick=()=>overlay.remove();
+  mhdr.append(mtitle,closeBtn);
+  modal.appendChild(mhdr);
+
+  const body=el('div'); body.style.cssText='flex:1;overflow-y:auto;';
+  modal.appendChild(body);
+  overlay.appendChild(modal);
+  overlay.addEventListener('click',e=>{ if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  overlay.classList.add('open');
+
+  // \u2500\u2500 Data prep \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  const sevenDaysAgo=Date.now()-7*24*60*60*1000;
+  const threeDaysAgo=Date.now()-3*24*60*60*1000;
+  const weekEntries=D.energyEntries.filter(e=>new Date(e.timestamp).getTime()>=sevenDaysAgo);
+  const last3=D.energyEntries.filter(e=>new Date(e.timestamp).getTime()>=threeDaysAgo);
+  const prior4=D.energyEntries.filter(e=>{ const t=new Date(e.timestamp).getTime(); return t>=sevenDaysAgo&&t<threeDaysAgo; });
+
+  if(!D.energyEntries.length){
+    const empty=el('div'); empty.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;padding:20px 0;text-align:center;';
+    empty.textContent='No entries yet. Start logging to see insights here.';
+    body.appendChild(empty); return;
+  }
+
+  // ═══ SECTION 1: 7-Day Trend ═══════════════════════════════════════════════
+  const sec1=el('div','energy-section-hdr'); sec1.textContent='7-Day Trend'; body.appendChild(sec1);
+  const trendGrid=el('div','energy-trend-grid');
+  [['Energy','energy'],['Focus','focus'],['Friction','friction']].forEach(([lbl,field])=>{
+    const val=energyMostCommon(weekEntries,field);
+    const arrow=energyTrendArrow(last3,prior4,field);
+    const tile=el('div','energy-trend-tile');
+    const tl=el('div','energy-trend-label'); tl.textContent='Most common '+lbl;
+    const vr=el('div','energy-trend-val-row');
+    const tv=el('div','energy-trend-val'); tv.style.color=val?(ENTRY_COLORS[val]||'var(--text)'):'var(--text-dim)'; tv.textContent=val||'\u2014';
+    vr.appendChild(tv);
+    if(arrow){ const ta=el('span','energy-trend-arrow'); ta.style.color=energyTrendColor(arrow); ta.textContent=arrow; vr.appendChild(ta); }
+    tile.append(tl,vr); trendGrid.appendChild(tile);
+  });
+  body.appendChild(trendGrid);
+
+  // ═══ SECTION 2: Visual Timeline ═══════════════════════════════════════════
+  if(weekEntries.length>=2){
+    const sec2=el('div','energy-section-hdr'); sec2.textContent='Visual Timeline \u2014 Last 7 Days'; body.appendChild(sec2);
+    const chartWrap=el('div','energy-chart-wrap');
+
+    // State
+    let chartMetric='energy', chartMode='bar';
+
+    const controls=el('div','energy-chart-controls');
+    // Metric buttons
+    const metricBtns={};
+    ['energy','focus','friction','all'].forEach(m=>{
+      const b=el('button','energy-chart-btn');
+      b.textContent=m==='all'?'All':m.charAt(0).toUpperCase()+m.slice(1);
+      b.classList.toggle('active',m===chartMetric);
+      b.onclick=()=>{ chartMetric=m; Object.values(metricBtns).forEach(x=>x.classList.remove('active')); b.classList.add('active'); redrawChart(); };
+      metricBtns[m]=b; controls.appendChild(b);
+    });
+    const sep=el('span','energy-chart-sep'); controls.appendChild(sep);
+    // Mode buttons
+    const modeBtns={};
+    ['bar','line'].forEach(m=>{
+      const b=el('button','energy-chart-btn');
+      b.textContent=m.charAt(0).toUpperCase()+m.slice(1);
+      b.classList.toggle('active',m===chartMode);
+      b.onclick=()=>{ chartMode=m; Object.values(modeBtns).forEach(x=>x.classList.remove('active')); b.classList.add('active'); redrawChart(); };
+      modeBtns[m]=b; controls.appendChild(b);
+    });
+    chartWrap.appendChild(controls);
+
+    const chartContainer=el('div'); chartContainer.style.cssText='width:100%;';
+    chartWrap.appendChild(chartContainer);
+    body.appendChild(chartWrap);
+
+    function redrawChart(){
+      chartContainer.innerHTML='';
+      chartContainer.appendChild(buildEnergyChart(D.energyEntries, chartMetric, chartMode, ENTRY_COLORS));
+    }
+    redrawChart();
+  }
+
+  // ═══ SECTION 3: Context Correlations ══════════════════════════════════════
+  const ctxs=[...new Set(weekEntries.map(e=>e.context).filter(Boolean))];
+  if(ctxs.length&&weekEntries.length>=5){
+    const sec3=el('div','energy-section-hdr'); sec3.textContent='Context Correlations'; body.appendChild(sec3);
+    const note=el('div'); note.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:6px;'; note.textContent='Most common value per context (requires \u22655 entries per context)';
+    body.appendChild(note);
+    const table=el('table','energy-corr-table');
+    const thead=el('thead'); const hr=el('tr');
+    ['Context','Energy','Focus','Friction'].forEach(h=>{ const th=el('th'); th.textContent=h; hr.appendChild(th); });
+    thead.appendChild(hr); table.appendChild(thead);
+    const tbody=el('tbody');
+    ctxs.forEach(ctx=>{
+      const ce=weekEntries.filter(e=>e.context===ctx);
+      if(ce.length<3) return;
+      const tr=el('tr');
+      const tdL=el('td'); tdL.textContent=ctx; tr.appendChild(tdL);
+      ['energy','focus','friction'].forEach(field=>{
+        const val=energyMostCommon(ce,field);
+        const td=el('td'); td.textContent=val||'\u2014';
+        if(val&&ENTRY_COLORS[val]) td.style.color=ENTRY_COLORS[val];
+        else td.style.color='var(--text-dim)';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    body.appendChild(table);
+  }
+
+  // ═══ SECTION 4: Location Correlations ═════════════════════════════════════
+  const locs=[...new Set(weekEntries.map(e=>e.location).filter(Boolean))];
+  if(locs.length&&weekEntries.length>=5){
+    const sec4=el('div','energy-section-hdr'); sec4.textContent='Location Correlations'; body.appendChild(sec4);
+    const table=el('table','energy-corr-table');
+    const thead=el('thead'); const hr=el('tr');
+    ['Location','Energy','Focus','Friction'].forEach(h=>{ const th=el('th'); th.textContent=h; hr.appendChild(th); });
+    thead.appendChild(hr); table.appendChild(thead);
+    const tbody=el('tbody');
+    locs.forEach(loc=>{
+      const le=weekEntries.filter(e=>e.location===loc);
+      if(le.length<3) return;
+      const tr=el('tr');
+      const tdL=el('td'); tdL.textContent=loc; tr.appendChild(tdL);
+      ['energy','focus','friction'].forEach(field=>{
+        const val=energyMostCommon(le,field);
+        const td=el('td'); td.textContent=val||'\u2014';
+        if(val&&ENTRY_COLORS[val]) td.style.color=ENTRY_COLORS[val];
+        else td.style.color='var(--text-dim)';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    body.appendChild(table);
+  }
+
+  // ═══ SECTION 5: Day-of-Week Patterns ══════════════════════════════════════
+  if(D.energyEntries.length>=7){
+    const sec5=el('div','energy-section-hdr'); sec5.textContent='Day-of-Week Patterns'; body.appendChild(sec5);
+    const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const dowWrap=el('div','energy-dow-wrap');
+    const allTime=D.energyEntries; // use all-time for day patterns
+    DOW.forEach((dayName,d)=>{
+      const dayE=allTime.filter(e=>new Date(e.timestamp).getDay()===d);
+      const avg=energyAvgScore(dayE,'energy');
+      const col=el('div','energy-dow-col');
+      const outer=el('div','energy-dow-bar-outer');
+      if(avg!==null&&dayE.length>=2){
+        const pct=(avg/4)*100;
+        const color=avg>=3?'#44cc88':avg>=2?'#0fb8dd':avg>=1?'#ffaa88':'#ff8888';
+        const inner=el('div','energy-dow-bar-inner'); inner.style.cssText='height:'+pct+'%;background:'+color+';opacity:0.75;';
+        outer.appendChild(inner);
+      }
+      const lbl=el('div','energy-dow-lbl'); lbl.textContent=dayName;
+      const avgLbl=el('div','energy-dow-avg'); avgLbl.textContent=avg!==null?avg.toFixed(1):'\u2014';
+      col.append(outer,lbl,avgLbl); dowWrap.appendChild(col);
+    });
+    body.appendChild(dowWrap);
+    if(D.energyEntries.length<21){
+      const hint=el('div'); hint.style.cssText='font-size:10px;color:var(--text-dim);margin-top:6px;font-style:italic;';
+      hint.textContent='Log more entries across different days to see stronger day-of-week patterns.';
+      body.appendChild(hint);
+    }
+  }
+
+  // ═══ SECTION 6: Full Insights List ════════════════════════════════════════
+  const allInsights=energyGenerateInsights(D.energyEntries);
+  if(allInsights.length){
+    const sec6=el('div','energy-section-hdr'); sec6.textContent='All Insights'; body.appendChild(sec6);
+    allInsights.forEach(ins=>{ const d=el('div','energy-full-insight'); d.textContent=ins; body.appendChild(d); });
+  } else {
+    const sec6=el('div','energy-section-hdr'); sec6.textContent='All Insights'; body.appendChild(sec6);
+    const note=el('div'); note.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;';
+    note.textContent='Keep logging \u2014 insights will appear here once you have more data (5+ entries in the last 7 days).';
+    body.appendChild(note);
+  }
+}
+
+// \u2500\u2500 SVG chart builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+function buildEnergyChart(allEntries, metric, mode, ENTRY_COLORS){
+  const W=620, H=160;
+  const PAD={top:12,right:10,bottom:28,left:28};
+  const cW=W-PAD.left-PAD.right, cH=H-PAD.top-PAD.bottom;
+  const ns='http://www.w3.org/2000/svg';
+
+  // Build 7-day buckets
+  const days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const dateStr=d.toLocaleDateString('en-CA');
+    days.push({ dateStr, entries:allEntries.filter(e=>e.timestamp.slice(0,10)===dateStr), label:d.toLocaleDateString('en-US',{weekday:'short'}) });
+  }
+
+  const METRICS = metric==='all'?['energy','focus','friction']:[metric];
+  const METRIC_COLORS = {energy:'#0fb8dd', focus:'#44cc88', friction:'#ddb04b'};
+  const MAX_SCORES    = {energy:4, focus:3, friction:2};
+
+  const svg=document.createElementNS(ns,'svg');
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.setAttribute('width','100%');
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+
+  // Grid lines
+  for(let i=0;i<=4;i++){
+    const y=PAD.top+cH*(1-i/4);
+    const line=document.createElementNS(ns,'line');
+    ['x1','x2','y1','y2'].forEach((a,idx)=>line.setAttribute(a,[PAD.left,W-PAD.right,y,y][idx]));
+    line.setAttribute('stroke','rgba(255,255,255,0.05)'); line.setAttribute('stroke-width','1');
+    svg.appendChild(line);
+  }
+
+  const slotW=cW/7;
+
+  METRICS.forEach((m,mi)=>{
+    const color=METRIC_COLORS[m]||'#aaa';
+    const maxS=MAX_SCORES[m]||4;
+    const dayAvgs=days.map(d=>{
+      const scored=d.entries.map(e=>energyFieldScore(m,e[m])).filter(v=>v!==null);
+      return scored.length?scored.reduce((a,b)=>a+b,0)/scored.length:null;
+    });
+
+    if(mode==='bar'&&METRICS.length===1){
+      dayAvgs.forEach((avg,i)=>{
+        if(avg===null) return;
+        const bW=slotW*0.6, x=PAD.left+i*slotW+slotW*0.2;
+        const bH=(avg/maxS)*cH, y=PAD.top+cH-bH;
+        const rect=document.createElementNS(ns,'rect');
+        [['x',x],['y',y],['width',bW],['height',Math.max(bH,1)],['fill',color],['opacity','0.75'],['rx','2']].forEach(([a,v])=>rect.setAttribute(a,v));
+        svg.appendChild(rect);
+        // Value label on top
+        const txt=document.createElementNS(ns,'text');
+        txt.setAttribute('x',x+bW/2); txt.setAttribute('y',y-3); txt.setAttribute('text-anchor','middle');
+        txt.setAttribute('font-size','8'); txt.setAttribute('fill',color); txt.setAttribute('opacity','0.8');
+        txt.textContent=avg.toFixed(1); svg.appendChild(txt);
+      });
+    } else {
+      // Line chart
+      const pts=dayAvgs.map((avg,i)=>avg===null?null:{x:PAD.left+i*slotW+slotW*0.5, y:PAD.top+cH-(avg/maxS)*cH});
+      let d=''; pts.forEach((p,i)=>{ if(!p) return; d+=(d===''||!pts[i-1])?'M '+p.x+' '+p.y:' L '+p.x+' '+p.y; });
+      if(d){
+        const path=document.createElementNS(ns,'path');
+        path.setAttribute('d',d); path.setAttribute('stroke',color); path.setAttribute('stroke-width','2');
+        path.setAttribute('fill','none'); path.setAttribute('stroke-linejoin','round');
+        if(METRICS.length>1) path.setAttribute('opacity','0.85');
+        svg.appendChild(path);
+        pts.forEach(p=>{ if(!p) return;
+          const c=document.createElementNS(ns,'circle');
+          c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','3'); c.setAttribute('fill',color);
+          svg.appendChild(c);
+        });
+      }
+    }
+  });
+
+  // Legend for multi-metric
+  if(METRICS.length>1){
+    let lx=PAD.left;
+    METRICS.forEach(m=>{
+      const color=METRIC_COLORS[m];
+      const lr=document.createElementNS(ns,'rect'); lr.setAttribute('x',lx); lr.setAttribute('y',3); lr.setAttribute('width',8); lr.setAttribute('height',4); lr.setAttribute('fill',color); lr.setAttribute('rx','1'); svg.appendChild(lr);
+      const lt=document.createElementNS(ns,'text'); lt.setAttribute('x',lx+10); lt.setAttribute('y',8); lt.setAttribute('font-size','7'); lt.setAttribute('fill',color); lt.setAttribute('font-family','Share Tech Mono,monospace'); lt.textContent=m.charAt(0).toUpperCase()+m.slice(1); svg.appendChild(lt);
+      lx+=60;
+    });
+  }
+
+  // X-axis labels
+  days.forEach((d,i)=>{
+    const x=PAD.left+i*slotW+slotW*0.5;
+    const txt=document.createElementNS(ns,'text');
+    txt.setAttribute('x',x); txt.setAttribute('y',H-7); txt.setAttribute('text-anchor','middle');
+    txt.setAttribute('font-size','9'); txt.setAttribute('fill','rgba(180,180,180,0.5)'); txt.setAttribute('font-family','Share Tech Mono,monospace');
+    txt.textContent=d.label; svg.appendChild(txt);
+  });
+
+  return svg;
 }
 
 /* ---- SPORTS SCORES ---- */
