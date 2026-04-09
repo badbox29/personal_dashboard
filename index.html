@@ -10495,17 +10495,32 @@ function buildEnergyChartWeek(allEntries, metric, mode, EC, onDayClick){
     hit.addEventListener('mouseleave',()=>{ hit.setAttribute('fill','transparent'); });
     svg.appendChild(hit);
   });
-  METRICS.forEach(m=>{
-    const color=MC[m]||'#aaa',maxS=MS[m]||4;
-    const dayAvgs=days.map(d=>{ const sc=d.entries.map(e=>energyFieldScore(m,e[m])).filter(v=>v!==null); return sc.length?sc.reduce((a,b)=>a+b,0)/sc.length:null; });
-    if(mode==='bar'&&METRICS.length===1){
-      dayAvgs.forEach((avg,i)=>{ if(avg===null) return; const bW=slotW*0.6,x=PAD.left+i*slotW+slotW*0.2,bH=(avg/maxS)*cH,y=PAD.top+cH-bH; const rect=document.createElementNS(ns,'rect'); [['x',x],['y',y],['width',bW],['height',Math.max(bH,1)],['fill',color],['opacity','0.75'],['rx','2']].forEach(([a,v])=>rect.setAttribute(a,v)); rect.style.cursor='pointer'; rect.addEventListener('click',()=>onDayClick(days[i].dateStr)); svg.appendChild(rect); const txt=document.createElementNS(ns,'text'); txt.setAttribute('x',x+bW/2); txt.setAttribute('y',y-3); txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','8'); txt.setAttribute('fill',color); txt.setAttribute('opacity','0.8'); txt.textContent=avg.toFixed(1); svg.appendChild(txt); });
-    } else {
+  if(mode==='bar'){
+    const totalBarW = slotW * 0.7;
+    const barW = totalBarW / METRICS.length;
+    METRICS.forEach((m, mi)=>{
+      const color=MC[m]||'#aaa', maxS=MS[m]||4;
+      const dayAvgs=days.map(d=>{ const sc=d.entries.map(e=>energyFieldScore(m,e[m])).filter(v=>v!==null); return sc.length?sc.reduce((a,b)=>a+b,0)/sc.length:null; });
+      dayAvgs.forEach((avg,i)=>{
+        if(avg===null) return;
+        const x=PAD.left+i*slotW+(slotW-totalBarW)/2+mi*barW;
+        const bH=(avg/maxS)*cH, y=PAD.top+cH-bH;
+        const rect=document.createElementNS(ns,'rect'); [['x',x],['y',y],['width',barW-1],['height',Math.max(bH,1)],['fill',color],['opacity','0.78'],['rx','1']].forEach(([a,v])=>rect.setAttribute(a,v));
+        rect.style.cursor='pointer'; rect.addEventListener('click',()=>onDayClick(days[i].dateStr)); svg.appendChild(rect);
+        if(METRICS.length===1){
+          const txt=document.createElementNS(ns,'text'); txt.setAttribute('x',x+barW/2); txt.setAttribute('y',y-3); txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','8'); txt.setAttribute('fill',color); txt.setAttribute('opacity','0.8'); txt.textContent=avg.toFixed(1); svg.appendChild(txt);
+        }
+      });
+    });
+  } else {
+    METRICS.forEach(m=>{
+      const color=MC[m]||'#aaa', maxS=MS[m]||4;
+      const dayAvgs=days.map(d=>{ const sc=d.entries.map(e=>energyFieldScore(m,e[m])).filter(v=>v!==null); return sc.length?sc.reduce((a,b)=>a+b,0)/sc.length:null; });
       const pts=dayAvgs.map((avg,i)=>avg===null?null:{x:PAD.left+i*slotW+slotW*0.5,y:PAD.top+cH-(avg/maxS)*cH});
       let d=''; pts.forEach((p,i)=>{ if(!p) return; d+=(d===''||!pts[i-1])?'M '+p.x+' '+p.y:' L '+p.x+' '+p.y; });
       if(d){ const path=document.createElementNS(ns,'path'); path.setAttribute('d',d); path.setAttribute('stroke',color); path.setAttribute('stroke-width','2'); path.setAttribute('fill','none'); path.setAttribute('stroke-linejoin','round'); if(METRICS.length>1) path.setAttribute('opacity','0.85'); svg.appendChild(path); pts.forEach((p,i)=>{ if(!p) return; const c=document.createElementNS(ns,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','4'); c.setAttribute('fill',color); c.style.cursor='pointer'; c.addEventListener('click',()=>onDayClick(days[i].dateStr)); svg.appendChild(c); }); }
-    }
-  });
+    });
+  }
   if(METRICS.length>1){ let lx=PAD.left; METRICS.forEach(m=>{ const color=MC[m]; const lr=document.createElementNS(ns,'rect'); lr.setAttribute('x',lx); lr.setAttribute('y',3); lr.setAttribute('width',8); lr.setAttribute('height',4); lr.setAttribute('fill',color); lr.setAttribute('rx','1'); svg.appendChild(lr); const lt=document.createElementNS(ns,'text'); lt.setAttribute('x',lx+10); lt.setAttribute('y',8); lt.setAttribute('font-size','7'); lt.setAttribute('fill',color); lt.setAttribute('font-family','Share Tech Mono,monospace'); lt.textContent=m.charAt(0).toUpperCase()+m.slice(1); svg.appendChild(lt); lx+=60; }); }
   // X labels + click hint
   days.forEach((d,i)=>{
@@ -10587,35 +10602,39 @@ function buildEnergyChartDay(allEntries, dateStr, metric, mode, EC){
   }
 
   // ── Data ─────────────────────────────────────────────────────────────────
-  METRICS.forEach(m=>{
-    const color=MC[m]||'#aaa', maxS=MS[m]||4;
-
-    if(mode==='bar'&&METRICS.length===1){
-      // Group entries by hour, average within each hour
+  if(mode==='bar'){
+    const totalBarW=perHour*0.72;
+    const barW=totalBarW/METRICS.length;
+    METRICS.forEach((m,mi)=>{
+      const color=MC[m]||'#aaa', maxS=MS[m]||4;
       const byHour={};
       dayEntries.forEach(e=>{ const h=new Date(e.timestamp).getHours(); const s=energyFieldScore(m,e[m]); if(s===null) return; if(!byHour[h]) byHour[h]=[]; byHour[h].push(s); });
       Object.entries(byHour).forEach(([hStr,scores])=>{
         const h=parseInt(hStr), avg=scores.reduce((a,b)=>a+b,0)/scores.length;
-        const bW=perHour*0.6, x=hourToX(h+0.5)-bW/2;
+        const x=hourToX(h+0.5)-totalBarW/2+mi*barW;
         const bH=(avg/maxS)*cH, y=PAD.top+cH-bH;
-        const rect=document.createElementNS(ns,'rect'); [['x',x],['y',y],['width',bW],['height',Math.max(bH,1)],['fill',color],['opacity','0.8'],['rx','2']].forEach(([a,v])=>rect.setAttribute(a,v)); svg.appendChild(rect);
-        const txt=document.createElementNS(ns,'text'); txt.setAttribute('x',x+bW/2); txt.setAttribute('y',y-3); txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','7.5'); txt.setAttribute('fill',color); txt.setAttribute('opacity','0.85'); txt.textContent=avg.toFixed(1); svg.appendChild(txt);
+        const rect=document.createElementNS(ns,'rect'); [['x',x],['y',y],['width',barW-1],['height',Math.max(bH,1)],['fill',color],['opacity','0.8'],['rx','1']].forEach(([a,v])=>rect.setAttribute(a,v)); svg.appendChild(rect);
+        if(METRICS.length===1){
+          const txt=document.createElementNS(ns,'text'); txt.setAttribute('x',x+barW/2); txt.setAttribute('y',y-3); txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','7.5'); txt.setAttribute('fill',color); txt.setAttribute('opacity','0.85'); txt.textContent=avg.toFixed(1); svg.appendChild(txt);
+        }
       });
-    } else {
-      // Line: plot each entry at its exact minute position
+    });
+  } else {
+    METRICS.forEach(m=>{
+      const color=MC[m]||'#aaa', maxS=MS[m]||4;
       const pts=dayEntries.map(e=>{
         const s=energyFieldScore(m,e[m]); if(s===null) return null;
         const d=new Date(e.timestamp);
         const fracHour=d.getHours()+d.getMinutes()/60;
-        return {x:hourToX(fracHour), y:PAD.top+cH-(s/maxS)*cH, score:s};
+        return {x:hourToX(fracHour), y:PAD.top+cH-(s/maxS)*cH};
       }).filter(Boolean);
       if(pts.length){
         let d2=''; pts.forEach((p,i)=>{ d2+=(i===0)?'M '+p.x+' '+p.y:' L '+p.x+' '+p.y; });
         const path=document.createElementNS(ns,'path'); path.setAttribute('d',d2); path.setAttribute('stroke',color); path.setAttribute('stroke-width','2'); path.setAttribute('fill','none'); path.setAttribute('stroke-linejoin','round'); if(METRICS.length>1) path.setAttribute('opacity','0.85'); svg.appendChild(path);
         pts.forEach(p=>{ const c=document.createElementNS(ns,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','3'); c.setAttribute('fill',color); svg.appendChild(c); });
       }
-    }
-  });
+    });
+  }
 
   // ── Multi-metric legend ───────────────────────────────────────────────────
   if(METRICS.length>1){ let lx=PAD.left; METRICS.forEach(m=>{ const color=MC[m]; const lr=document.createElementNS(ns,'rect'); lr.setAttribute('x',lx); lr.setAttribute('y',3); lr.setAttribute('width',8); lr.setAttribute('height',4); lr.setAttribute('fill',color); lr.setAttribute('rx','1'); svg.appendChild(lr); const lt=document.createElementNS(ns,'text'); lt.setAttribute('x',lx+10); lt.setAttribute('y',8); lt.setAttribute('font-size','7'); lt.setAttribute('fill',color); lt.setAttribute('font-family','Share Tech Mono,monospace'); lt.textContent=m.charAt(0).toUpperCase()+m.slice(1); svg.appendChild(lt); lx+=60; }); }
