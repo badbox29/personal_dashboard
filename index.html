@@ -6522,8 +6522,9 @@ const SEARCH_ENGINES = [
 ];
 
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
+                      'bible','wotd','apod','drinks',
                       'ports','myip','rfc','cve','bgp','dns','subnet','otx',
-                      'github','regex','jsonformat','base64','hash','jwt','drinks',
+                      'github','regex','jsonformat','base64','hash','jwt',
                       'compose','met','artspot','unsplash'];
 
 const UNIT_CATS = {
@@ -12021,11 +12022,10 @@ function cveAlarmSound(){
   } catch(e){}
 }
 
-function buildCveWidget(sec, tabId){
+function buildCveWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
   if(!cfg.watchlist)    cfg.watchlist    = [];
   if(cfg.alarmSound === undefined) cfg.alarmSound = false;
-  let cveFirstLoad = true; // suppress alarm on initial page render
   if(!cfg.nvdKey)       cfg.nvdKey       = '';
   if(!cfg.nvdWorker)    cfg.nvdWorker    = '';
   if(!cfg.sortBy)       cfg.sortBy       = 'date';
@@ -12063,7 +12063,6 @@ function buildCveWidget(sec, tabId){
     if(D.cveAlarmHistory.length > HISTORY_MAX) D.cveAlarmHistory = D.cveAlarmHistory.slice(0,HISTORY_MAX);
     persist();
     hitsPanel.style.display='none';
-    clearTabAlert(tabId);
   };
   const hitsCopy = el('button','cve-alert-dismiss');
   hitsCopy.textContent='\uD83D\uDCCB'; hitsCopy.title='Copy CVE IDs and URLs';
@@ -12335,12 +12334,8 @@ function buildCveWidget(sec, tabId){
             .sort((a,b)=>new Date(b.cve.published)-new Date(a.cve.published))
             .forEach(h=>hitsBody.appendChild(buildCveItem(h.cve, h.term)));
           hitsPanel.style.display=''; hitsBody.style.display=''; hitsChevron.style.transform='';
-          setTabAlert(tabId, 'critical');
-          if(cfg.alarmSound && !cveFirstLoad) cveAlarmSound();
-        } else {
-          clearTabAlert(tabId);
+          if(cfg.alarmSound) cveAlarmSound();
         }
-        cveFirstLoad = false;
         // Update last-checked timestamp for all terms
         const ts=new Date().toLocaleTimeString();
         cfg.watchlist.forEach((_,i)=>{
@@ -15374,11 +15369,10 @@ function performDrop(destTabId, destColId, destSecId, destParentId, targetId, dr
    ================================================================ */
 function switchTab(id){
   activeTab = id;
-  // Info alerts (e.g. energy reminder) clear on tab visit — passive nudge, no action needed.
-  // Critical/soft alerts (CVE hits, OTX threats) persist until the widget condition clears
-  // or the user explicitly dismisses — visiting the tab is not resolution.
+  // Auto-clear critical and soft alerts on tab visit (you've seen them).
+  // Info alerts (e.g. energy reminder) require explicit action to dismiss.
   const alertLevel = tabAlerts.get(id);
-  if(alertLevel === 'info') clearTabAlert(id);
+  if(alertLevel === 'critical' || alertLevel === 'soft') clearTabAlert(id);
   clearSearch();
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('searching'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tabId===id));
@@ -17329,7 +17323,6 @@ let ytReady         = false;
 let ytPendingVid    = null;   // vid/listId to load once API ready
 let ytPendingType   = 'video';// type of pending item
 let lofiPlaying     = false;
-let lofiWatchdogId  = null;   // setInterval id for stall detection
 let lofiCurrentId   = null;   // track id in D.lofi
 let lofiCurrentType = 'video';// 'video' or 'playlist'
 let lofiShuffleOn   = false;  // playlist shuffle state
@@ -17361,13 +17354,11 @@ window.onYouTubeIframeAPIReady = function(){
         if(e.data === YT.PlayerState.PLAYING){
           lofiApplyVolume();
           lofiPlaying = true;
-          lofiStartWatchdog();
           lofiSetStatus('playing');
           document.getElementById('lofiPlayBtn').textContent = '⏸';
           document.getElementById('lofiPlayBtn').classList.add('playing');
         } else if(e.data === YT.PlayerState.PAUSED){
           lofiPlaying = false;
-          lofiStopWatchdog();
           lofiSetStatus('paused');
           document.getElementById('lofiPlayBtn').textContent = '▶';
           document.getElementById('lofiPlayBtn').classList.remove('playing');
@@ -17417,38 +17408,10 @@ function lofiPlay(){
 function lofiStop(){
   ytPlayer?.stopVideo();
   lofiPlaying = false;
-  lofiStopWatchdog();
   lofiSetStatus('idle');
   document.getElementById('lofiPlayBtn').textContent = '▶';
   document.getElementById('lofiPlayBtn').classList.remove('playing');
 }
-
-function lofiStartWatchdog(){
-  lofiStopWatchdog();
-  lofiWatchdogId = setInterval(()=>{
-    if(!lofiPlaying || !ytPlayer || !ytReady) return;
-    const state = ytPlayer.getPlayerState();
-    // YT.PlayerState: PLAYING=1, PAUSED=2, BUFFERING=3, ENDED=0, UNSTARTED=-1
-    // If we think we're playing but YT reports paused (2) or unstarted (-1), nudge it
-    if(state === 2){
-      try{ ytPlayer.playVideo(); } catch(e){}
-    }
-  }, 5000); // check every 5 seconds
-}
-
-function lofiStopWatchdog(){
-  if(lofiWatchdogId){ clearInterval(lofiWatchdogId); lofiWatchdogId = null; }
-}
-
-// Resume on tab visibility restored
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState === 'visible' && lofiPlaying && ytPlayer && ytReady){
-    const state = ytPlayer.getPlayerState();
-    if(state === 2 || state === -1){
-      try{ ytPlayer.playVideo(); } catch(e){}
-    }
-  }
-});
 
 function lofiShuffle(){
   if(!D.lofi?.length) return;
