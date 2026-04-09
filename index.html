@@ -3508,6 +3508,40 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 .energy-chip.sel-neutral   { border-color:var(--cyan); background:rgba(15,184,221,0.12); color:var(--cyan); }
 .energy-chip.sel-engaged   { border-color:#44cc88; background:rgba(68,204,136,0.15); color:#44cc88; }
 .energy-chip.sel-restless  { border-color:var(--gold); background:rgba(221,176,75,0.15); color:var(--gold); }
+/* Location chip row — dashed border, gold selected state */
+.energy-loc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 5px 6px;
+  border: 1px dashed rgba(221,176,75,0.2);
+  border-radius: 4px;
+  background: rgba(221,176,75,0.03);
+}
+.energy-loc-label {
+  font-size: 9px;
+  font-family: 'Share Tech Mono', monospace;
+  color: rgba(221,176,75,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  width: 100%;
+  margin-bottom: 2px;
+}
+.energy-loc-chip {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 3px 9px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px dashed var(--border);
+  background: var(--inp-bg);
+  color: var(--text-dim);
+  transition: all 0.15s;
+  user-select: none;
+}
+.energy-loc-chip:hover { border-color: rgba(221,176,75,0.5); color: var(--gold); }
+.energy-loc-chip.loc-active { border-color: var(--gold); border-style: solid; background: rgba(221,176,75,0.1); color: var(--gold); }
 .energy-log-row {
   display: flex;
   align-items: center;
@@ -10103,12 +10137,13 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
 }
 
 /* ---- ENERGY TRACKER ---- */
+let _energyWidgetSec = null; // stored so history/edit modals can access widget config
 function buildEnergyWidget(sec, tabId){
   const ENERGY_OPTS   = ['Drained','Low','Normal','High','Wired'];
   const FOCUS_OPTS    = ['Scattered','Foggy','Steady','Locked In'];
   const FRICTION_OPTS = ['Resistant','Neutral','Engaged','Restless'];
   const CONTEXT_TAGS  = ['Coding','Meetings','Exercise','Relaxing','Other'];
-  const LOCATION_OPTS = ['At Home','Working \u2013 In Office','Working \u2013 At Home','Out & About','Traveling','Other'];
+  const DEFAULT_LOCS  = ['Home','Work','Traveling','Social'];
   const MAX_ENTRIES   = 500;
   const SNOOZE_MS     = 30 * 60 * 1000;
 
@@ -10117,7 +10152,6 @@ function buildEnergyWidget(sec, tabId){
     Scattered:'#ff8888',Foggy:'#ffaa88',Steady:'#0fb8dd','Locked In':'#44cc88',
     Resistant:'#ff8888',Neutral:'#0fb8dd',Engaged:'#44cc88',Restless:'#ddb04b',
   };
-  const valColor = v => VAL_COLORS[v] || null;
 
   const FREQ_OPTIONS = [
     { label:'Every 1 hour',   ms: 1  * 60 * 60 * 1000 },
@@ -10133,6 +10167,10 @@ function buildEnergyWidget(sec, tabId){
   if(cfg.remindersEnabled === undefined) cfg.remindersEnabled = false;
   if(!cfg.reminderFreqMs) cfg.reminderFreqMs = 4 * 60 * 60 * 1000;
   if(!cfg.snoozeUntil)    cfg.snoozeUntil    = 0;
+  if(!Array.isArray(cfg.locations)||!cfg.locations.length) cfg.locations = [...DEFAULT_LOCS];
+  _energyWidgetSec = sec;
+
+  let selEnergy=null, selFocus=null, selFriction=null, selContext=null, selLocation=null;
 
   const wrap = el('div');
 
@@ -10147,21 +10185,55 @@ function buildEnergyWidget(sec, tabId){
   reminderBanner.append(reminderIcon,reminderText,laterBtn);
   wrap.appendChild(reminderBanner);
 
-  function makeRow(){ const r=el('div'); r.style.cssText='display:flex;gap:6px;margin-bottom:7px;'; return r; }
+  // ── Chip row builder (Energy / Focus / Friction / Context) ──────────────
+  function makeChipRow(label, opts, getter, setter){
+    const row=el('div','energy-row');
+    const lbl=el('div','energy-row-label'); lbl.textContent=label;
+    const chips=el('div','energy-chips');
+    opts.forEach(opt=>{
+      const chip=el('div','energy-chip'); chip.textContent=opt; chip.dataset.val=opt;
+      const selClass='sel-'+opt.toLowerCase().replace(/\s+/g,'-');
+      chip.onclick=()=>{
+        if(getter()===opt){ setter(null); chip.classList.remove(selClass); }
+        else {
+          setter(opt);
+          chips.querySelectorAll('.energy-chip').forEach(c=>c.classList.remove('sel-'+c.dataset.val.toLowerCase().replace(/\s+/g,'-')));
+          chip.classList.add(selClass);
+        }
+      };
+      chips.appendChild(chip);
+    });
+    row.append(lbl,chips); return row;
+  }
 
-  // Row 1: Energy + Focus
-  const ddEnergy   = makeCustomDropdown('\u2014 Energy \u2014',   ENERGY_OPTS,   null, valColor);
-  const ddFocus    = makeCustomDropdown('\u2014 Focus \u2014',     FOCUS_OPTS,    null, valColor);
-  const r1 = makeRow(); r1.append(ddEnergy.wrap, ddFocus.wrap); wrap.appendChild(r1);
+  wrap.appendChild(makeChipRow('Energy',   ENERGY_OPTS,   ()=>selEnergy,   v=>{ selEnergy=v; }));
+  wrap.appendChild(makeChipRow('Focus',    FOCUS_OPTS,    ()=>selFocus,    v=>{ selFocus=v; }));
+  wrap.appendChild(makeChipRow('Friction', FRICTION_OPTS, ()=>selFriction, v=>{ selFriction=v; }));
+  wrap.appendChild(makeChipRow('Context',  CONTEXT_TAGS,  ()=>selContext,  v=>{ selContext=v; }));
 
-  // Row 2: Friction + Context
-  const ddFriction = makeCustomDropdown('\u2014 Friction \u2014', FRICTION_OPTS, null, valColor);
-  const ddContext  = makeCustomDropdown('\u2014 Context \u2014',  CONTEXT_TAGS,  null, null);
-  const r2 = makeRow(); r2.append(ddFriction.wrap, ddContext.wrap); wrap.appendChild(r2);
+  // ── Location chip row (user-configurable, dashed style) ─────────────────
+  const locRow=el('div','energy-loc-row');
+  const locLbl=el('div','energy-loc-label'); locLbl.textContent='\u{1F4CD} Location';
+  locRow.appendChild(locLbl);
+  let locChips=[];
 
-  // Row 3: Location (full width)
-  const ddLocation = makeCustomDropdown('\u2014 Location \u2014', LOCATION_OPTS, null, null);
-  const r3 = makeRow(); r3.appendChild(ddLocation.wrap); wrap.appendChild(r3);
+  function buildLocChips(){
+    locChips.forEach(c=>c.remove()); locChips=[];
+    cfg.locations.forEach(loc=>{
+      const chip=el('div','energy-loc-chip'); chip.textContent=loc; chip.dataset.loc=loc;
+      chip.onclick=()=>{
+        if(selLocation===loc){ selLocation=null; chip.classList.remove('loc-active'); }
+        else {
+          selLocation=loc;
+          locChips.forEach(c=>c.classList.remove('loc-active'));
+          chip.classList.add('loc-active');
+        }
+      };
+      locRow.appendChild(chip); locChips.push(chip);
+    });
+  }
+  buildLocChips();
+  wrap.appendChild(locRow);
 
   // Note input
   const noteInp=el('input','energy-note-inp'); noteInp.placeholder='Optional note\u2026'; noteInp.maxLength=200;
@@ -10174,13 +10246,18 @@ function buildEnergyWidget(sec, tabId){
   const getLastLogged=()=>{ if(!D.energyEntries.length) return ''; return 'Last: '+new Date(D.energyEntries[0].timestamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}); };
   lastLogEl.textContent=getLastLogged();
 
+  const resetAll=()=>{
+    selEnergy=null; selFocus=null; selFriction=null; selContext=null; selLocation=null;
+    wrap.querySelectorAll('.energy-chip').forEach(c=>c.classList.remove(...[...c.classList].filter(cl=>cl.startsWith('sel-'))));
+    locChips.forEach(c=>c.classList.remove('loc-active'));
+    noteInp.value='';
+  };
+
   logBtn.onclick=()=>{
-    const entry={ timestamp:new Date().toISOString(), energy:ddEnergy.getValue(), focus:ddFocus.getValue(), friction:ddFriction.getValue(), context:ddContext.getValue(), location:ddLocation.getValue(), note:noteInp.value.trim()||null };
+    const entry={ timestamp:new Date().toISOString(), energy:selEnergy, focus:selFocus, friction:selFriction, context:selContext, location:selLocation, note:noteInp.value.trim()||null };
     D.energyEntries.unshift(entry);
     if(D.energyEntries.length>MAX_ENTRIES) D.energyEntries=D.energyEntries.slice(0,MAX_ENTRIES);
-    cfg.snoozeUntil=0; persist();
-    [ddEnergy,ddFocus,ddFriction,ddContext,ddLocation].forEach(dd=>dd.setValue(null));
-    noteInp.value=''; lastLogEl.textContent=getLastLogged(); reminderBanner.style.display='none';
+    cfg.snoozeUntil=0; persist(); resetAll(); lastLogEl.textContent=getLastLogged(); reminderBanner.style.display='none';
     const orig=logBtn.textContent; logBtn.textContent='\u2713 Logged'; logBtn.disabled=true;
     setTimeout(()=>{ logBtn.textContent=orig; logBtn.disabled=false; },1200);
   };
@@ -10190,8 +10267,9 @@ function buildEnergyWidget(sec, tabId){
   logRow.append(logBtn,lastLogEl,histBtn,insBtn);
   wrap.appendChild(logRow);
 
-  // Edit mode: reminder settings
+  // ── Edit mode: reminder + location settings ──────────────────────────────
   const editSection=el('div','energy-edit-section');
+
   const remLbl=el('div','sports-edit-section-lbl'); remLbl.textContent='Reminder Settings';
   const remRow=el('div'); remRow.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;';
   const remChk=el('input'); remChk.type='checkbox'; remChk.id='energyRemChk_'+sec.id; remChk.checked=!!cfg.remindersEnabled;
@@ -10200,7 +10278,51 @@ function buildEnergyWidget(sec, tabId){
   FREQ_OPTIONS.forEach(f=>{ const o=document.createElement('option'); o.value=f.ms; o.textContent=f.label; if(f.ms===cfg.reminderFreqMs) o.selected=true; freqSel.appendChild(o); });
   remChk.onchange=()=>{ cfg.remindersEnabled=remChk.checked; persist(); };
   freqSel.onchange=()=>{ cfg.reminderFreqMs=parseInt(freqSel.value); persist(); };
-  remRow.append(remChkLbl,freqSel); editSection.append(remLbl,remRow); wrap.appendChild(editSection);
+  remRow.append(remChkLbl,freqSel);
+  editSection.append(remLbl,remRow);
+
+  // Location list manager
+  const locEditLbl=el('div','sports-edit-section-lbl'); locEditLbl.style.marginTop='10px'; locEditLbl.textContent='Location Labels (max 8)';
+  editSection.appendChild(locEditLbl);
+
+  const locList=el('div'); locList.style.cssText='display:flex;flex-direction:column;gap:4px;margin-bottom:6px;';
+
+  function renderLocList(){
+    locList.innerHTML='';
+    cfg.locations.forEach((loc,i)=>{
+      const row=el('div'); row.style.cssText='display:flex;align-items:center;gap:5px;';
+      const nameSp=el('span'); nameSp.style.cssText='font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text);flex:1;'; nameSp.textContent=loc;
+      const del=icBtn('\u2715','Remove',()=>{
+        cfg.locations.splice(i,1); persist();
+        renderLocList(); buildLocChips();
+        addBtn.disabled=cfg.locations.length>=8;
+      }); del.classList.add('ic-del');
+      row.append(nameSp,del); locList.appendChild(row);
+    });
+  }
+  renderLocList();
+  editSection.appendChild(locList);
+
+  const addRow=el('div'); addRow.style.cssText='display:flex;gap:5px;';
+  const addInp=el('input'); addInp.type='text'; addInp.placeholder='New location label\u2026'; addInp.maxLength=20;
+  addInp.style.cssText='flex:1;font-size:11px;padding:3px 7px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;font-family:Share Tech Mono,monospace;';
+  const addBtn=el('button','monitor-check-btn'); addBtn.textContent='Add'; addBtn.disabled=cfg.locations.length>=8;
+  addBtn.onclick=()=>{
+    const v=addInp.value.trim(); if(!v||cfg.locations.length>=8) return;
+    cfg.locations.push(v); persist(); addInp.value='';
+    renderLocList(); buildLocChips();
+    addBtn.disabled=cfg.locations.length>=8;
+  };
+  addInp.onkeydown=e=>{ if(e.key==='Enter') addBtn.click(); };
+  const resetBtn=el('button','monitor-check-btn'); resetBtn.textContent='Reset'; resetBtn.title='Restore defaults';
+  resetBtn.onclick=()=>{ cfg.locations=[...DEFAULT_LOCS]; persist(); renderLocList(); buildLocChips(); addBtn.disabled=false; };
+  addRow.append(addInp,addBtn,resetBtn);
+  editSection.appendChild(addRow);
+
+  const locHint=el('div'); locHint.style.cssText='font-size:9.5px;color:var(--text-dim);margin-top:4px;'; locHint.textContent='Max 8 labels. Short names work best (10 chars or fewer).';
+  editSection.appendChild(locHint);
+
+  wrap.appendChild(editSection);
 
   function checkReminder(){
     if(!cfg.remindersEnabled){ reminderBanner.style.display='none'; clearTabAlert(tabId); return; }
@@ -10309,7 +10431,7 @@ function openEnergyModal(){
         const timeEl=el('span'); timeEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);flex:1;';
         timeEl.textContent=new Date(e.timestamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+(e.context?' \u00b7 '+e.context:'')+(e.location?' \u00b7 '+e.location:'');
         const editBtn=el('button','ic-btn ic-edit'); editBtn.textContent='\u270e'; editBtn.title='Edit entry'; editBtn.style.cssText='font-size:10px;padding:1px 5px;';
-        editBtn.onclick=()=>{ closeOverlay('energyHistoryOverlay'); openEnergyEditModal(gi); };
+        editBtn.onclick=()=>{ closeOverlay('energyHistoryOverlay'); openEnergyEditModal(gi, _energyWidgetSec); };
         const del=el('button'); del.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:2px;'; del.textContent='\u2715'; del.title='Delete entry';
         del.onclick=()=>{ D.energyEntries.splice(gi,1); persist(); renderModal(); };
         timeRow.append(timeEl,editBtn,del);
@@ -10327,10 +10449,9 @@ function openEnergyModal(){
 }
 
 // Entry edit modal
-function openEnergyEditModal(entryIdx){
+function openEnergyEditModal(entryIdx, sec){
   const entry=D.energyEntries[entryIdx]; if(!entry) return;
   const ENERGY_OPTS=['Drained','Low','Normal','High','Wired'],FOCUS_OPTS=['Scattered','Foggy','Steady','Locked In'],FRICTION_OPTS=['Resistant','Neutral','Engaged','Restless'],CONTEXT_TAGS=['Coding','Meetings','Exercise','Relaxing','Other'];
-  const LOCATION_OPTS=['At Home','Working \u2013 In Office','Working \u2013 At Home','Out & About','Traveling','Other'];
   const VC={Drained:'#ff8888',Low:'#ffaa88',Normal:'#0fb8dd',High:'#44cc88',Wired:'#ddb04b',Scattered:'#ff8888',Foggy:'#ffaa88',Steady:'#0fb8dd','Locked In':'#44cc88',Resistant:'#ff8888',Neutral:'#0fb8dd',Engaged:'#44cc88',Restless:'#ddb04b'};
   const vc=v=>VC[v]||null;
   let ov=document.getElementById('energyEditOverlay'); if(ov) ov.remove();
@@ -10340,19 +10461,50 @@ function openEnergyEditModal(entryIdx){
   const ts=el('div'); ts.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-bottom:12px;';
   ts.textContent=new Date(entry.timestamp).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); modal.appendChild(ts);
   function mrow(){ const r=el('div'); r.style.cssText='display:flex;gap:6px;margin-bottom:7px;'; return r; }
-  const ddE=makeCustomDropdown('\u2014 Energy \u2014',ENERGY_OPTS,null,vc);    ddE.setValue(entry.energy);
-  const ddF=makeCustomDropdown('\u2014 Focus \u2014',FOCUS_OPTS,null,vc);      ddF.setValue(entry.focus);
-  const ddFr=makeCustomDropdown('\u2014 Friction \u2014',FRICTION_OPTS,null,vc); ddFr.setValue(entry.friction);
-  const ddC=makeCustomDropdown('\u2014 Context \u2014',CONTEXT_TAGS,null,null); ddC.setValue(entry.context);
-  const ddL=makeCustomDropdown('\u2014 Location \u2014',LOCATION_OPTS,null,null); ddL.setValue(entry.location);
-  const r1=mrow(); r1.append(ddE.wrap,ddF.wrap); modal.appendChild(r1);
-  const r2=mrow(); r2.append(ddFr.wrap,ddC.wrap); modal.appendChild(r2);
-  const r3=mrow(); r3.appendChild(ddL.wrap); modal.appendChild(r3);
+  // Chip selectors for Energy/Focus/Friction/Context
+  let eV=entry.energy, fV=entry.focus, frV=entry.friction, cV=entry.context, lV=entry.location;
+  function editChipRow(label,opts,getter,setter,colorMap){
+    const row=el('div','energy-row'); const lbl=el('div','energy-row-label'); lbl.textContent=label;
+    const chips=el('div','energy-chips');
+    opts.forEach(opt=>{
+      const chip=el('div','energy-chip'); chip.textContent=opt; chip.dataset.val=opt;
+      const sc='sel-'+opt.toLowerCase().replace(/\s+/g,'-');
+      if(getter()===opt) chip.classList.add(sc);
+      chip.onclick=()=>{
+        if(getter()===opt){ setter(null); chip.classList.remove(sc); }
+        else { setter(opt); chips.querySelectorAll('.energy-chip').forEach(c=>c.classList.remove('sel-'+c.dataset.val.toLowerCase().replace(/\s+/g,'-'))); chip.classList.add(sc); }
+      };
+      chips.appendChild(chip);
+    });
+    row.append(lbl,chips); return row;
+  }
+  modal.appendChild(editChipRow('Energy',   ENERGY_OPTS,   ()=>eV,  v=>{ eV=v; },  VC));
+  modal.appendChild(editChipRow('Focus',    FOCUS_OPTS,    ()=>fV,  v=>{ fV=v; },  VC));
+  modal.appendChild(editChipRow('Friction', FRICTION_OPTS, ()=>frV, v=>{ frV=v; }, VC));
+  modal.appendChild(editChipRow('Context',  CONTEXT_TAGS,  ()=>cV,  v=>{ cV=v; },  null));
+
+  // Location chips using configured list
+  const editLocRow=el('div','energy-loc-row');
+  const editLocLbl=el('div','energy-loc-label'); editLocLbl.textContent='\u{1F4CD} Location'; editLocRow.appendChild(editLocLbl);
+  const editLocChips=[];
+  const editLocList=sec?sec.widgetConfig?.locations:null;
+  const locOpts=Array.isArray(editLocList)&&editLocList.length?editLocList:['Home','Work','Traveling','Social'];
+  locOpts.forEach(loc=>{
+    const chip=el('div','energy-loc-chip'); chip.textContent=loc; chip.dataset.loc=loc;
+    if(lV===loc) chip.classList.add('loc-active');
+    chip.onclick=()=>{
+      if(lV===loc){ lV=null; chip.classList.remove('loc-active'); }
+      else { lV=loc; editLocChips.forEach(c=>c.classList.remove('loc-active')); chip.classList.add('loc-active'); }
+    };
+    editLocRow.appendChild(chip); editLocChips.push(chip);
+  });
+  modal.appendChild(editLocRow);
+
   const noteInp=el('input','energy-note-inp'); noteInp.placeholder='Note\u2026'; noteInp.maxLength=200; noteInp.value=entry.note||''; modal.appendChild(noteInp);
   const actions=el('div','modal-actions');
   const cancelBtn=el('button','mbtn mbtn-cancel'); cancelBtn.textContent='Cancel'; cancelBtn.onclick=()=>{ ov.remove(); openEnergyModal(); };
   const saveBtn=el('button','mbtn mbtn-primary'); saveBtn.textContent='Save';
-  saveBtn.onclick=()=>{ entry.energy=ddE.getValue(); entry.focus=ddF.getValue(); entry.friction=ddFr.getValue(); entry.context=ddC.getValue(); entry.location=ddL.getValue(); entry.note=noteInp.value.trim()||null; persist(); ov.remove(); openEnergyModal(); };
+  saveBtn.onclick=()=>{ entry.energy=eV; entry.focus=fV; entry.friction=frV; entry.context=cV; entry.location=lV; entry.note=noteInp.value.trim()||null; persist(); ov.remove(); openEnergyModal(); };
   actions.append(cancelBtn,saveBtn); modal.appendChild(actions);
   ov.appendChild(modal); ov.addEventListener('click',e=>{ if(e.target===ov){ov.remove();openEnergyModal();} }); document.body.appendChild(ov); ov.classList.add('open');
 }
