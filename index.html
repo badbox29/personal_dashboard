@@ -10398,12 +10398,33 @@ function openEnergyInsightsModal(){
 
     // Back button (hidden in week view)
     const backBtn=el('button'); backBtn.style.cssText=inactiveStyle+'display:none;'; backBtn.textContent='\u2190 Week';
-    backBtn.onclick=()=>{ viewMode='week'; drillDate=null; backBtn.style.display='none'; dateLabel.textContent=''; redraw(); };
+    backBtn.onclick=()=>{ viewMode='week'; drillDate=null; backBtn.style.display='none'; navWrap.style.display='none'; redraw(); };
     ctrl.appendChild(backBtn);
 
-    // Date label (shown in day view)
-    const dateLabel=el('span'); dateLabel.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--gold);margin-right:4px;';
-    ctrl.appendChild(dateLabel);
+    // Date label + prev/next nav (shown in day view)
+    const navWrap=el('div'); navWrap.style.cssText='display:none;align-items:center;gap:3px;';
+    const prevBtn=el('button'); prevBtn.style.cssText=inactiveStyle+'padding:2px 7px;'; prevBtn.textContent='\u2039';
+    prevBtn.title='Previous day';
+    prevBtn.onclick=()=>{
+      const d=new Date(drillDate+'T12:00:00'); d.setDate(d.getDate()-1);
+      drillDate=d.toLocaleDateString('en-CA');
+      dateLabel.textContent=d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+      redraw();
+    };
+    const dateLabel=el('span'); dateLabel.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--gold);white-space:nowrap;';
+    const nextBtn=el('button'); nextBtn.style.cssText=inactiveStyle+'padding:2px 7px;'; nextBtn.textContent='\u203a';
+    nextBtn.title='Next day';
+    nextBtn.onclick=()=>{
+      const d=new Date(drillDate+'T12:00:00'); d.setDate(d.getDate()+1);
+      const tomorrow=d.toLocaleDateString('en-CA');
+      // Don't navigate past today
+      if(tomorrow>new Date().toLocaleDateString('en-CA')) return;
+      drillDate=tomorrow;
+      dateLabel.textContent=d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+      redraw();
+    };
+    navWrap.append(prevBtn, dateLabel, nextBtn);
+    ctrl.appendChild(navWrap);
 
     const mB={};
     ['energy','focus','friction','all'].forEach(m=>{
@@ -10431,6 +10452,7 @@ function openEnergyInsightsModal(){
           const d=new Date(dateStr+'T12:00:00');
           dateLabel.textContent=d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
           backBtn.style.display='';
+          navWrap.style.display='flex';
           redraw();
         }));
       } else {
