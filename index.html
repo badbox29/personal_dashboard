@@ -15001,10 +15001,11 @@ function performDrop(destTabId, destColId, destSecId, destParentId, targetId, dr
    ================================================================ */
 function switchTab(id){
   activeTab = id;
-  // Auto-clear critical and soft alerts on tab visit (you've seen them).
-  // Info alerts (e.g. energy reminder) require explicit action to dismiss.
+  // Info alerts (e.g. energy reminder) clear on tab visit — passive nudge, no action needed.
+  // Critical/soft alerts (CVE hits, OTX threats) persist until the widget condition clears
+  // or the user explicitly dismisses — visiting the tab is not resolution.
   const alertLevel = tabAlerts.get(id);
-  if(alertLevel === 'critical' || alertLevel === 'soft') clearTabAlert(id);
+  if(alertLevel === 'info') clearTabAlert(id);
   clearSearch();
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('searching'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tabId===id));
