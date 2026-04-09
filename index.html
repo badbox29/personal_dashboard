@@ -10137,7 +10137,7 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
 }
 
 /* ---- ENERGY TRACKER ---- */
-let _energyWidgetSec = null; // stored so history/edit modals can access widget config
+var _energyWidgetSec = null; // stored so history/edit modals can access widget config
 function buildEnergyWidget(sec, tabId){
   const ENERGY_OPTS   = ['Drained','Low','Normal','High','Wired'];
   const FOCUS_OPTS    = ['Scattered','Foggy','Steady','Locked In'];
