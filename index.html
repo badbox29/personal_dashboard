@@ -17329,6 +17329,7 @@ let ytReady         = false;
 let ytPendingVid    = null;   // vid/listId to load once API ready
 let ytPendingType   = 'video';// type of pending item
 let lofiPlaying     = false;
+let lofiWatchdogId  = null;   // setInterval id for stall detection
 let lofiCurrentId   = null;   // track id in D.lofi
 let lofiCurrentType = 'video';// 'video' or 'playlist'
 let lofiShuffleOn   = false;  // playlist shuffle state
@@ -17360,11 +17361,13 @@ window.onYouTubeIframeAPIReady = function(){
         if(e.data === YT.PlayerState.PLAYING){
           lofiApplyVolume();
           lofiPlaying = true;
+          lofiStartWatchdog();
           lofiSetStatus('playing');
           document.getElementById('lofiPlayBtn').textContent = '⏸';
           document.getElementById('lofiPlayBtn').classList.add('playing');
         } else if(e.data === YT.PlayerState.PAUSED){
           lofiPlaying = false;
+          lofiStopWatchdog();
           lofiSetStatus('paused');
           document.getElementById('lofiPlayBtn').textContent = '▶';
           document.getElementById('lofiPlayBtn').classList.remove('playing');
@@ -17414,10 +17417,38 @@ function lofiPlay(){
 function lofiStop(){
   ytPlayer?.stopVideo();
   lofiPlaying = false;
+  lofiStopWatchdog();
   lofiSetStatus('idle');
   document.getElementById('lofiPlayBtn').textContent = '▶';
   document.getElementById('lofiPlayBtn').classList.remove('playing');
 }
+
+function lofiStartWatchdog(){
+  lofiStopWatchdog();
+  lofiWatchdogId = setInterval(()=>{
+    if(!lofiPlaying || !ytPlayer || !ytReady) return;
+    const state = ytPlayer.getPlayerState();
+    // YT.PlayerState: PLAYING=1, PAUSED=2, BUFFERING=3, ENDED=0, UNSTARTED=-1
+    // If we think we're playing but YT reports paused (2) or unstarted (-1), nudge it
+    if(state === 2){
+      try{ ytPlayer.playVideo(); } catch(e){}
+    }
+  }, 5000); // check every 5 seconds
+}
+
+function lofiStopWatchdog(){
+  if(lofiWatchdogId){ clearInterval(lofiWatchdogId); lofiWatchdogId = null; }
+}
+
+// Resume on tab visibility restored
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible' && lofiPlaying && ytPlayer && ytReady){
+    const state = ytPlayer.getPlayerState();
+    if(state === 2 || state === -1){
+      try{ ytPlayer.playVideo(); } catch(e){}
+    }
+  }
+});
 
 function lofiShuffle(){
   if(!D.lofi?.length) return;
