@@ -12152,25 +12152,98 @@ function buildTapWidget(sec,tabId){
   }
   TAB_DEFS.forEach(t=>placeholder(tabPanes[t.key],'Not yet loaded'));
 
+  // Shared classification colour map used across all three render functions
+  const CLS_COLOR={MALWARE:'#ff4444',PHISH:'#ff8844',PHISHING:'#ff8844',SPAM:'#ffcc44',IMPOSTOR:'#cc88ff',BULK:'#44aaff'};
+
   // ── Render: Blocked Threats ──
   function renderThreats(siem,hoursNeeded=1){
     const pane=tabPanes.threats; pane.innerHTML='';
     if(!siem){ placeholder(pane,'No data — check credentials'); return; }
-    const msgs=siem.messagesBlocked||[];
-    const clicksB=siem.clicksBlocked||[];
+    const msgs     =siem.messagesBlocked ||[];
+    const msgsDeliv=siem.messagesDelivered||[];
+    const clicksB  =siem.clicksBlocked  ||[];
+    const clicksP  =siem.clicksPermitted||[];
 
-    // Summary cards
-    const summRow=el('div'); summRow.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;';
-    [{label:'Messages Blocked',val:msgs.length,color:'#ff8844'},{label:'Clicks Blocked',val:clicksB.length,color:'#ffcc44'}].forEach(({label,val,color})=>{
-      const card=el('div'); card.style.cssText='background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:5px;padding:8px;text-align:center;';
+    // ── Helper: make a summary card with a hover tooltip ──
+    const makeSummCard=(label,val,color,borderColor,items,itemRenderer)=>{
+      const card=el('div');
+      card.style.cssText=`background:rgba(0,0,0,0.25);border:1px solid ${borderColor||'var(--border)'};border-radius:5px;padding:8px;text-align:center;cursor:${items.length?'default':'default'};transition:border-color 0.15s;`;
       const num=el('div'); num.style.cssText=`font-size:26px;font-weight:700;color:${color};font-family:Share Tech Mono,monospace;line-height:1;`; num.textContent=val;
-      const lbl=el('div'); lbl.style.cssText='font-size:9px;color:var(--text-dim);margin-top:3px;'; lbl.textContent=label;
-      card.append(num,lbl); summRow.appendChild(card);
-    });
+      const lbl=el('div'); lbl.style.cssText='font-size:9px;color:var(--text-dim);margin-top:3px;line-height:1.3;'; lbl.textContent=label;
+      card.append(num,lbl);
+
+      if(items.length){
+        const hintEl=el('div'); hintEl.style.cssText='font-size:7.5px;color:var(--text-dim);margin-top:4px;opacity:0.6;'; hintEl.textContent='hover for details';
+        card.appendChild(hintEl);
+
+        const tip=el('div');
+        tip.style.cssText=`position:fixed;z-index:9999;background:var(--card-bg,#1a1a2e);border:1px solid ${color};border-radius:6px;padding:10px;min-width:260px;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,0.7);pointer-events:none;display:none;font-family:Share Tech Mono,monospace;font-size:9px;`;
+        document.body.appendChild(tip);
+
+        card.addEventListener('mouseenter',()=>{
+          card.style.borderColor=color;
+          tip.innerHTML='';
+          const th=el('div'); th.style.cssText=`font-size:10px;font-weight:700;color:${color};margin-bottom:7px;border-bottom:1px solid var(--border);padding-bottom:5px;`;
+          th.textContent=label+' ('+val+' total)'; tip.appendChild(th);
+          const recent=items.slice().sort((a,b)=>new Date(b.messageTime||b.clickTime)-new Date(a.messageTime||a.clickTime)).slice(0,8);
+          recent.forEach(item=>{ const row=itemRenderer(item); if(row) tip.appendChild(row); });
+          if(items.length>8){ const more=el('div'); more.style.cssText='color:var(--text-dim);margin-top:5px;text-align:center;'; more.textContent=`+${items.length-8} more`; tip.appendChild(more); }
+          tip.style.display='block';
+          const rect=card.getBoundingClientRect();
+          let top=rect.bottom+6; let left=rect.left;
+          if(top+300>window.innerHeight) top=rect.top-tip.offsetHeight-6;
+          if(left+330>window.innerWidth) left=window.innerWidth-335;
+          tip.style.top=top+'px'; tip.style.left=Math.max(4,left)+'px';
+        });
+        card.addEventListener('mouseleave',()=>{ card.style.borderColor=borderColor||'var(--border)'; tip.style.display='none'; });
+      }
+      return card;
+    };
+
+    // Item renderers
+    const msgRenderer=(m)=>{
+      const from=(Array.isArray(m.fromAddress)?m.fromAddress[0]:m.fromAddress)||m.sender||'?';
+      const to  =(Array.isArray(m.recipient)?m.recipient[0]:m.recipient)||'?';
+      const cls =m.classification||'?';
+      const col =CLS_COLOR[cls]||'#888';
+      const tUrl=m.threatsInfoMap?.[0]?.threatUrl||m.threatsInfoMap?.[0]?.threatURL||'';
+      const row=el('div'); row.style.cssText='padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:5px;';
+      const badge=el('span'); badge.style.cssText=`font-size:7px;padding:1px 3px;border-radius:2px;background:${col}22;color:${col};flex-shrink:0;margin-top:1px;`; badge.textContent=cls;
+      const body=el('div'); body.style.cssText='flex:1;min-width:0;';
+      const fromEl=el('div'); fromEl.style.cssText='color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; fromEl.textContent='↑ '+from;
+      const toEl  =el('div'); toEl.style.cssText='color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; toEl.textContent='↓ '+to;
+      const timeEl=el('div'); timeEl.style.cssText='font-size:7.5px;color:var(--text-dim);'; timeEl.textContent=m.messageTime?new Date(m.messageTime).toLocaleString():'';
+      body.append(fromEl,toEl,timeEl);
+      row.append(badge,body);
+      if(tUrl){ const a=el('a'); a.href=tUrl; a.target='_blank'; a.rel='noopener'; a.style.cssText='color:var(--cyan);text-decoration:none;flex-shrink:0;font-size:10px;'; a.textContent='🔗'; row.appendChild(a); }
+      return row;
+    };
+
+    const clickRenderer=(c)=>{
+      const cls =c.classification||'?';
+      const col =CLS_COLOR[cls]||'#888';
+      const tUrl=c.threatURL||c.threatUrl||'';
+      const row=el('div'); row.style.cssText='padding:4px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:5px;';
+      const badge=el('span'); badge.style.cssText=`font-size:7px;padding:1px 3px;border-radius:2px;background:${col}22;color:${col};flex-shrink:0;margin-top:1px;`; badge.textContent=cls;
+      const body=el('div'); body.style.cssText='flex:1;min-width:0;';
+      const recipEl=el('div'); recipEl.style.cssText='color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; recipEl.textContent='👤 '+(c.recipient||'?');
+      const urlEl =el('div'); urlEl.style.cssText='color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:8px;'; urlEl.textContent=(c.url||'').replace(/^https?:\/\//,'').slice(0,45);
+      const timeEl=el('div'); timeEl.style.cssText='font-size:7.5px;color:var(--text-dim);'; timeEl.textContent=c.clickTime?new Date(c.clickTime).toLocaleString():'';
+      body.append(recipEl,urlEl,timeEl);
+      row.append(badge,body);
+      if(tUrl){ const a=el('a'); a.href=tUrl; a.target='_blank'; a.rel='noopener'; a.style.cssText='color:var(--cyan);text-decoration:none;flex-shrink:0;font-size:10px;'; a.textContent='🔗'; row.appendChild(a); }
+      return row;
+    };
+
+    // Four-card 2×2 grid
+    const summRow=el('div'); summRow.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;';
+    summRow.appendChild(makeSummCard('Messages\nBlocked',   msgs.length,     '#ff8844','#ff884433', msgs,      msgRenderer));
+    summRow.appendChild(makeSummCard('Msgs w/Threat\nDelivered', msgsDeliv.length, msgsDeliv.length>0?'#ff4444':'var(--text-dim)', msgsDeliv.length>0?'#ff444433':'var(--border)', msgsDeliv, msgRenderer));
+    summRow.appendChild(makeSummCard('Clicks\nBlocked',    clicksB.length,  '#ffcc44','#ffcc4433', clicksB,   clickRenderer));
+    summRow.appendChild(makeSummCard('Malicious Clicks\nPermitted', clicksP.length, clicksP.length>0?'#ff4444':'var(--text-dim)', clicksP.length>0?'#ff444433':'var(--border)', clicksP, clickRenderer));
     pane.appendChild(summRow);
 
     // Classification breakdown bars
-    const CLS_COLOR={MALWARE:'#ff4444',PHISH:'#ff8844',SPAM:'#ffcc44',IMPOSTOR:'#cc88ff',BULK:'#44aaff'};
     const renderBreakdown=(items,title)=>{
       const tc={}; items.forEach(m=>{ const c=m.classification||'Unknown'; tc[c]=(tc[c]||0)+1; });
       if(!Object.keys(tc).length) return;
@@ -12264,7 +12337,6 @@ function buildTapWidget(sec,tabId){
     const users=(vapData?.users||[]).slice().sort((a,b)=>(b.threatStatistics?.attackIndex||0)-(a.threatStatistics?.attackIndex||0));
     if(!users.length){ placeholder(pane,'No VAPs in window'); return; }
     const maxIdx=Math.max(...users.map(u=>u.threatStatistics?.attackIndex||0),1);
-    const CLS_COLOR={MALWARE:'#ff4444',PHISH:'#ff8844',PHISHING:'#ff8844',SPAM:'#ffcc44',IMPOSTOR:'#cc88ff',BULK:'#44aaff'};
     const listWrap=el('div'); listWrap.style.cssText='display:flex;flex-direction:column;gap:4px;max-height:420px;overflow-y:auto;';
     users.forEach((u,rank)=>{
       const email   =u.identity?.emails?.[0]||u.identity?.email||'Unknown';
