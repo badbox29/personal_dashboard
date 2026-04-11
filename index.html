@@ -6784,6 +6784,7 @@ const PORT_COMBOS = {
   if(!Array.isArray(D.otxAlarmHistory))  D.otxAlarmHistory  = [];
   if(!Array.isArray(D.tapSeenClickGuids)) D.tapSeenClickGuids = [];
   if(!Array.isArray(D.tapKnownVapEmails)) D.tapKnownVapEmails = [];
+  if(D.tapLastFetchTime === undefined)    D.tapLastFetchTime   = 0;
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -12060,8 +12061,8 @@ function buildTapWidget(sec,tabId){
   if(!cfg.tapPrincipal)          cfg.tapPrincipal ='';
   if(!cfg.tapSecret)             cfg.tapSecret    ='';
   if(!cfg.tapWorker)             cfg.tapWorker    ='';
-  if(!cfg.sinceSeconds)          cfg.sinceSeconds =3600;
   if(!cfg.vapWindow)             cfg.vapWindow    =14;
+  if(!cfg.catchUpHours)          cfg.catchUpHours =24;  // how far back to catch up on load (max 72)
   if(cfg.alarmSound===undefined) cfg.alarmSound   =false;
 
   const REFRESH_MS=30*60*1000;
@@ -12140,7 +12141,7 @@ function buildTapWidget(sec,tabId){
   TAB_DEFS.forEach(t=>placeholder(tabPanes[t.key],'Not yet loaded'));
 
   // ── Render: Blocked Threats ──
-  function renderThreats(siem){
+  function renderThreats(siem,hoursNeeded=1){
     const pane=tabPanes.threats; pane.innerHTML='';
     if(!siem){ placeholder(pane,'No data — check credentials'); return; }
     const msgs=siem.messagesBlocked||[];
@@ -12173,11 +12174,11 @@ function buildTapWidget(sec,tabId){
     renderBreakdown(msgs,'Message Classification');
     renderBreakdown(clicksB,'Blocked Click Classification');
     const winLbl=el('div'); winLbl.style.cssText='font-size:8.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;margin-top:7px;text-align:right;';
-    winLbl.textContent=`Window: last ${Math.round(cfg.sinceSeconds/3600)}h`; pane.appendChild(winLbl);
+    winLbl.textContent=`Window: last ${hoursNeeded}h`; pane.appendChild(winLbl);
   }
 
   // ── Render: Clicks ──
-  function renderClicks(siem){
+  function renderClicks(siem,hoursNeeded=1){
     const pane=tabPanes.clicks; pane.innerHTML='';
     if(!siem){ placeholder(pane,'No data — check credentials'); return; }
     const permitted=(siem.clicksPermitted||[]).map(c=>({...c,_status:'PERMITTED'}));
@@ -12200,20 +12201,20 @@ function buildTapWidget(sec,tabId){
     });
     pane.appendChild(listWrap);
     const cntLbl=el('div'); cntLbl.style.cssText='font-size:8.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;margin-top:5px;text-align:right;';
-    cntLbl.textContent=`${permitted.length} permitted · ${blocked.length} blocked · last ${Math.round(cfg.sinceSeconds/3600)}h`; pane.appendChild(cntLbl);
+    cntLbl.textContent=`${permitted.length} permitted · ${blocked.length} blocked · last ${hoursNeeded}h`; pane.appendChild(cntLbl);
   }
 
   // ── Render: VAPs ──
   function renderVaps(vapData){
     const pane=tabPanes.vaps; pane.innerHTML='';
-    const users=(vapData?.users||[]).slice().sort((a,b)=>(b.attackIndex||0)-(a.attackIndex||0));
+    const users=(vapData?.users||[]).slice().sort((a,b)=>(b.threatStatistics?.attackIndex||0)-(a.threatStatistics?.attackIndex||0));
     if(!users.length){ placeholder(pane,'No VAPs in window'); return; }
-    const maxIdx=Math.max(...users.map(u=>u.attackIndex||0),1);
+    const maxIdx=Math.max(...users.map(u=>u.threatStatistics?.attackIndex||0),1);
     const listWrap=el('div'); listWrap.style.cssText='display:flex;flex-direction:column;gap:3px;max-height:340px;overflow-y:auto;';
     users.forEach(u=>{
       const email=u.identity?.emails?.[0]||u.identity?.email||'Unknown';
       const name =u.identity?.name||email;
-      const idx  =u.attackIndex||0;
+      const idx  =u.threatStatistics?.attackIndex||0;
       const pct  =Math.min(100,(idx/maxIdx)*100);
       const color=idx>=900?'#ff4444':idx>=600?'#ff8844':idx>=300?'#ffcc44':'#44aaff';
       const row=el('div');
@@ -12279,7 +12280,7 @@ function buildTapWidget(sec,tabId){
       const em=v.identity?.emails?.[0]||v.identity?.email||'';
       if(em&&!D.tapKnownVapEmails.includes(em)){
         newEmails.push(em);
-        alerts.push({type:'vap',msg:`👤 New VAP: ${em} (Index: ${v.attackIndex||0})`});
+        alerts.push({type:'vap',msg:`👤 New VAP: ${em} (Index: ${v.threatStatistics?.attackIndex||0})`});
       }
     });
     // Cross-correlation
@@ -12316,6 +12317,9 @@ function buildTapWidget(sec,tabId){
   }
 
   // ── Fetch ──
+  // On load: determines how many hours have elapsed since last fetch (up to
+  // cfg.catchUpHours max), fires sequential 1-hour SIEM calls to cover the gap,
+  // then merges all results. Subsequent refreshes always fetch the last 1 hour.
   async function refresh(){
     if(!cfg.tapPrincipal||!cfg.tapSecret){
       TAB_DEFS.forEach(t=>placeholder(tabPanes[t.key],'Enter credentials in widget settings (edit mode)'));
@@ -12324,17 +12328,86 @@ function buildTapWidget(sec,tabId){
     const workerUrl=(cfg.tapWorker||D.workerUrl||'').replace(/\/+$/,'');
     if(!workerUrl){ TAB_DEFS.forEach(t=>placeholder(tabPanes[t.key],'No worker URL configured')); return; }
     spinner.style.display=''; rfBtn.disabled=true;
-    const post=(type,extra={})=>fetch(workerUrl+'/tap',{
+
+    const postInterval=(isoInterval,extra={})=>fetch(workerUrl+'/tap',{
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({type,principal:cfg.tapPrincipal,secret:cfg.tapSecret,sinceSeconds:cfg.sinceSeconds,...extra}),
+      body:JSON.stringify({type:'siem',principal:cfg.tapPrincipal,secret:cfg.tapSecret,interval:isoInterval,...extra}),
     }).then(r=>r.json()).catch(e=>({error:e.message}));
+
+    const postVap=(extra={})=>fetch(workerUrl+'/tap',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({type:'vap',principal:cfg.tapPrincipal,secret:cfg.tapSecret,vapWindow:cfg.vapWindow,...extra}),
+    }).then(r=>r.json()).catch(e=>({error:e.message}));
+
     try{
-      const [siem,vaps]=await Promise.all([post('siem'),post('vap',{vapWindow:cfg.vapWindow})]);
-      lastSiem=siem?.error?null:siem; lastVaps=vaps?.error?null:vaps;
-      if(siem?.error)      lastUpdLbl.textContent='SIEM error: '+siem.error;
-      else if(vaps?.error) lastUpdLbl.textContent='VAP error: '+vaps.error;
-      else                 lastUpdLbl.textContent='Updated '+new Date().toLocaleTimeString();
-      renderThreats(lastSiem); renderClicks(lastSiem); renderVaps(lastVaps);
+      const now      = Date.now();
+      const maxHours = Math.min(Math.max(parseInt(cfg.catchUpHours)||24, 1), 72);
+      const maxGapMs = maxHours * 60 * 60 * 1000;
+      const lastFetch= D.tapLastFetchTime || 0;
+      const gapMs    = Math.min(now - lastFetch, maxGapMs);
+      // Always fetch at least 1 hour; round up gap to whole hours
+      const hoursNeeded = Math.max(1, Math.ceil(gapMs / (60*60*1000)));
+
+      if(hoursNeeded > 1){
+        lastUpdLbl.textContent=`Catching up: fetching ${hoursNeeded}h of data…`;
+      }
+
+      // Build sequential 1-hour ISO intervals from oldest to newest
+      // e.g. hoursNeeded=3: [now-3h→now-2h], [now-2h→now-1h], [now-1h→now]
+      const intervals=[];
+      for(let i=hoursNeeded;i>0;i--){
+        const end  =new Date(now - (i-1)*60*60*1000);
+        const start=new Date(now -  i   *60*60*1000);
+        // ISO8601 interval: startZ/endZ
+        intervals.push(`${start.toISOString()}/${end.toISOString()}`);
+      }
+
+      // Fetch SIEM calls sequentially to avoid hammering the rate limit
+      const siemResults=[];
+      for(const iv of intervals){
+        const res=await postInterval(iv);
+        if(!res?.error) siemResults.push(res);
+        // Small pause between calls to be polite to the API
+        if(intervals.length>1) await new Promise(r=>setTimeout(r,400));
+      }
+
+      // Merge all SIEM results into one object
+      const merged={
+        messagesBlocked:[],
+        messagesDelivered:[],
+        clicksBlocked:[],
+        clicksPermitted:[],
+      };
+      siemResults.forEach(r=>{
+        if(r.messagesBlocked)  merged.messagesBlocked  =[...merged.messagesBlocked,  ...r.messagesBlocked];
+        if(r.messagesDelivered)merged.messagesDelivered=[...merged.messagesDelivered, ...r.messagesDelivered];
+        if(r.clicksBlocked)    merged.clicksBlocked    =[...merged.clicksBlocked,    ...r.clicksBlocked];
+        if(r.clicksPermitted)  merged.clicksPermitted  =[...merged.clicksPermitted,  ...r.clicksPermitted];
+      });
+      // Deduplicate by GUID where present
+      const dedupByGuid=arr=>{
+        const seen=new Set(); return arr.filter(x=>{ if(!x.GUID) return true; if(seen.has(x.GUID)) return false; seen.add(x.GUID); return true; });
+      };
+      merged.clicksBlocked  =dedupByGuid(merged.clicksBlocked);
+      merged.clicksPermitted=dedupByGuid(merged.clicksPermitted);
+
+      lastSiem=siemResults.length?merged:null;
+
+      // VAP fetch (single call — VAP window is days not hours)
+      const vaps=await postVap();
+      lastVaps=vaps?.error?null:vaps;
+
+      if(!lastSiem&&!lastVaps){
+        lastUpdLbl.textContent='No data returned — check credentials';
+      } else {
+        const windowDesc=hoursNeeded===1?'last 1h':`last ${hoursNeeded}h`;
+        lastUpdLbl.textContent=`Updated ${new Date().toLocaleTimeString()} · ${windowDesc}`;
+      }
+
+      renderThreats(lastSiem,hoursNeeded);
+      renderClicks(lastSiem,hoursNeeded);
+      renderVaps(lastVaps);
+
       if(isFirstLoad){ seedState(lastSiem,lastVaps); }
       else{
         processAlerts(lastSiem,lastVaps);
@@ -12342,8 +12415,9 @@ function buildTapWidget(sec,tabId){
         if(lastVaps) (lastVaps.users||[]).forEach(v=>{ const em=v.identity?.emails?.[0]||v.identity?.email||''; if(em&&!D.tapKnownVapEmails.includes(em)) D.tapKnownVapEmails.push(em); });
         if(D.tapSeenClickGuids.length>SEEN_CAP) D.tapSeenClickGuids=D.tapSeenClickGuids.slice(-200);
         if(D.tapKnownVapEmails.length>VAP_CAP)  D.tapKnownVapEmails=D.tapKnownVapEmails.slice(-150);
-        persist();
       }
+      D.tapLastFetchTime=now;
+      persist();
     }catch(err){ lastUpdLbl.textContent='Fetch error: '+err.message; }
     finally{ spinner.style.display='none'; rfBtn.disabled=false; isFirstLoad=false; }
     if(refreshTimer) clearTimeout(refreshTimer);
@@ -12367,9 +12441,9 @@ function buildTapWidget(sec,tabId){
     inp.style.cssText='flex:1;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;';
     inp.placeholder=ph; inp.value=val; return inp;
   };
-  const inpSince =mkNum('SIEM window (secs)',cfg.sinceSeconds,300,86400);
-  const inpVapWin=mkNum('VAP window (days)',cfg.vapWindow,1,90);
-  windowRow.append(inpSince,inpVapWin);
+  const inpCatchUp=mkNum('Catch-up window (hours, max 72)',cfg.catchUpHours,1,72);
+  const inpVapWin =mkNum('VAP window (days)',cfg.vapWindow,1,90);
+  windowRow.append(inpCatchUp,inpVapWin);
   const alarmRow=el('div','cve-watch-options');
   const alarmLbl=el('label','cve-watch-opt-label');
   const alarmChk=el('input'); alarmChk.type='checkbox'; alarmChk.checked=!!cfg.alarmSound;
@@ -12381,8 +12455,9 @@ function buildTapWidget(sec,tabId){
   const saveStatus=el('span'); saveStatus.style.cssText='font-size:10px;color:var(--cyan);';
   saveBtn.onclick=()=>{
     cfg.tapPrincipal=inpPrincipal.value.trim(); cfg.tapSecret=inpSecret.value.trim();
-    cfg.tapWorker=inpWorker.value.trim(); cfg.sinceSeconds=parseInt(inpSince.value)||3600;
-    cfg.vapWindow=parseInt(inpVapWin.value)||14; persist();
+    cfg.tapWorker=inpWorker.value.trim();
+    cfg.catchUpHours=parseInt(inpCatchUp.value)||24;
+    cfg.vapWindow   =parseInt(inpVapWin.value)||14; persist();
     saveStatus.textContent='✓ Saved'; setTimeout(()=>saveStatus.textContent='',2000); refresh();
   };
   saveRow.append(saveBtn,saveStatus);
