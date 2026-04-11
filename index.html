@@ -713,12 +713,16 @@ body.edit-mode .add-col-wrap { display: flex; align-items: flex-start; }
 }
 .weather-strip {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
   align-items: flex-start;
   gap: 8px;
   padding: 6px 14px 6px;
   flex-shrink: 0;
 }
+.weather-strip::-webkit-scrollbar { display: none; }
 .quote-in-weather {
   flex: 1;
   min-width: 0;
@@ -1937,6 +1941,8 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
   /* Weather strip collapsed by default on mobile */
   .weather-strip {
     flex-direction: column;
+    flex-wrap: nowrap;
+    overflow-x: hidden;
     gap: 4px;
     padding: 0 8px;
     align-items: stretch;
