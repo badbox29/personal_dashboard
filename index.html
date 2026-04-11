@@ -12058,12 +12058,19 @@ function tapAlarmSound(){
 /* ── PROOFPOINT TAP ─────────────────────────────────────────────────────────── */
 function buildTapWidget(sec,tabId){
   const cfg=sec.widgetConfig||(sec.widgetConfig={});
-  if(!cfg.tapPrincipal)          cfg.tapPrincipal ='';
-  if(!cfg.tapSecret)             cfg.tapSecret    ='';
-  if(!cfg.tapWorker)             cfg.tapWorker    ='';
-  if(!cfg.vapWindow)             cfg.vapWindow    =14;
-  if(!cfg.catchUpHours)          cfg.catchUpHours =24;  // how far back to catch up on load (max 72)
-  if(cfg.alarmSound===undefined) cfg.alarmSound   =false;
+  if(!cfg.tapPrincipal)          cfg.tapPrincipal    ='';
+  if(!cfg.tapSecret)             cfg.tapSecret       ='';
+  if(!cfg.tapWorker)             cfg.tapWorker       ='';
+  if(!cfg.tapDashboardUrl)       cfg.tapDashboardUrl ='';
+  if(!cfg.vapWindow)             cfg.vapWindow       =14;
+  if(!cfg.catchUpHours)          cfg.catchUpHours    =24;
+  if(cfg.alarmSound===undefined) cfg.alarmSound      =false;
+
+  // Helper: build a TAP dashboard URL from configured base
+  const tapUrl=(path='')=>{
+    const base=(cfg.tapDashboardUrl||'').replace(/\/+$/,'');
+    return base ? base+path : 'https://threatinsight.proofpoint.com';
+  };
 
   const REFRESH_MS=30*60*1000;
   const SEEN_CAP  =500;
@@ -12146,6 +12153,8 @@ function buildTapWidget(sec,tabId){
     if(!siem){ placeholder(pane,'No data — check credentials'); return; }
     const msgs=siem.messagesBlocked||[];
     const clicksB=siem.clicksBlocked||[];
+
+    // Summary cards
     const summRow=el('div'); summRow.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;';
     [{label:'Messages Blocked',val:msgs.length,color:'#ff8844'},{label:'Clicks Blocked',val:clicksB.length,color:'#ffcc44'}].forEach(({label,val,color})=>{
       const card=el('div'); card.style.cssText='background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:5px;padding:8px;text-align:center;';
@@ -12154,6 +12163,8 @@ function buildTapWidget(sec,tabId){
       card.append(num,lbl); summRow.appendChild(card);
     });
     pane.appendChild(summRow);
+
+    // Classification breakdown bars
     const CLS_COLOR={MALWARE:'#ff4444',PHISH:'#ff8844',SPAM:'#ffcc44',IMPOSTOR:'#cc88ff',BULK:'#44aaff'};
     const renderBreakdown=(items,title)=>{
       const tc={}; items.forEach(m=>{ const c=m.classification||'Unknown'; tc[c]=(tc[c]||0)+1; });
@@ -12173,6 +12184,37 @@ function buildTapWidget(sec,tabId){
     };
     renderBreakdown(msgs,'Message Classification');
     renderBreakdown(clicksB,'Blocked Click Classification');
+
+    // Recent blocked messages list with threat links
+    const recentMsgs=msgs.slice().sort((a,b)=>new Date(b.messageTime)-new Date(a.messageTime)).slice(0,50);
+    if(recentMsgs.length){
+      const msgsHdr=el('div'); msgsHdr.style.cssText='font-size:9px;color:var(--text-dim);font-family:Share Tech Mono,monospace;text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:5px;';
+      msgsHdr.textContent='Recent Blocked Messages'; pane.appendChild(msgsHdr);
+      const msgList=el('div'); msgList.style.cssText='display:flex;flex-direction:column;gap:3px;max-height:220px;overflow-y:auto;';
+      recentMsgs.forEach(m=>{
+        const from=(Array.isArray(m.fromAddress)?m.fromAddress[0]:m.fromAddress)||m.sender||'Unknown sender';
+        const to  =(Array.isArray(m.recipient)?m.recipient[0]:m.recipient)||'Unknown recipient';
+        const cls =m.classification||'UNKNOWN';
+        const col =CLS_COLOR[cls]||'#888';
+        const threatUrl=m.threatsInfoMap?.[0]?.threatUrl||m.threatsInfoMap?.[0]?.threatURL||'';
+        const mrow=el('div'); mrow.style.cssText='padding:5px 7px;border-radius:4px;border:1px solid var(--border);background:rgba(0,0,0,0.15);display:flex;align-items:flex-start;gap:5px;';
+        const clsBadge=el('span'); clsBadge.style.cssText=`font-size:7.5px;padding:1px 4px;border-radius:3px;background:${col}22;color:${col};font-family:Share Tech Mono,monospace;flex-shrink:0;margin-top:1px;`; clsBadge.textContent=cls;
+        const body=el('div'); body.style.cssText='flex:1;min-width:0;';
+        const fromEl=el('div'); fromEl.style.cssText='font-size:9px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; fromEl.textContent='From: '+from;
+        const toEl  =el('div'); toEl.style.cssText='font-size:9.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; toEl.textContent='To: '+to;
+        const timeEl=el('div'); timeEl.style.cssText='font-size:8px;color:var(--text-dim);margin-top:1px;'; timeEl.textContent=m.messageTime?new Date(m.messageTime).toLocaleString():'';
+        body.append(fromEl,toEl,timeEl);
+        if(threatUrl){
+          const link=el('a'); link.href=threatUrl; link.target='_blank'; link.rel='noopener';
+          link.style.cssText='font-size:11px;color:var(--cyan);text-decoration:none;flex-shrink:0;align-self:center;opacity:0.7;';
+          link.textContent='🔗'; link.title='View threat in TAP Dashboard';
+          mrow.append(clsBadge,body,link);
+        } else { mrow.append(clsBadge,body); }
+        msgList.appendChild(mrow);
+      });
+      pane.appendChild(msgList);
+    }
+
     const winLbl=el('div'); winLbl.style.cssText='font-size:8.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;margin-top:7px;text-align:right;';
     winLbl.textContent=`Window: last ${hoursNeeded}h`; pane.appendChild(winLbl);
   }
@@ -12185,18 +12227,25 @@ function buildTapWidget(sec,tabId){
     const blocked  =(siem.clicksBlocked  ||[]).map(c=>({...c,_status:'BLOCKED'}));
     const all=[...permitted,...blocked].sort((a,b)=>new Date(b.clickTime)-new Date(a.clickTime));
     if(!all.length){ placeholder(pane,'No click events in window'); return; }
-    const listWrap=el('div'); listWrap.style.cssText='display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto;';
+    const listWrap=el('div'); listWrap.style.cssText='display:flex;flex-direction:column;gap:4px;max-height:360px;overflow-y:auto;';
     all.forEach(c=>{
       const isPerm=c._status==='PERMITTED';
       const row=el('div');
-      row.style.cssText=`padding:6px 8px;border-radius:5px;border:1px solid ${isPerm?'#ff444455':'var(--border)'};background:${isPerm?'rgba(255,68,68,0.07)':'rgba(0,0,0,0.15)'};`;
-      const topRow=el('div'); topRow.style.cssText='display:flex;align-items:center;gap:4px;margin-bottom:2px;';
+      row.style.cssText=`padding:7px 8px;border-radius:5px;border:1px solid ${isPerm?'#ff444455':'var(--border)'};background:${isPerm?'rgba(255,68,68,0.07)':'rgba(0,0,0,0.15)'};`;
+      const topRow=el('div'); topRow.style.cssText='display:flex;align-items:center;gap:4px;margin-bottom:3px;';
       const sb=el('span'); sb.style.cssText=`font-size:8px;padding:1px 5px;border-radius:3px;font-family:Share Tech Mono,monospace;background:${isPerm?'#ff444422':'#44884422'};color:${isPerm?'#ff6666':'#66cc88'};flex-shrink:0;font-weight:700;`; sb.textContent=isPerm?'PERMITTED':'BLOCKED';
       const cb=el('span'); cb.style.cssText='font-size:8px;padding:1px 5px;border-radius:3px;font-family:Share Tech Mono,monospace;background:rgba(255,136,68,0.12);color:#ff9955;flex-shrink:0;'; cb.textContent=c.classification||'UNKNOWN';
       const ts=el('span'); ts.style.cssText='font-size:8px;color:var(--text-dim);font-family:Share Tech Mono,monospace;margin-left:auto;flex-shrink:0;'; ts.textContent=c.clickTime?new Date(c.clickTime).toLocaleString():'';
-      topRow.append(sb,cb,ts);
-      const recip=el('div'); recip.style.cssText='font-size:10px;color:var(--text);margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; recip.textContent='👤 '+(c.recipient||'Unknown');
-      const urlEl=el('div'); urlEl.style.cssText='font-size:8.5px;color:var(--cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; urlEl.textContent=c.url||''; urlEl.title=c.url||'';
+      // Threat link — threatURL is top-level on click events
+      if(c.threatURL||c.threatUrl){
+        const tlink=el('a'); tlink.href=c.threatURL||c.threatUrl; tlink.target='_blank'; tlink.rel='noopener';
+        tlink.style.cssText='font-size:11px;color:var(--cyan);text-decoration:none;flex-shrink:0;opacity:0.8;margin-left:4px;';
+        tlink.textContent='🔗'; tlink.title='View threat in TAP Dashboard';
+        tlink.onclick=e=>e.stopPropagation();
+        topRow.append(sb,cb,ts,tlink);
+      } else { topRow.append(sb,cb,ts); }
+      const recip=el('div'); recip.style.cssText='font-size:10.5px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; recip.textContent='👤 '+(c.recipient||'Unknown');
+      const urlEl=el('div'); urlEl.style.cssText='font-size:9px;color:var(--cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; urlEl.textContent=c.url||''; urlEl.title=c.url||'';
       row.append(topRow,recip,urlEl); listWrap.appendChild(row);
     });
     pane.appendChild(listWrap);
@@ -12210,47 +12259,84 @@ function buildTapWidget(sec,tabId){
     const users=(vapData?.users||[]).slice().sort((a,b)=>(b.threatStatistics?.attackIndex||0)-(a.threatStatistics?.attackIndex||0));
     if(!users.length){ placeholder(pane,'No VAPs in window'); return; }
     const maxIdx=Math.max(...users.map(u=>u.threatStatistics?.attackIndex||0),1);
-    const listWrap=el('div'); listWrap.style.cssText='display:flex;flex-direction:column;gap:3px;max-height:340px;overflow-y:auto;';
+    const CLS_COLOR={MALWARE:'#ff4444',PHISH:'#ff8844',PHISHING:'#ff8844',SPAM:'#ffcc44',IMPOSTOR:'#cc88ff',BULK:'#44aaff'};
+    const listWrap=el('div'); listWrap.style.cssText='display:flex;flex-direction:column;gap:4px;max-height:420px;overflow-y:auto;';
     users.forEach((u,rank)=>{
-      const email=u.identity?.emails?.[0]||u.identity?.email||'Unknown';
-      const name =u.identity?.name||'';
-      // Only show name separately if it's meaningfully different from the email
-      const hasName=name && name.toLowerCase()!==email.toLowerCase() && !email.startsWith(name.toLowerCase());
-      const idx  =u.threatStatistics?.attackIndex||0;
-      const pct  =Math.min(100,(idx/maxIdx)*100);
-      const color=idx>=900?'#ff4444':idx>=600?'#ff8844':idx>=300?'#ffcc44':'#44aaff';
+      const email   =u.identity?.emails?.[0]||u.identity?.email||'Unknown';
+      const name    =u.identity?.name||'';
+      const dept    =u.identity?.department||'';
+      const isVip   =u.identity?.vip===true;
+      const hasName =name && name.toLowerCase()!==email.toLowerCase() && !email.startsWith(name.toLowerCase());
+      const idx     =u.threatStatistics?.attackIndex||0;
+      const pct     =Math.min(100,(idx/maxIdx)*100);
+      const idxColor=idx>=900?'#ff4444':idx>=600?'#ff8844':idx>=300?'#ffcc44':'#44aaff';
+      const permClicks=u.threatStatistics?.clicksPermitted||0;
+
+      // Top threat family from families array
+      const families=u.threatStatistics?.families||[];
+      const topFamily=families.length?families.slice().sort((a,b)=>(b.score||0)-(a.score||0))[0]:null;
+      const famName=topFamily?.name||'';
+      const famColor=CLS_COLOR[famName.toUpperCase()]||CLS_COLOR[(famName.split(' ')[0]||'').toUpperCase()]||'#888';
 
       const row=el('div');
-      row.style.cssText='padding:5px 8px;border-radius:5px;border:1px solid var(--border);background:rgba(0,0,0,0.15);position:relative;overflow:hidden;cursor:default;display:flex;align-items:center;gap:7px;';
+      row.style.cssText='padding:8px 10px;border-radius:5px;border:1px solid var(--border);background:rgba(0,0,0,0.15);position:relative;overflow:hidden;cursor:pointer;display:flex;align-items:center;gap:8px;';
+      row.title='Click to view VAPs in TAP Dashboard';
 
-      // Background attack-index bar
-      const bgBar=el('div'); bgBar.style.cssText=`position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color}0e;pointer-events:none;`; row.appendChild(bgBar);
+      // Background bar
+      const bgBar=el('div'); bgBar.style.cssText=`position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${idxColor}0e;pointer-events:none;`; row.appendChild(bgBar);
 
-      // Rank number — tiny, left edge
-      const rankEl=el('span'); rankEl.style.cssText='font-size:8px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;min-width:14px;text-align:right;position:relative;';
+      // Rank
+      const rankEl=el('span'); rankEl.style.cssText='font-size:8.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;min-width:16px;text-align:right;position:relative;';
       rankEl.textContent=rank+1;
 
-      // Identity block — takes all available space, wraps gracefully
+      // Identity block
       const idBlock=el('div'); idBlock.style.cssText='flex:1;min-width:0;position:relative;';
+
+      // Badge row: VIP + ⚠ CLICKED + top family
+      const badgeRow=el('div'); badgeRow.style.cssText='display:flex;gap:4px;flex-wrap:wrap;margin-bottom:3px;';
+      if(isVip){
+        const vipB=el('span'); vipB.style.cssText='font-size:7.5px;padding:1px 5px;border-radius:3px;background:#ffd70022;color:#ffd700;font-family:Share Tech Mono,monospace;font-weight:700;';
+        vipB.textContent='★ VIP'; badgeRow.appendChild(vipB);
+      }
+      if(permClicks>0){
+        const clkB=el('span'); clkB.style.cssText='font-size:7.5px;padding:1px 5px;border-radius:3px;background:#ff444422;color:#ff6666;font-family:Share Tech Mono,monospace;font-weight:700;';
+        clkB.textContent=`⚠ CLICKED ×${permClicks}`; badgeRow.appendChild(clkB);
+      }
+      if(famName){
+        const famB=el('span'); famB.style.cssText=`font-size:7.5px;padding:1px 5px;border-radius:3px;background:${famColor}22;color:${famColor};font-family:Share Tech Mono,monospace;`;
+        famB.textContent=famName; badgeRow.appendChild(famB);
+      }
+      if(badgeRow.children.length) idBlock.appendChild(badgeRow);
+
       if(hasName){
-        const nameEl=el('div'); nameEl.style.cssText='font-size:10px;color:var(--text);line-height:1.3;word-break:break-word;';
-        nameEl.textContent=name;
-        idBlock.appendChild(nameEl);
-        const emailEl=el('div'); emailEl.style.cssText='font-size:8.5px;color:var(--text-dim);line-height:1.3;word-break:break-all;';
-        emailEl.textContent=email;
-        idBlock.appendChild(emailEl);
+        const nameEl=el('div'); nameEl.style.cssText='font-size:11px;color:var(--text);line-height:1.3;font-weight:600;';
+        nameEl.textContent=name; idBlock.appendChild(nameEl);
+        const emailEl=el('div'); emailEl.style.cssText='font-size:9px;color:var(--text-dim);line-height:1.3;word-break:break-all;';
+        emailEl.textContent=email; idBlock.appendChild(emailEl);
       } else {
-        // Email only — allow break at @ and dots so it wraps instead of clipping
-        const emailEl=el('div'); emailEl.style.cssText='font-size:9.5px;color:var(--text);line-height:1.4;word-break:break-all;';
-        emailEl.textContent=email;
-        idBlock.appendChild(emailEl);
+        const emailEl=el('div'); emailEl.style.cssText='font-size:10px;color:var(--text);line-height:1.4;word-break:break-all;';
+        emailEl.textContent=email; idBlock.appendChild(emailEl);
+      }
+      if(dept){
+        const deptEl=el('div'); deptEl.style.cssText='font-size:8.5px;color:var(--text-dim);margin-top:2px;';
+        deptEl.textContent=dept; idBlock.appendChild(deptEl);
       }
 
-      // Attack index badge — right, prominent, fixed width so it never gets squeezed
-      const idxB=el('div'); idxB.style.cssText=`font-size:11px;font-weight:700;color:${color};font-family:Share Tech Mono,monospace;flex-shrink:0;text-align:right;min-width:38px;position:relative;`;
-      idxB.textContent=idx;
+      // Attack index — right side, two lines: number + label
+      const idxBlock=el('div'); idxBlock.style.cssText='flex-shrink:0;text-align:right;position:relative;';
+      const idxNum=el('div'); idxNum.style.cssText=`font-size:14px;font-weight:700;color:${idxColor};font-family:Share Tech Mono,monospace;line-height:1;`;
+      idxNum.textContent=idx;
+      const idxLbl=el('div'); idxLbl.style.cssText='font-size:7.5px;color:var(--text-dim);margin-top:2px;';
+      idxLbl.textContent='ATK IDX';
+      idxBlock.append(idxNum,idxLbl);
 
-      row.append(rankEl,idBlock,idxB);
+      row.append(rankEl,idBlock,idxBlock);
+
+      // Click → open VAP page in TAP dashboard
+      row.addEventListener('click',()=>{ window.open(tapUrl('/people/vap'),'_blank','noopener'); });
+      row.addEventListener('mouseenter',()=>{ row.style.background='rgba(255,255,255,0.04)'; });
+      row.addEventListener('mouseleave',()=>{ row.style.background='rgba(0,0,0,0.15)'; });
+
       // Hover tooltip
       const tip=el('div');
       tip.style.cssText='position:fixed;z-index:9999;background:var(--card-bg,#1a1a2e);border:1px solid #ff4444;border-radius:6px;padding:10px 12px;min-width:220px;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.6);pointer-events:none;display:none;font-family:Share Tech Mono,monospace;font-size:9.5px;line-height:1.6;';
@@ -12259,24 +12345,25 @@ function buildTapWidget(sec,tabId){
         tip.innerHTML='';
         if(hasName){ const tn=el('div'); tn.style.cssText='font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px;'; tn.textContent=name; tip.appendChild(tn); }
         const te=el('div'); te.style.cssText='color:var(--cyan);margin-bottom:6px;'; te.textContent=email; tip.appendChild(te);
-        const ti=el('div'); ti.style.cssText=`color:${color};font-weight:700;margin-bottom:4px;`; ti.textContent=`Attack Index: ${idx}`; tip.appendChild(ti);
+        const ti=el('div'); ti.style.cssText=`color:${idxColor};font-weight:700;margin-bottom:4px;`; ti.textContent=`Attack Index: ${idx}`; tip.appendChild(ti);
         const ts=u.threatStatistics;
         if(ts){
           if(ts.clicksPermitted){ const cp=el('div'); cp.style.cssText='color:#ff6666;'; cp.textContent=`⚠ Permitted Clicks: ${ts.clicksPermitted}`; tip.appendChild(cp); }
           if(ts.messagesDelivered){ const md=el('div'); md.style.cssText='color:#ffcc44;'; md.textContent=`✉ Msgs Delivered: ${ts.messagesDelivered}`; tip.appendChild(md); }
           if(ts.messagesBlocked){ const mb=el('div'); mb.style.cssText='color:#44cc88;'; mb.textContent=`🛡 Msgs Blocked: ${ts.messagesBlocked}`; tip.appendChild(mb); }
         }
-        const atk=u.threatStatistics?.attacksByClassification||{};
-        if(Object.keys(atk).length){
-          const th=el('div'); th.style.cssText='color:var(--text-dim);margin-top:6px;margin-bottom:2px;'; th.textContent='Attack Types:'; tip.appendChild(th);
-          Object.entries(atk).forEach(([type,count])=>{ const tt=el('div'); tt.style.cssText='padding-left:8px;color:var(--text);'; tt.textContent=`${type}: ${count}`; tip.appendChild(tt); });
+        if(families.length){
+          const th=el('div'); th.style.cssText='color:var(--text-dim);margin-top:6px;margin-bottom:2px;'; th.textContent='Threat Families:'; tip.appendChild(th);
+          families.slice().sort((a,b)=>(b.score||0)-(a.score||0)).forEach(f=>{ const tt=el('div'); tt.style.cssText='padding-left:8px;color:var(--text);'; tt.textContent=`${f.name}: ${f.score}`; tip.appendChild(tt); });
         }
         if(u.identity?.department){ const dep=el('div'); dep.style.cssText='color:var(--text-dim);margin-top:4px;'; dep.textContent=`Dept: ${u.identity.department}`; tip.appendChild(dep); }
         if(u.identity?.location){ const loc=el('div'); loc.style.cssText='color:var(--text-dim);'; loc.textContent=`Location: ${u.identity.location}`; tip.appendChild(loc); }
+        if(u.identity?.title){ const ttl=el('div'); ttl.style.cssText='color:var(--text-dim);'; ttl.textContent=`Title: ${u.identity.title}`; tip.appendChild(ttl); }
+        const hint=el('div'); hint.style.cssText='color:var(--text-dim);margin-top:6px;font-size:8.5px;border-top:1px solid var(--border);padding-top:4px;'; hint.textContent='Click to open in TAP Dashboard →'; tip.appendChild(hint);
         tip.style.display='block';
         const rect=row.getBoundingClientRect();
         let top=rect.bottom+6; let left=rect.left;
-        if(top+240>window.innerHeight) top=rect.top-6-tip.offsetHeight;
+        if(top+260>window.innerHeight) top=rect.top-6-tip.offsetHeight;
         if(left+310>window.innerWidth) left=window.innerWidth-315;
         tip.style.top=top+'px'; tip.style.left=Math.max(4,left)+'px';
       });
@@ -12460,6 +12547,7 @@ function buildTapWidget(sec,tabId){
   const inpPrincipal=mkInp('Service Principal ID',cfg.tapPrincipal);
   const inpSecret   =mkInp('Service Principal Secret (stored locally)',cfg.tapSecret,true);
   const inpWorker   =mkInp('Override Worker URL (blank = use global)',cfg.tapWorker);
+  const inpDashUrl  =mkInp('TAP Dashboard URL (e.g. https://threatinsight.proofpoint.com/your-uuid)',cfg.tapDashboardUrl);
   const windowRow=el('div'); windowRow.style.cssText='display:flex;gap:6px;margin-bottom:4px;';
   const mkNum=(ph,val,min,max)=>{
     const inp=el('input','cve-interval-inp'); inp.type='number'; inp.min=min; inp.max=max;
@@ -12479,17 +12567,30 @@ function buildTapWidget(sec,tabId){
   const saveBtn=el('button','todo-add-btn'); saveBtn.textContent='Save & Refresh';
   const saveStatus=el('span'); saveStatus.style.cssText='font-size:10px;color:var(--cyan);';
   saveBtn.onclick=()=>{
-    cfg.tapPrincipal=inpPrincipal.value.trim(); cfg.tapSecret=inpSecret.value.trim();
-    cfg.tapWorker=inpWorker.value.trim();
-    cfg.catchUpHours=parseInt(inpCatchUp.value)||24;
-    cfg.vapWindow   =parseInt(inpVapWin.value)||14; persist();
+    cfg.tapPrincipal  =inpPrincipal.value.trim(); cfg.tapSecret=inpSecret.value.trim();
+    cfg.tapWorker     =inpWorker.value.trim();
+    cfg.tapDashboardUrl=inpDashUrl.value.trim().replace(/\/+$/,'');
+    cfg.catchUpHours  =parseInt(inpCatchUp.value)||24;
+    cfg.vapWindow     =parseInt(inpVapWin.value)||14; persist();
     saveStatus.textContent='✓ Saved'; setTimeout(()=>saveStatus.textContent='',2000); refresh();
   };
   saveRow.append(saveBtn,saveStatus);
   const editNote=el('div'); editNote.style.cssText='font-size:10px;color:var(--text-dim);margin-top:6px;line-height:1.5;';
   editNote.textContent='Generate credentials in Threat Insight Dashboard → Settings → Connected Applications.';
-  editSec.append(editLbl,inpPrincipal,inpSecret,inpWorker,windowRow,alarmRow,saveRow,editNote);
+  editSec.append(editLbl,inpPrincipal,inpSecret,inpWorker,inpDashUrl,windowRow,alarmRow,saveRow,editNote);
   wrap.appendChild(editSec);
+
+  // ── Persistent "Open TAP Dashboard" button — always visible ──
+  const dashBtn=el('a');
+  dashBtn.style.cssText='display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:6px 10px;border-radius:5px;border:1px solid var(--border);background:rgba(0,0,0,0.2);color:var(--text-dim);font-size:10px;font-family:Share Tech Mono,monospace;text-decoration:none;cursor:pointer;transition:border-color 0.15s,color 0.15s;';
+  dashBtn.textContent='↗ Open TAP Dashboard';
+  dashBtn.target='_blank'; dashBtn.rel='noopener';
+  // Update href dynamically so it always reflects current cfg.tapDashboardUrl
+  const updateDashBtn=()=>{ dashBtn.href=tapUrl(); };
+  updateDashBtn();
+  dashBtn.addEventListener('mouseenter',()=>{ dashBtn.style.borderColor='var(--cyan)'; dashBtn.style.color='var(--cyan)'; });
+  dashBtn.addEventListener('mouseleave',()=>{ dashBtn.style.borderColor='var(--border)'; dashBtn.style.color='var(--text-dim)'; });
+  wrap.appendChild(dashBtn);
   const applyEdit=()=>{ editSec.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
   const obsEdit=new MutationObserver(applyEdit);
   obsEdit.observe(document.body,{attributes:true,attributeFilter:['class']});
