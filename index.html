@@ -18995,10 +18995,10 @@ function setClockStyle(style){
 }
 
 // Close clock picker, focus panel, bg panel, and mobile overflow menu on outside click
+document.addEventListener('click', e => {
   // Close any open custom dropdowns on outside click
   if(!e.target.closest('.cdd-wrap')) document.querySelectorAll('.cdd-list.open').forEach(l=>l.classList.remove('open'));
 
-document.addEventListener('click', e => {
   const clockPicker = document.getElementById('clockPicker');
   const clockWrap   = document.getElementById('clockWrap');
   if(clockPicker && clockWrap && !clockWrap.contains(e.target)) clockPicker.classList.remove('open');
