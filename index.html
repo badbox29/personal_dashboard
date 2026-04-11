@@ -12279,14 +12279,14 @@ function buildTapWidget(sec,tabId){
       const famColor=CLS_COLOR[famName.toUpperCase()]||CLS_COLOR[(famName.split(' ')[0]||'').toUpperCase()]||'#888';
 
       const row=el('div');
-      row.style.cssText='padding:8px 10px;border-radius:5px;border:1px solid var(--border);background:rgba(0,0,0,0.15);position:relative;overflow:hidden;cursor:pointer;display:flex;align-items:center;gap:8px;';
+      row.style.cssText='padding:8px 10px;border-radius:5px;border:1px solid var(--border);background:rgba(0,0,0,0.15);position:relative;cursor:pointer;display:flex;align-items:flex-start;gap:8px;';
       row.title='Click to view VAPs in TAP Dashboard';
 
       // Background bar
       const bgBar=el('div'); bgBar.style.cssText=`position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${idxColor}0e;pointer-events:none;`; row.appendChild(bgBar);
 
       // Rank
-      const rankEl=el('span'); rankEl.style.cssText='font-size:8.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;min-width:16px;text-align:right;position:relative;';
+      const rankEl=el('span'); rankEl.style.cssText='font-size:8.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;min-width:16px;text-align:right;position:relative;padding-top:2px;';
       rankEl.textContent=rank+1;
 
       // Identity block
@@ -12323,7 +12323,7 @@ function buildTapWidget(sec,tabId){
       }
 
       // Attack index — right side, two lines: number + label
-      const idxBlock=el('div'); idxBlock.style.cssText='flex-shrink:0;text-align:right;position:relative;';
+      const idxBlock=el('div'); idxBlock.style.cssText='flex-shrink:0;text-align:right;position:relative;padding-top:1px;';
       const idxNum=el('div'); idxNum.style.cssText=`font-size:14px;font-weight:700;color:${idxColor};font-family:Share Tech Mono,monospace;line-height:1;`;
       idxNum.textContent=idx;
       const idxLbl=el('div'); idxLbl.style.cssText='font-size:7.5px;color:var(--text-dim);margin-top:2px;';
