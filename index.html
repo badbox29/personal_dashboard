@@ -12550,13 +12550,13 @@ function buildTapWidget(sec,tabId){
       }
 
       // Build sequential 1-hour ISO intervals from oldest to newest
-      // e.g. hoursNeeded=3: [now-3h→now-2h], [now-2h→now-1h], [now-1h→now]
+      // Strip ms and nudge end back 60s so we never request right at current moment
+      const toTapIso=d=>d.toISOString().replace(/\.\d{3}Z$/,'Z');
       const intervals=[];
       for(let i=hoursNeeded;i>0;i--){
-        const end  =new Date(now - (i-1)*60*60*1000);
-        const start=new Date(now -  i   *60*60*1000);
-        // ISO8601 interval: startZ/endZ
-        intervals.push(`${start.toISOString()}/${end.toISOString()}`);
+        const end  =new Date(now - (i-1)*60*60*1000 - 60*1000);
+        const start=new Date(now -  i   *60*60*1000 - 60*1000);
+        intervals.push(`${toTapIso(start)}/${toTapIso(end)}`);
       }
 
       // Fetch SIEM calls sequentially to avoid hammering the rate limit
