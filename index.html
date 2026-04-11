@@ -12561,11 +12561,21 @@ function buildTapWidget(sec,tabId){
 
       // Fetch SIEM calls sequentially to avoid hammering the rate limit
       const siemResults=[];
+      let siemError='';
       for(const iv of intervals){
         const res=await postInterval(iv);
-        if(!res?.error) siemResults.push(res);
+        if(res?.error){ siemError=res.error; }
+        else siemResults.push(res);
         // Small pause between calls to be polite to the API
         if(intervals.length>1) await new Promise(r=>setTimeout(r,400));
+      }
+
+      // If all SIEM calls failed, surface the error and schedule a retry
+      if(!siemResults.length && siemError){
+        lastUpdLbl.textContent=`Fetch failed — retrying in 30s (${siemError})`;
+        if(refreshTimer) clearTimeout(refreshTimer);
+        refreshTimer=setTimeout(refresh,30*1000);
+        return;
       }
 
       // Merge all SIEM results into one object
