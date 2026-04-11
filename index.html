@@ -12600,7 +12600,7 @@ function buildTapWidget(sec,tabId){
   dashBtn.textContent='↗ Open TAP Dashboard';
   dashBtn.target='_blank'; dashBtn.rel='noopener';
   // Update href dynamically so it always reflects current cfg.tapDashboardUrl
-  const updateDashBtn=()=>{ dashBtn.href=tapUrl(); };
+  const updateDashBtn=()=>{ dashBtn.href=tapUrl('/activity/email'); };
   updateDashBtn();
   dashBtn.addEventListener('mouseenter',()=>{ dashBtn.style.borderColor='var(--cyan)'; dashBtn.style.color='var(--cyan)'; });
   dashBtn.addEventListener('mouseleave',()=>{ dashBtn.style.borderColor='var(--border)'; dashBtn.style.color='var(--text-dim)'; });
