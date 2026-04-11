@@ -728,10 +728,11 @@ body.edit-mode .add-col-wrap { display: flex; align-items: flex-start; }
   min-width: 0;
   display: flex;
   flex-direction: row;
-  align-items: flex-end;
+  align-items: center;
   justify-content: flex-end;
   padding: 6px 18px 6px 16px;
   gap: 10px;
+  overflow: hidden;
 }
 .quote-in-weather .quote-text {
   text-align: right;
@@ -739,8 +740,11 @@ body.edit-mode .add-col-wrap { display: flex; align-items: flex-start; }
   font-size: 13px;
   color: var(--text-dim);
   line-height: 1.55;
-  white-space: normal;
   max-width: 33vw;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .quote-in-weather .quote-text .quote-mark {
   font-size: 18px;
