@@ -12066,10 +12066,15 @@ function buildTapWidget(sec,tabId){
   if(!cfg.catchUpHours)          cfg.catchUpHours    =24;
   if(cfg.alarmSound===undefined) cfg.alarmSound      =false;
 
-  // Helper: build a TAP dashboard URL from configured base
+  // Helper: build a TAP dashboard URL. cfg.tapDashboardUrl may be a bare UUID
+  // or a full URL — we extract the UUID either way.
   const tapUrl=(path='')=>{
-    const base=(cfg.tapDashboardUrl||'').replace(/\/+$/,'');
-    return base ? base+path : 'https://threatinsight.proofpoint.com';
+    const raw=(cfg.tapDashboardUrl||'').trim();
+    if(!raw) return 'https://threatinsight.proofpoint.com';
+    // If it looks like a full URL, extract the UUID segment after the domain
+    const uuidMatch=raw.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+    const uuid=uuidMatch?uuidMatch[1]:raw.replace(/^https?:\/\/[^/]+\//,'').split('/')[0];
+    return `https://threatinsight.proofpoint.com/${uuid}${path}`;
   };
 
   const REFRESH_MS=30*60*1000;
@@ -12547,15 +12552,23 @@ function buildTapWidget(sec,tabId){
   const inpPrincipal=mkInp('Service Principal ID',cfg.tapPrincipal);
   const inpSecret   =mkInp('Service Principal Secret (stored locally)',cfg.tapSecret,true);
   const inpWorker   =mkInp('Override Worker URL (blank = use global)',cfg.tapWorker);
-  const inpDashUrl  =mkInp('TAP Dashboard URL (e.g. https://threatinsight.proofpoint.com/your-uuid)',cfg.tapDashboardUrl);
+  const inpDashUrl  =mkInp('e.g. 51e267cc-2d62-105a-0bf8-718b2a1401e6',cfg.tapDashboardUrl);
+  const dashNote=el('div'); dashNote.style.cssText='font-size:9px;color:var(--text-dim);margin-bottom:6px;margin-top:-2px;line-height:1.5;';
+  dashNote.textContent='Log in to threatinsight.proofpoint.com — your Customer ID is the UUID in the address bar between the domain and the next "/".';
+
+  const windowLbl=el('div'); windowLbl.style.cssText='display:flex;gap:6px;margin-bottom:2px;';
+  const cuLbl=el('span'); cuLbl.style.cssText='flex:1;font-size:9px;color:var(--text-dim);'; cuLbl.textContent='Catch-up window (hours, max 72)';
+  const vwLbl=el('span'); vwLbl.style.cssText='flex:1;font-size:9px;color:var(--text-dim);'; vwLbl.textContent='VAP window (days: 14, 30, or 90)';
+  windowLbl.append(cuLbl,vwLbl);
+
   const windowRow=el('div'); windowRow.style.cssText='display:flex;gap:6px;margin-bottom:4px;';
   const mkNum=(ph,val,min,max)=>{
     const inp=el('input','cve-interval-inp'); inp.type='number'; inp.min=min; inp.max=max;
     inp.style.cssText='flex:1;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;';
     inp.placeholder=ph; inp.value=val; return inp;
   };
-  const inpCatchUp=mkNum('Catch-up window (hours, max 72)',cfg.catchUpHours,1,72);
-  const inpVapWin =mkNum('VAP window (days)',cfg.vapWindow,1,90);
+  const inpCatchUp=mkNum('24',cfg.catchUpHours,1,72);
+  const inpVapWin =mkNum('14',cfg.vapWindow,1,90);
   windowRow.append(inpCatchUp,inpVapWin);
   const alarmRow=el('div','cve-watch-options');
   const alarmLbl=el('label','cve-watch-opt-label');
@@ -12577,7 +12590,8 @@ function buildTapWidget(sec,tabId){
   saveRow.append(saveBtn,saveStatus);
   const editNote=el('div'); editNote.style.cssText='font-size:10px;color:var(--text-dim);margin-top:6px;line-height:1.5;';
   editNote.textContent='Generate credentials in Threat Insight Dashboard → Settings → Connected Applications.';
-  editSec.append(editLbl,inpPrincipal,inpSecret,inpWorker,inpDashUrl,windowRow,alarmRow,saveRow,editNote);
+  const custIdLbl=el('div'); custIdLbl.style.cssText='font-size:9px;color:var(--text-dim);margin-bottom:2px;margin-top:4px;'; custIdLbl.textContent='TAP Customer ID';
+  editSec.append(editLbl,inpPrincipal,inpSecret,inpWorker,custIdLbl,inpDashUrl,dashNote,windowLbl,windowRow,alarmRow,saveRow,editNote);
   wrap.appendChild(editSec);
 
   // ── Persistent "Open TAP Dashboard" button — always visible ──
