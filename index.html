@@ -12615,7 +12615,14 @@ function buildTapWidget(sec,tabId){
       }
       D.tapLastFetchTime=now;
       persist();
-    }catch(err){ lastUpdLbl.textContent='Fetch error: '+err.message; }
+    }catch(err){
+      // Credentials are present but fetch failed — show honest status and auto-retry in 30s
+      lastUpdLbl.textContent=`Fetch failed — retrying in 30s (${err.message})`;
+      if(refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer=setTimeout(refresh, 30*1000);
+      spinner.style.display='none'; rfBtn.disabled=false; isFirstLoad=false;
+      return;
+    }
     finally{ spinner.style.display='none'; rfBtn.disabled=false; isFirstLoad=false; }
     if(refreshTimer) clearTimeout(refreshTimer);
     refreshTimer=setTimeout(refresh,REFRESH_MS);
