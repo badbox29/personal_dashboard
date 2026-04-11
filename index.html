@@ -12211,28 +12211,53 @@ function buildTapWidget(sec,tabId){
     if(!users.length){ placeholder(pane,'No VAPs in window'); return; }
     const maxIdx=Math.max(...users.map(u=>u.threatStatistics?.attackIndex||0),1);
     const listWrap=el('div'); listWrap.style.cssText='display:flex;flex-direction:column;gap:3px;max-height:340px;overflow-y:auto;';
-    users.forEach(u=>{
+    users.forEach((u,rank)=>{
       const email=u.identity?.emails?.[0]||u.identity?.email||'Unknown';
-      const name =u.identity?.name||email;
+      const name =u.identity?.name||'';
+      // Only show name separately if it's meaningfully different from the email
+      const hasName=name && name.toLowerCase()!==email.toLowerCase() && !email.startsWith(name.toLowerCase());
       const idx  =u.threatStatistics?.attackIndex||0;
       const pct  =Math.min(100,(idx/maxIdx)*100);
       const color=idx>=900?'#ff4444':idx>=600?'#ff8844':idx>=300?'#ffcc44':'#44aaff';
+
       const row=el('div');
-      row.style.cssText='padding:6px 8px;border-radius:5px;border:1px solid var(--border);background:rgba(0,0,0,0.15);position:relative;overflow:hidden;cursor:default;';
-      const bgBar=el('div'); bgBar.style.cssText=`position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color}11;pointer-events:none;`; row.appendChild(bgBar);
-      const topRow=el('div'); topRow.style.cssText='display:flex;align-items:center;gap:5px;position:relative;';
-      const nameEl=el('div'); nameEl.style.cssText='font-size:10px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; nameEl.textContent=name;
-      const idxB=el('span'); idxB.style.cssText=`font-size:9px;font-weight:700;color:${color};font-family:Share Tech Mono,monospace;flex-shrink:0;`; idxB.textContent=idx;
-      topRow.append(nameEl,idxB);
-      const emailEl=el('div'); emailEl.style.cssText='font-size:8.5px;color:var(--text-dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;'; emailEl.textContent=email;
-      row.append(topRow,emailEl);
+      row.style.cssText='padding:5px 8px;border-radius:5px;border:1px solid var(--border);background:rgba(0,0,0,0.15);position:relative;overflow:hidden;cursor:default;display:flex;align-items:center;gap:7px;';
+
+      // Background attack-index bar
+      const bgBar=el('div'); bgBar.style.cssText=`position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color}0e;pointer-events:none;`; row.appendChild(bgBar);
+
+      // Rank number — tiny, left edge
+      const rankEl=el('span'); rankEl.style.cssText='font-size:8px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex-shrink:0;min-width:14px;text-align:right;position:relative;';
+      rankEl.textContent=rank+1;
+
+      // Identity block — takes all available space, wraps gracefully
+      const idBlock=el('div'); idBlock.style.cssText='flex:1;min-width:0;position:relative;';
+      if(hasName){
+        const nameEl=el('div'); nameEl.style.cssText='font-size:10px;color:var(--text);line-height:1.3;word-break:break-word;';
+        nameEl.textContent=name;
+        idBlock.appendChild(nameEl);
+        const emailEl=el('div'); emailEl.style.cssText='font-size:8.5px;color:var(--text-dim);line-height:1.3;word-break:break-all;';
+        emailEl.textContent=email;
+        idBlock.appendChild(emailEl);
+      } else {
+        // Email only — allow break at @ and dots so it wraps instead of clipping
+        const emailEl=el('div'); emailEl.style.cssText='font-size:9.5px;color:var(--text);line-height:1.4;word-break:break-all;';
+        emailEl.textContent=email;
+        idBlock.appendChild(emailEl);
+      }
+
+      // Attack index badge — right, prominent, fixed width so it never gets squeezed
+      const idxB=el('div'); idxB.style.cssText=`font-size:11px;font-weight:700;color:${color};font-family:Share Tech Mono,monospace;flex-shrink:0;text-align:right;min-width:38px;position:relative;`;
+      idxB.textContent=idx;
+
+      row.append(rankEl,idBlock,idxB);
       // Hover tooltip
       const tip=el('div');
       tip.style.cssText='position:fixed;z-index:9999;background:var(--card-bg,#1a1a2e);border:1px solid #ff4444;border-radius:6px;padding:10px 12px;min-width:220px;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.6);pointer-events:none;display:none;font-family:Share Tech Mono,monospace;font-size:9.5px;line-height:1.6;';
       document.body.appendChild(tip);
       row.addEventListener('mouseenter',()=>{
         tip.innerHTML='';
-        const tn=el('div'); tn.style.cssText='font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;'; tn.textContent=name; tip.appendChild(tn);
+        if(hasName){ const tn=el('div'); tn.style.cssText='font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px;'; tn.textContent=name; tip.appendChild(tn); }
         const te=el('div'); te.style.cssText='color:var(--cyan);margin-bottom:6px;'; te.textContent=email; tip.appendChild(te);
         const ti=el('div'); ti.style.cssText=`color:${color};font-weight:700;margin-bottom:4px;`; ti.textContent=`Attack Index: ${idx}`; tip.appendChild(ti);
         const ts=u.threatStatistics;
