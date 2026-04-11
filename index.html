@@ -5810,6 +5810,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swOtx"       onclick="selectWidgetType('otx')">
           🛰 Threat Intel<span>LevelBlue OTX feed — API required</span>
         </button>
+        <button class="sec-type-card" id="swTap"       onclick="selectWidgetType('tap')">
+          🔐 Proofpoint TAP<span>Blocked threats, clicks &amp; VAPs — API required</span>
+        </button>
       </div>
       <!-- Coding widgets -->
       <div class="widget-cat-panel" id="wcPanelCoding">
@@ -6523,7 +6526,7 @@ const SEARCH_ENGINES = [
 
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
                       'bible','wotd','apod','drinks',
-                      'ports','myip','rfc','cve','bgp','dns','subnet','otx',
+                      'ports','myip','rfc','cve','bgp','dns','subnet','otx','tap',
                       'github','regex','jsonformat','base64','hash','jwt',
                       'compose','met','artspot','unsplash'];
 
@@ -6779,6 +6782,8 @@ const PORT_COMBOS = {
   if(!Array.isArray(D.energyEntries)) D.energyEntries = [];
   if(!Array.isArray(D.otxIndustries))    D.otxIndustries    = [];
   if(!Array.isArray(D.otxAlarmHistory))  D.otxAlarmHistory  = [];
+  if(!Array.isArray(D.tapSeenClickGuids)) D.tapSeenClickGuids = [];
+  if(!Array.isArray(D.tapKnownVapEmails)) D.tapKnownVapEmails = [];
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -7248,6 +7253,7 @@ function buildWidgetBody(sec, tabId){
     case 'dns':       return buildDnsWidget(sec);
     case 'subnet':    return buildSubnetWidget(sec);
     case 'otx':       return buildOtxWidget(sec, tabId);
+    case 'tap':       return buildTapWidget(sec, tabId);
     case 'github':    return buildGithubWidget(sec);
     case 'regex':     return buildRegexWidget(sec);
     case 'rss':       return buildRssWidget(sec);
@@ -12020,6 +12026,377 @@ function cveAlarmSound(){
     if(ctx.state === 'suspended') ctx.resume().then(play);
     else play();
   } catch(e){}
+}
+
+// ── Proofpoint TAP alarm sound ────────────────────────────────────────────────
+// Sharp two-tone sawtooth pulses — distinct from CVE (square, rapid quad)
+// and OTX (sine, triple descending). Reads as "network intrusion": hard,
+// urgent, higher-frequency with a fast decay.
+function tapAlarmSound(){
+  try{
+    const ctx=getAudioCtx();
+    const play=()=>{
+      const now=ctx.currentTime;
+      // Two paired bursts: high→low, pause, high→low — sawtooth is harsher/more urgent
+      [[1200,0],[850,0.11],[1200,0.28],[850,0.39]].forEach(([freq,offset])=>{
+        const osc =ctx.createOscillator();
+        const gain=ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type='sawtooth';
+        osc.frequency.setValueAtTime(freq,now+offset);
+        gain.gain.setValueAtTime(0,now+offset);
+        gain.gain.linearRampToValueAtTime(0.16,now+offset+0.005);
+        gain.gain.exponentialRampToValueAtTime(0.001,now+offset+0.09);
+        osc.start(now+offset); osc.stop(now+offset+0.11);
+      });
+    };
+    if(ctx.state==='suspended') ctx.resume().then(play); else play();
+  }catch(e){}
+}
+
+/* ── PROOFPOINT TAP ─────────────────────────────────────────────────────────── */
+function buildTapWidget(sec,tabId){
+  const cfg=sec.widgetConfig||(sec.widgetConfig={});
+  if(!cfg.tapPrincipal)          cfg.tapPrincipal ='';
+  if(!cfg.tapSecret)             cfg.tapSecret    ='';
+  if(!cfg.tapWorker)             cfg.tapWorker    ='';
+  if(!cfg.sinceSeconds)          cfg.sinceSeconds =3600;
+  if(!cfg.vapWindow)             cfg.vapWindow    =14;
+  if(cfg.alarmSound===undefined) cfg.alarmSound   =false;
+
+  const REFRESH_MS=30*60*1000;
+  const SEEN_CAP  =500;
+  const VAP_CAP   =300;
+  let refreshTimer=null;
+  let isFirstLoad =true;
+  let lastSiem    =null;
+  let lastVaps    =null;
+
+  const wrap=el('div'); wrap.style.cssText='display:flex;flex-direction:column;gap:0;';
+
+  // ── Alert bar ──
+  const alertPanel=el('div'); alertPanel.style.cssText='display:none;margin-bottom:8px;';
+  const alertHdr=el('div');
+  alertHdr.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(255,68,68,0.1);border:1px solid #ff4444;border-radius:5px 5px 0 0;cursor:pointer;user-select:none;animation:cveAlertPulse 1.8s ease-in-out infinite alternate;';
+  const alertIcon=el('span'); alertIcon.textContent='🚨'; alertIcon.style.cssText='font-size:13px;flex-shrink:0;';
+  const alertTitle=el('span'); alertTitle.style.cssText='font-size:10.5px;font-family:Share Tech Mono,monospace;color:#ff8888;font-weight:700;letter-spacing:0.05em;flex:1;';
+  alertTitle.textContent='PROOFPOINT ALERTS';
+  const alertChevron=el('span'); alertChevron.style.cssText='font-size:9px;color:#ff8888;transition:transform 0.2s;'; alertChevron.textContent='▼';
+  const alertDismiss=el('button','cve-alert-dismiss'); alertDismiss.textContent='Dismiss';
+  alertDismiss.onclick=e=>{
+    e.stopPropagation();
+    if(lastSiem) (lastSiem.clicksPermitted||[]).forEach(c=>{ if(c.GUID&&!D.tapSeenClickGuids.includes(c.GUID)) D.tapSeenClickGuids.push(c.GUID); });
+    if(lastVaps) (lastVaps.users||[]).forEach(v=>{ const em=v.identity?.emails?.[0]||v.identity?.email||''; if(em&&!D.tapKnownVapEmails.includes(em)) D.tapKnownVapEmails.push(em); });
+    if(D.tapSeenClickGuids.length>SEEN_CAP) D.tapSeenClickGuids=D.tapSeenClickGuids.slice(-200);
+    if(D.tapKnownVapEmails.length>VAP_CAP)  D.tapKnownVapEmails=D.tapKnownVapEmails.slice(-150);
+    persist(); alertPanel.style.display='none'; clearTabAlert(tabId);
+  };
+  alertHdr.append(alertIcon,alertTitle,alertChevron,alertDismiss);
+  const alertBody=el('div');
+  alertBody.style.cssText='display:flex;flex-direction:column;gap:3px;border:1px solid #ff4444;border-top:none;border-radius:0 0 5px 5px;max-height:150px;overflow-y:auto;padding:5px 8px;';
+  alertHdr.addEventListener('click',()=>{
+    const open=alertBody.style.display!=='none';
+    alertBody.style.display=open?'none':'';
+    alertChevron.style.transform=open?'rotate(-90deg)':'';
+  });
+  alertPanel.append(alertHdr,alertBody);
+  wrap.appendChild(alertPanel);
+
+  // ── Header row ──
+  const hdrRow=el('div'); hdrRow.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:6px;';
+  const spinner=el('span','cve-spinner'); spinner.style.display='none';
+  const lastUpdLbl=el('span'); lastUpdLbl.style.cssText='font-size:9px;color:var(--text-dim);font-family:Share Tech Mono,monospace;flex:1;';
+  lastUpdLbl.textContent='Not yet loaded';
+  const rfBtn=el('button','monitor-check-btn'); rfBtn.textContent='↺'; rfBtn.title='Refresh now';
+  rfBtn.onclick=()=>refresh();
+  hdrRow.append(spinner,lastUpdLbl,rfBtn);
+  wrap.appendChild(hdrRow);
+
+  // ── Tab bar ──
+  const tabBar=el('div');
+  tabBar.style.cssText='display:flex;gap:3px;margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px;';
+  const TAB_DEFS=[{key:'threats',label:'🛡 Blocked'},{key:'clicks',label:'🖱 Clicks'},{key:'vaps',label:'👤 VAPs'}];
+  const tabBtns={}; const tabPanes={};
+  TAB_DEFS.forEach(t=>{
+    const btn=el('button','clock-style-btn'); btn.textContent=t.label;
+    btn.style.cssText='font-size:9.5px;padding:3px 8px;flex:1;';
+    btn.onclick=()=>switchTab(t.key); tabBtns[t.key]=btn; tabBar.appendChild(btn);
+    const pane=el('div'); pane.style.display='none'; tabPanes[t.key]=pane;
+  });
+  wrap.appendChild(tabBar);
+  const contentArea=el('div'); Object.values(tabPanes).forEach(p=>contentArea.appendChild(p)); wrap.appendChild(contentArea);
+
+  function switchTab(key){
+    Object.entries(tabBtns).forEach(([k,b])=>b.classList.toggle('active',k===key));
+    Object.entries(tabPanes).forEach(([k,p])=>p.style.display=k===key?'':'none');
+  }
+  switchTab('threats');
+
+  function placeholder(pane,msg){
+    pane.innerHTML='';
+    const d=el('div'); d.style.cssText='font-size:10.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;padding:20px 0;text-align:center;';
+    d.textContent=msg; pane.appendChild(d);
+  }
+  TAB_DEFS.forEach(t=>placeholder(tabPanes[t.key],'Not yet loaded'));
+
+  // ── Render: Blocked Threats ──
+  function renderThreats(siem){
+    const pane=tabPanes.threats; pane.innerHTML='';
+    if(!siem){ placeholder(pane,'No data — check credentials'); return; }
+    const msgs=siem.messagesBlocked||[];
+    const clicksB=siem.clicksBlocked||[];
+    const summRow=el('div'); summRow.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;';
+    [{label:'Messages Blocked',val:msgs.length,color:'#ff8844'},{label:'Clicks Blocked',val:clicksB.length,color:'#ffcc44'}].forEach(({label,val,color})=>{
+      const card=el('div'); card.style.cssText='background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:5px;padding:8px;text-align:center;';
+      const num=el('div'); num.style.cssText=`font-size:26px;font-weight:700;color:${color};font-family:Share Tech Mono,monospace;line-height:1;`; num.textContent=val;
+      const lbl=el('div'); lbl.style.cssText='font-size:9px;color:var(--text-dim);margin-top:3px;'; lbl.textContent=label;
+      card.append(num,lbl); summRow.appendChild(card);
+    });
+    pane.appendChild(summRow);
+    const CLS_COLOR={MALWARE:'#ff4444',PHISH:'#ff8844',SPAM:'#ffcc44',IMPOSTOR:'#cc88ff',BULK:'#44aaff'};
+    const renderBreakdown=(items,title)=>{
+      const tc={}; items.forEach(m=>{ const c=m.classification||'Unknown'; tc[c]=(tc[c]||0)+1; });
+      if(!Object.keys(tc).length) return;
+      const hdr=el('div'); hdr.style.cssText='font-size:9px;color:var(--text-dim);font-family:Share Tech Mono,monospace;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;margin-top:4px;';
+      hdr.textContent=title; pane.appendChild(hdr);
+      const maxC=Math.max(...Object.values(tc));
+      Object.entries(tc).sort((a,b)=>b[1]-a[1]).forEach(([cls,cnt])=>{
+        const row=el('div'); row.style.cssText='display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);';
+        const col=CLS_COLOR[cls]||'#888';
+        const badge=el('span'); badge.style.cssText=`font-size:8.5px;padding:1px 5px;border-radius:3px;background:${col}22;color:${col};font-family:Share Tech Mono,monospace;min-width:64px;text-align:center;flex-shrink:0;`; badge.textContent=cls;
+        const bw=el('div'); bw.style.cssText='flex:1;height:5px;border-radius:3px;background:var(--border);overflow:hidden;';
+        const fill=el('div'); fill.style.cssText=`height:100%;border-radius:3px;background:${col};width:${Math.min(100,(cnt/maxC)*100)}%;`; bw.appendChild(fill);
+        const num=el('span'); num.style.cssText='font-size:10px;color:var(--text-dim);font-family:Share Tech Mono,monospace;min-width:22px;text-align:right;flex-shrink:0;'; num.textContent=cnt;
+        row.append(badge,bw,num); pane.appendChild(row);
+      });
+    };
+    renderBreakdown(msgs,'Message Classification');
+    renderBreakdown(clicksB,'Blocked Click Classification');
+    const winLbl=el('div'); winLbl.style.cssText='font-size:8.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;margin-top:7px;text-align:right;';
+    winLbl.textContent=`Window: last ${Math.round(cfg.sinceSeconds/3600)}h`; pane.appendChild(winLbl);
+  }
+
+  // ── Render: Clicks ──
+  function renderClicks(siem){
+    const pane=tabPanes.clicks; pane.innerHTML='';
+    if(!siem){ placeholder(pane,'No data — check credentials'); return; }
+    const permitted=(siem.clicksPermitted||[]).map(c=>({...c,_status:'PERMITTED'}));
+    const blocked  =(siem.clicksBlocked  ||[]).map(c=>({...c,_status:'BLOCKED'}));
+    const all=[...permitted,...blocked].sort((a,b)=>new Date(b.clickTime)-new Date(a.clickTime));
+    if(!all.length){ placeholder(pane,'No click events in window'); return; }
+    const listWrap=el('div'); listWrap.style.cssText='display:flex;flex-direction:column;gap:4px;max-height:320px;overflow-y:auto;';
+    all.forEach(c=>{
+      const isPerm=c._status==='PERMITTED';
+      const row=el('div');
+      row.style.cssText=`padding:6px 8px;border-radius:5px;border:1px solid ${isPerm?'#ff444455':'var(--border)'};background:${isPerm?'rgba(255,68,68,0.07)':'rgba(0,0,0,0.15)'};`;
+      const topRow=el('div'); topRow.style.cssText='display:flex;align-items:center;gap:4px;margin-bottom:2px;';
+      const sb=el('span'); sb.style.cssText=`font-size:8px;padding:1px 5px;border-radius:3px;font-family:Share Tech Mono,monospace;background:${isPerm?'#ff444422':'#44884422'};color:${isPerm?'#ff6666':'#66cc88'};flex-shrink:0;font-weight:700;`; sb.textContent=isPerm?'PERMITTED':'BLOCKED';
+      const cb=el('span'); cb.style.cssText='font-size:8px;padding:1px 5px;border-radius:3px;font-family:Share Tech Mono,monospace;background:rgba(255,136,68,0.12);color:#ff9955;flex-shrink:0;'; cb.textContent=c.classification||'UNKNOWN';
+      const ts=el('span'); ts.style.cssText='font-size:8px;color:var(--text-dim);font-family:Share Tech Mono,monospace;margin-left:auto;flex-shrink:0;'; ts.textContent=c.clickTime?new Date(c.clickTime).toLocaleString():'';
+      topRow.append(sb,cb,ts);
+      const recip=el('div'); recip.style.cssText='font-size:10px;color:var(--text);margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; recip.textContent='👤 '+(c.recipient||'Unknown');
+      const urlEl=el('div'); urlEl.style.cssText='font-size:8.5px;color:var(--cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; urlEl.textContent=c.url||''; urlEl.title=c.url||'';
+      row.append(topRow,recip,urlEl); listWrap.appendChild(row);
+    });
+    pane.appendChild(listWrap);
+    const cntLbl=el('div'); cntLbl.style.cssText='font-size:8.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;margin-top:5px;text-align:right;';
+    cntLbl.textContent=`${permitted.length} permitted · ${blocked.length} blocked · last ${Math.round(cfg.sinceSeconds/3600)}h`; pane.appendChild(cntLbl);
+  }
+
+  // ── Render: VAPs ──
+  function renderVaps(vapData){
+    const pane=tabPanes.vaps; pane.innerHTML='';
+    const users=(vapData?.users||[]).slice().sort((a,b)=>(b.attackIndex||0)-(a.attackIndex||0));
+    if(!users.length){ placeholder(pane,'No VAPs in window'); return; }
+    const maxIdx=Math.max(...users.map(u=>u.attackIndex||0),1);
+    const listWrap=el('div'); listWrap.style.cssText='display:flex;flex-direction:column;gap:3px;max-height:340px;overflow-y:auto;';
+    users.forEach(u=>{
+      const email=u.identity?.emails?.[0]||u.identity?.email||'Unknown';
+      const name =u.identity?.name||email;
+      const idx  =u.attackIndex||0;
+      const pct  =Math.min(100,(idx/maxIdx)*100);
+      const color=idx>=900?'#ff4444':idx>=600?'#ff8844':idx>=300?'#ffcc44':'#44aaff';
+      const row=el('div');
+      row.style.cssText='padding:6px 8px;border-radius:5px;border:1px solid var(--border);background:rgba(0,0,0,0.15);position:relative;overflow:hidden;cursor:default;';
+      const bgBar=el('div'); bgBar.style.cssText=`position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color}11;pointer-events:none;`; row.appendChild(bgBar);
+      const topRow=el('div'); topRow.style.cssText='display:flex;align-items:center;gap:5px;position:relative;';
+      const nameEl=el('div'); nameEl.style.cssText='font-size:10px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; nameEl.textContent=name;
+      const idxB=el('span'); idxB.style.cssText=`font-size:9px;font-weight:700;color:${color};font-family:Share Tech Mono,monospace;flex-shrink:0;`; idxB.textContent=idx;
+      topRow.append(nameEl,idxB);
+      const emailEl=el('div'); emailEl.style.cssText='font-size:8.5px;color:var(--text-dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative;'; emailEl.textContent=email;
+      row.append(topRow,emailEl);
+      // Hover tooltip
+      const tip=el('div');
+      tip.style.cssText='position:fixed;z-index:9999;background:var(--card-bg,#1a1a2e);border:1px solid #ff4444;border-radius:6px;padding:10px 12px;min-width:220px;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,0.6);pointer-events:none;display:none;font-family:Share Tech Mono,monospace;font-size:9.5px;line-height:1.6;';
+      document.body.appendChild(tip);
+      row.addEventListener('mouseenter',()=>{
+        tip.innerHTML='';
+        const tn=el('div'); tn.style.cssText='font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;'; tn.textContent=name; tip.appendChild(tn);
+        const te=el('div'); te.style.cssText='color:var(--cyan);margin-bottom:6px;'; te.textContent=email; tip.appendChild(te);
+        const ti=el('div'); ti.style.cssText=`color:${color};font-weight:700;margin-bottom:4px;`; ti.textContent=`Attack Index: ${idx}`; tip.appendChild(ti);
+        const ts=u.threatStatistics;
+        if(ts){
+          if(ts.clicksPermitted){ const cp=el('div'); cp.style.cssText='color:#ff6666;'; cp.textContent=`⚠ Permitted Clicks: ${ts.clicksPermitted}`; tip.appendChild(cp); }
+          if(ts.messagesDelivered){ const md=el('div'); md.style.cssText='color:#ffcc44;'; md.textContent=`✉ Msgs Delivered: ${ts.messagesDelivered}`; tip.appendChild(md); }
+          if(ts.messagesBlocked){ const mb=el('div'); mb.style.cssText='color:#44cc88;'; mb.textContent=`🛡 Msgs Blocked: ${ts.messagesBlocked}`; tip.appendChild(mb); }
+        }
+        const atk=u.threatStatistics?.attacksByClassification||{};
+        if(Object.keys(atk).length){
+          const th=el('div'); th.style.cssText='color:var(--text-dim);margin-top:6px;margin-bottom:2px;'; th.textContent='Attack Types:'; tip.appendChild(th);
+          Object.entries(atk).forEach(([type,count])=>{ const tt=el('div'); tt.style.cssText='padding-left:8px;color:var(--text);'; tt.textContent=`${type}: ${count}`; tip.appendChild(tt); });
+        }
+        if(u.identity?.department){ const dep=el('div'); dep.style.cssText='color:var(--text-dim);margin-top:4px;'; dep.textContent=`Dept: ${u.identity.department}`; tip.appendChild(dep); }
+        if(u.identity?.location){ const loc=el('div'); loc.style.cssText='color:var(--text-dim);'; loc.textContent=`Location: ${u.identity.location}`; tip.appendChild(loc); }
+        tip.style.display='block';
+        const rect=row.getBoundingClientRect();
+        let top=rect.bottom+6; let left=rect.left;
+        if(top+240>window.innerHeight) top=rect.top-6-tip.offsetHeight;
+        if(left+310>window.innerWidth) left=window.innerWidth-315;
+        tip.style.top=top+'px'; tip.style.left=Math.max(4,left)+'px';
+      });
+      row.addEventListener('mouseleave',()=>{ tip.style.display='none'; });
+      listWrap.appendChild(row);
+    });
+    pane.appendChild(listWrap);
+    const cntLbl=el('div'); cntLbl.style.cssText='font-size:8.5px;color:var(--text-dim);font-family:Share Tech Mono,monospace;margin-top:5px;text-align:right;';
+    cntLbl.textContent=`${users.length} VAP(s) · ${cfg.vapWindow}-day window`; pane.appendChild(cntLbl);
+  }
+
+  // ── Alert processing ──
+  function processAlerts(siem,vaps){
+    if(isFirstLoad) return;
+    const alerts=[]; const newGuids=[]; const newEmails=[];
+    const permClicks=siem?.clicksPermitted||[];
+    permClicks.forEach(c=>{
+      if(c.GUID&&!D.tapSeenClickGuids.includes(c.GUID)){
+        newGuids.push(c.GUID);
+        const urlShort=(c.url||'').replace(/^https?:\/\//,'').slice(0,45);
+        alerts.push({type:'click',msg:`🖱 Permitted click: ${c.recipient||'?'} → ${urlShort}`});
+      }
+    });
+    const vapUsers=vaps?.users||[];
+    vapUsers.forEach(v=>{
+      const em=v.identity?.emails?.[0]||v.identity?.email||'';
+      if(em&&!D.tapKnownVapEmails.includes(em)){
+        newEmails.push(em);
+        alerts.push({type:'vap',msg:`👤 New VAP: ${em} (Index: ${v.attackIndex||0})`});
+      }
+    });
+    // Cross-correlation
+    if(permClicks.length&&vapUsers.length){
+      const vapSet=new Set(vapUsers.map(v=>v.identity?.emails?.[0]||v.identity?.email||'').filter(Boolean));
+      const corrs=new Set();
+      permClicks.forEach(c=>{
+        if(c.recipient&&vapSet.has(c.recipient)&&(newGuids.includes(c.GUID)||newEmails.includes(c.recipient))&&!corrs.has(c.recipient)){
+          corrs.add(c.recipient);
+          alerts.unshift({type:'correlation',msg:`⚡ VAP ${c.recipient} had a permitted malicious click!`});
+        }
+      });
+    }
+    if(alerts.length){
+      alertBody.innerHTML='';
+      alerts.forEach(a=>{
+        const line=el('div');
+        const lc=a.type==='correlation'?'#ff4444':a.type==='click'?'#ff9966':'#ffcc88';
+        line.style.cssText=`padding:2px 4px;font-size:9.5px;font-family:Share Tech Mono,monospace;color:${lc};border-bottom:1px solid rgba(255,68,68,0.15);`;
+        line.textContent=a.msg; alertBody.appendChild(line);
+      });
+      alertPanel.style.display=''; setTabAlert(tabId,'critical');
+      if(cfg.alarmSound) tapAlarmSound();
+    }
+  }
+
+  // ── Seed state on first load ──
+  function seedState(siem,vaps){
+    if(siem) (siem.clicksPermitted||[]).forEach(c=>{ if(c.GUID&&!D.tapSeenClickGuids.includes(c.GUID)) D.tapSeenClickGuids.push(c.GUID); });
+    if(vaps) (vaps.users||[]).forEach(v=>{ const em=v.identity?.emails?.[0]||v.identity?.email||''; if(em&&!D.tapKnownVapEmails.includes(em)) D.tapKnownVapEmails.push(em); });
+    if(D.tapSeenClickGuids.length>SEEN_CAP) D.tapSeenClickGuids=D.tapSeenClickGuids.slice(-200);
+    if(D.tapKnownVapEmails.length>VAP_CAP)  D.tapKnownVapEmails=D.tapKnownVapEmails.slice(-150);
+    persist();
+  }
+
+  // ── Fetch ──
+  async function refresh(){
+    if(!cfg.tapPrincipal||!cfg.tapSecret){
+      TAB_DEFS.forEach(t=>placeholder(tabPanes[t.key],'Enter credentials in widget settings (edit mode)'));
+      return;
+    }
+    const workerUrl=(cfg.tapWorker||D.workerUrl||'').replace(/\/+$/,'');
+    if(!workerUrl){ TAB_DEFS.forEach(t=>placeholder(tabPanes[t.key],'No worker URL configured')); return; }
+    spinner.style.display=''; rfBtn.disabled=true;
+    const post=(type,extra={})=>fetch(workerUrl+'/tap',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({type,principal:cfg.tapPrincipal,secret:cfg.tapSecret,sinceSeconds:cfg.sinceSeconds,...extra}),
+    }).then(r=>r.json()).catch(e=>({error:e.message}));
+    try{
+      const [siem,vaps]=await Promise.all([post('siem'),post('vap',{vapWindow:cfg.vapWindow})]);
+      lastSiem=siem?.error?null:siem; lastVaps=vaps?.error?null:vaps;
+      if(siem?.error)      lastUpdLbl.textContent='SIEM error: '+siem.error;
+      else if(vaps?.error) lastUpdLbl.textContent='VAP error: '+vaps.error;
+      else                 lastUpdLbl.textContent='Updated '+new Date().toLocaleTimeString();
+      renderThreats(lastSiem); renderClicks(lastSiem); renderVaps(lastVaps);
+      if(isFirstLoad){ seedState(lastSiem,lastVaps); }
+      else{
+        processAlerts(lastSiem,lastVaps);
+        if(lastSiem) (lastSiem.clicksPermitted||[]).forEach(c=>{ if(c.GUID&&!D.tapSeenClickGuids.includes(c.GUID)) D.tapSeenClickGuids.push(c.GUID); });
+        if(lastVaps) (lastVaps.users||[]).forEach(v=>{ const em=v.identity?.emails?.[0]||v.identity?.email||''; if(em&&!D.tapKnownVapEmails.includes(em)) D.tapKnownVapEmails.push(em); });
+        if(D.tapSeenClickGuids.length>SEEN_CAP) D.tapSeenClickGuids=D.tapSeenClickGuids.slice(-200);
+        if(D.tapKnownVapEmails.length>VAP_CAP)  D.tapKnownVapEmails=D.tapKnownVapEmails.slice(-150);
+        persist();
+      }
+    }catch(err){ lastUpdLbl.textContent='Fetch error: '+err.message; }
+    finally{ spinner.style.display='none'; rfBtn.disabled=false; isFirstLoad=false; }
+    if(refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer=setTimeout(refresh,REFRESH_MS);
+  }
+
+  // ── Edit-mode inline settings (same pattern as OTX) ──
+  const editSec=el('div'); editSec.style.cssText='margin-top:10px;padding:10px;background:rgba(0,0,0,0.2);border:1px dashed var(--border);border-radius:5px;';
+  const editLbl=el('div','sports-edit-section-lbl'); editLbl.textContent='TAP Settings';
+  const mkInp=(ph,val,pw=false)=>{
+    const inp=el('input','cve-interval-inp'); inp.type=pw?'password':'text';
+    inp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-bottom:4px;';
+    inp.placeholder=ph; inp.value=val||''; if(pw) inp.autocomplete='off'; return inp;
+  };
+  const inpPrincipal=mkInp('Service Principal ID',cfg.tapPrincipal);
+  const inpSecret   =mkInp('Service Principal Secret (stored locally)',cfg.tapSecret,true);
+  const inpWorker   =mkInp('Override Worker URL (blank = use global)',cfg.tapWorker);
+  const windowRow=el('div'); windowRow.style.cssText='display:flex;gap:6px;margin-bottom:4px;';
+  const mkNum=(ph,val,min,max)=>{
+    const inp=el('input','cve-interval-inp'); inp.type='number'; inp.min=min; inp.max=max;
+    inp.style.cssText='flex:1;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;';
+    inp.placeholder=ph; inp.value=val; return inp;
+  };
+  const inpSince =mkNum('SIEM window (secs)',cfg.sinceSeconds,300,86400);
+  const inpVapWin=mkNum('VAP window (days)',cfg.vapWindow,1,90);
+  windowRow.append(inpSince,inpVapWin);
+  const alarmRow=el('div','cve-watch-options');
+  const alarmLbl=el('label','cve-watch-opt-label');
+  const alarmChk=el('input'); alarmChk.type='checkbox'; alarmChk.checked=!!cfg.alarmSound;
+  alarmChk.onchange=()=>{ cfg.alarmSound=alarmChk.checked; persist(); };
+  alarmLbl.append(alarmChk,document.createTextNode(' Alarm sound on alerts'));
+  alarmRow.appendChild(alarmLbl);
+  const saveRow=el('div'); saveRow.style.cssText='display:flex;align-items:center;gap:6px;margin-top:4px;';
+  const saveBtn=el('button','todo-add-btn'); saveBtn.textContent='Save & Refresh';
+  const saveStatus=el('span'); saveStatus.style.cssText='font-size:10px;color:var(--cyan);';
+  saveBtn.onclick=()=>{
+    cfg.tapPrincipal=inpPrincipal.value.trim(); cfg.tapSecret=inpSecret.value.trim();
+    cfg.tapWorker=inpWorker.value.trim(); cfg.sinceSeconds=parseInt(inpSince.value)||3600;
+    cfg.vapWindow=parseInt(inpVapWin.value)||14; persist();
+    saveStatus.textContent='✓ Saved'; setTimeout(()=>saveStatus.textContent='',2000); refresh();
+  };
+  saveRow.append(saveBtn,saveStatus);
+  const editNote=el('div'); editNote.style.cssText='font-size:10px;color:var(--text-dim);margin-top:6px;line-height:1.5;';
+  editNote.textContent='Generate credentials in Threat Insight Dashboard → Settings → Connected Applications.';
+  editSec.append(editLbl,inpPrincipal,inpSecret,inpWorker,windowRow,alarmRow,saveRow,editNote);
+  wrap.appendChild(editSec);
+  const applyEdit=()=>{ editSec.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obsEdit=new MutationObserver(applyEdit);
+  obsEdit.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyEdit();
+
+  refresh();
+  return wrap;
 }
 
 function buildCveWidget(sec){
