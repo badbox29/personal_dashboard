@@ -6971,6 +6971,8 @@ function kvMergeD(remote) {
     const seen = new Map(localArr.map(e => [idFn(e), e]));
     remoteArr.forEach(e => { const k = idFn(e); if(!seen.has(k)) seen.set(k, e); });
     D[key] = Array.from(seen.values());
+    // Keep energyEntries sorted newest-first so [0] is always the most recent
+    if(key === 'energyEntries') D[key].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
   });
 
   // Merge drinkLogs per secId additively
@@ -7141,6 +7143,8 @@ function renderTabBar(){
   atb.textContent = '＋ Tab';
   atb.onclick = promptAddTab;
   bar.insertBefore(atb, toolbar);
+  // Re-apply any active tab alerts to the newly built tab buttons
+  _applyTabAlertClasses();
 }
 
 /* ---- TAB CONTENTS ---- */
