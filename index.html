@@ -5534,10 +5534,6 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="mbtn mbtn-cancel" onclick="resetKvIdentity()" style="font-size:11px;">⚠ Reset Sync Identity</button>
         <span style="font-size:10px;color:var(--text-dim);">Reset generates a new token and disconnects from current KV data.</span>
       </div>
-      <div style="margin-top:10px;">
-        <button class="mbtn mbtn-cancel" onclick="resetKvIdentity()" style="font-size:11px;">⚠ Reset Sync Identity</button>
-        <span style="font-size:10px;color:var(--text-dim);margin-left:8px;">Generates a new token — disconnects from current KV data.</span>
-      </div>
     </div>
     <div class="modal-actions">
       <button class="mbtn mbtn-cancel" onclick="closeOverlay('workerOverlay')">Close</button>
@@ -17282,7 +17278,9 @@ function enterKvToken(){
   }
   D.kvToken    = val;
   D.kvLastSync = 0;
-  persist();
+  // Write directly to localStorage — do NOT call persist() here as that would
+  // trigger a push and overwrite the remote KV data we're trying to pull down
+  localStorage.setItem('salty_v2', JSON.stringify(D));
   document.getElementById('kvTokenDisplay').value = D.kvToken;
   const s = document.getElementById('kvTokenStatus');
   s.style.color = 'var(--cyan)';
