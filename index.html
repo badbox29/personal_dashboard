@@ -5505,6 +5505,34 @@ body.edit-mode .gh-add-row { display: flex; }
         Leave them blank to use this global setting.
       </p>
     </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+      <label style="font-weight:600;">☁️ KV Sync</label>
+      <p style="font-size:11px;color:var(--text-dim);margin:4px 0 10px;line-height:1.6;">
+        Syncs your dashboard state across multiple browsers via your Worker's KV storage.
+        Each user gets a unique sync token — include it in your JSON export to share state with your other devices.
+      </p>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <label class="toggle-label" style="margin:0;">
+          <input type="checkbox" id="kvEnabledChk" onchange="saveKvEnabled(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span style="font-size:12px;color:var(--text);">Enable KV sync</span>
+        <span id="kvSyncStatus" style="margin-left:auto;font-size:11px;color:var(--text-dim);"></span>
+      </div>
+      <label style="font-weight:600;font-size:11px;">Sync Token</label>
+      <p style="font-size:11px;color:var(--text-dim);margin:3px 0 6px;line-height:1.5;">
+        This token is your sync identity. Copy it to other devices or let the export/import process carry it automatically.
+      </p>
+      <div style="display:flex;gap:7px;align-items:center;">
+        <input type="text" id="kvTokenDisplay" readonly
+               style="flex:1;font-family:Share Tech Mono,monospace;font-size:11px;opacity:0.7;cursor:default;background:var(--bg2);">
+        <button class="mbtn mbtn-primary" onclick="copyKvToken()" style="flex-shrink:0;">Copy</button>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="mbtn mbtn-cancel" onclick="resetKvIdentity()" style="font-size:11px;">⚠ Reset Sync Identity</button>
+        <span style="font-size:10px;color:var(--text-dim);margin-left:8px;">Generates a new token — disconnects from current KV data.</span>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="mbtn mbtn-cancel" onclick="closeOverlay('workerOverlay')">Close</button>
     </div>
@@ -6735,6 +6763,15 @@ const PORT_COMBOS = {
 };
 
 /* ================================================================
+   SYNC TOKEN UTILITY
+   ================================================================ */
+function generateSyncToken(){
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, b => b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ================================================================
    BOOT
    ================================================================ */
 (function init(){
@@ -6790,6 +6827,21 @@ const PORT_COMBOS = {
   if(!Array.isArray(D.tapSeenClickGuids)) D.tapSeenClickGuids = [];
   if(!Array.isArray(D.tapKnownVapEmails)) D.tapKnownVapEmails = [];
   if(D.tapLastFetchTime === undefined)    D.tapLastFetchTime   = 0;
+  if(typeof D.drinkLogs !== 'object' || Array.isArray(D.drinkLogs)) D.drinkLogs = {};
+  // Migrate legacy salty_drinks_* localStorage keys into D.drinkLogs
+  Object.keys(localStorage).filter(k=>k.startsWith('salty_drinks_')).forEach(k=>{
+    const secId = k.replace('salty_drinks_','');
+    if(!D.drinkLogs[secId]){
+      try{ D.drinkLogs[secId] = JSON.parse(localStorage.getItem(k)||'[]'); } catch(e){ D.drinkLogs[secId]=[]; }
+    }
+    localStorage.removeItem(k);
+  });
+  // KV sync fields
+  if(D.kvEnabled === undefined)   D.kvEnabled   = false;
+  if(D.kvToken === undefined)     D.kvToken     = generateSyncToken();
+  if(D.kvLastSync === undefined)  D.kvLastSync  = 0;
+  // Per-browser clientId (stored outside D so it stays browser-specific)
+  if(!localStorage.getItem('salty_clientId')) localStorage.setItem('salty_clientId', generateSyncToken());
   if(D.pinWeather === undefined) D.pinWeather = false;
   if(D.pollenKey === undefined) D.pollenKey = '';
   if(D.pollenEnabled === undefined) D.pollenEnabled = false;
@@ -6840,6 +6892,8 @@ const PORT_COMBOS = {
   applyWeatherPin();
   fetchQuote();
   fetchAllWeather();
+  // Pull KV state on load if sync is enabled
+  kvPull();
 
   // Auto-refresh weather tiles — default 30 min, configurable via D.weatherRefreshMins
   // Prevents tiles getting permanently stuck on "Loading…" after a failed initial fetch
@@ -6861,9 +6915,106 @@ const PORT_COMBOS = {
 
 function tryParse(s){ try{ return JSON.parse(s); } catch(e){ return null; } }
 function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
-function persist(){ localStorage.setItem('salty_v2', JSON.stringify(D)); }
+function persist(){ localStorage.setItem('salty_v2', JSON.stringify(D)); kvPushDebounced(); }
 // Returns the effective worker URL for a widget: widget override → global → null
 function getWorkerUrl(widgetOverride){ return (widgetOverride||'').trim() || (D.workerUrl||'').trim() || null; }
+
+/* ================================================================
+   KV SYNC
+   ================================================================ */
+
+// Keys whose arrays are merged additively rather than overwritten
+const KV_MERGE_KEYS = {
+  // dedup by .id
+  otxAlarmHistory:    e => e.id,
+  cveAlarmHistory:    e => e.id,
+  // dedup by .vendor
+  cveVendorList:      e => e.vendor,
+  // dedup by .timestamp
+  energyEntries:      e => e.timestamp,
+  // primitive arrays — dedup by value
+  tapSeenClickGuids:  e => e,
+  tapKnownVapEmails:  e => e,
+};
+
+function kvMergeD(remote) {
+  // Merge array keys additively
+  Object.entries(KV_MERGE_KEYS).forEach(([key, idFn]) => {
+    const localArr  = Array.isArray(D[key])      ? D[key]      : [];
+    const remoteArr = Array.isArray(remote[key])  ? remote[key] : [];
+    const seen = new Map(localArr.map(e => [idFn(e), e]));
+    remoteArr.forEach(e => { const k = idFn(e); if(!seen.has(k)) seen.set(k, e); });
+    D[key] = Array.from(seen.values());
+  });
+
+  // Merge drinkLogs per secId additively
+  const remoteLogs = (typeof remote.drinkLogs === 'object' && !Array.isArray(remote.drinkLogs))
+    ? remote.drinkLogs : {};
+  Object.entries(remoteLogs).forEach(([secId, remoteLog]) => {
+    const localLog = Array.isArray(D.drinkLogs[secId]) ? D.drinkLogs[secId] : [];
+    const seen = new Map(localLog.map(e => [e.t, e]));
+    (Array.isArray(remoteLog) ? remoteLog : []).forEach(e => { if(!seen.has(e.t)) seen.set(e.t, e); });
+    D.drinkLogs[secId] = Array.from(seen.values());
+  });
+
+  // For everything else: remote wins if remote is newer
+  // (config, layout, theme etc — already handled by caller checking timestamps)
+}
+
+async function kvPull() {
+  const workerUrl = (D.workerUrl || '').trim();
+  if(!D.kvEnabled || !workerUrl || !D.kvToken) return;
+  try {
+    const res = await fetch(workerUrl.replace(/\/+$/,'') + '/kv', {
+      method: 'GET',
+      headers: { 'X-Sync-Token': D.kvToken }
+    });
+    if(!res.ok) return;
+    const { found, data } = await res.json();
+    if(!found || !data) return;
+    const remoteTs = data.updatedAt || 0;
+    const localTs  = D.kvLastSync  || 0;
+    if(remoteTs <= localTs) return; // local is current
+    // Merge data arrays additively
+    kvMergeD(data.payload || {});
+    // For config: remote wins if remote is newer than local last-sync
+    // (we already merged arrays; now take remote config fields if remote is fresher)
+    const configKeys = Object.keys(data.payload || {}).filter(k => !(k in KV_MERGE_KEYS) && k !== 'drinkLogs');
+    configKeys.forEach(k => { D[k] = (data.payload)[k]; });
+    D.kvLastSync = remoteTs;
+    persist();
+    renderAll();
+  } catch(e) { console.warn('[KV] pull failed:', e); }
+}
+
+let _kvPushTimer = null;
+function kvPushDebounced() {
+  if(!D.kvEnabled) return;
+  clearTimeout(_kvPushTimer);
+  _kvPushTimer = setTimeout(kvPush, 5000);
+}
+
+async function kvPush() {
+  const workerUrl = (D.workerUrl || '').trim();
+  if(!D.kvEnabled || !workerUrl || !D.kvToken) return;
+  const clientId = localStorage.getItem('salty_clientId') || 'unknown';
+  const now = Date.now();
+  const envelope = {
+    version:   1,
+    updatedAt: now,
+    clientId:  clientId,
+    payload:   deepClone(D)
+  };
+  try {
+    await fetch(workerUrl.replace(/\/+$/,'') + '/kv', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Sync-Token': D.kvToken },
+      body:    JSON.stringify(envelope)
+    });
+    D.kvLastSync = now;
+    localStorage.setItem('salty_v2', JSON.stringify(D));
+  } catch(e) { console.warn('[KV] push failed:', e); }
+}
 
 /* ================================================================
    RENDER ALL
@@ -15618,9 +15769,8 @@ function buildUnsplashWidget(sec){
 /* ================================================================
    DRINK TRACKER WIDGET
    ================================================================ */
-function drinksKey(secId){ return 'salty_drinks_'+secId; }
-function loadDrinksLog(secId){ try{ return JSON.parse(localStorage.getItem(drinksKey(secId))||'[]'); } catch(e){ return []; } }
-function saveDrinksLog(secId, log){ localStorage.setItem(drinksKey(secId), JSON.stringify(log)); }
+function loadDrinksLog(secId){ return Array.isArray(D.drinkLogs[secId]) ? D.drinkLogs[secId] : []; }
+function saveDrinksLog(secId, log){ D.drinkLogs[secId] = log; persist(); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
 function dayTotals(log, dateStr){
   const totals={}; DRINK_CATS.forEach(c=>{ totals[c.key]=0; });
@@ -17093,6 +17243,52 @@ function openWorkerModal(){
   openOverlay('workerOverlay');
 }
 
+function openWorkerModal(){
+  document.getElementById('workerUrlInp').value = D.workerUrl || '';
+  document.getElementById('workerUrlStatus').textContent = '';
+  document.getElementById('localProxyUrlInp').value = D.localProxyUrl || '';
+  document.getElementById('localProxyUrlStatus').textContent = '';
+  // KV sync fields
+  document.getElementById('kvEnabledChk').checked = !!D.kvEnabled;
+  document.getElementById('kvTokenDisplay').value = D.kvToken || '';
+  updateKvSyncStatus();
+  openOverlay('workerOverlay');
+}
+
+function updateKvSyncStatus(){
+  const el = document.getElementById('kvSyncStatus');
+  if(!el) return;
+  if(!D.kvEnabled){ el.textContent = ''; return; }
+  el.textContent = D.kvLastSync
+    ? 'Last synced: ' + new Date(D.kvLastSync).toLocaleTimeString()
+    : 'Not yet synced';
+}
+
+function saveKvEnabled(checked){
+  D.kvEnabled = checked;
+  persist();
+  updateKvSyncStatus();
+  if(checked) kvPull();
+}
+
+function copyKvToken(){
+  const tok = D.kvToken || '';
+  if(!tok) return;
+  navigator.clipboard.writeText(tok).then(()=>{
+    const btn = document.querySelector('#workerOverlay button[onclick="copyKvToken()"]');
+    if(btn){ const orig=btn.textContent; btn.textContent='Copied!'; setTimeout(()=>{ btn.textContent=orig; },2000); }
+  });
+}
+
+function resetKvIdentity(){
+  if(!confirm('This will generate a new sync token and disconnect from your current KV data.\n\nYour local data is safe. Are you sure?')) return;
+  D.kvToken   = generateSyncToken();
+  D.kvLastSync = 0;
+  persist();
+  document.getElementById('kvTokenDisplay').value = D.kvToken;
+  updateKvSyncStatus();
+}
+
 function saveWorkerUrl(){
   D.workerUrl = document.getElementById('workerUrlInp').value.trim();
   persist();
@@ -17632,12 +17828,22 @@ function handleImport(ev){
   fr.onload = e => {
     const imported = tryParse(e.target.result);
     if(!imported?.tabs){ alert('Invalid bookmark file.'); return; }
+    // Preserve per-browser identity if the import doesn't have a token
+    // (importing someone else's file shouldn't steal their KV identity)
+    const localToken    = D.kvToken || null;
+    const localClientId = localStorage.getItem('salty_clientId');
     D = imported;
+    // If imported file has no token, keep the local one
+    if(!D.kvToken) D.kvToken = localToken || generateSyncToken();
+    // drinkLogs migration: ensure it exists
+    if(typeof D.drinkLogs !== 'object' || Array.isArray(D.drinkLogs)) D.drinkLogs = {};
     activeTab = D.tabs[0]?.id;
     persist();
+    if(localClientId) localStorage.setItem('salty_clientId', localClientId);
     renderAll();
     fetchAllWeather();
     alert('Bookmarks imported successfully!');
+
   };
   fr.readAsText(file);
   ev.target.value='';
