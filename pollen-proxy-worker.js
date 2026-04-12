@@ -639,6 +639,109 @@ async function handleRss(body, ctx) {
   });
 }
 
+// ── TAP handler (/tap) ────────────────────────────────────────────────────────
+//
+// Proxies Proofpoint TAP API v2 endpoints. Credentials stay server-side.
+// Body: { type: 'siem'|'clicks'|'vap', principal, secret, interval?, sinceSeconds?, vapWindow? }
+//   siem/clicks support either:
+//     interval: ISO8601 interval string e.g. "2024-01-01T00:00:00Z/2024-01-01T01:00:00Z"
+//     sinceSeconds: integer (legacy, still supported)
+//   vap requires vapWindow (days: 14, 30, or 90)
+//   siem   → /v2/siem/all          (messagesBlocked + clicksBlocked + clicksPermitted)
+//   clicks → /v2/siem/clicks/permitted (permitted malicious clicks only)
+//   vap    → /v2/people/vap        (Very Attacked Persons list)
+//
+// Cache: 5 min (widget refreshes every 30 min, so short cache just collapses
+//         any accidental double-loads without serving stale security data).
+
+const TAP_CACHE_TTL_CURRENT  =  5 * 60; // 5 min  — for intervals touching now
+const TAP_CACHE_TTL_HISTORIC =  2 * 60 * 60; // 2 hrs — for fully past intervals (immutable)
+
+async function handleTap(body, ctx) {
+  const {
+    type,
+    principal,
+    secret,
+    interval,          // ISO8601 interval string (preferred for catch-up calls)
+    sinceSeconds = 3600, // fallback for simple 1-hour pulls
+    vapWindow    = 14,
+  } = body;
+
+  if (!principal || !secret)
+    return json({ error: 'Required fields: principal, secret' }, 400);
+  if (!['siem', 'clicks', 'vap'].includes(type))
+    return json({ error: 'Required field: type must be siem | clicks | vap' }, 400);
+
+  // Build time query param — prefer interval over sinceSeconds
+  const timeParam = interval
+    ? `interval=${encodeURIComponent(interval)}`
+    : `sinceSeconds=${encodeURIComponent(sinceSeconds)}`;
+
+  // Basic auth: base64(principal:secret)
+  const auth     = btoa(`${principal}:${secret}`);
+  const keyHash  = hashStr(principal);
+
+  let upstreamUrl;
+  if (type === 'siem')
+    upstreamUrl = `https://tap-api-v2.proofpoint.com/v2/siem/all?format=json&${timeParam}`;
+  else if (type === 'clicks')
+    upstreamUrl = `https://tap-api-v2.proofpoint.com/v2/siem/clicks/permitted?format=json&${timeParam}`;
+  else
+    upstreamUrl = `https://tap-api-v2.proofpoint.com/v2/people/vap?window=${encodeURIComponent(vapWindow)}`;
+
+  // Cache key uses interval string or sinceSeconds value
+  const timeKey  = interval ? encodeURIComponent(interval) : sinceSeconds;
+  const cacheKey = `https://tap-cache.internal/${keyHash}/${type}/${type === 'vap' ? vapWindow : timeKey}`;
+  const cache    = caches.default;
+
+  const cached = await cache.match(cacheKey);
+  if (cached) return json({ ...(await cached.json()), _cached: true });
+
+  let upstream;
+  try {
+    upstream = await fetch(upstreamUrl, {
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Accept':        'application/json',
+      },
+    });
+  } catch (e) {
+    return json({ error: `TAP fetch failed: ${e.message}` }, 502);
+  }
+
+  let data;
+  try { data = await upstream.json(); }
+  catch (e) { return json({ error: 'TAP API returned non-JSON' }, 502); }
+
+  if (!upstream.ok) {
+    const msg = data?.message || data?.error || `HTTP ${upstream.status}`;
+    return json({ error: `TAP API error: ${msg}`, status: upstream.status }, upstream.status);
+  }
+
+  // Historical intervals (end time > 5 min in the past) are immutable — cache longer.
+  // Intervals touching the current hour get the short TTL so fresh data comes through.
+  let cacheTtl = TAP_CACHE_TTL_CURRENT;
+  if (interval) {
+    try {
+      const endIso = interval.split('/')[1];
+      if (endIso) {
+        const endMs  = new Date(endIso).getTime();
+        const ageMs  = Date.now() - endMs;
+        if (ageMs > 5 * 60 * 1000) cacheTtl = TAP_CACHE_TTL_HISTORIC;
+      }
+    } catch (_) {}
+  }
+
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(data), {
+    headers: {
+      'Content-Type':  'application/json',
+      'Cache-Control': `public, max-age=${cacheTtl}`,
+    },
+  })));
+
+  return json(data);
+}
+
 // ── NVD handler (/nvd) ───────────────────────────────────────────────────────
 
 async function handleNvd(body, ctx) {
@@ -996,6 +1099,7 @@ export default {
 
     if(path === '/pollen') return handlePollen(body, ctx);
     if(path === '/rss')    return handleRss(body, ctx);
+    if(path === '/tap')    return handleTap(body, ctx);
     if(path === '/nvd')    return handleNvd(body, ctx);
     if(path === '/sports') return handleSports(body, ctx);
     if(path === '/otx')    return handleOtx(body, ctx);
@@ -1012,6 +1116,6 @@ export default {
     if(body.service) return handlePollen(body, ctx);
     if(body.url)     return handleRss(body, ctx);
 
-    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /sports, /otx, /bible, /topics, /wotd, /unsplash, or /status' }, 404);
+    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /tap, /sports, /otx, /bible, /topics, /wotd, /unsplash, or /status' }, 404);
   }
 };
