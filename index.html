@@ -6999,9 +6999,10 @@ async function kvPull() {
     });
     if(!res.ok) return;
     const { found, data } = await res.json();
-    if(!found || !data) return;
+    if(!found || !data) { console.log('[KV pull] nothing found'); return; }
     const remoteTs = data.updatedAt || 0;
     const localTs  = D.kvLastSync  || 0;
+    console.log('[KV pull]', { remoteTs, localTs, willPull: remoteTs > localTs, remoteEntries: data.payload?.energyEntries?.length, localEntries: D.energyEntries.length });
     if(remoteTs <= localTs) return;
     kvMergeD(data.payload || {});
     const configKeys = Object.keys(data.payload || {}).filter(k => !(k in KV_MERGE_KEYS) && k !== 'drinkLogs');
@@ -10519,6 +10520,15 @@ function buildEnergyWidget(sec, tabId){
     if(!cfg.remindersEnabled){ reminderBanner.style.display='none'; clearTabAlert(tabId); return; }
     const now=Date.now(), lastTs=D.energyEntries.length?new Date(D.energyEntries[0].timestamp).getTime():0;
     const active=(now-lastTs>=cfg.reminderFreqMs)&&!(cfg.snoozeUntil&&now<cfg.snoozeUntil);
+    console.log('[Energy checkReminder]',{
+      entriesCount: D.energyEntries.length,
+      lastEntry: D.energyEntries[0]?.timestamp || 'none',
+      lastTs, now,
+      msSinceLast: now-lastTs,
+      reminderFreqMs: cfg.reminderFreqMs,
+      snoozeUntil: cfg.snoozeUntil,
+      active
+    });
     reminderBanner.style.display=active?'':'none';
     if(active) setTabAlert(tabId,'info'); else clearTabAlert(tabId);
   }
