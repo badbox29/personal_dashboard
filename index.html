@@ -5530,6 +5530,8 @@ body.edit-mode .gh-add-row { display: flex; }
       </div>
       <div id="kvTokenStatus" style="font-size:11px;color:var(--cyan);margin-top:5px;min-height:14px;"></div>
       <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="mbtn mbtn-primary" onclick="kvPushManual()" style="font-size:11px;">⬆ Push to KV</button>
+        <button class="mbtn mbtn-primary" onclick="kvPullManual()" style="font-size:11px;">⬇ Pull from KV</button>
         <button class="mbtn mbtn-cancel" onclick="enterKvToken()" style="font-size:11px;">📋 Enter Token</button>
         <button class="mbtn mbtn-cancel" onclick="resetKvIdentity()" style="font-size:11px;">⚠ Reset Sync Identity</button>
         <span style="font-size:10px;color:var(--text-dim);">Reset generates a new token and disconnects from current KV data.</span>
@@ -17266,6 +17268,37 @@ function updateKvSyncStatus(){
     : 'Not yet synced';
 }
 
+async function kvPushManual(){
+  const s = document.getElementById('kvTokenStatus');
+  s.style.color = 'var(--cyan)';
+  s.textContent = '⬆ Pushing to KV…';
+  await kvPush();
+  s.textContent = '✓ Pushed successfully.';
+  updateKvSyncStatus();
+  setTimeout(()=>{ s.textContent=''; }, 3000);
+}
+
+async function kvPullManual(){
+  const s = document.getElementById('kvTokenStatus');
+  s.style.color = 'var(--cyan)';
+  s.textContent = '⬇ Pulling from KV…';
+  // Temporarily zero out kvLastSync so pull doesn't skip due to timestamp check
+  const saved = D.kvLastSync;
+  D.kvLastSync = 0;
+  await kvPull();
+  if(D.kvLastSync === 0) {
+    // Nothing came down
+    D.kvLastSync = saved;
+    s.style.color = 'var(--del-color)';
+    s.textContent = '✗ Nothing to pull — KV may be empty or token mismatch.';
+  } else {
+    s.style.color = 'var(--cyan)';
+    s.textContent = '✓ Pulled successfully.';
+    updateKvSyncStatus();
+  }
+  setTimeout(()=>{ s.textContent=''; }, 3000);
+}
+
 function enterKvToken(){
   const val = (prompt('Paste the sync token from your other device:') || '').trim();
   if(!val) return;
@@ -17290,7 +17323,9 @@ function enterKvToken(){
 
 function saveKvEnabled(checked){
   D.kvEnabled = checked;
-  persist();
+  // Write directly — do NOT call persist() here as that would trigger a push
+  // which could overwrite remote KV data on a fresh browser being set up
+  localStorage.setItem('salty_v2', JSON.stringify(D));
   updateKvSyncStatus();
   if(checked) kvPull();
 }
@@ -17306,9 +17341,10 @@ function copyKvToken(){
 
 function resetKvIdentity(){
   if(!confirm('This will generate a new sync token and disconnect from your current KV data.\n\nYour local data is safe. Are you sure?')) return;
-  D.kvToken   = generateSyncToken();
+  D.kvToken    = generateSyncToken();
   D.kvLastSync = 0;
-  persist();
+  // Write directly — reset is a setup action, not a content change
+  localStorage.setItem('salty_v2', JSON.stringify(D));
   document.getElementById('kvTokenDisplay').value = D.kvToken;
   updateKvSyncStatus();
 }
