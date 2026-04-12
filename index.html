@@ -5521,12 +5521,18 @@ body.edit-mode .gh-add-row { display: flex; }
       </div>
       <label style="font-weight:600;font-size:11px;">Sync Token</label>
       <p style="font-size:11px;color:var(--text-dim);margin:3px 0 6px;line-height:1.5;">
-        This token is your sync identity. Copy it to other devices or let the export/import process carry it automatically.
+        This token is your sync identity. Copy it to other devices or let the export/import process carry it automatically. To join another device's sync group, use "Enter Token."
       </p>
       <div style="display:flex;gap:7px;align-items:center;">
         <input type="text" id="kvTokenDisplay" readonly
                style="flex:1;font-family:Share Tech Mono,monospace;font-size:11px;opacity:0.7;cursor:default;background:var(--bg2);">
-        <button class="mbtn mbtn-primary" onclick="copyKvToken()" style="flex-shrink:0;">Copy</button>
+        <button class="mbtn mbtn-cancel" onclick="copyKvToken()" style="flex-shrink:0;">Copy</button>
+      </div>
+      <div id="kvTokenStatus" style="font-size:11px;color:var(--cyan);margin-top:5px;min-height:14px;"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="mbtn mbtn-cancel" onclick="enterKvToken()" style="font-size:11px;">📋 Enter Token</button>
+        <button class="mbtn mbtn-cancel" onclick="resetKvIdentity()" style="font-size:11px;">⚠ Reset Sync Identity</button>
+        <span style="font-size:10px;color:var(--text-dim);">Reset generates a new token and disconnects from current KV data.</span>
       </div>
       <div style="margin-top:10px;">
         <button class="mbtn mbtn-cancel" onclick="resetKvIdentity()" style="font-size:11px;">⚠ Reset Sync Identity</button>
@@ -17262,6 +17268,26 @@ function updateKvSyncStatus(){
   el.textContent = D.kvLastSync
     ? 'Last synced: ' + new Date(D.kvLastSync).toLocaleTimeString()
     : 'Not yet synced';
+}
+
+function enterKvToken(){
+  const val = (prompt('Paste the sync token from your other device:') || '').trim();
+  if(!val) return;
+  if(val.length < 32){
+    const s = document.getElementById('kvTokenStatus');
+    s.style.color = 'var(--del-color)';
+    s.textContent = '✗ Token too short — make sure you copied the full token.';
+    setTimeout(()=>{ s.textContent=''; }, 3000);
+    return;
+  }
+  D.kvToken    = val;
+  D.kvLastSync = 0;
+  persist();
+  document.getElementById('kvTokenDisplay').value = D.kvToken;
+  const s = document.getElementById('kvTokenStatus');
+  s.style.color = 'var(--cyan)';
+  s.textContent = '✓ Token saved — reload the page to pull from KV.';
+  setTimeout(()=>{ s.textContent=''; }, 4000);
 }
 
 function saveKvEnabled(checked){
