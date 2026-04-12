@@ -5462,7 +5462,7 @@ body.edit-mode .gh-add-row { display: flex; }
 
 <!-- ===== WORKER MODAL ===== -->
 <div class="overlay" id="workerOverlay">
-  <div class="modal" style="width:500px;">
+  <div class="modal" style="width:500px;max-height:88vh;overflow-y:auto;">
     <h3>⚡ Cloudflare Worker URL</h3>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 14px;line-height:1.7;">
       A Cloudflare Worker acts as a CORS proxy for features that can't be called directly from the browser
@@ -5508,33 +5508,55 @@ body.edit-mode .gh-add-row { display: flex; }
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
       <label style="font-weight:600;">☁️ KV Sync</label>
       <p style="font-size:11px;color:var(--text-dim);margin:4px 0 10px;line-height:1.6;">
-        Syncs your dashboard state across multiple browsers via your Worker's KV storage.
-        Each user gets a unique sync token — include it in your JSON export to share state with your other devices.
+        Syncs your dashboard state across multiple browsers via your Worker's KV storage. Each user gets a
+        unique sync token. To set up a new browser, follow the steps below in order.
       </p>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <label class="toggle-label" style="margin:0;">
-          <input type="checkbox" id="kvEnabledChk" onchange="saveKvEnabled(this.checked)">
-          <span class="toggle-slider"></span>
-        </label>
-        <span style="font-size:12px;color:var(--text);">Enable KV sync</span>
-        <span id="kvSyncStatus" style="margin-left:auto;font-size:11px;color:var(--text-dim);"></span>
-      </div>
-      <label style="font-weight:600;font-size:11px;">Sync Token</label>
-      <p style="font-size:11px;color:var(--text-dim);margin:3px 0 6px;line-height:1.5;">
-        This token is your sync identity. Copy it to other devices or let the export/import process carry it automatically. To join another device's sync group, use "Enter Token."
+
+      <!-- Step 1: Worker URL -->
+      <p style="font-size:11px;color:var(--text-dim);margin:0 0 10px;line-height:1.6;">
+        <strong style="color:var(--text);">Step 1</strong> — Enter and save your Worker URL above if you haven't already. KV sync routes through the same worker.
       </p>
-      <div style="display:flex;gap:7px;align-items:center;">
+
+      <!-- Step 2: Token -->
+      <p style="font-size:11px;color:var(--text-dim);margin:0 0 6px;line-height:1.6;">
+        <strong style="color:var(--text);">Step 2</strong> — Your sync token is your identity. On your primary browser, copy it and keep it somewhere safe.
+        On a new browser, use <em>Enter Token</em> to paste the token from your primary browser so both devices share the same KV namespace.
+        Your token is also included automatically in any JSON export.
+      </p>
+      <div style="display:flex;gap:7px;align-items:center;margin-bottom:6px;">
         <input type="text" id="kvTokenDisplay" readonly
                style="flex:1;font-family:Share Tech Mono,monospace;font-size:11px;opacity:0.7;cursor:default;background:var(--bg2);">
         <button class="mbtn mbtn-cancel" onclick="copyKvToken()" style="flex-shrink:0;">Copy</button>
       </div>
-      <div id="kvTokenStatus" style="font-size:11px;color:var(--cyan);margin-top:5px;min-height:14px;"></div>
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <button class="mbtn mbtn-primary" onclick="kvPushManual()" style="font-size:11px;">⬆ Push to KV</button>
-        <button class="mbtn mbtn-primary" onclick="kvPullManual()" style="font-size:11px;">⬇ Pull from KV</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
         <button class="mbtn mbtn-cancel" onclick="enterKvToken()" style="font-size:11px;">📋 Enter Token</button>
         <button class="mbtn mbtn-cancel" onclick="resetKvIdentity()" style="font-size:11px;">⚠ Reset Sync Identity</button>
-        <span style="font-size:10px;color:var(--text-dim);">Reset generates a new token and disconnects from current KV data.</span>
+      </div>
+      <p style="font-size:10px;color:var(--text-dim);margin:0 0 12px;">Reset generates a new token and permanently disconnects this browser from its current KV data.</p>
+
+      <!-- Step 3: Pull -->
+      <p style="font-size:11px;color:var(--text-dim);margin:0 0 6px;line-height:1.6;">
+        <strong style="color:var(--text);">Step 3</strong> — On a new browser, after entering the token, click <em>Pull from KV</em> to immediately download
+        your saved state. On your primary browser, use <em>Push to KV</em> to force an immediate upload of your current state.
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+        <button class="mbtn mbtn-primary" onclick="kvPushManual()" style="font-size:11px;">⬆ Push to KV</button>
+        <button class="mbtn mbtn-primary" onclick="kvPullManual()" style="font-size:11px;">⬇ Pull from KV</button>
+      </div>
+      <div id="kvTokenStatus" style="font-size:11px;color:var(--cyan);margin-top:5px;min-height:14px;"></div>
+
+      <!-- Step 4: Enable -->
+      <p style="font-size:11px;color:var(--text-dim);margin:12px 0 8px;line-height:1.6;">
+        <strong style="color:var(--text);">Step 4</strong> — Once your state is confirmed, enable automatic sync. When active, any dashboard change
+        will be pushed to KV within 5 seconds and pulled automatically on every page load.
+      </p>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <label class="toggle-label" style="margin:0;">
+          <input type="checkbox" id="kvEnabledChk" onchange="saveKvEnabled(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <span style="font-size:12px;color:var(--text);">Enable automatic KV sync</span>
+        <span id="kvSyncStatus" style="margin-left:auto;font-size:11px;color:var(--text-dim);"></span>
       </div>
     </div>
     <div class="modal-actions">
@@ -6897,7 +6919,7 @@ function generateSyncToken(){
   fetchQuote();
   fetchAllWeather();
   // Pull KV state on load if sync is enabled
-  kvPull();
+  if(D.kvEnabled) kvPull();
 
   // Auto-refresh weather tiles — default 30 min, configurable via D.weatherRefreshMins
   // Prevents tiles getting permanently stuck on "Loading…" after a failed initial fetch
@@ -6967,7 +6989,7 @@ function kvMergeD(remote) {
 
 async function kvPull() {
   const workerUrl = (D.workerUrl || '').trim();
-  if(!D.kvEnabled || !workerUrl || !D.kvToken) return;
+  if(!workerUrl || !D.kvToken) return;
   try {
     const res = await fetch(workerUrl.replace(/\/+$/,'') + '/kv', {
       method: 'GET',
@@ -6978,15 +7000,12 @@ async function kvPull() {
     if(!found || !data) return;
     const remoteTs = data.updatedAt || 0;
     const localTs  = D.kvLastSync  || 0;
-    if(remoteTs <= localTs) return; // local is current
-    // Merge data arrays additively
+    if(remoteTs <= localTs) return;
     kvMergeD(data.payload || {});
-    // For config: remote wins if remote is newer than local last-sync
-    // (we already merged arrays; now take remote config fields if remote is fresher)
     const configKeys = Object.keys(data.payload || {}).filter(k => !(k in KV_MERGE_KEYS) && k !== 'drinkLogs');
     configKeys.forEach(k => { D[k] = (data.payload)[k]; });
     D.kvLastSync = remoteTs;
-    persist();
+    localStorage.setItem('salty_v2', JSON.stringify(D));
     renderAll();
   } catch(e) { console.warn('[KV] pull failed:', e); }
 }
@@ -7000,7 +7019,7 @@ function kvPushDebounced() {
 
 async function kvPush() {
   const workerUrl = (D.workerUrl || '').trim();
-  if(!D.kvEnabled || !workerUrl || !D.kvToken) return;
+  if(!workerUrl || !D.kvToken) return;
   const clientId = localStorage.getItem('salty_clientId') || 'unknown';
   const now = Date.now();
   const envelope = {
