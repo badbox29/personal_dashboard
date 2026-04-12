@@ -17289,6 +17289,18 @@ function updateKvSyncStatus(){
 
 async function kvPushManual(){
   const s = document.getElementById('kvTokenStatus');
+  const warning =
+    'This will overwrite the KV data for this sync token with your current local state.\n\n' +
+    '⚠ If you are setting up a new browser, click Cancel and use "Pull from KV" first to\n' +
+    'bring down your existing data — otherwise it will be lost.\n\n' +
+    'Type PUSH below to confirm you want to overwrite KV with this browser\'s current state:';
+  const answer = (prompt(warning) || '').trim();
+  if(answer !== 'PUSH'){
+    s.style.color = 'var(--text-dim)';
+    s.textContent = 'Push cancelled.';
+    setTimeout(()=>{ s.textContent=''; }, 2000);
+    return;
+  }
   s.style.color = 'var(--cyan)';
   s.textContent = '⬆ Pushing to KV…';
   await kvPush();
