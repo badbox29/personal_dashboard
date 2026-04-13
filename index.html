@@ -19325,45 +19325,54 @@ function bgSynthwave(){
       c.fillStyle=`rgba(255,255,255,${s.op})`; c.fill();
     });
 
-    /* --- SUN GLOW (behind sun) --- */
+    /* --- SUN BODY + GLOW (offscreen canvas so stripes are truly transparent) --- */
+    const ofc = document.createElement('canvas');
+    ofc.width = w; ofc.height = h;
+    const oc = ofc.getContext('2d');
+
+    // Glow on offscreen so stripes punch through it too
     const glowRad = sunR * 1.75;
-    const glow = c.createRadialGradient(sunCX,sunCY,sunR*0.5,sunCX,sunCY,glowRad);
+    const glow = oc.createRadialGradient(sunCX,sunCY,sunR*0.5,sunCX,sunCY,glowRad);
     glow.addColorStop(0,'rgba(255,140,20,0.5)');
     glow.addColorStop(0.5,'rgba(255,80,10,0.18)');
     glow.addColorStop(1,'rgba(255,40,0,0)');
-    c.fillStyle=glow;
-    c.beginPath(); c.arc(sunCX,sunCY,glowRad,0,Math.PI*2); c.fill();
+    oc.fillStyle=glow;
+    oc.beginPath(); oc.arc(sunCX,sunCY,glowRad,0,Math.PI*2); oc.fill();
 
-    /* --- SUN BODY (clipped circle) --- */
-    c.save();
-    c.beginPath(); c.arc(sunCX,sunCY,sunR,0,Math.PI*2); c.clip();
-
-    // Gradient: pale yellow → orange → deep red
-    const sunG = c.createLinearGradient(sunCX,sunCY-sunR,sunCX,sunCY+sunR);
+    // Sun gradient clipped to circle
+    oc.save();
+    oc.beginPath(); oc.arc(sunCX,sunCY,sunR,0,Math.PI*2); oc.clip();
+    const sunG = oc.createLinearGradient(sunCX,sunCY-sunR,sunCX,sunCY+sunR);
     sunG.addColorStop(0,   '#ffe040');
     sunG.addColorStop(0.32,'#ff9000');
     sunG.addColorStop(0.62,'#ff4400');
     sunG.addColorStop(1,   '#c01800');
-    c.fillStyle=sunG;
-    c.fillRect(sunCX-sunR, sunCY-sunR, sunR*2, sunR*2);
+    oc.fillStyle=sunG;
+    oc.fillRect(sunCX-sunR, sunCY-sunR, sunR*2, sunR*2);
 
-    // Stripes start higher — about 35% above centre — so 2-3 are visible above horizon
-    const stripeTop    = sunCY - sunR*0.42;
-    const stripeBottom = sunCY + sunR;
-    const zone         = stripeBottom - stripeTop;
-    const numStripes   = 6;
-    const unit         = zone / (numStripes * 2 - 1);
-    // Stripes: repaint sky gradient over stripe areas so sky shows through
-    const stripeG = c.createLinearGradient(0,0,0,horizon);
-    stripeG.addColorStop(0, `rgba(6,3,18,1)`);
-    stripeG.addColorStop(0.6, `rgba(${Math.round(r*0.12)},${Math.round(g*0.06)},${Math.round(b*0.22)},1)`);
-    stripeG.addColorStop(1, `rgba(${Math.round(r*0.22)},${Math.round(g*0.10)},${Math.round(b*0.35)},1)`);
-    c.fillStyle = stripeG;
+    // Stripes grow in height toward horizon (perspective feel)
+    // Relative heights: small at top, large at bottom
+    const stripeWeights = [0.6, 0.85, 1.1, 1.45, 1.85, 2.3];
+    const numStripes    = stripeWeights.length;
+    const stripeTop     = sunCY - sunR*0.42;
+    const stripeBottom  = sunCY + sunR;
+    const zone          = stripeBottom - stripeTop;
+    const gapUnit       = zone / (stripeWeights.reduce((a,b)=>a+b,0) + (numStripes - 1) * 0.7);
+    const gapH          = gapUnit * 0.7;
+
+    oc.globalCompositeOperation = 'destination-out';
+    oc.fillStyle = 'rgba(0,0,0,1)';
+    let sy = stripeTop;
     for(let i=0;i<numStripes;i++){
-      const sy = stripeTop + i * unit * 2;
-      c.fillRect(sunCX-sunR, sy, sunR*2, unit*0.88);
+      const sh = stripeWeights[i] * gapUnit;
+      oc.fillRect(sunCX-sunR, sy, sunR*2, sh);
+      sy += sh + gapH;
     }
-    c.restore();
+    oc.restore();
+
+    // Composite onto main canvas — sky painted earlier shows through stripe holes
+    c.drawImage(ofc, 0, 0);
+
 
     /* --- GROUND FILL — occludes lower sun, sits under grid --- */
     const groundG = c.createLinearGradient(0,horizon,0,horizon+60);
