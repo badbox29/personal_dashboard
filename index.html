@@ -16181,6 +16181,12 @@ async function poemFetch(sec){
     document.querySelectorAll('[id^="poemLoadMsg_"]').forEach(el2=>{
       el2.textContent='Could not load poem — click to retry.';
     });
+    // Update modal loading state to error if open
+    const tp = document.getElementById('poemTextPanel');
+    if(tp){
+      const loadMsg = tp.querySelector('.poem-card-loading');
+      if(loadMsg) loadMsg.textContent='Could not load poem — close and try again.';
+    }
   }
 }
 
@@ -16265,7 +16271,12 @@ function poemRenderToday(textPane, notePane){
     isFav ? poemUnfavorite(id) : poemFavorite(poem);
     poemRenderModal();
   }, ()=>{
-    D.poemDaily=null; persist(); poemClose();
+    D.poemDaily=null; persist();
+    // Show loading state in-place without closing
+    const tp = document.getElementById('poemTextPanel');
+    const np = document.getElementById('poemNotesPanel');
+    if(tp){ tp.innerHTML='<div class="poem-card-loading" style="padding:20px 0;">Loading…</div>'; }
+    if(np){ np.innerHTML=''; np.classList.add('locked'); }
     if(_poemSec) poemFetch(_poemSec);
   }));
   inner.appendChild(poemBuildLines(poem.lines, favObj));
