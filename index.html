@@ -5337,7 +5337,9 @@ body.edit-mode .gh-add-row { display: flex; }
       <button class="noise-btn" onclick="setBgStyle('warp',this)">⟡ Warp</button>
       <button class="noise-btn" onclick="setBgStyle('fireflies',this)">✦ Fireflies</button>
       <button class="noise-btn" onclick="setBgStyle('hex',this)">⬡ Hex</button>
-      <button class="noise-btn" onclick="setBgStyle('waves',this)">∿ Waves</button>
+      <button class="noise-btn" onclick="setBgStyle('ripples',this)">◉ Ripples</button>
+      <button class="noise-btn" onclick="setBgStyle('ocean',this)">〰 Ocean</button>
+      <button class="noise-btn" onclick="setBgStyle('lissajous',this)">∞ Lissajous</button>
       <button class="noise-btn" onclick="setBgStyle('nebula',this)">☁ Nebula</button>
       <button class="noise-btn" onclick="setBgStyle('circuit',this)">⬚ Circuit</button>
       <button class="noise-btn" onclick="setBgStyle('snow',this)">❄ Snow</button>
@@ -19095,7 +19097,9 @@ function applyBg(){
     warp:       bgWarp,
     fireflies:  bgFireflies,
     hex:        bgHex,
-    waves:      bgWaves,
+    ripples:    bgRipples,
+    ocean:      bgOcean,
+    lissajous:  bgLissajous,
     nebula:     bgNebula,
     circuit:    bgCircuit,
     snow:       bgSnow,
@@ -19460,33 +19464,132 @@ function bgHex(){
   draw();
 }
 
-/* ---- WAVES ---- */
-function bgWaves(){
+/* ---- RIPPLES ---- */
+function bgRipples(){
   const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
   const {r,g,b} = hexRgb(D.bgColor);
-  const waveDefs=[
-    {yRatio:0.25,amp:22,freq:0.012,speed:0.018,opacity:0.55,lw:1.2},
-    {yRatio:0.38,amp:16,freq:0.018,speed:-0.013,opacity:0.40,lw:0.9},
-    {yRatio:0.52,amp:28,freq:0.009,speed:0.022,opacity:0.50,lw:1.4},
-    {yRatio:0.65,amp:14,freq:0.022,speed:-0.016,opacity:0.35,lw:0.8},
-    {yRatio:0.78,amp:20,freq:0.014,speed:0.011,opacity:0.45,lw:1.1},
-    {yRatio:0.88,amp:10,freq:0.028,speed:-0.020,opacity:0.30,lw:0.7},
-  ];
-  let t=0;
+  const rings = [];
+  let spawnTimer = 0;
+  function spawnRing(){
+    rings.push({
+      x: Math.random()*w, y: Math.random()*h,
+      radius: 0,
+      maxRadius: Math.min(w,h)*(0.18+Math.random()*0.22),
+      speed: 0.6+Math.random()*0.7,
+      opacity: 0.7+Math.random()*0.3
+    });
+  }
+  // seed a few rings at staggered ages
+  for(let i=0;i<6;i++){
+    spawnRing();
+    rings[i].radius = rings[i].maxRadius * (i/6);
+  }
   function draw(){
     c.clearRect(0,0,w,h);
-    waveDefs.forEach(wd=>{
-      c.beginPath();
-      const baseY=h*wd.yRatio;
-      c.moveTo(0,baseY+Math.sin(wd.speed*t*50)*wd.amp);
-      for(let x=1;x<=w;x+=4){
-        const y=baseY+Math.sin(x*wd.freq+t*wd.speed*50)*wd.amp;
-        c.lineTo(x,y);
+    spawnTimer++;
+    if(spawnTimer > 55){ spawnRing(); spawnTimer=0; }
+    for(let i=rings.length-1;i>=0;i--){
+      const rg=rings[i];
+      rg.radius += rg.speed;
+      const fade = 1 - rg.radius/rg.maxRadius;
+      if(fade<=0){ rings.splice(i,1); continue; }
+      // draw 2-3 concentric rings per source for a natural ripple look
+      for(let k=0;k<3;k++){
+        const kr = rg.radius - k*10;
+        if(kr<=0) continue;
+        c.beginPath();
+        c.arc(rg.x, rg.y, kr, 0, Math.PI*2);
+        c.strokeStyle=`rgba(${r},${g},${b},${fade*rg.opacity*(1-k*0.28)})`;
+        c.lineWidth = 1.2 - k*0.3;
+        c.stroke();
       }
-      c.strokeStyle=`rgba(${r},${g},${b},${wd.opacity})`;
-      c.lineWidth=wd.lw; c.stroke();
+    }
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- OCEAN ---- */
+function bgOcean(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  let t=0;
+  const layers=[
+    {yRatio:0.52, amp:28, freq:0.010, speed:0.016, opacity:0.45, foam:true},
+    {yRatio:0.62, amp:22, freq:0.013, speed:0.021, opacity:0.38, foam:true},
+    {yRatio:0.72, amp:18, freq:0.016, speed:0.013, opacity:0.30, foam:false},
+    {yRatio:0.82, amp:14, freq:0.020, speed:0.018, opacity:0.22, foam:false},
+  ];
+  function wavePath(layer, filled){
+    const baseY = h*layer.yRatio;
+    c.beginPath();
+    c.moveTo(0, h);
+    c.lineTo(0, baseY + Math.sin(t*layer.speed*40)*layer.amp);
+    for(let x=2;x<=w;x+=2){
+      c.lineTo(x, baseY + Math.sin(x*layer.freq + t*layer.speed*40)*layer.amp);
+    }
+    c.lineTo(w, h);
+    c.closePath();
+  }
+  function draw(){
+    c.clearRect(0,0,w,h);
+    layers.forEach(layer=>{
+      // filled body
+      wavePath(layer, true);
+      c.fillStyle=`rgba(${r},${g},${b},${layer.opacity})`;
+      c.fill();
+      // foam crest
+      if(layer.foam){
+        const baseY = h*layer.yRatio;
+        c.beginPath();
+        c.moveTo(0, baseY + Math.sin(t*layer.speed*40)*layer.amp);
+        for(let x=2;x<=w;x+=2){
+          c.lineTo(x, baseY + Math.sin(x*layer.freq + t*layer.speed*40)*layer.amp);
+        }
+        c.strokeStyle=`rgba(${r},${g},${b},${layer.opacity*1.6})`;
+        c.lineWidth=1.5; c.stroke();
+      }
     });
     t+=0.018;
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- LISSAJOUS ---- */
+function bgLissajous(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  // Slowly morph through frequency ratios
+  const STEPS=1800;
+  let t=0, drift=0;
+  // Pairs: [a, b] frequency ratios that produce classic figures
+  const ratios=[[1,2],[2,3],[3,4],[3,5],[4,5],[1,3]];
+  let ratioIdx=0, nextRatioIdx=1, ratioT=0;
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function draw(){
+    c.clearRect(0,0,w,h);
+    const margin=Math.min(w,h)*0.07;
+    const rx=(w/2)-margin, ry=(h/2)-margin;
+    const a0=ratios[ratioIdx][0],  b0=ratios[ratioIdx][1];
+    const a1=ratios[nextRatioIdx][0], b1=ratios[nextRatioIdx][1];
+    const a=lerp(a0,a1,ratioT), bFreq=lerp(b0,b1,ratioT);
+    const delta = drift;
+    c.beginPath();
+    for(let i=0;i<=STEPS;i++){
+      const angle=(i/STEPS)*Math.PI*2;
+      const px=w/2 + rx*Math.sin(a*angle+delta);
+      const py=h/2 + ry*Math.sin(bFreq*angle);
+      const prog=i/STEPS;
+      const alpha=0.1+Math.sin(prog*Math.PI)*0.65;
+      if(i===0) c.moveTo(px,py); else c.lineTo(px,py);
+    }
+    c.strokeStyle=`rgba(${r},${g},${b},0.7)`;
+    c.lineWidth=1.2;
+    c.stroke();
+    drift+=0.004;
+    ratioT+=0.0018;
+    if(ratioT>=1){ ratioT=0; ratioIdx=nextRatioIdx; nextRatioIdx=(nextRatioIdx+1)%ratios.length; }
     bgAnimFrame=requestAnimationFrame(draw);
   }
   draw();
