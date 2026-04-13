@@ -19298,7 +19298,7 @@ function bgSynthwave(){
   const horizon  = h * 0.54;
   const sunR     = Math.min(w,h) * 0.19;
   const sunCX    = w / 2;
-  const sunCY    = horizon - sunR * 0.02; // bottom of sun sits on horizon
+  const sunCY    = horizon - sunR * 0.02; // bottom of sun sits just on horizon
 
   // Fixed star field (sky only)
   const stars = Array.from({length:110},()=>({
@@ -19347,12 +19347,12 @@ function bgSynthwave(){
     c.fillStyle=sunG;
     c.fillRect(sunCX-sunR, sunCY-sunR, sunR*2, sunR*2);
 
-    // Horizontal stripe cutouts across lower ~60% of sun
-    const stripeTop    = sunCY - sunR*0.08;
+    // Stripes start higher — about 35% above centre — so 2-3 are visible above horizon
+    const stripeTop    = sunCY - sunR*0.42;
     const stripeBottom = sunCY + sunR;
     const zone         = stripeBottom - stripeTop;
-    const numStripes   = 5;
-    const unit         = zone / (numStripes + numStripes - 1); // alternating gap/stripe
+    const numStripes   = 6;
+    const unit         = zone / (numStripes * 2 - 1);
     for(let i=0;i<numStripes;i++){
       const sy = stripeTop + i * unit * 2;
       c.fillStyle='rgba(0,0,0,0.82)';
@@ -19360,13 +19360,20 @@ function bgSynthwave(){
     }
     c.restore();
 
+    /* --- GROUND FILL — occludes lower sun, sits under grid --- */
+    const groundG = c.createLinearGradient(0,horizon,0,horizon+60);
+    groundG.addColorStop(0, `rgba(4,2,14,0.98)`);
+    groundG.addColorStop(1, `rgba(4,2,14,0.98)`);
+    c.fillStyle=groundG;
+    c.fillRect(0, horizon, w, h-horizon);
+
     /* --- HORIZON GLOW LINE --- */
     const hline = c.createLinearGradient(0,horizon-1,0,horizon+14);
     hline.addColorStop(0,`rgba(${r},${g},${b},1)`);
     hline.addColorStop(1,`rgba(${r},${g},${b},0)`);
     c.fillStyle=hline; c.fillRect(0,horizon-1,w,15);
 
-    /* --- GRID --- */
+    /* --- GRID (drawn on top of ground fill) --- */
     c.strokeStyle=`rgba(${r},${g},${b},0.65)`;
     c.lineWidth=1;
     // Vertical perspective lines
