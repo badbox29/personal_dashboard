@@ -5558,6 +5558,12 @@ body.edit-mode .gh-add-row { display: flex; }
         <span style="font-size:12px;color:var(--text);">Enable automatic KV sync</span>
         <span id="kvSyncStatus" style="margin-left:auto;font-size:11px;color:var(--text-dim);"></span>
       </div>
+      <div id="kvTimestamps" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:none;">
+        <div style="font-size:11px;color:var(--text-dim);line-height:1.8;">
+          <div>⬆ Last pushed: <span id="kvLastPushDisplay" style="color:var(--text);">—</span></div>
+          <div>⬇ Last pulled: <span id="kvLastPullDisplay" style="color:var(--text);">—</span></div>
+        </div>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="mbtn mbtn-cancel" onclick="closeOverlay('workerOverlay')">Close</button>
@@ -6863,9 +6869,12 @@ function generateSyncToken(){
     localStorage.removeItem(k);
   });
   // KV sync fields
-  if(D.kvEnabled === undefined)   D.kvEnabled   = false;
-  if(D.kvToken === undefined)     D.kvToken     = generateSyncToken();
-  if(D.kvLastSync === undefined)  D.kvLastSync  = 0;
+  if(D.kvEnabled === undefined)     D.kvEnabled     = false;
+  if(D.kvToken === undefined)       D.kvToken       = generateSyncToken();
+  if(D.kvLastSync === undefined)    D.kvLastSync    = 0;
+  if(D.kvLastPush === undefined)    D.kvLastPush    = 0;
+  if(D.kvLastPull === undefined)    D.kvLastPull    = 0;
+  if(D.configDirtyAt === undefined) D.configDirtyAt = 0;
   // Per-browser clientId (stored outside D so it stays browser-specific)
   if(!localStorage.getItem('salty_clientId')) localStorage.setItem('salty_clientId', generateSyncToken());
   if(D.pinWeather === undefined) D.pinWeather = false;
@@ -6942,6 +6951,14 @@ function generateSyncToken(){
 function tryParse(s){ try{ return JSON.parse(s); } catch(e){ return null; } }
 function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
 function persist(){ localStorage.setItem('salty_v2', JSON.stringify(D)); kvPushDebounced(); }
+
+// Use persistConfig() instead of persist() when saving widget config/settings
+// (playlists, layout changes, preferences). Sets configDirtyAt so the KV pre-pull
+// knows not to overwrite this browser's pending config with an older remote snapshot.
+function persistConfig(){
+  D.configDirtyAt = Date.now();
+  persist();
+}
 // Returns the effective worker URL for a widget: widget override → global → null
 function getWorkerUrl(widgetOverride){ return (widgetOverride||'').trim() || (D.workerUrl||'').trim() || null; }
 
@@ -6962,6 +6979,9 @@ const KV_MERGE_KEYS = {
   tapSeenClickGuids:  e => e,
   tapKnownVapEmails:  e => e,
 };
+
+// Keys that are per-browser diagnostics — never overwrite from remote payload
+const KV_PER_BROWSER_KEYS = new Set(['kvLastSync','kvLastPush','kvLastPull','configDirtyAt']);
 
 function kvMergeD(remote) {
   // Merge array keys additively
@@ -7004,9 +7024,18 @@ async function kvPull() {
     const localTs  = D.kvLastSync  || 0;
     if(remoteTs < localTs) return;
     kvMergeD(data.payload || {});
-    const configKeys = Object.keys(data.payload || {}).filter(k => !(k in KV_MERGE_KEYS) && k !== 'drinkLogs');
-    configKeys.forEach(k => { D[k] = (data.payload)[k]; });
+    // Apply remote config only if remote is newer than our last local config change.
+    // This prevents a pull from overwriting a pending config change (e.g. a new playlist
+    // entry) that hasn't been pushed yet.
+    if(remoteTs > (D.configDirtyAt || 0)) {
+      const configKeys = Object.keys(data.payload || {}).filter(k =>
+        !(k in KV_MERGE_KEYS) && k !== 'drinkLogs' && !KV_PER_BROWSER_KEYS.has(k)
+      );
+      configKeys.forEach(k => { D[k] = (data.payload)[k]; });
+      D.configDirtyAt = remoteTs;
+    }
     D.kvLastSync = remoteTs;
+    D.kvLastPull = remoteTs;
     localStorage.setItem('salty_v2', JSON.stringify(D));
     renderAll();
   } catch(e) { console.warn('[KV] pull failed:', e); }
@@ -7019,20 +7048,38 @@ function kvPushDebounced() {
   _kvPushTimer = setTimeout(kvPush, 5000);
 }
 
+// Flush any pending debounced push immediately when the tab is hidden —
+// prevents losing config changes made right before walking away from the desk.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'hidden' && _kvPushTimer) {
+    clearTimeout(_kvPushTimer);
+    _kvPushTimer = null;
+    kvPush();
+  }
+});
+
 async function kvPush() {
   const workerUrl = (D.workerUrl || '').trim();
   if(!workerUrl || !D.kvToken) return;
 
-  // Silent pre-pull: merge remote mergeable arrays into D before building
-  // the push payload. This prevents a client with fewer entries from
-  // overwriting KV with a subset of what another client already pushed.
+  // Silent pre-pull: merge remote arrays additively, and apply remote config
+  // if remote is newer than our last local config change. This ensures we never
+  // push a payload that discards data or config that another browser already pushed.
   try {
     const preRes = await fetch(workerUrl.replace(/\/+$/,'') + '/kv', {
       method: 'GET', headers: { 'X-Sync-Token': D.kvToken }
     });
     if(preRes.ok) {
       const { found, data } = await preRes.json();
-      if(found && data && data.payload) kvMergeD(data.payload);
+      if(found && data && data.payload) {
+        kvMergeD(data.payload);
+        if((data.updatedAt || 0) > (D.configDirtyAt || 0)) {
+          const configKeys = Object.keys(data.payload).filter(k =>
+            !(k in KV_MERGE_KEYS) && k !== 'drinkLogs' && !KV_PER_BROWSER_KEYS.has(k)
+          );
+          configKeys.forEach(k => { D[k] = data.payload[k]; });
+        }
+      }
     }
   } catch(e) { /* ignore — still push what we have */ }
 
@@ -7050,7 +7097,9 @@ async function kvPush() {
       headers: { 'Content-Type': 'application/json', 'X-Sync-Token': D.kvToken },
       body:    JSON.stringify(envelope)
     });
-    D.kvLastSync = now;
+    D.kvLastSync    = now;
+    D.kvLastPush    = now;
+    D.configDirtyAt = now;
     localStorage.setItem('salty_v2', JSON.stringify(D));
   } catch(e) { console.warn('[KV] push failed:', e); }
 }
@@ -17300,10 +17349,22 @@ function openWorkerModal(){
 function updateKvSyncStatus(){
   const el = document.getElementById('kvSyncStatus');
   if(!el) return;
-  if(!D.kvEnabled){ el.textContent = ''; return; }
-  el.textContent = D.kvLastSync
-    ? 'Last synced: ' + new Date(D.kvLastSync).toLocaleTimeString()
-    : 'Not yet synced';
+  if(!D.kvEnabled){ el.textContent = ''; }
+  else {
+    el.textContent = D.kvLastSync
+      ? 'Last synced: ' + new Date(D.kvLastSync).toLocaleTimeString()
+      : 'Not yet synced';
+  }
+  // Push/pull timestamps — always shown when KV section is open
+  const tsPanel = document.getElementById('kvTimestamps');
+  const pushEl  = document.getElementById('kvLastPushDisplay');
+  const pullEl  = document.getElementById('kvLastPullDisplay');
+  if(tsPanel && pushEl && pullEl) {
+    const fmt = ts => ts ? new Date(ts).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+    pushEl.textContent = fmt(D.kvLastPush || 0);
+    pullEl.textContent = fmt(D.kvLastPull || 0);
+    tsPanel.style.display = 'block';
+  }
 }
 
 async function kvPushManual(){
@@ -18515,7 +18576,7 @@ function renderLofiList(){
     row.innerHTML = `<span style="font-size:12px;">${t.label}${typeTag} <span style="color:var(--text-dim);font-size:10px;font-family:Share Tech Mono,monospace;">${t.vid}</span></span>`;
     const db = document.createElement('button');
     db.className='wloc-del'; db.textContent='✕'; db.title='Remove';
-    db.onclick=()=>{ D.lofi.splice(i,1); persist(); renderLofiList(); lofiPopulateSelect(); };
+    db.onclick=()=>{ D.lofi.splice(i,1); persistConfig(); renderLofiList(); lofiPopulateSelect(); };
     row.appendChild(db);
     wrap.appendChild(row);
   });
@@ -18582,7 +18643,7 @@ function lofiAddTrack(){
   if(parsed.error){ err.textContent=parsed.error; err.style.display='block'; return; }
   if(D.lofi.find(t=>t.vid===parsed.id)){ err.textContent='That video or playlist is already in the list.'; err.style.display='block'; return; }
   D.lofi.push({ id:'lf_'+Date.now(), label, vid:parsed.id, type:parsed.type });
-  persist();
+  persistConfig();
   renderLofiList();
   lofiPopulateSelect();
   document.getElementById('lofiAddLabel').value='';
