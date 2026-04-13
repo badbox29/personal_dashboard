@@ -5069,7 +5069,14 @@ body.edit-mode .gh-add-row { display: flex; }
 .poem-tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:8px 16px;font-size:12px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);cursor:pointer;transition:all .15s;margin-bottom:-1px;letter-spacing:.04em;}
 .poem-tab-btn:hover{color:var(--text);}
 .poem-tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
-.poem-modal-body{overflow-y:auto;padding:18px 22px 22px;display:flex;flex-direction:column;gap:14px;flex:1;}
+.poem-modal-body{display:flex;flex:1;overflow:hidden;}
+.poem-text-panel{flex:1 1 60%;overflow-y:auto;padding:16px 18px;border-right:1px solid var(--border);}
+.poem-text-panel-inner{display:flex;flex-direction:column;gap:14px;}
+.poem-notes-panel{flex:0 0 40%;overflow-y:auto;padding:14px 14px;display:flex;flex-direction:column;gap:8px;min-width:0;position:relative;}
+.poem-notes-panel.locked{pointer-events:none;}
+.poem-notes-panel.locked .poem-notes-area{opacity:0.35;}
+.poem-notes-lock-msg{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);line-height:1.65;padding:4px 0 10px;border-bottom:1px solid var(--border);margin-bottom:2px;}
+.poem-notes-lock-msg b{color:var(--gold);font-weight:normal;font-style:normal;}
 /* Poem header inside modal */
 .poem-modal-poem-hdr{display:flex;flex-direction:column;gap:4px;padding-bottom:12px;border-bottom:1px solid var(--border);}
 .poem-modal-title{font-family:'Lora',Georgia,serif;font-size:20px;font-weight:600;color:var(--text-head);line-height:1.3;}
@@ -5090,12 +5097,11 @@ body.edit-mode .gh-add-row { display: flex; }
 .poem-line.annotatable:hover{background:rgba(255,255,255,0.06);}
 .poem-line.highlighted{background:rgba(221,176,75,0.18);color:var(--text-head);}
 .poem-line.highlighted:hover{background:rgba(221,176,75,0.28);}
-.poem-annotate-hint{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);font-style:normal;text-align:center;padding:10px 0 4px;letter-spacing:.04em;}
-/* Notes */
-.poem-notes-wrap{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);padding-top:12px;margin-top:4px;}
+/* Notes panel */
 .poem-notes-label{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;}
-.poem-notes-area{background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;line-height:1.6;padding:8px 10px;resize:vertical;min-height:70px;outline:none;}
+.poem-notes-area{background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;line-height:1.6;padding:8px 10px;resize:none;width:100%;box-sizing:border-box;flex:1;min-height:140px;outline:none;}
 .poem-notes-area:focus{border-color:var(--gold);}
+.poem-hl-hint{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);padding:4px 0 0;line-height:1.6;}
 /* Favorites list */
 .poem-fav-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:border-color .15s;}
 .poem-fav-item:hover{border-color:var(--gold);}
@@ -16203,7 +16209,11 @@ function poemEnsureModal(){
   top.appendChild(lbl); top.appendChild(cls);
 
   const tabBar = el('div','poem-tab-bar'); tabBar.id='poemTabBar';
-  const body   = el('div','poem-modal-body'); body.id='poemModalBody';
+  // Two-column body: text panel + notes panel
+  const body     = el('div','poem-modal-body'); body.id='poemModalBody';
+  const textPane = el('div','poem-text-panel'); textPane.id='poemTextPanel';
+  const notePane = el('div','poem-notes-panel'); notePane.id='poemNotesPanel';
+  body.appendChild(textPane); body.appendChild(notePane);
 
   modal.appendChild(top); modal.appendChild(tabBar); modal.appendChild(body);
   overlay.appendChild(modal);
@@ -16211,9 +16221,10 @@ function poemEnsureModal(){
 }
 
 function poemRenderModal(){
-  const tabBar = document.getElementById('poemTabBar');
-  const body   = document.getElementById('poemModalBody');
-  if(!tabBar || !body) return;
+  const tabBar   = document.getElementById('poemTabBar');
+  const textPane = document.getElementById('poemTextPanel');
+  const notePane = document.getElementById('poemNotesPanel');
+  if(!tabBar || !textPane) return;
 
   tabBar.innerHTML = '';
   [['today','Today'],['favorites',`Favorites (${(D.poemFavorites||[]).length})`]].forEach(([key,label])=>{
@@ -16223,37 +16234,45 @@ function poemRenderModal(){
     tabBar.appendChild(btn);
   });
 
-  body.innerHTML = '';
-  if(_poemTab==='today') poemRenderToday(body);
-  else                   poemRenderFavorites(body);
+  textPane.innerHTML = '';
+  notePane.innerHTML = '';
+
+  if(_poemTab==='today'){
+    // Show notes panel for today tab
+    notePane.style.display = '';
+    poemRenderToday(textPane, notePane);
+  } else {
+    // Favorites uses full width — hide notes panel
+    notePane.style.display = 'none';
+    textPane.style.borderRight = 'none';
+    poemRenderFavorites(textPane);
+    return;
+  }
+  textPane.style.borderRight = '';
 }
 
-function poemRenderToday(body){
+function poemRenderToday(textPane, notePane){
   const poem = D.poemDaily;
   if(!poem){
-    const d=el('div','poem-empty-msg'); d.textContent='No poem loaded yet.'; body.appendChild(d); return;
+    const d=el('div','poem-empty-msg'); d.textContent='No poem loaded yet.'; textPane.appendChild(d); return;
   }
   const id    = poemMakeId(poem);
   const isFav = (D.poemFavorites||[]).some(f=>f.id===id);
   const favObj= (D.poemFavorites||[]).find(f=>f.id===id);
 
-  body.appendChild(poemBuildHdr(poem, isFav, ()=>{
+  const inner = el('div','poem-text-panel-inner');
+  inner.appendChild(poemBuildHdr(poem, isFav, ()=>{
     isFav ? poemUnfavorite(id) : poemFavorite(poem);
     poemRenderModal();
   }, ()=>{
     D.poemDaily=null; persist(); poemClose();
     if(_poemSec) poemFetch(_poemSec);
   }));
+  inner.appendChild(poemBuildLines(poem.lines, favObj));
+  textPane.appendChild(inner);
 
-  body.appendChild(poemBuildLines(poem.lines, favObj));
-
-  if(favObj){
-    body.appendChild(poemBuildNotes(favObj));
-  } else {
-    const hint=el('div','poem-annotate-hint');
-    hint.textContent='♡ Save to favorites to highlight lines and add notes';
-    body.appendChild(hint);
-  }
+  // Notes panel — always rendered, locked when not favorited
+  poemFillNotesPanel(notePane, favObj, isFav);
 }
 
 function poemRenderFavorites(body){
@@ -16287,16 +16306,45 @@ function poemRenderFavorites(body){
 }
 
 function poemRenderFavDetail(body, fav){
+  const notePane = document.getElementById('poemNotesPanel');
+  notePane.style.display = '';
+  notePane.innerHTML = '';
+  document.getElementById('poemTextPanel').style.borderRight = '';
+
   const back=el('button','poem-back-btn'); back.textContent='← Favorites';
   back.onclick=()=>{ _poemViewFavId=null; poemRenderModal(); };
   body.appendChild(back);
 
-  body.appendChild(poemBuildHdr(fav, true, ()=>{
+  const inner = el('div','poem-text-panel-inner');
+  inner.appendChild(poemBuildHdr(fav, true, ()=>{
     poemUnfavorite(fav.id); _poemViewFavId=null; poemRenderModal();
   }, null));
+  inner.appendChild(poemBuildLines(fav.lines, fav));
+  body.appendChild(inner);
 
-  body.appendChild(poemBuildLines(fav.lines, fav));
-  body.appendChild(poemBuildNotes(fav));
+  poemFillNotesPanel(notePane, fav, true);
+}
+
+function poemFillNotesPanel(notePane, favObj, isFav){
+  // Lock message — always shown, explains feature when not favorited
+  const lockMsg = el('div','poem-notes-lock-msg');
+  if(!isFav){
+    lockMsg.innerHTML = 'Tap <b>♡</b> to save this poem as a favorite — then you can highlight lines and add notes here.';
+    notePane.classList.add('locked');
+  } else {
+    lockMsg.innerHTML = '<b>Click any line</b> in the poem to highlight it.';
+    notePane.classList.remove('locked');
+  }
+  notePane.appendChild(lockMsg);
+
+  const notesLbl  = el('div','poem-notes-label'); notesLbl.textContent='Notes';
+  const notesArea = el('textarea','poem-notes-area');
+  notesArea.placeholder='Your thoughts on this poem…';
+  notesArea.value = favObj?.note || '';
+  if(isFav) notesArea.oninput=()=>poemSaveNote(favObj.id, notesArea.value);
+
+  notePane.appendChild(notesLbl);
+  notePane.appendChild(notesArea);
 }
 
 function poemBuildHdr(poem, isFav, onFavClick, onRefreshClick){
@@ -16331,17 +16379,6 @@ function poemBuildLines(lines, favObj){
     div.appendChild(d);
   });
   return div;
-}
-
-function poemBuildNotes(favObj){
-  const wrap  = el('div','poem-notes-wrap');
-  const lbl   = el('div','poem-notes-label'); lbl.textContent='Notes';
-  const area  = el('textarea','poem-notes-area');
-  area.placeholder='Your thoughts on this poem…';
-  area.value = favObj.note||'';
-  area.oninput=()=>poemSaveNote(favObj.id, area.value);
-  wrap.appendChild(lbl); wrap.appendChild(area);
-  return wrap;
 }
 
 function poemMakeId(poem){
