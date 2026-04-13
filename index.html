@@ -19353,9 +19353,15 @@ function bgSynthwave(){
     const zone         = stripeBottom - stripeTop;
     const numStripes   = 6;
     const unit         = zone / (numStripes * 2 - 1);
+    // Stripes: repaint sky gradient over stripe areas so sky shows through
+    const stripeG = c.createLinearGradient(0,0,0,horizon);
+    stripeG.addColorStop(0, `rgba(6,3,18,1)`);
+    stripeG.addColorStop(0.6, `rgba(${Math.round(r*0.12)},${Math.round(g*0.06)},${Math.round(b*0.22)},1)`);
+    stripeG.addColorStop(1, `rgba(${Math.round(r*0.22)},${Math.round(g*0.10)},${Math.round(b*0.35)},1)`);
+    c.fillStyle = stripeG;
     for(let i=0;i<numStripes;i++){
       const sy = stripeTop + i * unit * 2;
-      c.clearRect(sunCX-sunR, sy, sunR*2, unit*0.88);
+      c.fillRect(sunCX-sunR, sy, sunR*2, unit*0.88);
     }
     c.restore();
 
