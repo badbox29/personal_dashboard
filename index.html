@@ -8394,7 +8394,9 @@ function buildJsonFormatWidget(sec){
   indSel.onchange=()=>{ cfg.indent=parseInt(indSel.value); persist(); };
   settings.append(indLbl, indSel);
   const applyVis1=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
-  new MutationObserver(applyVis1).observe(document.body,{attributes:true,attributeFilter:['class']}); applyVis1();
+  const obsVis1=new MutationObserver(applyVis1); obsVis1.observe(document.body,{attributes:true,attributeFilter:['class']}); applyVis1();
+  const obsC1=new MutationObserver(()=>{ if(!document.contains(wrap)){ obsVis1.disconnect(); obsC1.disconnect(); } });
+  obsC1.observe(document.body,{childList:true,subtree:true});
   wrap.appendChild(settings);
 
   return wrap;
@@ -8540,7 +8542,9 @@ function buildHashWidget(sec){
   });
 
   const applyVis2=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
-  new MutationObserver(applyVis2).observe(document.body,{attributes:true,attributeFilter:['class']}); applyVis2();
+  const obsVis2=new MutationObserver(applyVis2); obsVis2.observe(document.body,{attributes:true,attributeFilter:['class']}); applyVis2();
+  const obsC2=new MutationObserver(()=>{ if(!document.contains(wrap)){ obsVis2.disconnect(); obsC2.disconnect(); } });
+  obsC2.observe(document.body,{childList:true,subtree:true});
   wrap.appendChild(settings);
 
   return wrap;
