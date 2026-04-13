@@ -7002,7 +7002,7 @@ async function kvPull() {
     if(!found || !data) return;
     const remoteTs = data.updatedAt || 0;
     const localTs  = D.kvLastSync  || 0;
-    if(remoteTs <= localTs) return;
+    if(remoteTs < localTs) return;
     kvMergeD(data.payload || {});
     const configKeys = Object.keys(data.payload || {}).filter(k => !(k in KV_MERGE_KEYS) && k !== 'drinkLogs');
     configKeys.forEach(k => { D[k] = (data.payload)[k]; });
@@ -7022,6 +7022,20 @@ function kvPushDebounced() {
 async function kvPush() {
   const workerUrl = (D.workerUrl || '').trim();
   if(!workerUrl || !D.kvToken) return;
+
+  // Silent pre-pull: merge remote mergeable arrays into D before building
+  // the push payload. This prevents a client with fewer entries from
+  // overwriting KV with a subset of what another client already pushed.
+  try {
+    const preRes = await fetch(workerUrl.replace(/\/+$/,'') + '/kv', {
+      method: 'GET', headers: { 'X-Sync-Token': D.kvToken }
+    });
+    if(preRes.ok) {
+      const { found, data } = await preRes.json();
+      if(found && data && data.payload) kvMergeD(data.payload);
+    }
+  } catch(e) { /* ignore — still push what we have */ }
+
   const clientId = localStorage.getItem('salty_clientId') || 'unknown';
   const now = Date.now();
   const envelope = {
