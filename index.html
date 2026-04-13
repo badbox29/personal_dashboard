@@ -17182,12 +17182,13 @@ function paintWeather(loc){
     // Pollen helpers
     const pollenColor = (v) => {
       if(!v || v === 'None') return 'var(--text-dim)';
+      if(v === 'Very Low')  return '#88ddaa';
       if(v === 'Low')       return '#44cc88';
       if(v === 'Moderate')  return '#ffcc00';
       if(v === 'High')      return '#ff8844';
       return '#ff4444';
     };
-    const pollenRank = (v) => ({ 'None':0,'Low':1,'Moderate':2,'High':3,'Very High':4 }[v] ?? -1);
+    const pollenRank = (v) => ({ 'None':0,'Very Low':1,'Low':2,'Moderate':3,'High':4,'Very High':5 }[v] ?? -1);
     const pl = loc._pollen;
     let pillPollenHtml = '';
     let pollenPanel = '';
