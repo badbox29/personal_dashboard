@@ -19013,7 +19013,10 @@ function setBgUrl(){
 
 function clearBgUrl(){
   D.bgUrlActive = false;
+  D.bgUrl = '';
   persist();
+  const urlInput = document.getElementById('bgUrlInput');
+  if(urlInput) urlInput.value = '';
   applyBg();
   syncBgUI();
 }
