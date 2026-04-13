@@ -19355,8 +19355,7 @@ function bgSynthwave(){
     const unit         = zone / (numStripes * 2 - 1);
     for(let i=0;i<numStripes;i++){
       const sy = stripeTop + i * unit * 2;
-      c.fillStyle='rgba(0,0,0,0.82)';
-      c.fillRect(sunCX-sunR, sy, sunR*2, unit*0.88);
+      c.clearRect(sunCX-sunR, sy, sunR*2, unit*0.88);
     }
     c.restore();
 
