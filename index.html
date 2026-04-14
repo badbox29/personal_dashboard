@@ -16241,6 +16241,12 @@ function buildAbsWidget(sec){
   let _trackIdx      = 0;
   let _progressTimer = null;
   let _libraries     = [];
+  // Library cache — persists across modal open/close
+  let _libCache      = {};    // keyed by libraryId: { items, progMap, fetchedAt }
+  let _allItems      = [];
+  let _filteredItems = [];
+  let _progMap       = {};
+  let _cachedLibId   = '';
 
   const wrap = el('div','abs-widget');
 
@@ -16509,11 +16515,8 @@ function buildAbsWidget(sec){
     document.body.appendChild(ov);
     requestAnimationFrame(()=> ov.classList.add('open'));
 
-    // Load state
-    let _allItems = [];
-    let _filteredItems = [];
-    let _progMap = {};
-    let _view = 'grid'; // 'grid' | 'detail'
+    // Modal view state only — items/progress cached at widget scope
+    let _view = 'grid';
     let _detailItem = null;
 
     function showLoading(msg='Loading…'){
@@ -16524,6 +16527,17 @@ function buildAbsWidget(sec){
     }
 
     async function loadLibraries(){
+      // Use cached libraries if already loaded
+      if(_libraries.length){
+        libSel.innerHTML='';
+        _libraries.forEach(lib=>{
+          const o=document.createElement('option'); o.value=lib.id; o.textContent=lib.name;
+          if(lib.id===cfg.absLibraryId) o.selected=true;
+          libSel.appendChild(o);
+        });
+        await loadItems(cfg.absLibraryId || _libraries[0]?.id);
+        return;
+      }
       showLoading('Loading libraries…');
       try {
         const data = await absCall('/api/libraries');
@@ -16542,9 +16556,14 @@ function buildAbsWidget(sec){
     async function loadItems(libId){
       if(!libId) return;
       cfg.absLibraryId = libId; persist();
+      // Use cache if same library already loaded
+      if(_cachedLibId === libId && _allItems.length){
+        _filteredItems = _allItems;
+        renderGrid();
+        return;
+      }
       showLoading('Loading books…');
       try {
-        // Paginate to load full library — ABS max is 100 per page
         const PAGE = 100;
         let page = 0, allResults = [];
         while(true){
@@ -16557,10 +16576,9 @@ function buildAbsWidget(sec){
         }
         const progData = await absCall('/api/me/items-in-progress').catch(()=>({libraryItems:[]}));
         _allItems = allResults;
-        // Build progress map
+        _cachedLibId = libId;
         _progMap={};
         (progData.libraryItems||[]).forEach(p=>{ _progMap[p.id]={ pct: p.userMediaProgress?.progress||0 }; });
-        // Move in-progress to top
         _allItems.sort((a,b)=>{
           const ap=_progMap[a.id]?.pct||0, bp=_progMap[b.id]?.pct||0;
           if(ap>0 && bp===0) return -1;
@@ -16586,6 +16604,8 @@ function buildAbsWidget(sec){
         // Cover
         const img = document.createElement('img');
         img.className='abs-card-cover';
+        img.loading='lazy';
+        img.decoding='async';
         img.src=cfg.absUrl+'/api/items/'+item.id+'/cover?token='+encodeURIComponent(cfg.absToken)+'&width=120';
         img.onerror=()=>{ img.replaceWith(Object.assign(el('div','abs-card-cover-ph'),{textContent:'🎧'})); };
         const ttl = el('div','abs-card-title'); ttl.textContent=meta.title||'Untitled';
@@ -16640,6 +16660,7 @@ function buildAbsWidget(sec){
         // Top section
         const topSec = el('div','abs-detail-top');
         const img=document.createElement('img'); img.className='abs-detail-cover';
+        img.decoding='async';
         img.src=cfg.absUrl+'/api/items/'+itemId+'/cover?token='+encodeURIComponent(cfg.absToken)+'&width=200';
         img.onerror=()=>{ img.replaceWith(Object.assign(el('div','abs-detail-cover-ph'),{textContent:'🎧'})); };
 
