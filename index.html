@@ -13041,7 +13041,7 @@ function buildTapWidget(sec,tabId){
   return wrap;
 }
 
-function buildCveWidget(sec){
+function buildCveWidget(sec, tabId){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
   if(!cfg.watchlist)    cfg.watchlist    = [];
   if(cfg.alarmSound === undefined) cfg.alarmSound = false;
