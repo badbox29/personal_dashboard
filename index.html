@@ -16310,12 +16310,19 @@ function buildAbsWidget(sec){
   // ── Worker proxy call ────────────────────────────────────────
   async function absCall(endpoint, method='GET', payload=null){
     const wUrl = getWorkerUrl('abs');
-    const r = await fetch(wUrl, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ absUrl: cfg.absUrl, token: cfg.absToken, endpoint, method, payload })
-    });
-    const j = await r.json();
+    let r;
+    try {
+      r = await fetch(wUrl, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ absUrl: cfg.absUrl, token: cfg.absToken, endpoint, method, payload })
+      });
+    } catch(e) {
+      throw new Error('Worker unreachable — check your Worker URL in ⚡ settings');
+    }
+    let j;
+    try { j = await r.json(); }
+    catch(_) { throw new Error('Worker returned non-JSON — is the updated worker deployed?'); }
     if(!j.ok) throw new Error(j.data?.error || j.error || 'ABS error '+j.status);
     return j.data;
   }
