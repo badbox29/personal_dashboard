@@ -800,6 +800,41 @@ async function handleWotd(body, ctx) {
 
 const UNSPLASH_CACHE_TTL = 60 * 60; // 1 hour
 
+// ── Audiobookshelf proxy ─────────────────────────────────────────────────────
+async function handleAbs(body) {
+  const { absUrl, token, endpoint, method = 'GET', payload } = body;
+  if(!absUrl || !token || !endpoint)
+    return json({ error: 'Required fields: absUrl, token, endpoint' }, 400);
+  // Safety: only allow HTTPS targets
+  let base;
+  try {
+    base = new URL(absUrl);
+    if(base.protocol !== 'https:') throw new Error();
+  } catch(_) {
+    return json({ error: 'absUrl must be a valid HTTPS URL' }, 400);
+  }
+  const target = base.origin + endpoint;
+  const init = {
+    method,
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type':  'application/json',
+      'Accept':        'application/json',
+    },
+  };
+  if(payload && method !== 'GET') init.body = JSON.stringify(payload);
+  try {
+    const r   = await fetch(target, init);
+    const ct  = r.headers.get('content-type') || '';
+    const text = await r.text();
+    let data;
+    try { data = JSON.parse(text); } catch(_) { data = { _raw: text }; }
+    return json({ ok: r.ok, status: r.status, data }, r.ok ? 200 : r.status);
+  } catch(e) {
+    return json({ error: 'ABS fetch failed: ' + e.message }, 502);
+  }
+}
+
 async function handleUnsplash(body, ctx) {
   const { apiKey, query = '', orientation = 'landscape', mode = 'photo' } = body;
 
@@ -1145,6 +1180,7 @@ export default {
     if(path === '/bible')  return handleBible(body, ctx);
     if(path === '/topics') return handleTopics(body, ctx);
     if(path === '/wotd')   return handleWotd(body, ctx);
+    if(path === '/abs')     return handleAbs(body);
     if(path === '/unsplash') return handleUnsplash(body, ctx);
     if(path === '/status') {
       try { return await handleStatus(body); }

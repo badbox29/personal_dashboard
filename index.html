@@ -5115,6 +5115,88 @@ body.edit-mode .gh-add-row { display: flex; }
 .poem-fav-del:hover{color:var(--del-color);}
 .poem-empty-msg{padding:24px;text-align:center;color:var(--text-dim);font-size:13px;line-height:1.7;}
 
+
+/* ── AUDIOBOOKSHELF widget ───────────────────────────── */
+.abs-widget{display:flex;flex-direction:column;gap:8px;}
+.abs-player{display:flex;flex-direction:column;gap:8px;}
+.abs-now-playing{display:flex;gap:10px;align-items:flex-start;}
+.abs-cover{width:64px;height:64px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--surface);border:1px solid var(--border);}
+.abs-cover-placeholder{width:64px;height:64px;border-radius:5px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.abs-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.abs-title{font-size:13px;font-weight:600;color:var(--text-head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.abs-author{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.abs-series{font-size:10px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.abs-progress-row{display:flex;align-items:center;gap:6px;}
+.abs-time{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);white-space:nowrap;flex-shrink:0;}
+.abs-scrubber{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--border);outline:none;cursor:pointer;}
+.abs-scrubber::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--gold);cursor:pointer;}
+.abs-scrubber::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;}
+.abs-controls{display:flex;align-items:center;gap:6px;}
+.abs-ctrl-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:13px;padding:4px 10px;cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;line-height:1;}
+.abs-ctrl-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.abs-ctrl-btn.play{border-color:var(--gold);color:var(--gold);font-size:15px;padding:4px 14px;}
+.abs-ctrl-btn.play:hover{background:rgba(221,176,75,.1);}
+.abs-speed{background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:11px;font-family:'Share Tech Mono',monospace;padding:4px 4px;cursor:pointer;outline:none;}
+.abs-speed:focus{border-color:var(--gold);}
+.abs-lib-btn{margin-left:auto;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:11px;padding:4px 10px;cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;}
+.abs-lib-btn:hover{border-color:var(--gold);color:var(--gold);}
+.abs-idle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 8px;color:var(--text-dim);font-size:12px;text-align:center;}
+.abs-idle-icon{font-size:32px;opacity:.4;}
+.abs-settings{display:flex;flex-direction:column;gap:8px;margin-top:4px;}
+.abs-setting-row{display:flex;align-items:center;gap:6px;}
+.abs-setting-lbl{font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);width:72px;flex-shrink:0;}
+.abs-chapter-badge{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);white-space:nowrap;}
+
+/* ABS Library Modal */
+.abs-modal{background:var(--modal-bg);border:1px solid var(--border);border-radius:10px;width:min(820px,96vw);height:min(86vh,720px);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55);}
+.abs-modal-top{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;gap:8px;}
+.abs-modal-title{font-size:13px;font-weight:600;color:var(--text-head);flex:1;}
+.abs-modal-lib-sel{background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;font-family:'Outfit',sans-serif;padding:4px 8px;outline:none;cursor:pointer;}
+.abs-modal-lib-sel:focus{border-color:var(--gold);}
+.abs-search-inp{background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);font-size:12px;font-family:'Outfit',sans-serif;padding:4px 10px;outline:none;width:160px;}
+.abs-search-inp:focus{border-color:var(--gold);}
+.abs-modal-close{background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer;padding:2px 6px;line-height:1;}
+.abs-modal-close:hover{color:var(--text);}
+.abs-modal-body{flex:1;overflow:hidden;display:flex;}
+/* Grid view */
+.abs-book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;padding:14px;overflow-y:auto;flex:1;}
+.abs-book-card{display:flex;flex-direction:column;gap:5px;cursor:pointer;border-radius:6px;padding:6px;border:1px solid transparent;transition:all .15s;}
+.abs-book-card:hover{border-color:var(--border);background:rgba(255,255,255,.03);}
+.abs-book-card.active{border-color:var(--gold);background:rgba(221,176,75,.06);}
+.abs-card-cover{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:4px;background:var(--surface);}
+.abs-card-cover-ph{width:100%;aspect-ratio:1/1;border-radius:4px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:32px;border:1px solid var(--border);}
+.abs-card-title{font-size:11px;font-weight:600;color:var(--text-head);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.abs-card-author{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.abs-card-prog{height:3px;border-radius:2px;background:var(--border);margin-top:2px;overflow:hidden;}
+.abs-card-prog-fill{height:100%;border-radius:2px;background:var(--gold);}
+/* Detail view */
+.abs-detail{display:flex;flex-direction:column;gap:0;flex:1;overflow:hidden;}
+.abs-detail-top{display:flex;gap:14px;padding:14px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.abs-detail-cover{width:100px;height:100px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--surface);}
+.abs-detail-cover-ph{width:100px;height:100px;border-radius:6px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:44px;border:1px solid var(--border);flex-shrink:0;}
+.abs-detail-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.abs-detail-title{font-size:16px;font-weight:600;color:var(--text-head);line-height:1.3;}
+.abs-detail-author{font-size:12px;font-family:'Share Tech Mono',monospace;color:var(--gold);}
+.abs-detail-series{font-size:11px;color:var(--text-dim);}
+.abs-detail-desc{font-size:12px;color:var(--text);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.abs-detail-actions{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+.abs-load-btn{background:rgba(221,176,75,.12);border:1px solid var(--gold);border-radius:4px;color:var(--gold);font-size:12px;font-family:'Outfit',sans-serif;padding:5px 14px;cursor:pointer;font-weight:600;transition:all .15s;}
+.abs-load-btn:hover{background:rgba(221,176,75,.22);}
+.abs-open-btn{background:none;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:12px;font-family:'Outfit',sans-serif;padding:5px 14px;cursor:pointer;transition:all .15s;}
+.abs-open-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.abs-back-btn{background:none;border:none;color:var(--text-dim);font-size:11px;font-family:'Share Tech Mono',monospace;cursor:pointer;padding:0;letter-spacing:.04em;}
+.abs-back-btn:hover{color:var(--text);}
+.abs-chapters{flex:1;overflow-y:auto;padding:0 14px 14px;}
+.abs-chapters-lbl{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;padding:10px 0 6px;position:sticky;top:0;background:var(--modal-bg);}
+.abs-chapter-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:4px;cursor:pointer;transition:background .12s;border:1px solid transparent;}
+.abs-chapter-row:hover{background:rgba(255,255,255,.04);}
+.abs-chapter-row.active{background:rgba(221,176,75,.08);border-color:var(--gold);}
+.abs-ch-num{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);width:22px;flex-shrink:0;text-align:right;}
+.abs-ch-title{flex:1;font-size:12px;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.abs-ch-dur{font-size:10px;font-family:'Share Tech Mono',monospace;color:var(--text-dim);flex-shrink:0;}
+.abs-modal-loading{display:flex;align-items:center;justify-content:center;flex:1;color:var(--text-dim);font-size:13px;}
+.abs-modal-err{display:flex;align-items:center;justify-content:center;flex:1;color:var(--del-color);font-size:12px;padding:20px;text-align:center;}
+
 /* ── NASA APOD widget ─────────────────────────────────── */
 .apod-widget{display:flex;flex-direction:column;gap:7px;}
 .apod-hdr{display:flex;align-items:center;gap:6px;}
@@ -5931,6 +6013,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swPoem"     onclick="selectWidgetType('poem')">
           📜 Poem of the Day<span>Daily poem with favorites</span>
         </button>
+        <button class="sec-type-card" id="swAbs"      onclick="selectWidgetType('abs')">
+          🎧 Audiobookshelf<span>Self-hosted audiobook player</span>
+        </button>
       </div>
       <!-- Network Engineering widgets -->
       <div class="widget-cat-panel" id="wcPanelNetwork">
@@ -6676,6 +6761,7 @@ const SEARCH_ENGINES = [
 
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
                       'bible','wotd','apod','drinks',
+                      'abs',
                       'ports','myip','rfc','cve','bgp','dns','subnet','otx','tap',
                       'github','regex','jsonformat','base64','hash','jwt',
                       'compose','met','artspot','unsplash'];
@@ -7610,6 +7696,7 @@ function buildWidgetBody(sec, tabId){
     case 'hash':       return buildHashWidget(sec);
     case 'jwt':        return buildJwtWidget(sec);
     case 'drinks':     return buildDrinksWidget(sec);
+    case 'abs':        return buildAbsWidget(sec);
     case 'poem':       return buildPoemWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
@@ -16134,6 +16221,523 @@ function buildDrinksWidget(sec){
 let _poemSec      = null;
 let _poemTab      = 'today';
 let _poemViewFavId = null;
+
+/* ================================================================
+   AUDIOBOOKSHELF WIDGET
+   ================================================================ */
+function buildAbsWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.absUrl)   cfg.absUrl   = '';
+  if(!cfg.absToken) cfg.absToken = '';
+  // Persisted playback state (survives page reload)
+  if(!cfg.absCurrentItemId)      cfg.absCurrentItemId      = '';
+  if(!cfg.absCurrentTrackIndex)  cfg.absCurrentTrackIndex  = 0;
+  if(!cfg.absCurrentTime)        cfg.absCurrentTime        = 0;
+  if(!cfg.absLibraryId)          cfg.absLibraryId          = '';
+
+  let _itemData      = null;   // full item detail from ABS
+  let _tracks        = [];     // array of {title, duration, startOffset, contentUrl}
+  let _trackIdx      = 0;
+  let _progressTimer = null;
+  let _libraries     = [];
+
+  const wrap = el('div','abs-widget');
+
+  // Hidden audio element
+  const audio = document.createElement('audio');
+  audio.preload = 'metadata';
+  wrap.appendChild(audio);
+
+  // ── Player area ─────────────────────────────────────────────
+  const playerDiv = el('div','abs-player');
+  wrap.appendChild(playerDiv);
+
+  const nowPlaying = el('div','abs-now-playing');
+  playerDiv.appendChild(nowPlaying);
+
+  const coverEl = el('div','abs-cover-placeholder'); coverEl.textContent = '🎧';
+  nowPlaying.appendChild(coverEl);
+
+  const metaDiv = el('div','abs-meta');
+  const titleEl = el('div','abs-title');   titleEl.textContent = 'No book loaded';
+  const authorEl= el('div','abs-author');  authorEl.textContent = '';
+  const seriesEl= el('div','abs-series');  seriesEl.textContent = '';
+  metaDiv.append(titleEl, authorEl, seriesEl);
+  nowPlaying.appendChild(metaDiv);
+
+  // Progress row
+  const progRow = el('div','abs-progress-row');
+  const curTime = el('span','abs-time'); curTime.textContent = '0:00';
+  const scrubber = document.createElement('input');
+  scrubber.type='range'; scrubber.className='abs-scrubber';
+  scrubber.min=0; scrubber.max=100; scrubber.value=0; scrubber.step=0.1;
+  const durTime = el('span','abs-time'); durTime.textContent = '0:00';
+  const chBadge = el('span','abs-chapter-badge');
+  progRow.append(curTime, scrubber, durTime, chBadge);
+  playerDiv.appendChild(progRow);
+
+  // Controls row
+  const ctrlRow = el('div','abs-controls');
+  const skipBackBtn  = el('button','abs-ctrl-btn'); skipBackBtn.textContent='⏪ 30s'; skipBackBtn.title='Back 30s';
+  const playBtn      = el('button','abs-ctrl-btn play'); playBtn.textContent='▶';
+  const skipFwdBtn   = el('button','abs-ctrl-btn'); skipFwdBtn.textContent='30s ⏩'; skipFwdBtn.title='Forward 30s';
+  const speedSel     = document.createElement('select'); speedSel.className='abs-speed';
+  [0.75,1,1.25,1.5,1.75,2].forEach(s=>{
+    const o=document.createElement('option'); o.value=s; o.textContent=s+'×'; speedSel.appendChild(o);
+  });
+  speedSel.value = '1';
+  const libBtn = el('button','abs-lib-btn'); libBtn.textContent='📚 Library';
+  ctrlRow.append(skipBackBtn, playBtn, skipFwdBtn, speedSel, libBtn);
+  playerDiv.appendChild(ctrlRow);
+
+  // Idle state (shown when no book loaded and not in edit mode)
+  const idleDiv = el('div','abs-idle');
+  idleDiv.innerHTML = '<div class="abs-idle-icon">🎧</div><div>No book loaded<br><small style="font-size:10px;">Browse the library to pick one</small></div>';
+  wrap.appendChild(idleDiv);
+
+  // ── Helper: format seconds to H:MM:SS or M:SS ───────────────
+  function fmtTime(s){
+    s = Math.max(0, Math.floor(s||0));
+    const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+    if(h>0) return h+':'+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+    return m+':'+String(sec).padStart(2,'0');
+  }
+
+  // ── Worker proxy call ────────────────────────────────────────
+  async function absCall(endpoint, method='GET', payload=null){
+    const wUrl = getWorkerUrl('abs');
+    const r = await fetch(wUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ absUrl: cfg.absUrl, token: cfg.absToken, endpoint, method, payload })
+    });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.data?.error || j.error || 'ABS error '+j.status);
+    return j.data;
+  }
+
+  // ── Load item into player ────────────────────────────────────
+  async function loadItem(itemId, startTrackIdx, startTime){
+    if(!cfg.absUrl || !cfg.absToken){ showIdle(true); return; }
+    try {
+      const data = await absCall('/api/items/'+itemId+'?expanded=1');
+      _itemData = data;
+      _tracks = buildTrackList(data);
+      if(!_tracks.length){ titleEl.textContent='No audio tracks found'; return; }
+      _trackIdx = startTrackIdx || 0;
+
+      // Metadata
+      const meta = data.media?.metadata || {};
+      titleEl.textContent  = meta.title  || 'Unknown Title';
+      authorEl.textContent = meta.authorName || '';
+      seriesEl.textContent = meta.seriesName ? 'Series: '+meta.seriesName : '';
+
+      // Cover
+      coverEl.innerHTML='';
+      const img = document.createElement('img');
+      img.className='abs-cover';
+      img.src = cfg.absUrl+'/api/items/'+itemId+'/cover?token='+encodeURIComponent(cfg.absToken);
+      img.onerror=()=>{ coverEl.innerHTML=''; coverEl.textContent='🎧'; coverEl.className='abs-cover-placeholder'; };
+      img.onload=()=>{ coverEl.className=''; };
+      coverEl.className='';
+      coverEl.appendChild(img);
+
+      // Save to cfg
+      cfg.absCurrentItemId     = itemId;
+      cfg.absCurrentTrackIdx   = _trackIdx;
+      cfg.absCurrentTime       = startTime || 0;
+      persist();
+
+      showIdle(false);
+      cueTrack(_trackIdx, startTime||0);
+    } catch(e){
+      titleEl.textContent = '⚠ '+e.message;
+    }
+  }
+
+  function buildTrackList(data){
+    const files = data.media?.audioFiles || [];
+    const tracks = [];
+    let offset = 0;
+    files.forEach((f,i)=>{
+      tracks.push({
+        title: f.metadata?.filename || ('Track '+(i+1)),
+        duration: f.duration || 0,
+        startOffset: offset,
+        contentUrl: f.metadata?.path || '',
+        index: i
+      });
+      offset += f.duration||0;
+    });
+    return tracks;
+  }
+
+  function cueTrack(idx, startSec){
+    if(!_tracks[idx]) return;
+    _trackIdx = idx;
+    const t = _tracks[idx];
+    // Stream direct from ABS — CORS is now open via Cloudflare Transform Rule
+    const url = cfg.absUrl+'/api/items/'+cfg.absCurrentItemId+'/file/'+_trackIdx+'?token='+encodeURIComponent(cfg.absToken);
+    audio.src = url;
+    audio.currentTime = startSec || 0;
+    scrubber.max = t.duration;
+    scrubber.value = startSec || 0;
+    durTime.textContent = fmtTime(t.duration);
+    chBadge.textContent = _tracks.length > 1 ? 'Ch '+(idx+1)+'/'+_tracks.length : '';
+    updateTimeDisplay(startSec||0);
+  }
+
+  function showIdle(show){
+    idleDiv.style.display  = show ? '' : 'none';
+    playerDiv.style.display= show ? 'none' : '';
+  }
+
+  function updateTimeDisplay(t){
+    curTime.textContent = fmtTime(t);
+    scrubber.value = t;
+  }
+
+  // ── Audio events ─────────────────────────────────────────────
+  audio.addEventListener('timeupdate', ()=>{
+    updateTimeDisplay(audio.currentTime);
+    cfg.absCurrentTime = audio.currentTime;
+  });
+
+  audio.addEventListener('ended', ()=>{
+    // Advance to next track
+    if(_trackIdx < _tracks.length-1){
+      cueTrack(_trackIdx+1, 0);
+      audio.play().catch(()=>{});
+    } else {
+      playBtn.textContent='▶';
+      syncProgress();
+    }
+  });
+
+  audio.addEventListener('play',  ()=>{ playBtn.textContent='⏸'; startProgressSync(); });
+  audio.addEventListener('pause', ()=>{ playBtn.textContent='▶'; stopProgressSync(); syncProgress(); });
+
+  // ── Controls ─────────────────────────────────────────────────
+  playBtn.onclick = ()=>{
+    if(!cfg.absCurrentItemId){ openAbsLibrary(); return; }
+    if(audio.paused) audio.play().catch(()=>{});
+    else audio.pause();
+  };
+
+  skipBackBtn.onclick = ()=>{ audio.currentTime = Math.max(0, audio.currentTime-30); };
+  skipFwdBtn.onclick  = ()=>{ audio.currentTime = Math.min(audio.duration||0, audio.currentTime+30); };
+
+  speedSel.onchange = ()=>{ audio.playbackRate = parseFloat(speedSel.value)||1; };
+
+  scrubber.oninput = ()=>{ audio.currentTime = parseFloat(scrubber.value)||0; };
+  scrubber.onchange= ()=>{ syncProgress(); };
+
+  libBtn.onclick = ()=> openAbsLibrary();
+
+  // ── Progress sync to ABS server ──────────────────────────────
+  function startProgressSync(){
+    stopProgressSync();
+    _progressTimer = setInterval(syncProgress, 15000);
+  }
+  function stopProgressSync(){ if(_progressTimer){ clearInterval(_progressTimer); _progressTimer=null; } }
+
+  async function syncProgress(){
+    if(!cfg.absCurrentItemId || !cfg.absToken || !cfg.absUrl) return;
+    try {
+      await absCall('/api/me/progress/'+cfg.absCurrentItemId, 'PATCH', {
+        currentTime: audio.currentTime,
+        duration: _tracks.reduce((a,t)=>a+t.duration, 0),
+        isFinished: false
+      });
+    } catch(_){}
+  }
+
+  // ── Library Modal ─────────────────────────────────────────────
+  function openAbsLibrary(){
+    if(!cfg.absUrl || !cfg.absToken){
+      alert('Add your Audiobookshelf server URL and token in edit mode first.');
+      return;
+    }
+    // Build modal
+    const ov = el('div','overlay'); ov.id='absLibOverlay';
+    const modal = el('div','abs-modal');
+
+    // Top bar
+    const top = el('div','abs-modal-top');
+    const titleLbl = el('div','abs-modal-title'); titleLbl.textContent='📚 Library';
+    const libSel = document.createElement('select'); libSel.className='abs-modal-lib-sel';
+    const searchInp = document.createElement('input'); searchInp.className='abs-search-inp';
+    searchInp.type='search'; searchInp.placeholder='Search…';
+    const closeBtn = el('button','abs-modal-close'); closeBtn.textContent='✕';
+    closeBtn.onclick = ()=>{ stopProgressSync(); ov.remove(); };
+    top.append(titleLbl, libSel, searchInp, closeBtn);
+    modal.appendChild(top);
+
+    // Body
+    const body = el('div','abs-modal-body');
+    modal.appendChild(body);
+    ov.appendChild(modal);
+    document.body.appendChild(ov);
+    requestAnimationFrame(()=> ov.classList.add('open'));
+
+    // Load state
+    let _allItems = [];
+    let _filteredItems = [];
+    let _progMap = {};
+    let _view = 'grid'; // 'grid' | 'detail'
+    let _detailItem = null;
+
+    function showLoading(msg='Loading…'){
+      body.innerHTML=''; const d=el('div','abs-modal-loading'); d.textContent=msg; body.appendChild(d);
+    }
+    function showError(msg){
+      body.innerHTML=''; const d=el('div','abs-modal-err'); d.textContent='⚠ '+msg; body.appendChild(d);
+    }
+
+    async function loadLibraries(){
+      showLoading('Loading libraries…');
+      try {
+        const data = await absCall('/api/libraries');
+        _libraries = data.libraries || [];
+        libSel.innerHTML='';
+        _libraries.forEach(lib=>{
+          const o=document.createElement('option'); o.value=lib.id; o.textContent=lib.name;
+          if(lib.id===cfg.absLibraryId) o.selected=true;
+          libSel.appendChild(o);
+        });
+        if(!cfg.absLibraryId && _libraries.length) cfg.absLibraryId=_libraries[0].id;
+        await loadItems(cfg.absLibraryId || _libraries[0]?.id);
+      } catch(e){ showError(e.message); }
+    }
+
+    async function loadItems(libId){
+      if(!libId) return;
+      cfg.absLibraryId = libId; persist();
+      showLoading('Loading books…');
+      try {
+        const [itemsData, progData] = await Promise.all([
+          absCall('/api/libraries/'+libId+'/items?limit=100&sort=media.metadata.title&desc=0'),
+          absCall('/api/me/items-in-progress').catch(()=>({libraryItems:[]}))
+        ]);
+        _allItems = itemsData.results || [];
+        // Build progress map
+        _progMap={};
+        (progData.libraryItems||[]).forEach(p=>{ _progMap[p.id]={ pct: p.userMediaProgress?.progress||0 }; });
+        // Move in-progress to top
+        _allItems.sort((a,b)=>{
+          const ap=_progMap[a.id]?.pct||0, bp=_progMap[b.id]?.pct||0;
+          if(ap>0 && bp===0) return -1;
+          if(bp>0 && ap===0) return 1;
+          return 0;
+        });
+        _filteredItems = _allItems;
+        renderGrid();
+      } catch(e){ showError(e.message); }
+    }
+
+    function renderGrid(){
+      _view='grid';
+      body.innerHTML='';
+      const grid = el('div','abs-book-grid');
+
+      // If currently playing item, jump to it in modal
+      const activeId = cfg.absCurrentItemId;
+
+      (_filteredItems.length ? _filteredItems : _allItems).forEach(item=>{
+        const meta = item.media?.metadata || {};
+        const card = el('div','abs-book-card'+(item.id===activeId?' active':''));
+        // Cover
+        const img = document.createElement('img');
+        img.className='abs-card-cover';
+        img.src=cfg.absUrl+'/api/items/'+item.id+'/cover?token='+encodeURIComponent(cfg.absToken)+'&width=120';
+        img.onerror=()=>{ img.replaceWith(Object.assign(el('div','abs-card-cover-ph'),{textContent:'🎧'})); };
+        const ttl = el('div','abs-card-title'); ttl.textContent=meta.title||'Untitled';
+        const aut = el('div','abs-card-author'); aut.textContent=meta.authorName||'';
+        // Progress bar
+        const pct = (_progMap[item.id]?.pct||0)*100;
+        const pb  = el('div','abs-card-prog');
+        const pf  = el('div','abs-card-prog-fill'); pf.style.width=pct.toFixed(1)+'%';
+        pb.appendChild(pf);
+        card.append(img,ttl,aut,pb);
+        card.onclick=()=> showDetail(item.id);
+        grid.appendChild(card);
+      });
+
+      if(!_filteredItems.length && !_allItems.length){
+        const msg=el('div','abs-modal-loading'); msg.textContent='No items found.'; body.appendChild(msg);
+      } else { body.appendChild(grid); }
+
+      // Scroll active card into view
+      setTimeout(()=>{
+        const active = grid.querySelector('.abs-book-card.active');
+        if(active) active.scrollIntoView({block:'nearest'});
+      }, 50);
+    }
+
+    async function showDetail(itemId){
+      _view='detail';
+      body.innerHTML='';
+      const detail = el('div','abs-detail');
+      body.appendChild(detail);
+
+      // Show skeleton while loading
+      const loadMsg=el('div','abs-modal-loading'); loadMsg.textContent='Loading…';
+      detail.appendChild(loadMsg);
+
+      try {
+        const data = await absCall('/api/items/'+itemId+'?expanded=1');
+        const meta  = data.media?.metadata || {};
+        const tracks = buildTrackList(data);
+        const curProg = await absCall('/api/me/progress/'+itemId).catch(()=>null);
+        const progTime = curProg?.currentTime || 0;
+
+        detail.innerHTML='';
+
+        // Back button row
+        const backRow=el('div');backRow.style.cssText='padding:8px 14px 0;flex-shrink:0;';
+        const backBtn=el('button','abs-back-btn'); backBtn.textContent='← Back to library';
+        backBtn.onclick=()=>renderGrid();
+        backRow.appendChild(backBtn);
+        detail.appendChild(backRow);
+
+        // Top section
+        const topSec = el('div','abs-detail-top');
+        const img=document.createElement('img'); img.className='abs-detail-cover';
+        img.src=cfg.absUrl+'/api/items/'+itemId+'/cover?token='+encodeURIComponent(cfg.absToken)+'&width=200';
+        img.onerror=()=>{ img.replaceWith(Object.assign(el('div','abs-detail-cover-ph'),{textContent:'🎧'})); };
+
+        const metaDiv=el('div','abs-detail-meta');
+        const dtTitle=el('div','abs-detail-title'); dtTitle.textContent=meta.title||'Untitled';
+        const dtAuthor=el('div','abs-detail-author'); dtAuthor.textContent=meta.authorName||'';
+        const dtSeries=el('div','abs-detail-series'); dtSeries.textContent=meta.seriesName?'Series: '+meta.seriesName:'';
+        const dtDesc=el('div','abs-detail-desc'); dtDesc.textContent=meta.description||'';
+
+        const dtActions=el('div','abs-detail-actions');
+        const loadBtn=el('button','abs-load-btn');
+        loadBtn.textContent=(cfg.absCurrentItemId===itemId?'▶ Resume':'▶ Load & Play');
+        loadBtn.onclick=async()=>{
+          const startTime = cfg.absCurrentItemId===itemId ? cfg.absCurrentTime : progTime;
+          ov.classList.remove('open');
+          setTimeout(()=>ov.remove(),300);
+          await loadItem(itemId, 0, startTime);
+          audio.play().catch(()=>{});
+        };
+        const openBtn=el('button','abs-open-btn'); openBtn.textContent='Open in ABS ↗';
+        openBtn.onclick=()=> window.open(cfg.absUrl+'/item/'+itemId,'_blank','noopener');
+        dtActions.append(loadBtn,openBtn);
+        metaDiv.append(dtTitle,dtAuthor,dtSeries,dtDesc,dtActions);
+        topSec.append(img,metaDiv);
+        detail.appendChild(topSec);
+
+        // Chapters list
+        const chWrap=el('div','abs-chapters');
+        const chLbl=el('div','abs-chapters-lbl'); chLbl.textContent='Chapters / Tracks';
+        chWrap.appendChild(chLbl);
+
+        const activeTrack = cfg.absCurrentItemId===itemId ? cfg.absCurrentTrackIdx||0 : -1;
+        tracks.forEach((t,i)=>{
+          const row=el('div','abs-chapter-row'+(i===activeTrack?' active':''));
+          const num=el('span','abs-ch-num'); num.textContent=i+1;
+          const ttl=el('span','abs-ch-title'); ttl.textContent=t.title;
+          const dur=el('span','abs-ch-dur'); dur.textContent=fmtTime(t.duration);
+          row.append(num,ttl,dur);
+          row.onclick=async()=>{
+            ov.classList.remove('open');
+            setTimeout(()=>ov.remove(),300);
+            await loadItem(itemId, i, 0);
+            audio.play().catch(()=>{});
+          };
+          chWrap.appendChild(row);
+        });
+        detail.appendChild(chWrap);
+
+        // Scroll active chapter into view
+        setTimeout(()=>{
+          const ac=chWrap.querySelector('.abs-chapter-row.active');
+          if(ac) ac.scrollIntoView({block:'nearest'});
+        },50);
+
+      } catch(e){
+        detail.innerHTML='';
+        const err=el('div','abs-modal-err'); err.textContent='⚠ '+e.message;
+        detail.appendChild(err);
+      }
+    }
+
+    // Search filter
+    let _searchTimer=null;
+    searchInp.oninput=()=>{
+      clearTimeout(_searchTimer);
+      _searchTimer=setTimeout(()=>{
+        const q=searchInp.value.trim().toLowerCase();
+        _filteredItems=q ? _allItems.filter(item=>{
+          const m=item.media?.metadata||{};
+          return (m.title||'').toLowerCase().includes(q)||(m.authorName||'').toLowerCase().includes(q);
+        }) : _allItems;
+        if(_view==='grid') renderGrid();
+      }, 250);
+    };
+
+    libSel.onchange=()=> loadItems(libSel.value);
+
+    // Initial load
+    loadLibraries();
+  }
+
+  // ── Settings (edit mode) ──────────────────────────────────────
+  const settings = el('div','abs-settings');
+
+  const urlRow=el('div','abs-setting-row');
+  const urlLbl=el('label','abs-setting-lbl'); urlLbl.textContent='Server URL';
+  const urlInp=el('input','search-widget-input'); urlInp.type='url';
+  urlInp.placeholder='https://abs.example.com'; urlInp.value=cfg.absUrl; urlInp.style.flex='1';
+  const urlSave=el('button','search-widget-go'); urlSave.textContent='Save';
+  urlSave.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;';
+  urlSave.onclick=()=>{
+    cfg.absUrl=urlInp.value.trim().replace(/\/+$/,''); persist();
+    urlSave.textContent='✓'; setTimeout(()=>urlSave.textContent='Save',1500);
+  };
+  urlRow.append(urlLbl,urlInp,urlSave);
+  settings.appendChild(urlRow);
+
+  const tokRow=el('div','abs-setting-row');
+  const tokLbl=el('label','abs-setting-lbl'); tokLbl.textContent='API Token';
+  const tokInp=el('input','search-widget-input'); tokInp.type='password';
+  tokInp.placeholder='Paste API token…'; tokInp.value=cfg.absToken; tokInp.style.flex='1';
+  const tokSave=el('button','search-widget-go'); tokSave.textContent='Save';
+  tokSave.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;';
+  tokSave.onclick=()=>{
+    cfg.absToken=tokInp.value.trim(); persist();
+    tokSave.textContent='✓'; setTimeout(()=>tokSave.textContent='Save',1500);
+  };
+  tokRow.append(tokLbl,tokInp,tokSave);
+  settings.appendChild(tokRow);
+
+  const applyVis=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obs=new MutationObserver(applyVis); obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyVis();
+  wrap.appendChild(settings);
+
+  // Cleanup on removal
+  const obsC=new MutationObserver(()=>{
+    if(!document.contains(wrap)){
+      obs.disconnect(); obsC.disconnect();
+      stopProgressSync();
+      audio.pause(); audio.src='';
+    }
+  });
+  obsC.observe(document.body,{childList:true,subtree:true});
+
+  // ── Initial state ─────────────────────────────────────────────
+  if(cfg.absCurrentItemId && cfg.absUrl && cfg.absToken){
+    showIdle(false);
+    loadItem(cfg.absCurrentItemId, cfg.absCurrentTrackIdx||0, cfg.absCurrentTime||0);
+  } else {
+    showIdle(true);
+  }
+
+  return wrap;
+}
 
 function buildPoemWidget(sec){
   const wrap = el('div','poem-card');
