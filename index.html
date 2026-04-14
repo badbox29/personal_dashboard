@@ -16293,6 +16293,10 @@ function buildAbsWidget(sec){
   // Idle state (shown when no book loaded and not in edit mode)
   const idleDiv = el('div','abs-idle');
   idleDiv.innerHTML = '<div class="abs-idle-icon">🎧</div><div>No book loaded<br><small style="font-size:10px;">Browse the library to pick one</small></div>';
+  const idleLibBtn = el('button','abs-lib-btn'); idleLibBtn.textContent='📚 Browse Library';
+  idleLibBtn.style.cssText='margin:4px auto 0;';
+  idleLibBtn.onclick = ()=> openAbsLibrary();
+  idleDiv.appendChild(idleLibBtn);
   wrap.appendChild(idleDiv);
 
   // ── Helper: format seconds to H:MM:SS or M:SS ───────────────
