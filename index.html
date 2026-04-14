@@ -20093,53 +20093,104 @@ function bgNebula(){
 
 /* ---- CIRCUIT ---- */
 function bgCircuit(){
-  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const main = bgCtx, W = main.canvas.width, H = main.canvas.height;
   const {r,g,b} = hexRgb(D.bgColor);
-  const CELL=60;
-  const cols=Math.ceil(w/CELL)+1, rows=Math.ceil(h/CELL)+1;
-  // Build a random set of edges
-  const edges=[];
-  for(let row=0;row<rows;row++){
-    for(let col=0;col<cols;col++){
-      if(col<cols-1 && Math.random()<0.55) edges.push({x1:col*CELL,y1:row*CELL,x2:(col+1)*CELL,y2:row*CELL});
-      if(row<rows-1 && Math.random()<0.55) edges.push({x1:col*CELL,y1:row*CELL,x2:col*CELL,y2:(row+1)*CELL});
+  // Off-screen canvas 2x viewport so camera pan has room to roam
+  const off = document.createElement('canvas');
+  off.width = W*2; off.height = H*2;
+  const oc = off.getContext('2d');
+  const rr=(a=1,b0=0)=>Math.random()*(a-b0)+b0;
+  const ch=a=>a[Math.floor(Math.random()*a.length)];
+  const st={tr:[],jn:[],lim:180};
+  // Build a trace: 4 waypoints with right-angle PCB turns
+  function mk(p,ang_in){
+    const s=p||{x:rr(off.width),y:rr(off.height)};
+    const ang=ang_in??ch([0,90,180,270]);
+    const L1=rr(100,60);
+    const p1={x:s.x+Math.cos(ang*Math.PI/180)*L1, y:s.y+Math.sin(ang*Math.PI/180)*L1};
+    const t=ch([45,-45]);
+    const p2={x:p1.x+Math.cos((ang+t)*Math.PI/180)*rr(160,80), y:p1.y+Math.sin((ang+t)*Math.PI/180)*rr(160,80)};
+    const p3={x:p2.x+Math.cos(ang*Math.PI/180)*rr(200,100), y:p2.y+Math.sin(ang*Math.PI/180)*rr(200,100)};
+    return{pts:[s,p1,p2,p3],b:performance.now(),dt:rr(2500,1500),ht:rr(2000,1000),ft:1200,bs:0,be:0};
+  }
+  function pathLen(pts){let l=0;for(let i=0;i<pts.length-1;i++)l+=Math.hypot(pts[i+1].x-pts[i].x,pts[i+1].y-pts[i].y);return l;}
+  function drawTrace(tr,now){
+    let A=now-tr.b,PL=pathLen(tr.pts),al=1,p=0;
+    if(A<tr.dt){p=A/tr.dt;al=p;}
+    else if(A<tr.dt+tr.ht){p=1;}
+    else if(A<tr.dt+tr.ht+tr.ft){p=1;al=1-(A-tr.dt-tr.ht)/tr.ft;}
+    else{tr.d=1;return;}
+    al*=0.7;
+    const DL=PL*p;
+    oc.strokeStyle=`rgba(${r},${g},${b},${al})`;
+    oc.lineWidth=2; oc.shadowBlur=8;
+    oc.shadowColor=`rgba(${r},${g},${b},${0.4*al})`;
+    oc.beginPath(); oc.moveTo(tr.pts[0].x,tr.pts[0].y);
+    let rem=DL;
+    for(let i=0;i<tr.pts.length-1;i++){
+      const PA=tr.pts[i],PB=tr.pts[i+1],SL=Math.hypot(PB.x-PA.x,PB.y-PA.y);
+      if(rem>=SL){oc.lineTo(PB.x,PB.y);rem-=SL;}
+      else{const tp=rem/SL;oc.lineTo(PA.x+(PB.x-PA.x)*tp,PA.y+(PB.y-PA.y)*tp);break;}
+    }
+    oc.stroke();
+    // Start dot
+    oc.fillStyle=`rgba(${r},${g},${b},${al})`;
+    oc.beginPath(); oc.arc(tr.pts[0].x,tr.pts[0].y,5,0,7); oc.fill();
+    if(p>=1){
+      // End dot
+      oc.beginPath(); oc.arc(tr.pts[3].x,tr.pts[3].y,7,0,7); oc.fill();
+      // Junction flash — white burst when traces meet
+      for(const j of st.jn){
+        if(Math.hypot(j.x-tr.pts[3].x,j.y-tr.pts[3].y)<12){
+          oc.fillStyle='rgba(255,255,255,0.9)';
+          oc.beginPath(); oc.arc(j.x,j.y,8,0,7); oc.fill();
+          return;
+        }
+      }
+      st.jn.push({x:tr.pts[3].x,y:tr.pts[3].y});
+      // Branch forward from endpoint
+      if(!tr.be){
+        tr.be=1;
+        if(Math.random()<0.4)return;
+        if(Math.random()<0.08&&st.tr.length<st.lim){
+          const dx=tr.pts[3].x-tr.pts[2].x,dy=tr.pts[3].y-tr.pts[2].y;
+          const ang=Math.atan2(dy,dx)*180/Math.PI;
+          for(const o of[-90,0,90])st.tr.push(mk(tr.pts[3],ang+o));
+        }
+      }
+      // Branch backward from start
+      if(!tr.bs&&Math.random()<0.08&&st.tr.length<st.lim){
+        tr.bs=1;
+        const dx=tr.pts[1].x-tr.pts[0].x,dy=tr.pts[1].y-tr.pts[0].y;
+        const ang=Math.atan2(dy,dx)*180/Math.PI+180;
+        for(const o of[-90,0,90])st.tr.push(mk(tr.pts[0],ang+o));
+      }
     }
   }
-  // Traces that travel along edges
-  const traces=Array.from({length:22},()=>spawnTrace());
-  function spawnTrace(){
-    const e=edges[Math.floor(Math.random()*edges.length)];
-    return {e, progress:Math.random(), speed:0.004+Math.random()*0.006, tail:0.18+Math.random()*0.18};
-  }
-  function draw(){
-    c.clearRect(0,0,w,h);
-    // Draw static dim grid
-    c.strokeStyle=`rgba(${r},${g},${b},0.1)`; c.lineWidth=0.7;
-    edges.forEach(e=>{ c.beginPath(); c.moveTo(e.x1,e.y1); c.lineTo(e.x2,e.y2); c.stroke(); });
-    // Draw nodes
-    const nodes=new Set();
-    edges.forEach(e=>{ nodes.add(`${e.x1},${e.y1}`); nodes.add(`${e.x2},${e.y2}`); });
-    nodes.forEach(n=>{ const [nx,ny]=n.split(',').map(Number); c.beginPath(); c.arc(nx,ny,1.8,0,Math.PI*2); c.fillStyle=`rgba(${r},${g},${b},0.2)`; c.fill(); });
-    // Draw traces
-    traces.forEach((tr,i)=>{
-      tr.progress+=tr.speed;
-      if(tr.progress>1){ traces[i]=spawnTrace(); return; }
-      const {x1,y1,x2,y2}=tr.e;
-      const hx=x1+(x2-x1)*tr.progress, hy=y1+(y2-y1)*tr.progress;
-      const tx=x1+(x2-x1)*Math.max(0,tr.progress-tr.tail);
-      const ty=y1+(y2-y1)*Math.max(0,tr.progress-tr.tail);
-      const grad=c.createLinearGradient(tx,ty,hx,hy);
-      grad.addColorStop(0,`rgba(${r},${g},${b},0)`);
-      grad.addColorStop(1,`rgba(${r},${g},${b},0.85)`);
-      c.beginPath(); c.moveTo(tx,ty); c.lineTo(hx,hy);
-      c.strokeStyle=grad; c.lineWidth=1.5; c.stroke();
-      // Head dot
-      c.beginPath(); c.arc(hx,hy,2.5,0,Math.PI*2);
-      c.fillStyle=`rgba(${r},${g},${b},0.9)`; c.fill();
-    });
+  // Seed a handful of initial traces so the screen isn't empty at start
+  for(let i=0;i<6;i++) st.tr.push(mk());
+  function draw(now){
+    // Draw all traces to off-screen canvas
+    oc.setTransform(1,0,0,1,0,0);
+    oc.clearRect(0,0,off.width,off.height);
+    if(Math.random()<0.02&&st.tr.length<st.lim) st.tr.push(mk());
+    for(let i=st.tr.length-1;i>=0;i--){
+      drawTrace(st.tr[i],now);
+      if(st.tr[i].d) st.tr.splice(i,1);
+    }
+    // Composite to main canvas with slow sinusoidal camera drift
+    const px=Math.sin(now*0.0002)*200, py=Math.cos(now*0.00015)*150;
+    const rot=Math.sin(now*0.00007)*0.05, z=1.15+0.05*Math.sin(now*0.0001);
+    main.setTransform(1,0,0,1,0,0);
+    main.clearRect(0,0,W,H);
+    main.translate(W/2,H/2);
+    main.rotate(rot);
+    main.scale(z,z);
+    main.translate(-off.width/2+px,-off.height/2+py);
+    main.drawImage(off,0,0);
     bgAnimFrame=requestAnimationFrame(draw);
   }
-  draw();
+  bgAnimFrame=requestAnimationFrame(draw);
 }
 
 /* ---- SNOW ---- */
