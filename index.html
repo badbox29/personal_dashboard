@@ -16544,11 +16544,19 @@ function buildAbsWidget(sec){
       cfg.absLibraryId = libId; persist();
       showLoading('Loading books…');
       try {
-        const [itemsData, progData] = await Promise.all([
-          absCall('/api/libraries/'+libId+'/items?limit=100&sort=media.metadata.title&desc=0'),
-          absCall('/api/me/items-in-progress').catch(()=>({libraryItems:[]}))
-        ]);
-        _allItems = itemsData.results || [];
+        // Paginate to load full library — ABS max is 100 per page
+        const PAGE = 100;
+        let page = 0, allResults = [];
+        while(true){
+          const data = await absCall('/api/libraries/'+libId+'/items?limit='+PAGE+'&page='+page+'&sort=media.metadata.title&desc=0');
+          const batch = data.results || [];
+          allResults = allResults.concat(batch);
+          if(allResults.length >= (data.total || 0) || batch.length < PAGE) break;
+          page++;
+          showLoading('Loading books… ('+allResults.length+' of '+(data.total||'?')+')');
+        }
+        const progData = await absCall('/api/me/items-in-progress').catch(()=>({libraryItems:[]}));
+        _allItems = allResults;
         // Build progress map
         _progMap={};
         (progData.libraryItems||[]).forEach(p=>{ _progMap[p.id]={ pct: p.userMediaProgress?.progress||0 }; });
