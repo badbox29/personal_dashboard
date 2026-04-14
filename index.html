@@ -16229,6 +16229,7 @@ function buildAbsWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
   if(!cfg.absUrl)   cfg.absUrl   = '';
   if(!cfg.absToken) cfg.absToken = '';
+  if(cfg.absUseWorker === undefined) cfg.absUseWorker = false;
   // Persisted playback state (survives page reload)
   if(!cfg.absCurrentItemId)      cfg.absCurrentItemId      = '';
   if(!cfg.absCurrentTrackIndex)  cfg.absCurrentTrackIndex  = 0;
@@ -16309,20 +16310,37 @@ function buildAbsWidget(sec){
 
   // ── Worker proxy call ────────────────────────────────────────
   async function absCall(endpoint, method='GET', payload=null){
-    // Call ABS directly — CORS is handled via Cloudflare Transform Rule on abs.freedomtothink.social.
-    // Worker proxy not used here: CF Workers cannot reliably reach CF-proxied domains on same account.
-    const sep = endpoint.includes('?') ? '&' : '?';
-    const url = cfg.absUrl + endpoint + sep + 'token=' + encodeURIComponent(cfg.absToken);
-    const init = { method, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' } };
-    if(payload && method !== 'GET') init.body = JSON.stringify(payload);
-    let r;
-    try { r = await fetch(url, init); }
-    catch(e) { throw new Error('Cannot reach ABS server: ' + e.message); }
-    let data;
-    try { data = await r.json(); }
-    catch(_) { throw new Error('ABS returned non-JSON (status '+r.status+')'); }
-    if(!r.ok) throw new Error(data?.error || data?.message || 'ABS error ' + r.status);
-    return data;
+    if(cfg.absUseWorker){
+      // Worker proxy mode — use when your ABS server is NOT behind Cloudflare
+      const wUrl = getWorkerUrl('abs');
+      let r;
+      try {
+        r = await fetch(wUrl, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ absUrl: cfg.absUrl, token: cfg.absToken, endpoint, method, payload })
+        });
+      } catch(e) { throw new Error('Worker unreachable — check your Worker URL in ⚡ settings'); }
+      let j;
+      try { j = await r.json(); }
+      catch(_) { throw new Error('Worker returned non-JSON — is the updated worker deployed?'); }
+      if(!j.ok) throw new Error(j.data?.error || j.error || 'ABS error '+j.status);
+      return j.data;
+    } else {
+      // Direct mode — use when CORS is enabled on your ABS server (default)
+      const sep = endpoint.includes('?') ? '&' : '?';
+      const url = cfg.absUrl + endpoint + sep + 'token=' + encodeURIComponent(cfg.absToken);
+      const init = { method, headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' } };
+      if(payload && method !== 'GET') init.body = JSON.stringify(payload);
+      let r;
+      try { r = await fetch(url, init); }
+      catch(e) { throw new Error('Cannot reach ABS server: ' + e.message); }
+      let data;
+      try { data = await r.json(); }
+      catch(_) { throw new Error('ABS returned non-JSON (status '+r.status+')'); }
+      if(!r.ok) throw new Error(data?.error || data?.message || 'ABS error ' + r.status);
+      return data;
+    }
   }
 
   // ── Load item into player ────────────────────────────────────
@@ -16721,6 +16739,25 @@ function buildAbsWidget(sec){
   };
   tokRow.append(tokLbl,tokInp,tokSave);
   settings.appendChild(tokRow);
+
+  // Worker proxy toggle
+  const wkRow = el('div','abs-setting-row'); wkRow.style.alignItems='flex-start';
+  const wkLbl = el('label','abs-setting-lbl'); wkLbl.textContent=''; wkLbl.style.paddingTop='2px';
+  const wkWrap = el('div'); wkWrap.style.cssText='display:flex;flex-direction:column;gap:4px;flex:1;';
+  const wkChkRow = el('div'); wkChkRow.style.cssText='display:flex;align-items:center;gap:6px;';
+  const wkChk = document.createElement('input'); wkChk.type='checkbox'; wkChk.id='absUseWorker_'+sec.id;
+  wkChk.checked = !!cfg.absUseWorker;
+  const wkChkLbl = el('label'); wkChkLbl.htmlFor='absUseWorker_'+sec.id;
+  wkChkLbl.style.cssText='font-size:11px;color:var(--text);cursor:pointer;';
+  wkChkLbl.textContent='Route API calls through Cloudflare Worker';
+  wkChk.onchange=()=>{ cfg.absUseWorker=wkChk.checked; persist(); };
+  wkChkRow.append(wkChk, wkChkLbl);
+  const wkNote = el('div'); wkNote.style.cssText='font-size:10px;color:var(--text-dim);line-height:1.5;';
+  wkNote.innerHTML='<b style="color:var(--gold)">Unchecked (default):</b> Browser calls ABS directly. Requires CORS to be enabled on your ABS server or reverse proxy.<br>'
+    +'<b style="color:var(--gold)">Checked:</b> API calls go through your Cloudflare Worker. Use this if your ABS server is <em>not</em> behind Cloudflare. Note: if both your Worker and ABS are on Cloudflare, leave this unchecked — Cloudflare blocks Worker→Cloudflare-proxied requests.';
+  wkWrap.append(wkChkRow, wkNote);
+  wkRow.append(wkLbl, wkWrap);
+  settings.appendChild(wkRow);
 
   const applyVis=()=>{ settings.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
   const obs=new MutationObserver(applyVis); obs.observe(document.body,{attributes:true,attributeFilter:['class']});
