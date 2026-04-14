@@ -16391,7 +16391,7 @@ function buildAbsWidget(sec){
         title: f.metadata?.filename || ('Track '+(i+1)),
         duration: f.duration || 0,
         startOffset: offset,
-        contentUrl: f.metadata?.path || '',
+        ino: f.ino || String(i),   // ABS file identifier — used in stream URL
         index: i
       });
       offset += f.duration||0;
@@ -16403,10 +16403,12 @@ function buildAbsWidget(sec){
     if(!_tracks[idx]) return;
     _trackIdx = idx;
     const t = _tracks[idx];
-    // Stream direct from ABS — CORS is now open via Cloudflare Transform Rule
-    const url = cfg.absUrl+'/api/items/'+cfg.absCurrentItemId+'/file/'+_trackIdx+'?token='+encodeURIComponent(cfg.absToken);
+    // Stream direct from ABS using ino (file identifier), not numeric index
+    const url = cfg.absUrl+'/api/items/'+cfg.absCurrentItemId+'/file/'+t.ino+'?token='+encodeURIComponent(cfg.absToken);
+    audio.crossOrigin = 'anonymous';
     audio.src = url;
-    audio.currentTime = startSec || 0;
+    audio.load();
+    if(startSec) audio.addEventListener('loadedmetadata', ()=>{ audio.currentTime = startSec; }, { once: true });
     scrubber.max = t.duration;
     scrubber.value = startSec || 0;
     durTime.textContent = fmtTime(t.duration);
@@ -16647,7 +16649,12 @@ function buildAbsWidget(sec){
           ov.classList.remove('open');
           setTimeout(()=>ov.remove(),300);
           await loadItem(itemId, 0, startTime);
-          audio.play().catch(()=>{});
+          // Wait for audio to be ready before playing
+          if(audio.readyState >= 2){
+            audio.play().catch(()=>{});
+          } else {
+            audio.addEventListener('canplay', ()=> audio.play().catch(()=>{}), { once: true });
+          }
         };
         const openBtn=el('button','abs-open-btn'); openBtn.textContent='Open in ABS ↗';
         openBtn.onclick=()=> window.open(cfg.absUrl+'/item/'+itemId,'_blank','noopener');
@@ -16672,7 +16679,11 @@ function buildAbsWidget(sec){
             ov.classList.remove('open');
             setTimeout(()=>ov.remove(),300);
             await loadItem(itemId, i, 0);
-            audio.play().catch(()=>{});
+            if(audio.readyState >= 2){
+              audio.play().catch(()=>{});
+            } else {
+              audio.addEventListener('canplay', ()=> audio.play().catch(()=>{}), { once: true });
+            }
           };
           chWrap.appendChild(row);
         });
