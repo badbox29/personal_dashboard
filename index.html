@@ -5393,8 +5393,6 @@ body.edit-mode .gh-add-row { display: flex; }
     <div class="bg-effects-row">
       <span class="noise-label">Effect</span>
       <button class="noise-btn" onclick="setBgStyle('none',this)">Off</button>
-      <button class="noise-btn" onclick="setBgStyle('starfield',this)">✦ Stars</button>
-      <button class="noise-btn" onclick="setBgStyle('aurora',this)">🌌 Aurora</button>
       <button class="noise-btn" onclick="setBgStyle('matrix',this)">⬛ Matrix</button>
       <button class="noise-btn" onclick="setBgStyle('pulse',this)">◎ Pulse</button>
       <button class="noise-btn" onclick="setBgStyle('grid',this)">⊞ Grid</button>
@@ -5403,13 +5401,17 @@ body.edit-mode .gh-add-row { display: flex; }
       <button class="noise-btn" onclick="setBgStyle('rain',this)">🌧 Rain</button>
       <button class="noise-btn" onclick="setBgStyle('warp',this)">⟡ Warp</button>
       <button class="noise-btn" onclick="setBgStyle('fireflies',this)">✦ Fireflies</button>
-      <button class="noise-btn" onclick="setBgStyle('hex',this)">⬡ Hex</button>
       <button class="noise-btn" onclick="setBgStyle('ripples',this)">◉ Ripples</button>
       <button class="noise-btn" onclick="setBgStyle('ocean',this)">〰 Ocean</button>
       <button class="noise-btn" onclick="setBgStyle('lissajous',this)">∞ Lissajous</button>
-      <button class="noise-btn" onclick="setBgStyle('nebula',this)">☁ Nebula</button>
       <button class="noise-btn" onclick="setBgStyle('circuit',this)">⬚ Circuit</button>
       <button class="noise-btn" onclick="setBgStyle('snow',this)">❄ Snow</button>
+      <button class="noise-btn" onclick="setBgStyle('nightsky',this)">🌌 Night Sky</button>
+      <button class="noise-btn" onclick="setBgStyle('churn',this)">▪ Churn</button>
+      <button class="noise-btn" onclick="setBgStyle('parallax',this)">║ Parallax</button>
+      <button class="noise-btn" onclick="setBgStyle('glitter',this)">✧ Glitter</button>
+      <button class="noise-btn" onclick="setBgStyle('scales',this)">◎ Scales</button>
+      <button class="noise-btn" onclick="setBgStyle('gridtrail',this)">⊞ Grid Trail</button>
     </div>
     <div class="bg-color-row">
       <span class="noise-label">Color</span>
@@ -19442,6 +19444,11 @@ function applyBg(){
 
   // Stop any running animation
   if(bgAnimFrame){ cancelAnimationFrame(bgAnimFrame); bgAnimFrame=null; }
+  // Clean up Grid Trail mouse listener if present
+  if(bgCtx?.canvas?._gridTrailHandler){
+    window.removeEventListener('mousemove', bgCtx.canvas._gridTrailHandler);
+    bgCtx.canvas._gridTrailHandler = null;
+  }
 
   // Custom URL mode — apply as body background, hide canvas
   if(D.bgUrlActive && D.bgUrl){
@@ -19463,14 +19470,13 @@ function applyBg(){
   }
 
   bgCtx = canvas.getContext('2d');
+  bgCtx.globalCompositeOperation = 'source-over';
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
   canvas.style.opacity = D.bgOpacity / 100;
   document.getElementById('bgDimOverlay').style.opacity = D.bgDim / 100;
 
   const fns = {
-    starfield:  bgStarfield,
-    aurora:     bgAurora,
     matrix:     bgMatrix,
     pulse:      bgPulse,
     grid:       bgGrid,
@@ -19479,13 +19485,17 @@ function applyBg(){
     rain:       bgRain,
     warp:       bgWarp,
     fireflies:  bgFireflies,
-    hex:        bgHex,
     ripples:    bgRipples,
     ocean:      bgOcean,
     lissajous:  bgLissajous,
-    nebula:     bgNebula,
     circuit:    bgCircuit,
     snow:       bgSnow,
+    nightsky:   bgNightSky,
+    churn:      bgChurn,
+    parallax:   bgParallax,
+    glitter:    bgGlitter,
+    scales:     bgScales,
+    gridtrail:  bgGridTrail,
   };
   fns[D.bgStyle]?.();
 }
@@ -19499,62 +19509,6 @@ window.addEventListener('resize', ()=>{
 function hexRgb(hex){
   const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
   return {r,g,b};
-}
-
-/* ---- STARFIELD ---- */
-function bgStarfield(){
-  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
-  const {r,g,b} = hexRgb(D.bgColor);
-  const stars = Array.from({length:200},()=>({
-    x:Math.random()*w, y:Math.random()*h,
-    size:Math.random()*2+0.3,
-    speed:Math.random()*0.4+0.1,
-    opacity:Math.random()
-  }));
-  function draw(){
-    c.clearRect(0,0,w,h);
-    stars.forEach(s=>{
-      s.opacity += (Math.random()-0.5)*0.03;
-      s.opacity = Math.max(0.1, Math.min(1, s.opacity));
-      s.y += s.speed;
-      if(s.y > h){ s.y=0; s.x=Math.random()*w; }
-      c.beginPath();
-      c.arc(s.x,s.y,s.size,0,Math.PI*2);
-      c.fillStyle=`rgba(${r},${g},${b},${s.opacity})`;
-      c.fill();
-    });
-    bgAnimFrame = requestAnimationFrame(draw);
-  }
-  draw();
-}
-
-/* ---- AURORA ---- */
-function bgAurora(){
-  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
-  const {r,g,b} = hexRgb(D.bgColor);
-  let t=0;
-  function draw(){
-    c.clearRect(0,0,w,h);
-    for(let i=0;i<4;i++){
-      const y  = h*(0.2+i*0.18) + Math.sin(t*0.4+i*1.2)*60;
-      const amp = 80+Math.sin(t*0.3+i)*40;
-      const grad = c.createLinearGradient(0,y-amp,0,y+amp);
-      grad.addColorStop(0,`rgba(${r},${g},${b},0)`);
-      grad.addColorStop(0.5,`rgba(${r},${g},${b},${0.45+Math.sin(t+i)*0.1})`);
-      grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
-      c.beginPath();
-      c.moveTo(0,y);
-      for(let x=0;x<=w;x+=20){
-        c.lineTo(x, y + Math.sin(x*0.01+t*0.5+i)*amp*0.5);
-      }
-      c.lineTo(w,h); c.lineTo(0,h); c.closePath();
-      c.fillStyle = grad;
-      c.fill();
-    }
-    t+=0.02;
-    bgAnimFrame = requestAnimationFrame(draw);
-  }
-  draw();
 }
 
 /* ---- MATRIX RAIN ---- */
@@ -19892,44 +19846,6 @@ function bgFireflies(){
   draw();
 }
 
-/* ---- HEX GRID ---- */
-function bgHex(){
-  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
-  const {r,g,b} = hexRgb(D.bgColor);
-  const size=38, hx=size*Math.sqrt(3), hy=size*1.5;
-  let t=0;
-  const hexes=[];
-  for(let row=-1;row<Math.ceil(h/hy)+2;row++){
-    for(let col=-1;col<Math.ceil(w/hx)+2;col++){
-      const ox = col*hx + (row%2)*hx*0.5;
-      const oy = row*hy;
-      hexes.push({x:ox,y:oy,phase:Math.random()*Math.PI*2});
-    }
-  }
-  function drawHex(x,y,s){
-    c.beginPath();
-    for(let i=0;i<6;i++){
-      const a=Math.PI/180*(60*i-30);
-      i===0?c.moveTo(x+s*Math.cos(a),y+s*Math.sin(a)):c.lineTo(x+s*Math.cos(a),y+s*Math.sin(a));
-    }
-    c.closePath();
-  }
-  function draw(){
-    c.clearRect(0,0,w,h);
-    hexes.forEach(hex=>{
-      const pulse=0.35+Math.sin(t*0.8+hex.phase)*0.25;
-      drawHex(hex.x,hex.y,size-1);
-      c.strokeStyle=`rgba(${r},${g},${b},${pulse})`;
-      c.lineWidth=0.8; c.stroke();
-      c.beginPath(); c.arc(hex.x,hex.y,2,0,Math.PI*2);
-      c.fillStyle=`rgba(${r},${g},${b},${pulse*1.4})`; c.fill();
-    });
-    t+=0.012;
-    bgAnimFrame=requestAnimationFrame(draw);
-  }
-  draw();
-}
-
 /* ---- RIPPLES ---- */
 function bgRipples(){
   const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
@@ -20061,136 +19977,55 @@ function bgLissajous(){
   draw();
 }
 
-/* ---- NEBULA ---- */
-function bgNebula(){
+/* ---- CIRCUIT ---- */
+function bgCircuit(){
   const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
   const {r,g,b} = hexRgb(D.bgColor);
-  const blobs=Array.from({length:6},(_,i)=>({
-    ax:w*(0.2+Math.random()*0.6), ay:h*(0.2+Math.random()*0.6),
-    bx:w*(0.2+Math.random()*0.6), by:h*(0.2+Math.random()*0.6),
-    freq:0.0004+Math.random()*0.0003,
-    phase:Math.random()*Math.PI*2,
-    radius:Math.min(w,h)*(0.25+Math.random()*0.25),
-    opacity:0.12+Math.random()*0.12,
-  }));
-  let t=0;
+  const CELL=60;
+  const cols=Math.ceil(w/CELL)+1, rows=Math.ceil(h/CELL)+1;
+  // Build a random set of edges
+  const edges=[];
+  for(let row=0;row<rows;row++){
+    for(let col=0;col<cols;col++){
+      if(col<cols-1 && Math.random()<0.55) edges.push({x1:col*CELL,y1:row*CELL,x2:(col+1)*CELL,y2:row*CELL});
+      if(row<rows-1 && Math.random()<0.55) edges.push({x1:col*CELL,y1:row*CELL,x2:col*CELL,y2:(row+1)*CELL});
+    }
+  }
+  // Traces that travel along edges
+  const traces=Array.from({length:22},()=>spawnTrace());
+  function spawnTrace(){
+    const e=edges[Math.floor(Math.random()*edges.length)];
+    return {e, progress:Math.random(), speed:0.004+Math.random()*0.006, tail:0.18+Math.random()*0.18};
+  }
   function draw(){
     c.clearRect(0,0,w,h);
-    blobs.forEach(bl=>{
-      const p=0.5+0.5*Math.sin(t*bl.freq*2*Math.PI+bl.phase);
-      const bx=bl.ax+(bl.bx-bl.ax)*p, by=bl.ay+(bl.by-bl.ay)*p;
-      const grad=c.createRadialGradient(bx,by,0,bx,by,bl.radius);
-      grad.addColorStop(0,`rgba(${r},${g},${b},${bl.opacity})`);
-      grad.addColorStop(0.4,`rgba(${r},${g},${b},${bl.opacity*0.5})`);
-      grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
-      c.fillStyle=grad; c.fillRect(0,0,w,h);
+    // Draw static dim grid
+    c.strokeStyle=`rgba(${r},${g},${b},0.1)`; c.lineWidth=0.7;
+    edges.forEach(e=>{ c.beginPath(); c.moveTo(e.x1,e.y1); c.lineTo(e.x2,e.y2); c.stroke(); });
+    // Draw nodes
+    const nodes=new Set();
+    edges.forEach(e=>{ nodes.add(`${e.x1},${e.y1}`); nodes.add(`${e.x2},${e.y2}`); });
+    nodes.forEach(n=>{ const [nx,ny]=n.split(',').map(Number); c.beginPath(); c.arc(nx,ny,1.8,0,Math.PI*2); c.fillStyle=`rgba(${r},${g},${b},0.2)`; c.fill(); });
+    // Draw traces
+    traces.forEach((tr,i)=>{
+      tr.progress+=tr.speed;
+      if(tr.progress>1){ traces[i]=spawnTrace(); return; }
+      const {x1,y1,x2,y2}=tr.e;
+      const hx=x1+(x2-x1)*tr.progress, hy=y1+(y2-y1)*tr.progress;
+      const tx=x1+(x2-x1)*Math.max(0,tr.progress-tr.tail);
+      const ty=y1+(y2-y1)*Math.max(0,tr.progress-tr.tail);
+      const grad=c.createLinearGradient(tx,ty,hx,hy);
+      grad.addColorStop(0,`rgba(${r},${g},${b},0)`);
+      grad.addColorStop(1,`rgba(${r},${g},${b},0.85)`);
+      c.beginPath(); c.moveTo(tx,ty); c.lineTo(hx,hy);
+      c.strokeStyle=grad; c.lineWidth=1.5; c.stroke();
+      // Head dot
+      c.beginPath(); c.arc(hx,hy,2.5,0,Math.PI*2);
+      c.fillStyle=`rgba(${r},${g},${b},0.9)`; c.fill();
     });
-    t++;
     bgAnimFrame=requestAnimationFrame(draw);
   }
   draw();
-}
-
-/* ---- CIRCUIT ---- */
-function bgCircuit(){
-  const main = bgCtx, W = main.canvas.width, H = main.canvas.height;
-  const {r,g,b} = hexRgb(D.bgColor);
-  // Off-screen canvas 2x viewport so camera pan has room to roam
-  const off = document.createElement('canvas');
-  off.width = W*2; off.height = H*2;
-  const oc = off.getContext('2d');
-  const rr=(a=1,b0=0)=>Math.random()*(a-b0)+b0;
-  const ch=a=>a[Math.floor(Math.random()*a.length)];
-  const st={tr:[],jn:[],lim:180};
-  // Build a trace: 4 waypoints with right-angle PCB turns
-  function mk(p,ang_in){
-    const s=p||{x:rr(off.width),y:rr(off.height)};
-    const ang=ang_in??ch([0,90,180,270]);
-    const L1=rr(100,60);
-    const p1={x:s.x+Math.cos(ang*Math.PI/180)*L1, y:s.y+Math.sin(ang*Math.PI/180)*L1};
-    const t=ch([45,-45]);
-    const p2={x:p1.x+Math.cos((ang+t)*Math.PI/180)*rr(160,80), y:p1.y+Math.sin((ang+t)*Math.PI/180)*rr(160,80)};
-    const p3={x:p2.x+Math.cos(ang*Math.PI/180)*rr(200,100), y:p2.y+Math.sin(ang*Math.PI/180)*rr(200,100)};
-    return{pts:[s,p1,p2,p3],b:performance.now(),dt:rr(2500,1500),ht:rr(2000,1000),ft:1200,bs:0,be:0};
-  }
-  function pathLen(pts){let l=0;for(let i=0;i<pts.length-1;i++)l+=Math.hypot(pts[i+1].x-pts[i].x,pts[i+1].y-pts[i].y);return l;}
-  function drawTrace(tr,now){
-    let A=now-tr.b,PL=pathLen(tr.pts),al=1,p=0;
-    if(A<tr.dt){p=A/tr.dt;al=p;}
-    else if(A<tr.dt+tr.ht){p=1;}
-    else if(A<tr.dt+tr.ht+tr.ft){p=1;al=1-(A-tr.dt-tr.ht)/tr.ft;}
-    else{tr.d=1;return;}
-    al*=0.7;
-    const DL=PL*p;
-    oc.strokeStyle=`rgba(${r},${g},${b},${al})`;
-    oc.lineWidth=2; oc.shadowBlur=8;
-    oc.shadowColor=`rgba(${r},${g},${b},${0.4*al})`;
-    oc.beginPath(); oc.moveTo(tr.pts[0].x,tr.pts[0].y);
-    let rem=DL;
-    for(let i=0;i<tr.pts.length-1;i++){
-      const PA=tr.pts[i],PB=tr.pts[i+1],SL=Math.hypot(PB.x-PA.x,PB.y-PA.y);
-      if(rem>=SL){oc.lineTo(PB.x,PB.y);rem-=SL;}
-      else{const tp=rem/SL;oc.lineTo(PA.x+(PB.x-PA.x)*tp,PA.y+(PB.y-PA.y)*tp);break;}
-    }
-    oc.stroke();
-    // Start dot
-    oc.fillStyle=`rgba(${r},${g},${b},${al})`;
-    oc.beginPath(); oc.arc(tr.pts[0].x,tr.pts[0].y,5,0,7); oc.fill();
-    if(p>=1){
-      // End dot
-      oc.beginPath(); oc.arc(tr.pts[3].x,tr.pts[3].y,7,0,7); oc.fill();
-      // Junction flash — white burst when traces meet
-      for(const j of st.jn){
-        if(Math.hypot(j.x-tr.pts[3].x,j.y-tr.pts[3].y)<12){
-          oc.fillStyle='rgba(255,255,255,0.9)';
-          oc.beginPath(); oc.arc(j.x,j.y,8,0,7); oc.fill();
-          return;
-        }
-      }
-      st.jn.push({x:tr.pts[3].x,y:tr.pts[3].y});
-      // Branch forward from endpoint
-      if(!tr.be){
-        tr.be=1;
-        if(Math.random()<0.4)return;
-        if(Math.random()<0.08&&st.tr.length<st.lim){
-          const dx=tr.pts[3].x-tr.pts[2].x,dy=tr.pts[3].y-tr.pts[2].y;
-          const ang=Math.atan2(dy,dx)*180/Math.PI;
-          for(const o of[-90,0,90])st.tr.push(mk(tr.pts[3],ang+o));
-        }
-      }
-      // Branch backward from start
-      if(!tr.bs&&Math.random()<0.08&&st.tr.length<st.lim){
-        tr.bs=1;
-        const dx=tr.pts[1].x-tr.pts[0].x,dy=tr.pts[1].y-tr.pts[0].y;
-        const ang=Math.atan2(dy,dx)*180/Math.PI+180;
-        for(const o of[-90,0,90])st.tr.push(mk(tr.pts[0],ang+o));
-      }
-    }
-  }
-  // Seed a handful of initial traces so the screen isn't empty at start
-  for(let i=0;i<6;i++) st.tr.push(mk());
-  function draw(now){
-    // Draw all traces to off-screen canvas
-    oc.setTransform(1,0,0,1,0,0);
-    oc.clearRect(0,0,off.width,off.height);
-    if(Math.random()<0.02&&st.tr.length<st.lim) st.tr.push(mk());
-    for(let i=st.tr.length-1;i>=0;i--){
-      drawTrace(st.tr[i],now);
-      if(st.tr[i].d) st.tr.splice(i,1);
-    }
-    // Composite to main canvas with slow sinusoidal camera drift
-    const px=Math.sin(now*0.0002)*200, py=Math.cos(now*0.00015)*150;
-    const rot=Math.sin(now*0.00007)*0.05, z=1.15+0.05*Math.sin(now*0.0001);
-    main.setTransform(1,0,0,1,0,0);
-    main.clearRect(0,0,W,H);
-    main.translate(W/2,H/2);
-    main.rotate(rot);
-    main.scale(z,z);
-    main.translate(-off.width/2+px,-off.height/2+py);
-    main.drawImage(off,0,0);
-    bgAnimFrame=requestAnimationFrame(draw);
-  }
-  bgAnimFrame=requestAnimationFrame(draw);
 }
 
 /* ---- SNOW ---- */
@@ -20218,6 +20053,335 @@ function bgSnow(){
       c.fillStyle=`rgba(${r},${g},${b},${f.opacity})`; c.fill();
     });
     t+=0.016;
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- NIGHT SKY ---- */
+function bgNightSky(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  // Pre-build random arrays to avoid per-frame Math.random() calls
+  const rndArr=Array.from({length:1000},()=>Math.random());
+  const hueArr=Array.from({length:1000},()=>{let h=Math.floor(Math.random()*160);return h>60?h+110:h;});
+  let rndIdx=0;
+  // Twinkling stars
+  const stars=Array.from({length:600},()=>{
+    const sz=Math.random()*0.6+0.3;
+    return{x:Math.random()*w,y:Math.random()*h,size:sz,
+      alpha:sz/0.9,baseHue:hueArr[Math.floor(Math.random()*1000)],
+      baseHueProp:Math.random(),rndA:Math.floor(Math.random()*1000)};
+  });
+  // Shooting stars
+  const shooters=[];
+  const shootColors=[`rgba(${r},${g},${b},1)`,'rgba(161,255,186,1)','rgba(161,210,255,1)','rgba(255,250,161,1)'];
+  // Off-screen milky way canvas — drawn once
+  const mw=document.createElement('canvas'); mw.width=w; mw.height=h;
+  const mc=mw.getContext('2d');
+  const mwAngle=0.6;
+  function mwY(x,mode){
+    const off=((w/2)-x)*mwAngle;
+    if(mode==='star') return Math.floor(Math.pow(Math.random(),1.2)*h*(Math.random()-0.5)+h/2+(Math.random()-0.5)*100)+off;
+    return Math.floor(Math.pow(Math.random(),1.5)*h*0.6*(Math.random()-0.5)+h/2+(Math.random()-0.5)*100)+off;
+  }
+  // Draw milky way base stars
+  for(let i=0;i<60000;i++){
+    const x=Math.random()*w;
+    const y=Math.random()<0.2?Math.random()*h:mwY(x,'star');
+    const sz=Math.random()*0.27;
+    mc.beginPath(); mc.arc(x,y,sz,0,Math.PI*2);
+    mc.fillStyle=`rgba(255,255,255,${0.4+Math.random()*0.6})`; mc.fill();
+  }
+  // Draw milky way clusters
+  for(let i=0;i<200;i++){
+    const cx2=Math.random()*w, cy2=mwY(cx2,'cluster');
+    const dist=(1-Math.abs(cx2-w/2)/(w/2))*(1-Math.abs(cy2-h/2)/(h/2));
+    const sz=80+Math.random()*60;
+    const hue=150+Math.floor((Math.random()*0.5+dist*0.5)*150);
+    const wp=50+Math.random()*15;
+    const starsPerLayer=Math.floor(800/8);
+    for(let layer=1;layer<8;layer++){
+      const lr=sz*layer/8;
+      for(let j=0;j<starsPerLayer;j++){
+        const px=cx2+2*lr*(Math.random()-0.5);
+        const py=cy2+2*Math.sqrt(Math.max(0,lr*lr-(cx2-px)*(cx2-px)))*(Math.random()-0.5);
+        mc.beginPath(); mc.arc(px,py,0.05+Math.random()*0.15,0,Math.PI*2);
+        mc.fillStyle=`hsla(${hue},100%,${wp+15+Math.floor(Math.random()*10)}%,${0.3+Math.random()*0.4})`;
+        mc.fill();
+      }
+    }
+  }
+  function draw(){
+    c.clearRect(0,0,w,h);
+    c.drawImage(mw,0,0);
+    // Twinkling stars
+    stars.forEach(s=>{
+      const rval=rndArr[s.rndA];
+      const al=Math.max(0.1,Math.min(1,s.alpha+(rval-0.5)*0.5));
+      c.beginPath(); c.arc(s.x,s.y,s.size,0,Math.PI*2);
+      c.fillStyle=`rgba(${r},${g},${b},${al*0.6})`; c.fill();
+      s.rndA=(s.rndA+1)%1000;
+    });
+    // Shooting stars
+    if(Math.random()<0.008){
+      shooters.push({x:Math.random()*w,y:Math.random()*150,
+        vx:(Math.random()-0.5)*20,vy:Math.random()*10+2,
+        frames:60,color:shootColors[Math.floor(Math.random()*shootColors.length)]});
+    }
+    for(let i=shooters.length-1;i>=0;i--){
+      const s=shooters[i];
+      const half=30, am=Math.pow(1-Math.abs(s.frames-half)/half,2);
+      const ex=s.x-s.vx*6*am, ey=s.y-s.vy*6*am;
+      const g2=c.createLinearGradient(s.x,s.y,ex,ey);
+      g2.addColorStop(0,'#fff'); g2.addColorStop(Math.min(am,0.7),s.color); g2.addColorStop(1,'rgba(0,0,0,0)');
+      c.strokeStyle=g2; c.lineWidth=1.5; c.beginPath(); c.moveTo(s.x,s.y); c.lineTo(ex,ey); c.stroke();
+      s.x+=s.vx; s.y+=s.vy; s.frames--;
+      if(s.frames<=0) shooters.splice(i,1);
+    }
+    rndIdx=(rndIdx+1)%1000;
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- CHURN ---- */
+function bgChurn(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  const INC=12345, MULT=1103515245, MOD=Math.pow(2,31);
+  function lcg(x){return(MULT*x+INC)%MOD;}
+  function mkRand(seed){let s=seed;return{get(){s=lcg(s);return s/MOD;},reset(v){s=v;}};}
+  const rng=mkRand(0);
+  const stepX=16, stepY=16, sizeX=1, sizeY=1;
+  const mT=32, mB=32, mL=32, mR=32;
+  function draw(ft){
+    c.clearRect(0,0,w,h);
+    for(let y=mT;y<h-mB;y+=stepY){
+      rng.reset(y);
+      for(let x=mL;x<w-mR;x+=stepX){
+        const rv=rng.get();
+        const phase=rv*Math.PI*2;
+        const pulse=(Math.sin(phase+ft/1000)+1)/2; // 0..1
+        const al=0.08+pulse*0.55;
+        const sw=sizeX+Math.sin(phase+ft/1000)*rv*16;
+        const sh=sizeY+Math.cos(phase+ft/1000)*rv*16;
+        c.fillStyle=`rgba(${r},${g},${b},${al})`;
+        c.fillRect(x,y,Math.max(0.5,sw),Math.max(0.5,sh));
+      }
+    }
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  bgAnimFrame=requestAnimationFrame(draw);
+}
+
+/* ---- PARALLAX ---- */
+function bgParallax(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  // Convert D.bgColor to hue for the spread
+  function rgbToHue(r,g,b){
+    r/=255;g/=255;b/=255;
+    const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
+    if(d===0)return 0;
+    let h=max===r?((g-b)/d)%6:max===g?(b-r)/d+2:(r-g)/d+4;
+    return Math.round(h*60+360)%360;
+  }
+  const baseHue=rgbToHue(r,g,b);
+  const hueDif=50;
+  const md=100;
+  const dots=[];
+  for(let i=0;i<md;i++){
+    dots.push({
+      x:Math.random()*w,
+      y:Math.random()*h/2,
+      hgt:Math.random()*(h*0.9-h*0.5)+h*0.5,
+      wid:Math.random()*13+2,
+      hue:Math.random()*(hueDif*2)-hueDif+baseHue,
+      spd:Math.random()*29+6
+    });
+  }
+  c.globalCompositeOperation='lighter';
+  function draw(){
+    c.clearRect(0,0,w,h);
+    dots.forEach(d=>{
+      const grd=c.createLinearGradient(d.x,d.y,d.x+d.wid,d.y+d.hgt);
+      grd.addColorStop(0,`hsla(${d.hue},50%,50%,0)`);
+      grd.addColorStop(0.2,`hsla(${d.hue+20},50%,50%,0.5)`);
+      grd.addColorStop(0.5,`hsla(${d.hue+50},70%,60%,0.8)`);
+      grd.addColorStop(0.8,`hsla(${d.hue+80},50%,50%,0.5)`);
+      grd.addColorStop(1,`hsla(${d.hue+100},50%,50%,0)`);
+      c.shadowBlur=10; c.shadowColor=`hsla(${d.hue},50%,50%,1)`;
+      c.fillStyle=grd;
+      c.fillRect(d.x,d.y,d.wid,d.hgt);
+      d.x+=d.spd/100;
+      if(d.x>w+15) d.x=-15;
+    });
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- GLITTER ---- */
+function bgGlitter(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  const shapes=Array.from({length:300},()=>{
+    const x=w*(Math.random()+Math.random())/2;
+    const y=Math.random()*h;
+    const life=Math.floor(Math.random()*20);
+    return{x,y,r2:Math.random()*15+10,
+      ga:Math.random()*Math.random()*Math.random()*Math.random(),
+      vx:Math.random(),vy:-1,l:life,sl:life||1};
+  });
+  c.globalCompositeOperation='lighter';
+  function draw(){
+    c.clearRect(0,0,w,h);
+    shapes.forEach(s=>{
+      s.x+=Math.random(); s.y+=-Math.random(); s.l-=1;
+      if(s.l<0){
+        s.x=w*(Math.random()+Math.random())/2;
+        s.y=Math.random()*h;
+        s.l=Math.floor(Math.random()*20);
+        s.sl=s.l||1;
+        s.ga=Math.random()*Math.random()*Math.random()*Math.random();
+      }
+      c.save();
+      c.globalCompositeOperation='lighter';
+      c.globalAlpha=s.ga;
+      c.fillStyle=`rgba(${r},${g},${b},1)`;
+      c.beginPath(); c.arc(s.x,s.y,s.r2,0,Math.PI*2); c.fill();
+      c.restore();
+    });
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- SCALES ---- */
+function bgScales(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  function rgbToHue(r,g,b){
+    r/=255;g/=255;b/=255;
+    const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;
+    if(d===0)return 0;
+    let h=max===r?((g-b)/d)%6:max===g?(b-r)/d+2:(r-g)/d+4;
+    return Math.round(h*60+360)%360;
+  }
+  const baseHue=rgbToHue(r,g,b);
+  // Build palette spread around baseHue
+  function palette(){
+    const spread=80, n=5;
+    return Array.from({length:n},(_,i)=>{
+      const h=(baseHue-spread/2+i*(spread/(n-1))+360)%360;
+      return `hsl(${h},60%,${30+i*8}%)`;
+    });
+  }
+  let cols=palette();
+  let opacity=1;
+  let fading=false;
+  let fadeDir=0; // -1=out, 1=in
+  let nextCols=null;
+  function drawScene(clrs){
+    c.globalAlpha=opacity;
+    c.fillStyle='#111';
+    c.fillRect(0,0,w,h);
+    const size=120;
+    for(let row=Math.round(h/size*2);row>-1;row--){
+      const xOff=row%2===1?size/2:0;
+      const y=row*size/2;
+      for(let col=0;col<w/size+2;col++){
+        const x=col*size;
+        [size/2,size/3,size/7].forEach((rad,i)=>{
+          c.fillStyle=clrs[Math.floor(Math.random()*clrs.length)];
+          c.beginPath(); c.arc(x+xOff,y,rad,0,Math.PI*2); c.fill();
+        });
+      }
+    }
+    c.globalAlpha=1;
+  }
+  // Draw immediately
+  drawScene(cols);
+  // Noise overlay
+  function drawNoise(){
+    c.globalAlpha=0.06;
+    const n=Math.floor(w*h/70);
+    for(let i=0;i<n;i++){
+      c.fillStyle=Math.random()<0.5?'rgb(90,90,90)':'rgb(200,200,200)';
+      c.fillRect(Math.random()*w,Math.random()*h-45,1,90);
+    }
+    c.globalAlpha=1;
+  }
+  drawNoise();
+  // Crossfade redraw every 5 seconds
+  let lastDraw=performance.now();
+  const INTERVAL=5000, FADE=500;
+  function draw(now){
+    const elapsed=now-lastDraw;
+    if(!fading && elapsed>INTERVAL){
+      fading=true; fadeDir=-1; nextCols=palette(); opacity=1;
+    }
+    if(fading){
+      opacity+=fadeDir*(16/FADE);
+      if(fadeDir===-1 && opacity<=0){
+        opacity=0; cols=nextCols; drawScene(cols); drawNoise(); fadeDir=1;
+      } else if(fadeDir===1 && opacity>=1){
+        opacity=1; fading=false; lastDraw=now;
+      } else {
+        drawScene(cols); drawNoise();
+      }
+    }
+    bgAnimFrame=requestAnimationFrame(draw);
+  }
+  bgAnimFrame=requestAnimationFrame(draw);
+}
+
+/* ---- GRID TRAIL ---- */
+function bgGridTrail(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+  const sqSz=80;
+  const grid=[];
+  for(let x=0;x<w;x+=sqSz){
+    for(let y=0;y<h;y+=sqSz){
+      grid.push({x,y,alpha:0,fading:false,lastTouched:0});
+    }
+  }
+  function getCell(mx,my){
+    return grid.find(cell=>mx>=cell.x&&mx<cell.x+sqSz&&my>=cell.y&&my<cell.y+sqSz);
+  }
+  // Track mouse globally, store on bgCtx canvas
+  function onMove(e){
+    const rect=bgCtx.canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    const cell=getCell(mx,my);
+    if(cell&&cell.alpha===0){cell.alpha=1;cell.lastTouched=Date.now();cell.fading=false;}
+  }
+  // Store handler so cleanup works when bg switches
+  bgCtx.canvas._gridTrailHandler=onMove;
+  window.addEventListener('mousemove',onMove);
+  // Also pulse a random cell occasionally for ambient effect
+  function draw(){
+    c.clearRect(0,0,w,h);
+    const now=Date.now();
+    // Ambient: randomly light a cell
+    if(Math.random()<0.015){
+      const cell=grid[Math.floor(Math.random()*grid.length)];
+      if(cell.alpha===0){cell.alpha=0.6;cell.lastTouched=now;cell.fading=false;}
+    }
+    grid.forEach(cell=>{
+      if(cell.alpha>0&&!cell.fading&&now-cell.lastTouched>500) cell.fading=true;
+      if(cell.fading){cell.alpha-=0.015;if(cell.alpha<=0){cell.alpha=0;cell.fading=false;}}
+      if(cell.alpha>0){
+        const cx=cell.x+sqSz/2, cy=cell.y+sqSz/2;
+        const grad=c.createRadialGradient(cx,cy,5,cx,cy,sqSz);
+        grad.addColorStop(0,`rgba(${r},${g},${b},${cell.alpha})`);
+        grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
+        c.strokeStyle=grad; c.lineWidth=1.3;
+        c.strokeRect(cell.x+0.5,cell.y+0.5,sqSz-1,sqSz-1);
+      }
+    });
     bgAnimFrame=requestAnimationFrame(draw);
   }
   draw();
