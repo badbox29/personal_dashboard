@@ -13082,6 +13082,7 @@ function buildCveWidget(sec, tabId){
     if(D.cveAlarmHistory.length > HISTORY_MAX) D.cveAlarmHistory = D.cveAlarmHistory.slice(0,HISTORY_MAX);
     persist();
     hitsPanel.style.display='none';
+    clearTabAlert(tabId);
   };
   const hitsCopy = el('button','cve-alert-dismiss');
   hitsCopy.textContent='\uD83D\uDCCB'; hitsCopy.title='Copy CVE IDs and URLs';
@@ -13353,6 +13354,7 @@ function buildCveWidget(sec, tabId){
             .sort((a,b)=>new Date(b.cve.published)-new Date(a.cve.published))
             .forEach(h=>hitsBody.appendChild(buildCveItem(h.cve, h.term)));
           hitsPanel.style.display=''; hitsBody.style.display=''; hitsChevron.style.transform='';
+          setTabAlert(tabId,'critical');
           if(cfg.alarmSound) cveAlarmSound();
         }
         // Update last-checked timestamp for all terms
