@@ -3015,6 +3015,22 @@ body.edit-mode .todo-del { display: block; }
 }
 .todo-clear-btn:hover { color: var(--del-color); }
 body.edit-mode .todo-clear-btn { display: block; }
+/* cfg-input — shared input/textarea style used by widget config forms */
+.cfg-input {
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  padding: 5px 8px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.cfg-input:focus { border-color: var(--gold); }
+.cfg-input::placeholder { color: var(--text-dim); }
 
 /* ============================================================
    TASK TRACKER WIDGET
@@ -21291,7 +21307,7 @@ function ttOpenAddDialog(onAdded){
     const dinp=el('textarea','cfg-input'); dinp.id='ttAddDesc'; dinp.placeholder='Brief description…'; dinp.rows=3;
     dinp.style.cssText='width:100%;box-sizing:border-box;resize:vertical;margin-bottom:14px;';
     const acts=el('div','modal-actions');
-    const ok=el('button','mbtn mbtn-ok'); ok.id='ttAddOk'; ok.textContent='OK';
+    const ok=el('button','mbtn mbtn-primary'); ok.id='ttAddOk'; ok.textContent='OK';
     const cancel=el('button','mbtn mbtn-cancel'); cancel.textContent='Cancel';
     cancel.onclick=()=>closeOverlay('ttAddOverlay');
     acts.append(cancel,ok);
@@ -21421,22 +21437,64 @@ function ttOpenExplorer(onChanged){
     stats.append(s1,s2);
     detail.appendChild(stats);
 
+    /* ── Hoist form field refs so history click handlers can populate them ── */
+    let hinp=null, sdinp=null, flagChk=null, ninp=null, tickInps={};
+    const tickTypes=[['Incident','INC'],['Service Request','REQ'],['Change','CHG'],['Problem','PRB']];
+
+    function populateForm(log){
+      if(!hinp) return;
+      hinp.value=log.hours||'';
+      hinp.oninput();
+      sdinp.value=log.shortDescription||'';
+      flagChk.checked=!!log.flagStatusReport;
+      ninp.value=log.journalNotes||'';
+      tickTypes.forEach(([,abbr])=>{
+        const t=log.tickets&&log.tickets[abbr]||{};
+        tickInps[abbr].ticketNum.value=t.ticketNum&&t.ticketNum!=='0'?t.ticketNum:'';
+        tickInps[abbr].taskNum.value=t.taskNum&&t.taskNum!=='0'?t.taskNum:'';
+      });
+      hinp.scrollIntoView({behavior:'smooth',block:'nearest'});
+      hinp.focus();
+    }
+
     /* Work log history */
     if(task.workLogs&&task.workLogs.length){
       const lhdr=el('div','tt-section-hdr'); lhdr.textContent='Work Log History';
-      const llist=el('div'); llist.style.cssText='max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:12px;';
+      const llist=el('div'); llist.style.cssText='max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:12px;';
       task.workLogs.forEach(log=>{
         const logRow=el('div','tt-log-entry');
+        logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;';
+        logRow.title='Click to load into form below';
         const d=new Date(log.loggedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-        logRow.innerHTML='<span style="color:var(--cyan);font-family:Share Tech Mono,monospace;">'+log.hours+'h</span>'
+        const mainLine=el('div');
+        mainLine.innerHTML='<span style="color:var(--cyan);font-family:Share Tech Mono,monospace;">'+log.hours+'h</span>'
           +' <span style="color:var(--text-dim);font-size:10px;">'+d+'</span>'
           +(log.shortDescription?' — '+log.shortDescription:'')
           +(log.flagStatusReport?' <span style="color:#f0c040;font-size:9px;">★ STATUS</span>':'');
+        logRow.appendChild(mainLine);
         if(log.journalNotes){
           const jn=el('div'); jn.textContent=log.journalNotes;
           jn.style.cssText='color:var(--text-dim);font-size:10px;margin-top:3px;font-style:italic;white-space:pre-wrap;';
           logRow.appendChild(jn);
         }
+        /* Delete button */
+        const delBtn=el('button');
+        delBtn.textContent='✕';
+        delBtn.title='Delete this entry';
+        delBtn.style.cssText='position:absolute;top:4px;right:5px;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;padding:0;line-height:1;opacity:0.5;transition:opacity 0.15s,color 0.15s;';
+        delBtn.onmouseenter=()=>{ delBtn.style.opacity='1'; delBtn.style.color='var(--del-color)'; };
+        delBtn.onmouseleave=()=>{ delBtn.style.opacity='0.5'; delBtn.style.color='var(--text-dim)'; };
+        delBtn.onclick=e=>{
+          e.stopPropagation();
+          if(!confirm('Delete this work log entry? This cannot be undone.')) return;
+          task.workLogs=task.workLogs.filter(l=>l.id!==log.id);
+          persist(); renderList(); renderDetail(); if(onChanged) onChanged();
+        };
+        logRow.appendChild(delBtn);
+        /* Click row to populate form */
+        logRow.onclick=()=>populateForm(log);
+        logRow.onmouseenter=()=>{ logRow.style.background='rgba(255,255,255,0.05)'; };
+        logRow.onmouseleave=()=>{ logRow.style.background=''; };
         llist.appendChild(logRow);
       });
       detail.append(lhdr,llist);
@@ -21459,7 +21517,7 @@ function ttOpenExplorer(onChanged){
     /* Hours input */
     const hlbl=el('div'); hlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; hlbl.textContent='Hours (this entry)';
     const hrow=el('div'); hrow.style.cssText='display:flex;align-items:center;gap:8px;';
-    const hinp=el('input','cfg-input'); hinp.type='number'; hinp.min='0.25'; hinp.step='0.25'; hinp.placeholder='0.25';
+    hinp=el('input','cfg-input'); hinp.type='number'; hinp.min='0.25'; hinp.step='0.25'; hinp.placeholder='0.25';
     hinp.style.cssText='width:80px;';
     const hmins=el('span'); hmins.style.cssText='font-size:10px;color:var(--text-dim);';
     hinp.oninput=()=>{ const v=parseFloat(hinp.value); hmins.textContent=(!isNaN(v)&&v>0)?Math.round(v*60)+' min':''; };
@@ -21470,13 +21528,13 @@ function ttOpenExplorer(onChanged){
 
     /* Short description */
     const sdlbl=el('div'); sdlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; sdlbl.textContent='Short Description';
-    const sdinp=el('input','cfg-input'); sdinp.placeholder='Brief summary…'; sdinp.style.cssText='width:100%;box-sizing:border-box;';
+    sdinp=el('input','cfg-input'); sdinp.placeholder='Brief summary…'; sdinp.style.cssText='width:100%;box-sizing:border-box;';
     const sdwrap=el('div'); sdwrap.append(sdlbl,sdinp);
     lc.appendChild(sdwrap);
 
     /* Flag checkbox */
     const flagRow=el('div'); flagRow.style.cssText='display:flex;align-items:center;gap:6px;';
-    const flagChk=el('input'); flagChk.type='checkbox'; flagChk.id='ttFlagChk';
+    flagChk=el('input'); flagChk.type='checkbox'; flagChk.id='ttFlagChk';
     const flagLbl=el('label'); flagLbl.htmlFor='ttFlagChk'; flagLbl.textContent='Flag for Status Report';
     flagLbl.style.cssText='font-size:11px;cursor:pointer;';
     flagRow.append(flagChk,flagLbl);
@@ -21488,8 +21546,6 @@ function ttOpenExplorer(onChanged){
     thdr.style.cssText='margin-bottom:5px;font-size:9px;color:var(--text-dim);display:grid;grid-template-columns:110px 1fr 1fr;gap:4px;';
     thdr.innerHTML='<span></span><span style="text-align:right;">Ticket #</span><span style="text-align:right;">Task #</span>';
     rc.appendChild(thdr);
-    const tickTypes=[['Incident','INC'],['Service Request','REQ'],['Change','CHG'],['Problem','PRB']];
-    const tickInps={};
     tickTypes.forEach(([label,abbr])=>{
       const tr=el('div','tt-ticket-grid');
       const tl=el('span'); tl.textContent=label; tl.style.cssText='font-size:10px;color:var(--text-dim);';
@@ -21504,15 +21560,15 @@ function ttOpenExplorer(onChanged){
 
     /* Journal notes — full width */
     const nlbl=el('div'); nlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;margin-top:10px;'; nlbl.textContent='Journal Notes';
-    const ninp=el('textarea','cfg-input'); ninp.placeholder='Detailed notes…'; ninp.rows=4;
+    ninp=el('textarea','cfg-input'); ninp.placeholder='Detailed notes…'; ninp.rows=4;
     ninp.style.cssText='width:100%;box-sizing:border-box;resize:vertical;';
     detail.append(nlbl,ninp);
 
     /* Actions */
     const acts=el('div','modal-actions'); acts.style.marginTop='10px;';
-    const acCancel=el('button','mbtn mbtn-cancel'); acCancel.textContent='Cancel';
+    const acCancel=el('button','mbtn mbtn-cancel'); acCancel.textContent='Clear';
     acCancel.onclick=()=>renderDetail();
-    const acOk=el('button','mbtn mbtn-ok'); acOk.textContent='OK';
+    const acOk=el('button','mbtn mbtn-primary'); acOk.textContent='OK';
     acOk.onclick=()=>{
       const hrs=ttRoundToQuarter(parseFloat(hinp.value)||0);
       if(hrs<=0){ hinp.focus(); return; }
