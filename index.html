@@ -21477,13 +21477,14 @@ function ttOpenExplorer(onChanged){
     detail.appendChild(trow);
 
     /* ── Hoist form field refs so history click handlers can populate them ── */
-    let hinp=null, sdinp=null, ninp=null, tickInps={};
+    let hinp=null, dinp=null, sdinp=null, ninp=null, tickInps={};
     const tickTypes=[['Incident','INC'],['Service Request','REQ'],['Change','CHG'],['Problem','PRB']];
 
     function populateForm(log){
       if(!hinp) return;
       hinp.value=log.hours||'';
       hinp.oninput();
+      if(dinp) dinp.value=log.entryDate||(log.loggedAt?log.loggedAt.slice(0,10):new Date().toLocaleDateString('en-CA'));
       sdinp.value=log.shortDescription||'';
       ninp.value=log.journalNotes||'';
       tickTypes.forEach(([,abbr])=>{
@@ -21510,18 +21511,19 @@ function ttOpenExplorer(onChanged){
       const llist=el('div'); llist.style.cssText='max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;';
       task.workLogs.forEach(log=>{
         const logRow=el('div','tt-log-entry');
-        logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;';
+        logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;height:52px;overflow:hidden;box-sizing:border-box;';
         logRow.title='Click to load into form below';
-        const d=new Date(log.loggedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        const d=(log.entryDate?new Date(log.entryDate+'T12:00:00'):new Date(log.loggedAt)).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
         const mainLine=el('div');
+        mainLine.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
         mainLine.innerHTML='<span style="color:var(--cyan);font-family:Share Tech Mono,monospace;">'+log.hours+'h</span>'
           +' <span style="color:var(--text-dim);font-size:10px;">'+d+'</span>'
-          +(log.shortDescription?' — '+log.shortDescription:'')
+          +(log.shortDescription?' — <strong>'+log.shortDescription+'</strong>':'')
           +'';
         logRow.appendChild(mainLine);
         if(log.journalNotes){
           const jn=el('div'); jn.textContent=log.journalNotes;
-          jn.style.cssText='color:var(--text-dim);font-size:10px;margin-top:3px;font-style:italic;white-space:pre-wrap;';
+          jn.style.cssText='color:var(--text-dim);font-size:10px;margin-top:2px;font-style:italic;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;';
           logRow.appendChild(jn);
         }
         /* Delete button */
@@ -21563,17 +21565,26 @@ function ttOpenExplorer(onChanged){
     /* Left col */
     const lc=el('div'); lc.style.cssText='display:flex;flex-direction:column;gap:10px;';
 
-    /* Hours input */
-    const hlbl=el('div'); hlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; hlbl.textContent='Hours (this entry)';
-    const hrow=el('div'); hrow.style.cssText='display:flex;align-items:center;gap:8px;';
+    /* Hours + Date row */
+    const hdRow=el('div'); hdRow.style.cssText='display:flex;gap:12px;align-items:flex-end;';
+    /* Hours */
+    const hwrap=el('div');
+    const hlbl=el('div'); hlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; hlbl.textContent='Hours';
+    const hrow=el('div'); hrow.style.cssText='display:flex;align-items:center;gap:6px;';
     hinp=el('input','cfg-input'); hinp.type='number'; hinp.min='0.25'; hinp.step='0.25'; hinp.placeholder='0.25';
-    hinp.style.cssText='width:80px;';
-    const hmins=el('span'); hmins.style.cssText='font-size:10px;color:var(--text-dim);';
+    hinp.style.cssText='width:72px;';
+    const hmins=el('span'); hmins.style.cssText='font-size:10px;color:var(--text-dim);white-space:nowrap;';
     hinp.oninput=()=>{ const v=parseFloat(hinp.value); hmins.textContent=(!isNaN(v)&&v>0)?Math.round(v*60)+' min':''; };
     hinp.onblur=()=>{ const v=parseFloat(hinp.value); if(!isNaN(v)&&v>0){ hinp.value=ttRoundToQuarter(v); hinp.oninput(); } };
-    hrow.append(hinp,hmins);
-    const hwrap=el('div'); hwrap.append(hlbl,hrow);
-    lc.appendChild(hwrap);
+    hrow.append(hinp,hmins); hwrap.append(hlbl,hrow);
+    /* Date */
+    const dwrap=el('div');
+    const dlbl=el('div'); dlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; dlbl.textContent='Date';
+    dinp=el('input','cfg-input'); dinp.type='date'; dinp.value=new Date().toLocaleDateString('en-CA');
+    dinp.style.cssText='width:130px;';
+    dwrap.append(dlbl,dinp);
+    hdRow.append(hwrap,dwrap);
+    lc.appendChild(hdRow);
 
     /* Short description */
     const sdlbl=el('div'); sdlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; sdlbl.textContent='Short Description';
@@ -21624,7 +21635,7 @@ function ttOpenExplorer(onChanged){
       if(!Array.isArray(task.workLogs)) task.workLogs=[];
       task.workLogs.unshift({
         id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-        hours:hrs, shortDescription:sdinp.value.trim(),
+        hours:hrs, entryDate:dinp.value||new Date().toLocaleDateString('en-CA'), shortDescription:sdinp.value.trim(),
         journalNotes:ninp.value.trim(),
         loggedAt:new Date().toISOString(), tickets
       });
