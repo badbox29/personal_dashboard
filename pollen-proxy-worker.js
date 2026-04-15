@@ -751,9 +751,9 @@ async function handleOtx(body, ctx) {
 // Cache TTL varies by method: recenttracks=30s, top*=1hr, user.getInfo=6hr
 
 async function handleLastfm(body, ctx) {
-  const { apiKey, username, method, period, limit = 10 } = body;
+  const { apiKey, username, method, period, limit = 10, artist } = body;
   if(!apiKey)   return json({ error: 'Required field: apiKey' }, 400);
-  if(!username) return json({ error: 'Required field: username' }, 400);
+  if(!username && method.toLowerCase() !== 'artist.getinfo') return json({ error: 'Required field: username' }, 400);
   if(!method)   return json({ error: 'Required field: method' }, 400);
 
   const ALLOWED_METHODS = [
@@ -763,6 +763,7 @@ async function handleLastfm(body, ctx) {
     'user.gettopalbums',
     'user.getinfo',
     'user.getlovedtracks',
+    'artist.getinfo',
   ];
   if(!ALLOWED_METHODS.includes(method.toLowerCase()))
     return json({ error: `Method not allowed: ${method}` }, 400);
@@ -774,11 +775,12 @@ async function handleLastfm(body, ctx) {
 
   const params = new URLSearchParams({
     method,
-    user:    username,
+    ...(username ? { user: username } : {}),
     api_key: apiKey,
     format:  'json',
     limit:   safeLimit,
     ...(period ? { period } : {}),
+    ...(artist ? { artist } : {}),
   });
 
   const url = `https://ws.audioscrobbler.com/2.0/?${params}`;

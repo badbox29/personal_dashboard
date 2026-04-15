@@ -3099,6 +3099,20 @@ body.edit-mode .todo-clear-btn { display: block; }
 }
 .lfm-stat-chip span { color:var(--cyan); font-family:'Share Tech Mono',monospace; }
 
+.lfm-artist-modal-bio {
+  font-size:11px; color:var(--text-dim); line-height:1.6;
+  max-height:120px; overflow-y:auto; margin-bottom:10px;
+  white-space:pre-wrap;
+}
+.lfm-similar-chip {
+  display:inline-block; padding:2px 8px; font-size:10px;
+  border:1px solid rgba(255,255,255,0.15); border-radius:3px;
+  color:var(--text-dim); cursor:pointer; transition:all 0.15s;
+}
+.lfm-similar-chip:hover { border-color:var(--cyan); color:var(--cyan); }
+.lfm-clickable { cursor:pointer; }
+.lfm-clickable:hover { text-decoration:underline; text-decoration-style:dotted; }
+
 /* ============================================================
    TASK TRACKER WIDGET
    ============================================================ */
@@ -21908,6 +21922,69 @@ function buildLastfmWidget(sec){
     } catch(e){ return null; }
   }
 
+  async function openArtistModal(artistName){
+    if(!artistName) return;
+    // Build or reuse overlay
+    let ov = document.getElementById('lfmArtistOverlay');
+    if(!ov){
+      ov = el('div','overlay'); ov.id='lfmArtistOverlay';
+      const m = el('div','modal'); m.style.cssText='width:500px;max-height:80vh;display:flex;flex-direction:column;';
+      const mhdr = el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-shrink:0;';
+      const mtitle = el('h3'); mtitle.style.cssText='margin:0;flex:1;font-size:13px;'; mtitle.id='lfmArtistTitle';
+      const mclose = el('button','mbtn mbtn-cancel'); mclose.textContent='Close'; mclose.onclick=()=>closeOverlay('lfmArtistOverlay');
+      mhdr.append(mtitle, mclose);
+      const mbody = el('div'); mbody.id='lfmArtistBody'; mbody.style.cssText='flex:1;overflow-y:auto;';
+      m.append(mhdr, mbody); ov.appendChild(m); document.body.appendChild(ov);
+    }
+    document.getElementById('lfmArtistTitle').textContent = artistName;
+    const body = document.getElementById('lfmArtistBody');
+    body.innerHTML = '<div style="color:var(--text-dim);font-size:11px;padding:8px 0;">Loading…</div>';
+    openOverlay('lfmArtistOverlay');
+
+    const data = await lfmFetch('artist.getinfo', { artist: artistName, limit:1 });
+    if(!data || !data.artist){ body.innerHTML='<div style="color:var(--text-dim);font-size:11px;">No data found.</div>'; return; }
+    const a = data.artist;
+
+    body.innerHTML='';
+    // Stats row
+    const statsRow = el('div'); statsRow.style.cssText='display:flex;gap:10px;margin-bottom:12px;';
+    if(a.stats?.listeners){
+      const s1=el('div','lfm-stat-chip'); s1.innerHTML='<span>'+parseInt(a.stats.listeners).toLocaleString()+'</span> listeners'; statsRow.appendChild(s1);
+    }
+    if(a.stats?.playcount){
+      const s2=el('div','lfm-stat-chip'); s2.innerHTML='<span>'+parseInt(a.stats.playcount).toLocaleString()+'</span> scrobbles'; statsRow.appendChild(s2);
+    }
+    if(statsRow.children.length) body.appendChild(statsRow);
+
+    // Bio
+    const bioText = a.bio?.summary||'';
+    const cleanBio = bioText.replace(/<a [^>]+>.*?<\/a>/gi,'').replace(/<[^>]+>/g,'').trim();
+    if(cleanBio){
+      const bioDiv = el('div','lfm-artist-modal-bio'); bioDiv.textContent=cleanBio;
+      body.appendChild(bioDiv);
+    }
+
+    // Similar artists
+    const similar = a.similar?.artist||[];
+    if(similar.length){
+      const simHdr=el('div','tt-section-hdr'); simHdr.textContent='Similar Artists'; body.appendChild(simHdr);
+      const simWrap=el('div'); simWrap.style.cssText='display:flex;flex-wrap:wrap;gap:5px;';
+      similar.slice(0,8).forEach(s=>{
+        const chip=el('span','lfm-similar-chip'); chip.textContent=s.name;
+        chip.onclick=()=>openArtistModal(s.name);
+        simWrap.appendChild(chip);
+      });
+      body.appendChild(simWrap);
+    }
+
+    // Link to Last.fm
+    const linkRow=el('div'); linkRow.style.cssText='margin-top:12px;';
+    const link=el('a'); link.href=a.url||('https://www.last.fm/music/'+encodeURIComponent(artistName));
+    link.target='_blank'; link.rel='noopener'; link.textContent='View on Last.fm →';
+    link.style.cssText='font-size:11px;color:var(--cyan);';
+    linkRow.appendChild(link); body.appendChild(linkRow);
+  }
+
   async function fetchRecent(){
     const data = await lfmFetch('user.getrecenttracks', { limit:cfg.recentLimit||8 });
     if(!data) return;
@@ -21920,16 +21997,25 @@ function buildLastfmWidget(sec){
       if(isNow && i===0){ nowPlayingTrack = t; return; }
 
       const row = el('div','lfm-recent-row');
-      const art = el('img','lfm-recent-art');
       const artUrl = lfmArt(t.image,'small');
-      art.src = artUrl || '';
-      art.style.display = artUrl ? '' : 'none';
+      const art = el('img','lfm-recent-art');
+      art.src = artUrl||''; art.style.display = artUrl?'':'none';
       const info = el('div','lfm-recent-info');
       const tname = el('div','lfm-recent-track'); tname.textContent = t.name||'';
-      const tartist = el('div','lfm-recent-artist'); tartist.textContent = t.artist?.['#text']||t.artist||'';
+      const artistName = t.artist?.['#text']||t.artist||'';
+      const tartist = el('div','lfm-recent-artist lfm-clickable'); tartist.textContent = artistName;
+      tartist.title = 'View artist info';
+      tartist.onclick = e=>{ e.stopPropagation(); openArtistModal(artistName); };
       info.append(tname, tartist);
       const ts = el('div','lfm-recent-time');
       ts.textContent = t.date?.uts ? timeAgo(t.date.uts) : '';
+      // Album tooltip on row
+      const albumName = lfmArt(t.image,'small'), album = t.album?.['#text']||'';
+      if(album) row.title = '📀 '+album;
+      // Click row → open track page on Last.fm
+      const trackUrl = t.url || ('https://www.last.fm/music/'+encodeURIComponent(artistName)+'/_/'+encodeURIComponent(t.name||''));
+      row.style.cursor='pointer';
+      row.onclick = ()=>window.open(trackUrl,'_blank','noopener');
       row.append(art, info, ts);
       recentList.appendChild(row);
     });
@@ -21938,7 +22024,17 @@ function buildLastfmWidget(sec){
       const artUrl = lfmArt(nowPlayingTrack.image,'medium');
       nowArt.src = artUrl||''; nowArt.style.display = artUrl?'':'none';
       nowName.textContent = nowPlayingTrack.name||'';
-      nowArtist.textContent = nowPlayingTrack.artist?.['#text']||nowPlayingTrack.artist||'';
+      const _nowArtistName = nowPlayingTrack.artist?.['#text']||nowPlayingTrack.artist||'';
+      nowArtist.textContent = _nowArtistName;
+      const _nowAlbum = nowPlayingTrack.album?.['#text']||'';
+      if(_nowAlbum) nowCard.title='📀 '+_nowAlbum;
+      // Click artist → modal
+      nowArtist.className='lfm-track-artist lfm-clickable';
+      nowArtist.onclick=e=>{ e.stopPropagation(); openArtistModal(_nowArtistName); };
+      // Click card (not artist) → track page
+      const _nowUrl = nowPlayingTrack.url||('https://www.last.fm/music/'+encodeURIComponent(_nowArtistName)+'/_/'+encodeURIComponent(nowPlayingTrack.name||''));
+      nowCard.style.cursor='pointer';
+      nowCard.onclick=e=>{ if(e.target===nowArtist) return; window.open(_nowUrl,'_blank','noopener'); };
       nowCard.classList.add('live');
       nowCard.style.display = '';
     } else {
@@ -21973,16 +22069,25 @@ function buildLastfmWidget(sec){
       ? (data.toptracks?.track||[])
       : (data.topartists?.artist||[]);
     items.slice(0,5).forEach((item,i)=>{
-      const row = el('div','lfm-recent-row');
+      const row = el('div','lfm-recent-row'); row.style.cursor='pointer';
       const rank = el('span');
       rank.style.cssText='font-size:10px;color:var(--text-dim);width:14px;flex-shrink:0;text-align:right;';
       rank.textContent=(i+1)+'.';
-      const nameDiv = el('div'); nameDiv.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;';
+      const nameDiv = el('div','lfm-clickable'); nameDiv.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;';
       nameDiv.textContent = item.name||'';
       const plays = el('span');
       plays.style.cssText='font-size:9px;color:var(--text-dim);flex-shrink:0;font-family:Share Tech Mono,monospace;';
       plays.textContent = parseInt(item.playcount||0).toLocaleString();
       row.append(rank, nameDiv, plays);
+      if(cfg.topMode==='artists'){
+        row.title='View artist info';
+        row.onclick=()=>openArtistModal(item.name||'');
+      } else {
+        const artistN=item.artist?.name||'';
+        if(artistN) row.title='by '+artistN;
+        const trackUrl=item.url||('https://www.last.fm/music/'+encodeURIComponent(artistN)+'/_/'+encodeURIComponent(item.name||''));
+        row.onclick=()=>window.open(trackUrl,'_blank','noopener');
+      }
       topList.appendChild(row);
     });
   }
