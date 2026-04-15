@@ -3033,6 +3033,73 @@ body.edit-mode .todo-clear-btn { display: block; }
 .cfg-input::placeholder { color: var(--text-dim); }
 
 /* ============================================================
+   LAST.FM WIDGET
+   ============================================================ */
+.lfm-now-playing {
+  display:flex; align-items:center; gap:10px; padding:8px 10px;
+  background:rgba(var(--cyan-rgb,100,200,220),0.06);
+  border:1px solid rgba(var(--cyan-rgb,100,200,220),0.2);
+  border-radius:5px; margin-bottom:8px;
+}
+.lfm-now-playing.live {
+  background:rgba(211,47,47,0.08);
+  border-color:rgba(211,47,47,0.35);
+  animation: lfmPulse 2.5s ease-in-out infinite alternate;
+}
+@keyframes lfmPulse {
+  from { border-color: rgba(211,47,47,0.25); }
+  to   { border-color: rgba(211,47,47,0.6); }
+}
+.lfm-art {
+  width:42px; height:42px; border-radius:3px; flex-shrink:0;
+  background:rgba(255,255,255,0.06); object-fit:cover;
+}
+.lfm-track-info { flex:1; min-width:0; }
+.lfm-track-name {
+  font-size:12px; font-weight:600;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.lfm-track-artist {
+  font-size:10px; color:var(--text-dim);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.lfm-live-badge {
+  font-size:9px; color:#ef5350; font-family:'Share Tech Mono',monospace;
+  letter-spacing:0.08em; flex-shrink:0;
+}
+.lfm-recent-row {
+  display:flex; align-items:center; gap:8px;
+  padding:4px 6px; border-radius:3px; font-size:11px;
+  transition:background 0.1s;
+}
+.lfm-recent-row:hover { background:rgba(255,255,255,0.04); }
+.lfm-recent-art {
+  width:28px; height:28px; border-radius:2px; flex-shrink:0;
+  background:rgba(255,255,255,0.06); object-fit:cover;
+}
+.lfm-recent-info { flex:1; min-width:0; }
+.lfm-recent-track {
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px;
+}
+.lfm-recent-artist {
+  font-size:9px; color:var(--text-dim);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.lfm-recent-time { font-size:9px; color:var(--text-dim); flex-shrink:0; }
+.lfm-period-btn {
+  background:none; border:1px solid rgba(255,255,255,0.1); border-radius:3px;
+  color:var(--text-dim); font-size:10px; padding:2px 7px; cursor:pointer;
+  font-family:'Outfit',sans-serif; transition:all 0.15s;
+}
+.lfm-period-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+.lfm-period-btn.active { border-color:var(--cyan); color:var(--cyan); background:rgba(var(--cyan-rgb,100,200,220),0.08); }
+.lfm-stat-chip {
+  font-size:10px; color:var(--text-dim); padding:2px 8px;
+  background:rgba(255,255,255,0.04); border-radius:3px;
+}
+.lfm-stat-chip span { color:var(--cyan); font-family:'Share Tech Mono',monospace; }
+
+/* ============================================================
    TASK TRACKER WIDGET
    ============================================================ */
 .tt-task-row {
@@ -6084,6 +6151,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swPoem"     onclick="selectWidgetType('poem')">
           📜 Poem of the Day<span>Daily poem with favorites</span>
         </button>
+        <button class="sec-type-card" id="swLastfm"   onclick="selectWidgetType('lastfm')">
+          🎵 Last.fm<span>Scrobbles &amp; stats</span>
+        </button>
       </div>
       <!-- Tools widgets -->
       <div class="widget-cat-panel" id="wcPanelTools">
@@ -6844,7 +6914,7 @@ const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','r
                       'abs',
                       'ports','myip','rfc','cve','bgp','dns','subnet','otx','tap',
                       'github','regex','jsonformat','base64','hash','jwt',
-                      'compose','met','artspot','unsplash','tasktracker'];
+                      'compose','met','artspot','unsplash','tasktracker','lastfm'];
 
 const UNIT_CATS = {
   Length:      { units:['mm','cm','m','km','in','ft','yd','mi'],                       toBase:{ mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344 } },
@@ -7804,6 +7874,7 @@ function buildWidgetBody(sec, tabId){
     case 'abs':        return buildAbsWidget(sec);
     case 'poem':       return buildPoemWidget(sec);
     case 'tasktracker': return buildTaskTrackerWidget(sec);
+    case 'lastfm':       return buildLastfmWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -21722,6 +21793,262 @@ function ttOpenExplorer(onChanged){
   modal.append(hdr,tabBar,listWrap,div,detail);
   renderList(); renderDetail();
   openOverlay('ttExplorerOverlay');
+}
+
+/* ================================================================
+   LAST.FM WIDGET
+   ================================================================ */
+
+function buildLastfmWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.username)     cfg.username     = '';
+  if(!cfg.apiKey)       cfg.apiKey       = '';
+  if(!cfg.period)       cfg.period       = '7day';
+  if(!cfg.topMode)      cfg.topMode      = 'artists'; // 'artists' | 'tracks'
+  if(!cfg.recentLimit)  cfg.recentLimit  = 8;
+
+  const workerUrl = getWorkerUrl();
+  let _refreshTimer = null;
+
+  const wrap = el('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+
+  // ── No-config placeholder ────────────────────────────────────────────────
+  const cfgNote = el('div');
+  cfgNote.style.cssText = 'font-size:11px;color:var(--text-dim);padding:4px 0;';
+  cfgNote.textContent = 'Enter your Last.fm username and API key in settings (⚙).';
+
+  // ── Now playing card ─────────────────────────────────────────────────────
+  const nowCard = el('div','lfm-now-playing');
+  nowCard.style.display = 'none';
+  const nowArt  = el('img','lfm-art'); nowArt.alt='';
+  const nowInfo = el('div','lfm-track-info');
+  const nowName = el('div','lfm-track-name');
+  const nowArtist = el('div','lfm-track-artist');
+  const nowBadge  = el('div','lfm-live-badge'); nowBadge.textContent='▶ NOW PLAYING';
+  nowInfo.append(nowName, nowArtist);
+  nowCard.append(nowArt, nowInfo, nowBadge);
+
+  // ── Recent tracks list ───────────────────────────────────────────────────
+  const recentHdr = el('div','tt-section-hdr'); recentHdr.textContent = 'Recent Tracks';
+  const recentList = el('div');
+  recentList.style.cssText = 'display:flex;flex-direction:column;gap:2px;margin-bottom:4px;';
+
+  // ── Stat strip ───────────────────────────────────────────────────────────
+  const statStrip = el('div');
+  statStrip.style.cssText = 'display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;';
+
+  // ── Top section ──────────────────────────────────────────────────────────
+  const topHdr = el('div');
+  topHdr.style.cssText = 'display:flex;align-items:center;gap:5px;margin-bottom:4px;';
+  const topLabel = el('div','tt-section-hdr'); topLabel.style.marginBottom='0';
+  const topSep   = el('span'); topSep.style.flex='1';
+  // Mode toggles
+  const btnArtists = el('button','lfm-period-btn'); btnArtists.textContent='Artists';
+  const btnTracks  = el('button','lfm-period-btn'); btnTracks.textContent='Tracks';
+  // Period toggles
+  const periods = [['7day','7D'],['1month','1M'],['3month','3M'],['12month','12M']];
+  const periodBtns = periods.map(([v,l])=>{
+    const b=el('button','lfm-period-btn'); b.textContent=l; b.dataset.period=v;
+    return b;
+  });
+  topHdr.append(topLabel, topSep, btnArtists, btnTracks, ...periodBtns);
+
+  const topList = el('div');
+  topList.style.cssText = 'display:flex;flex-direction:column;gap:2px;';
+
+  wrap.append(cfgNote, nowCard, recentHdr, recentList, statStrip, topHdr, topList);
+
+  function setMode(mode){
+    cfg.topMode = mode;
+    persistConfig();
+    btnArtists.classList.toggle('active', mode==='artists');
+    btnTracks.classList.toggle('active',  mode==='tracks');
+    topLabel.textContent = mode==='artists' ? 'Top Artists' : 'Top Tracks';
+    fetchTop();
+  }
+  function setPeriod(p){
+    cfg.period = p;
+    persistConfig();
+    periodBtns.forEach(b=>b.classList.toggle('active', b.dataset.period===p));
+    fetchTop();
+  }
+  btnArtists.onclick = ()=>setMode('artists');
+  btnTracks.onclick  = ()=>setMode('tracks');
+  periodBtns.forEach(b=>{ b.onclick=()=>setPeriod(b.dataset.period); });
+
+  function lfmArt(images, size='medium'){
+    const img = (images||[]).find(i=>i.size===size);
+    return (img&&img['#text']&&!img['#text'].includes('2a96cbd8b46e442fc41c2b86b821562f'))
+      ? img['#text'] : '';
+  }
+
+  function timeAgo(dateStr){
+    if(!dateStr) return '';
+    const d = new Date(parseInt(dateStr)*1000);
+    const diff = Math.floor((Date.now()-d)/1000);
+    if(diff<60) return 'just now';
+    if(diff<3600) return Math.floor(diff/60)+'m ago';
+    if(diff<86400) return Math.floor(diff/3600)+'h ago';
+    return Math.floor(diff/86400)+'d ago';
+  }
+
+  async function lfmFetch(method, extra={}){
+    if(!cfg.username||!cfg.apiKey) return null;
+    try {
+      const r = await fetch(workerUrl.replace(/\/+$/,'')+'/lastfm', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ apiKey:cfg.apiKey, username:cfg.username, method, limit:cfg.recentLimit||8, ...extra })
+      });
+      const j = await r.json();
+      if(j.error) return null;
+      return j;
+    } catch(e){ return null; }
+  }
+
+  async function fetchRecent(){
+    const data = await lfmFetch('user.getrecenttracks', { limit:cfg.recentLimit||8 });
+    if(!data) return;
+    const tracks = data.recenttracks?.track || [];
+    recentList.innerHTML = '';
+    let nowPlayingTrack = null;
+
+    tracks.forEach((t,i)=>{
+      const isNow = t['@attr']?.nowplaying === 'true';
+      if(isNow && i===0){ nowPlayingTrack = t; return; }
+
+      const row = el('div','lfm-recent-row');
+      const art = el('img','lfm-recent-art');
+      const artUrl = lfmArt(t.image,'small');
+      art.src = artUrl || '';
+      art.style.display = artUrl ? '' : 'none';
+      const info = el('div','lfm-recent-info');
+      const tname = el('div','lfm-recent-track'); tname.textContent = t.name||'';
+      const tartist = el('div','lfm-recent-artist'); tartist.textContent = t.artist?.['#text']||t.artist||'';
+      info.append(tname, tartist);
+      const ts = el('div','lfm-recent-time');
+      ts.textContent = t.date?.uts ? timeAgo(t.date.uts) : '';
+      row.append(art, info, ts);
+      recentList.appendChild(row);
+    });
+
+    if(nowPlayingTrack){
+      const artUrl = lfmArt(nowPlayingTrack.image,'medium');
+      nowArt.src = artUrl||''; nowArt.style.display = artUrl?'':'none';
+      nowName.textContent = nowPlayingTrack.name||'';
+      nowArtist.textContent = nowPlayingTrack.artist?.['#text']||nowPlayingTrack.artist||'';
+      nowCard.classList.add('live');
+      nowCard.style.display = '';
+    } else {
+      nowCard.classList.remove('live');
+      nowCard.style.display = 'none';
+    }
+  }
+
+  async function fetchUserInfo(){
+    const data = await lfmFetch('user.getinfo', { limit:1 });
+    if(!data) return;
+    const u = data.user;
+    statStrip.innerHTML='';
+    const total = parseInt(u?.playcount||0).toLocaleString();
+    const chip = el('div','lfm-stat-chip');
+    chip.innerHTML = '<span>'+total+'</span> total scrobbles';
+    statStrip.appendChild(chip);
+    if(u?.registered?.unixtime){
+      const since = new Date(parseInt(u.registered.unixtime)*1000).getFullYear();
+      const chip2 = el('div','lfm-stat-chip');
+      chip2.innerHTML = 'scrobbling since <span>'+since+'</span>';
+      statStrip.appendChild(chip2);
+    }
+  }
+
+  async function fetchTop(){
+    const method = cfg.topMode==='tracks' ? 'user.gettoptracks' : 'user.gettopartists';
+    const data = await lfmFetch(method, { period:cfg.period, limit:5 });
+    topList.innerHTML='';
+    if(!data) return;
+    const items = cfg.topMode==='tracks'
+      ? (data.toptracks?.track||[])
+      : (data.topartists?.artist||[]);
+    items.slice(0,5).forEach((item,i)=>{
+      const row = el('div','lfm-recent-row');
+      const rank = el('span');
+      rank.style.cssText='font-size:10px;color:var(--text-dim);width:14px;flex-shrink:0;text-align:right;';
+      rank.textContent=(i+1)+'.';
+      const nameDiv = el('div'); nameDiv.style.cssText='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;';
+      nameDiv.textContent = item.name||'';
+      const plays = el('span');
+      plays.style.cssText='font-size:9px;color:var(--text-dim);flex-shrink:0;font-family:Share Tech Mono,monospace;';
+      plays.textContent = parseInt(item.playcount||0).toLocaleString();
+      row.append(rank, nameDiv, plays);
+      topList.appendChild(row);
+    });
+  }
+
+  function refresh(){
+    if(!cfg.username||!cfg.apiKey){
+      cfgNote.style.display='';
+      nowCard.style.display='none';
+      recentHdr.style.display='none';
+      recentList.style.display='none';
+      statStrip.style.display='none';
+      topHdr.style.display='none';
+      topList.style.display='none';
+      return;
+    }
+    cfgNote.style.display='none';
+    recentHdr.style.display='';
+    recentList.style.display='';
+    statStrip.style.display='';
+    topHdr.style.display='';
+    topList.style.display='';
+    fetchRecent();
+    fetchUserInfo();
+    fetchTop();
+  }
+
+  // ── Edit mode config panel ───────────────────────────────────────────────
+  const editPanel = el('div');
+  editPanel.style.cssText='display:none;flex-direction:column;gap:8px;margin-top:4px;border-top:1px solid rgba(255,255,255,0.08);padding-top:8px;';
+
+  const unLbl=el('div'); unLbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; unLbl.textContent='Last.fm Username';
+  const unInp=el('input','cfg-input'); unInp.placeholder='your_username'; unInp.value=cfg.username||'';
+  unInp.style.cssText='width:100%;box-sizing:border-box;';
+  unInp.oninput=()=>{ cfg.username=unInp.value.trim(); persistConfig(); };
+
+  const keyLbl=el('div'); keyLbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;margin-top:4px;'; keyLbl.textContent='API Key';
+  const keyInp=el('input','cfg-input'); keyInp.placeholder='Last.fm API key'; keyInp.value=cfg.apiKey||'';
+  keyInp.style.cssText='width:100%;box-sizing:border-box;';
+  keyInp.oninput=()=>{ cfg.apiKey=keyInp.value.trim(); persistConfig(); };
+
+  const saveBtn=el('button');
+  saveBtn.textContent='Save & Refresh';
+  saveBtn.style.cssText='font-size:11px;padding:3px 10px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;margin-top:4px;width:fit-content;transition:background 0.15s;';
+  saveBtn.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)';
+  saveBtn.onmouseleave=e=>e.currentTarget.style.background='transparent';
+  saveBtn.onclick=()=>refresh();
+
+  editPanel.append(unLbl,unInp,keyLbl,keyInp,saveBtn);
+  wrap.appendChild(editPanel);
+
+  // Show edit panel in edit mode
+  const obs = new MutationObserver(()=>{
+    const inEdit = document.body.classList.contains('edit-mode');
+    editPanel.style.display = inEdit ? 'flex' : 'none';
+  });
+  obs.observe(document.body, {attributes:true, attributeFilter:['class']});
+  editPanel.style.display = document.body.classList.contains('edit-mode') ? 'flex' : 'none';
+
+  // Init
+  setMode(cfg.topMode);
+  setPeriod(cfg.period);
+  refresh();
+
+  // Auto-refresh recent tracks every 30s
+  _refreshTimer = setInterval(()=>{ if(cfg.username&&cfg.apiKey) fetchRecent(); }, 30000);
+
+  return wrap;
 }
 
 /* ================================================================

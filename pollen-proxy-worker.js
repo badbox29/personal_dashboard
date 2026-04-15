@@ -744,6 +744,70 @@ async function handleOtx(body, ctx) {
 }
 
 
+// ── Last.fm handler (/lastfm) ────────────────────────────────────────────────
+//
+// Proxies Last.fm API requests. Accepts { apiKey, username, method, ...params }
+// Returns parsed JSON from ws.audioscrobbler.com/2.0/
+// Cache TTL varies by method: recenttracks=30s, top*=1hr, user.getInfo=6hr
+
+async function handleLastfm(body, ctx) {
+  const { apiKey, username, method, period, limit = 10 } = body;
+  if(!apiKey)   return json({ error: 'Required field: apiKey' }, 400);
+  if(!username) return json({ error: 'Required field: username' }, 400);
+  if(!method)   return json({ error: 'Required field: method' }, 400);
+
+  const ALLOWED_METHODS = [
+    'user.getrecenttracks',
+    'user.gettoptracks',
+    'user.gettopartists',
+    'user.gettopalbums',
+    'user.getinfo',
+    'user.getlovedtracks',
+  ];
+  if(!ALLOWED_METHODS.includes(method.toLowerCase()))
+    return json({ error: `Method not allowed: ${method}` }, 400);
+
+  const safeLimit = Math.min(Math.max(parseInt(limit)||10, 1), 50);
+  const cacheTTL = method.toLowerCase() === 'user.getrecenttracks' ? 30
+                 : method.toLowerCase() === 'user.getinfo'          ? 6 * 60 * 60
+                 : 60 * 60;
+
+  const params = new URLSearchParams({
+    method,
+    user:    username,
+    api_key: apiKey,
+    format:  'json',
+    limit:   safeLimit,
+    ...(period ? { period } : {}),
+  });
+
+  const url = `https://ws.audioscrobbler.com/2.0/?${params}`;
+  const cacheKey = url.replace(apiKey, hashStr(apiKey)); // don't cache raw key
+  const cache = caches.default;
+  const cached = await cache.match(cacheKey);
+  if(cached) return json({ ...(await cached.json()), _cached: true });
+
+  let upstream;
+  try {
+    upstream = await fetch(url, { headers: { 'User-Agent': 'SaltyDashboard/1.0' } });
+  } catch(e) { return json({ error: `Last.fm fetch failed: ${e.message}` }, 502); }
+
+  let data;
+  try { data = await upstream.json(); }
+  catch(e) { return json({ error: 'Last.fm returned non-JSON' }, 502); }
+
+  if(data.error) return json({ error: `Last.fm API error ${data.error}: ${data.message}` }, 400);
+
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(data), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': `public, max-age=${cacheTTL}`,
+    },
+  })));
+
+  return json(data);
+}
+
 // ── WOTD handler (/wotd) ─────────────────────────────────────────────────────
 //
 // Proxies Wordnik's word-of-the-day endpoint, adding api-key server-side.
@@ -799,41 +863,6 @@ async function handleWotd(body, ctx) {
 // rolls in. Keeps usage well within free-tier limits for a shared dashboard.
 
 const UNSPLASH_CACHE_TTL = 60 * 60; // 1 hour
-
-// ── Audiobookshelf proxy ─────────────────────────────────────────────────────
-async function handleAbs(body) {
-  const { absUrl, token, endpoint, method = 'GET', payload } = body;
-  if(!absUrl || !token || !endpoint)
-    return json({ error: 'Required fields: absUrl, token, endpoint' }, 400);
-  // Safety: only allow HTTPS targets
-  let base;
-  try {
-    base = new URL(absUrl);
-    if(base.protocol !== 'https:') throw new Error();
-  } catch(_) {
-    return json({ error: 'absUrl must be a valid HTTPS URL' }, 400);
-  }
-  const target = base.origin + endpoint;
-  const init = {
-    method,
-    headers: {
-      'Authorization': 'Bearer ' + token,
-      'Content-Type':  'application/json',
-      'Accept':        'application/json',
-    },
-  };
-  if(payload && method !== 'GET') init.body = JSON.stringify(payload);
-  try {
-    const r   = await fetch(target, init);
-    const ct  = r.headers.get('content-type') || '';
-    const text = await r.text();
-    let data;
-    try { data = JSON.parse(text); } catch(_) { data = { _raw: text }; }
-    return json({ ok: r.ok, status: r.status, data }, r.ok ? 200 : r.status);
-  } catch(e) {
-    return json({ error: 'ABS fetch failed: ' + e.message }, 502);
-  }
-}
 
 async function handleUnsplash(body, ctx) {
   const { apiKey, query = '', orientation = 'landscape', mode = 'photo' } = body;
@@ -1180,8 +1209,8 @@ export default {
     if(path === '/bible')  return handleBible(body, ctx);
     if(path === '/topics') return handleTopics(body, ctx);
     if(path === '/wotd')   return handleWotd(body, ctx);
-    if(path === '/abs')     return handleAbs(body);
     if(path === '/unsplash') return handleUnsplash(body, ctx);
+    if(path === '/lastfm')   return handleLastfm(body, ctx);
     if(path === '/status') {
       try { return await handleStatus(body); }
       catch(e) { return json({ ok: false, status: null, via: 'worker', error: 'Unhandled worker error' }); }
@@ -1191,6 +1220,6 @@ export default {
     if(body.service) return handlePollen(body, ctx);
     if(body.url)     return handleRss(body, ctx);
 
-    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /tap, /sports, /otx, /bible, /topics, /wotd, /unsplash, /kv, or /status' }, 404);
+    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /tap, /sports, /otx, /bible, /topics, /wotd, /unsplash, /lastfm, /kv, or /status' }, 404);
   }
 };
