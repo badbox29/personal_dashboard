@@ -21384,7 +21384,7 @@ function ttOpenExplorer(onChanged){
 
   /* ── Detail panel ── */
   const detail=el('div');
-  detail.style.cssText='flex:1;overflow-y:auto;min-height:0;';
+  detail.style.cssText='flex:1;display:flex;flex-direction:column;min-height:0;overflow-y:auto;';
 
   /* ── Divider ── */
   const div=el('div'); div.style.cssText='height:1px;background:rgba(255,255,255,0.08);margin-bottom:10px;flex-shrink:0;';
@@ -21595,18 +21595,20 @@ function ttOpenExplorer(onChanged){
     formGrid.append(lc,rc);
     detail.appendChild(formGrid);
 
-    /* Journal notes — full width */
-    const nlbl=el('div'); nlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;margin-top:10px;'; nlbl.textContent='Journal Notes';
-    ninp=el('textarea','cfg-input'); ninp.placeholder='Detailed notes…'; ninp.rows=4;
-    ninp.style.cssText='width:100%;box-sizing:border-box;resize:vertical;';
+    /* Journal notes — flex-grows to fill remaining space */
+    const jWrap=el('div'); jWrap.style.cssText='flex:1;display:flex;flex-direction:column;min-height:80px;margin-top:10px;';
+    const nlbl=el('div'); nlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;flex-shrink:0;'; nlbl.textContent='Journal Notes';
+    ninp=el('textarea','cfg-input'); ninp.placeholder='Detailed notes…';
+    ninp.style.cssText='width:100%;box-sizing:border-box;resize:none;flex:1;min-height:0;';
     // Pre-populate: short desc from task description, journal from last log entry
     if(task.description) sdinp.value=task.description;
     const lastLog=(task.workLogs&&task.workLogs.length)?task.workLogs[0]:null;
     if(lastLog&&lastLog.journalNotes) ninp.value=lastLog.journalNotes;
-    detail.append(nlbl,ninp);
+    jWrap.append(nlbl,ninp);
+    detail.appendChild(jWrap);
 
     /* Actions */
-    const acts=el('div','modal-actions'); acts.style.marginTop='10px;';
+    const acts=el('div','modal-actions'); acts.style.cssText='margin-top:10px;flex-shrink:0;';
     const acCancel=el('button'); acCancel.textContent='Clear'; acCancel.style.cssText='font-size:12px;padding:5px 14px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
     acCancel.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)'; acCancel.onmouseleave=e=>e.currentTarget.style.background='transparent';
     acCancel.onclick=()=>renderDetail();
