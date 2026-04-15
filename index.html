@@ -21543,7 +21543,7 @@ function ttOpenExplorer(onChanged){
       const _deleted=new Set(D.taskTrackerDeletedLogIds||[]);
       task.workLogs.filter(l=>!_deleted.has(l.id)).forEach(log=>{
         const logRow=el('div','tt-log-entry');
-        logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;height:56px;overflow:hidden;box-sizing:border-box;flex-shrink:0;';
+        logRow.style.cssText='cursor:pointer;position:relative;padding-right:42px;height:56px;overflow:hidden;box-sizing:border-box;flex-shrink:0;';
         logRow.title='Click to load into form below';
         const d=(log.entryDate?new Date(log.entryDate+'T12:00:00'):new Date(log.loggedAt)).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
         const mainLine=el('div');
@@ -21562,7 +21562,7 @@ function ttOpenExplorer(onChanged){
         const delBtn=el('button');
         delBtn.textContent='✕';
         delBtn.title='Delete this entry';
-        delBtn.style.cssText='position:absolute;top:4px;right:5px;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;padding:0;line-height:1;opacity:0.5;transition:opacity 0.15s,color 0.15s;';
+        delBtn.style.cssText='position:absolute;top:4px;right:18px;background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;padding:0;line-height:1;opacity:0.5;transition:opacity 0.15s,color 0.15s;';
         delBtn.onmouseenter=()=>{ delBtn.style.opacity='1'; delBtn.style.color='var(--del-color)'; };
         delBtn.onmouseleave=()=>{ delBtn.style.opacity='0.5'; delBtn.style.color='var(--text-dim)'; };
         delBtn.onclick=e=>{
