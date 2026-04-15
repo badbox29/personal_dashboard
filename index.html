@@ -21477,11 +21477,12 @@ function ttOpenExplorer(onChanged){
     detail.appendChild(trow);
 
     /* ── Hoist form field refs so history click handlers can populate them ── */
-    let hinp=null, dinp=null, sdinp=null, ninp=null, tickInps={};
+    let hinp=null, dinp=null, sdinp=null, ninp=null, tickInps={}, selLog=null;
     const tickTypes=[['Incident','INC'],['Service Request','REQ'],['Change','CHG'],['Problem','PRB']];
 
     function populateForm(log){
       if(!hinp) return;
+      selLog=log;
       hinp.value=log.hours||'';
       hinp.oninput();
       if(dinp) dinp.value=log.entryDate||(log.loggedAt?log.loggedAt.slice(0,10):new Date().toLocaleDateString('en-CA'));
@@ -21492,9 +21493,18 @@ function ttOpenExplorer(onChanged){
         tickInps[abbr].ticketNum.value=t.ticketNum&&t.ticketNum!=='0'?t.ticketNum:'';
         tickInps[abbr].taskNum.value=t.taskNum&&t.taskNum!=='0'?t.taskNum:'';
       });
+      // Update form to edit mode visuals
+      if(fhdr){ fhdr.textContent='Edit Log Entry'; fhdr.style.color='#f0c040'; }
+      if(acCancel){ acCancel.textContent='New Entry'; }
+      // Highlight selected row
+      document.querySelectorAll('.tt-log-entry').forEach(r=>r.style.borderLeftColor='');
+      if(logRowMap&&logRowMap.get(log.id)) logRowMap.get(log.id).style.borderLeftColor='var(--cyan)';
       hinp.scrollIntoView({behavior:'smooth',block:'nearest'});
       hinp.focus();
     }
+
+    const logRowMap=new Map();
+    let fhdr=null, acCancel=null;
 
     /* Stats + log history — side by side */
     const statsAndHistory=el('div'); statsAndHistory.style.cssText='display:flex;gap:10px;margin-bottom:12px;align-items:stretch;flex-shrink:0;height:160px;';
@@ -21540,6 +21550,7 @@ function ttOpenExplorer(onChanged){
           persist(); renderList(); renderDetail(); if(onChanged) onChanged();
         };
         logRow.appendChild(delBtn);
+        logRowMap.set(log.id, logRow);
         /* Click row to populate form */
         logRow.onclick=()=>populateForm(log);
         logRow.onmouseenter=()=>{ logRow.style.background='rgba(255,255,255,0.05)'; };
@@ -21554,7 +21565,7 @@ function ttOpenExplorer(onChanged){
     /* New log entry form — only for open tasks */
     if(task.status!=='open') return;
 
-    const fhdr=el('div','tt-section-hdr');
+    fhdr=el('div','tt-section-hdr');
     fhdr.style.cssText='font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;';
     fhdr.textContent='Add Work Log Entry';
     detail.appendChild(fhdr);
@@ -21621,7 +21632,7 @@ function ttOpenExplorer(onChanged){
 
     /* Actions */
     const acts=el('div','modal-actions'); acts.style.cssText='margin-top:10px;flex-shrink:0;';
-    const acCancel=el('button'); acCancel.textContent='Clear'; acCancel.style.cssText='font-size:12px;padding:5px 14px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
+    acCancel=el('button'); acCancel.textContent='Clear'; acCancel.style.cssText='font-size:12px;padding:5px 14px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
     acCancel.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)'; acCancel.onmouseleave=e=>e.currentTarget.style.background='transparent';
     acCancel.onclick=()=>renderDetail();
     const acOk=el('button','mbtn mbtn-primary'); acOk.textContent='OK';
@@ -21633,12 +21644,24 @@ function ttOpenExplorer(onChanged){
         tickets[abbr]={ ticketNum:tickInps[abbr].ticketNum.value.trim()||'0', taskNum:tickInps[abbr].taskNum.value.trim()||'0' };
       });
       if(!Array.isArray(task.workLogs)) task.workLogs=[];
-      task.workLogs.unshift({
-        id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-        hours:hrs, entryDate:dinp.value||new Date().toLocaleDateString('en-CA'), shortDescription:sdinp.value.trim(),
-        journalNotes:ninp.value.trim(),
-        loggedAt:new Date().toISOString(), tickets
-      });
+      if(selLog){
+        // Edit existing entry — preserve loggedAt timestamp
+        const idx=task.workLogs.findIndex(l=>l.id===selLog.id);
+        if(idx>=0){
+          task.workLogs[idx]={
+            ...task.workLogs[idx],
+            hours:hrs, entryDate:dinp.value||task.workLogs[idx].entryDate,
+            shortDescription:sdinp.value.trim(), journalNotes:ninp.value.trim(), tickets
+          };
+        }
+      } else {
+        task.workLogs.unshift({
+          id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+          hours:hrs, entryDate:dinp.value||new Date().toLocaleDateString('en-CA'), shortDescription:sdinp.value.trim(),
+          journalNotes:ninp.value.trim(),
+          loggedAt:new Date().toISOString(), tickets
+        });
+      }
       persist(); renderList(); renderDetail(); if(onChanged) onChanged();
     };
     acts.append(acCancel,acOk);
