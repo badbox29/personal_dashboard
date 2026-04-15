@@ -7096,7 +7096,8 @@ function generateSyncToken(){
   if(!Array.isArray(D.otxIndustries))    D.otxIndustries    = [];
   if(!Array.isArray(D.otxAlarmHistory))  D.otxAlarmHistory  = [];
   if(!Array.isArray(D.otxDailyCounts))   D.otxDailyCounts   = [];
-  if(!Array.isArray(D.taskTrackerTasks)) D.taskTrackerTasks = [];
+  if(!Array.isArray(D.taskTrackerTasks))       D.taskTrackerTasks       = [];
+  if(!Array.isArray(D.taskTrackerDeletedLogIds)) D.taskTrackerDeletedLogIds = [];
   if(!Array.isArray(D.tapSeenClickGuids)) D.tapSeenClickGuids = [];
   if(!Array.isArray(D.tapKnownVapEmails)) D.tapKnownVapEmails = [];
   if(D.tapLastFetchTime === undefined)    D.tapLastFetchTime   = 0;
@@ -7219,7 +7220,8 @@ const KV_MERGE_KEYS = {
   // dedup by .timestamp
   energyEntries:      e => e.timestamp,
   otxDailyCounts:     e => e.date,
-  taskTrackerTasks:   e => e.id,
+  taskTrackerTasks:        e => e.id,
+  taskTrackerDeletedLogIds: e => e,
   // primitive arrays — dedup by value
   tapSeenClickGuids:  e => e,
   tapKnownVapEmails:  e => e,
@@ -7249,7 +7251,9 @@ function kvMergeD(remote) {
         const localAt  = new Date(local.createdAt||0).getTime();
         const remoteAt = new Date(e.createdAt||0).getTime();
         const base = remoteAt > localAt ? {...e} : {...local};
+        const deletedIds = new Set(D.taskTrackerDeletedLogIds||[]);
         base.workLogs = Array.from(mergedLogs.values())
+          .filter(l => !deletedIds.has(l.id))
           .sort((a,b) => new Date(b.loggedAt||0) - new Date(a.loggedAt||0));
         seen.set(k, base);
       }
@@ -21536,7 +21540,8 @@ function ttOpenExplorer(onChanged){
     if(task.workLogs&&task.workLogs.length){
       const lhdr=el('div','tt-section-hdr'); lhdr.textContent='Work Log History'; histCol.appendChild(lhdr);
       const llist=el('div'); llist.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;min-height:0;';
-      task.workLogs.forEach(log=>{
+      const _deleted=new Set(D.taskTrackerDeletedLogIds||[]);
+      task.workLogs.filter(l=>!_deleted.has(l.id)).forEach(log=>{
         const logRow=el('div','tt-log-entry');
         logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;height:56px;overflow:hidden;box-sizing:border-box;flex-shrink:0;';
         logRow.title='Click to load into form below';
@@ -21564,6 +21569,8 @@ function ttOpenExplorer(onChanged){
           e.stopPropagation();
           if(!confirm('Delete this work log entry? This cannot be undone.')) return;
           task.workLogs=task.workLogs.filter(l=>l.id!==log.id);
+          if(!Array.isArray(D.taskTrackerDeletedLogIds)) D.taskTrackerDeletedLogIds=[];
+          if(!D.taskTrackerDeletedLogIds.includes(log.id)) D.taskTrackerDeletedLogIds.push(log.id);
           persist(); renderList(); renderDetail(); if(onChanged) onChanged();
         };
         logRow.appendChild(delBtn);
