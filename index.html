@@ -21511,7 +21511,7 @@ function ttOpenExplorer(onChanged){
       const llist=el('div'); llist.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;min-height:0;';
       task.workLogs.forEach(log=>{
         const logRow=el('div','tt-log-entry');
-        logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;height:68px;overflow:hidden;box-sizing:border-box;flex-shrink:0;';
+        logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;height:56px;overflow:hidden;box-sizing:border-box;flex-shrink:0;';
         logRow.title='Click to load into form below';
         const d=(log.entryDate?new Date(log.entryDate+'T12:00:00'):new Date(log.loggedAt)).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
         const mainLine=el('div');
