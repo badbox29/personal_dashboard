@@ -19636,7 +19636,11 @@ function lofiPopulateSelect(){
   ul.appendChild(ph);
   (D.lofi||[]).forEach(t => {
     const li = document.createElement('li');
-    const typeTag = (t.type==='playlist') ? ' <span style="font-size:10px;opacity:0.6;">[playlist]</span>' : '';
+    const isRadioMix1 = (t.type==='playlist') && t.vid && t.vid.startsWith('RD');
+    const typeTag = (t.type==='playlist')
+      ? isRadioMix1 ? ' <span style="font-size:10px;color:#50c878;opacity:0.8;">[radio mix]</span>'
+                    : ' <span style="font-size:10px;opacity:0.6;">[playlist]</span>'
+      : '';
     li.innerHTML = t.label + typeTag;
     li.dataset.vid = t.vid;
     li.dataset.type = t.type||'video';
@@ -19665,7 +19669,12 @@ function renderLofiList(){
   D.lofi.forEach((t,i)=>{
     const row = document.createElement('div');
     row.className = 'wloc-row';
-    const typeTag = (t.type==='playlist') ? '<span style="margin-left:5px;padding:1px 4px;background:rgba(var(--cyan-rgb,100,200,220),0.15);border:1px solid var(--cyan);border-radius:3px;font-size:9px;color:var(--cyan);">PLAYLIST</span>' : '';
+    const isRadioMix = (t.type==='playlist') && t.vid && t.vid.startsWith('RD');
+    const typeTag = (t.type==='playlist')
+      ? isRadioMix
+        ? '<span style="margin-left:5px;padding:1px 4px;background:rgba(80,200,120,0.15);border:1px solid #50c878;border-radius:3px;font-size:9px;color:#50c878;">RADIO MIX</span>'
+        : '<span style="margin-left:5px;padding:1px 4px;background:rgba(var(--cyan-rgb,100,200,220),0.15);border:1px solid var(--cyan);border-radius:3px;font-size:9px;color:var(--cyan);">PLAYLIST</span>'
+      : '';
     row.innerHTML = `<span style="font-size:12px;">${t.label}${typeTag} <span style="color:var(--text-dim);font-size:10px;font-family:Share Tech Mono,monospace;">${t.vid}</span></span>`;
     const db = document.createElement('button');
     db.className='wloc-del'; db.textContent='✕'; db.title='Remove';
