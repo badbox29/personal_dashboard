@@ -19639,7 +19639,7 @@ function lofiPopulateSelect(){
     const isRadioMix1 = (t.type==='playlist') && t.vid && t.vid.startsWith('RD');
     const typeTag = (t.type==='playlist')
       ? isRadioMix1 ? ' <span style="font-size:10px;color:#50c878;opacity:0.8;">[radio mix]</span>'
-                    : ' <span style="font-size:10px;opacity:0.6;">[playlist]</span>'
+                    : ' <span style="font-size:10px;color:var(--cyan);opacity:0.8;">[playlist]</span>'
       : '';
     li.innerHTML = t.label + typeTag;
     li.dataset.vid = t.vid;
