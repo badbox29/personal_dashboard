@@ -19637,8 +19637,10 @@ function lofiPopulateSelect(){
   (D.lofi||[]).forEach(t => {
     const li = document.createElement('li');
     const isRadioMix1 = (t.type==='playlist') && t.vid && t.vid.startsWith('RD');
+    const isAlbum1    = (t.type==='playlist') && t.vid && t.vid.startsWith('OLAK5uy_');
     const typeTag = (t.type==='playlist')
-      ? isRadioMix1 ? ' <span style="font-size:10px;color:#50c878;opacity:0.8;">[radio mix]</span>'
+      ? isAlbum1    ? ' <span style="font-size:10px;color:#f0c040;opacity:0.8;">[album]</span>'
+      : isRadioMix1 ? ' <span style="font-size:10px;color:#50c878;opacity:0.8;">[radio mix]</span>'
                     : ' <span style="font-size:10px;color:var(--cyan);opacity:0.8;">[playlist]</span>'
       : '';
     li.innerHTML = t.label + typeTag;
@@ -19670,10 +19672,11 @@ function renderLofiList(){
     const row = document.createElement('div');
     row.className = 'wloc-row';
     const isRadioMix = (t.type==='playlist') && t.vid && t.vid.startsWith('RD');
+    const isAlbum    = (t.type==='playlist') && t.vid && t.vid.startsWith('OLAK5uy_');
     const typeTag = (t.type==='playlist')
-      ? isRadioMix
-        ? '<span style="margin-left:5px;padding:1px 4px;background:rgba(80,200,120,0.15);border:1px solid #50c878;border-radius:3px;font-size:9px;color:#50c878;">RADIO MIX</span>'
-        : '<span style="margin-left:5px;padding:1px 4px;background:rgba(var(--cyan-rgb,100,200,220),0.15);border:1px solid var(--cyan);border-radius:3px;font-size:9px;color:var(--cyan);">PLAYLIST</span>'
+      ? isAlbum    ? '<span style="margin-left:5px;padding:1px 4px;background:rgba(240,192,64,0.15);border:1px solid #f0c040;border-radius:3px;font-size:9px;color:#f0c040;">ALBUM</span>'
+      : isRadioMix ? '<span style="margin-left:5px;padding:1px 4px;background:rgba(80,200,120,0.15);border:1px solid #50c878;border-radius:3px;font-size:9px;color:#50c878;">RADIO MIX</span>'
+                   : '<span style="margin-left:5px;padding:1px 4px;background:rgba(var(--cyan-rgb,100,200,220),0.15);border:1px solid var(--cyan);border-radius:3px;font-size:9px;color:var(--cyan);">PLAYLIST</span>'
       : '';
     row.innerHTML = `<span style="font-size:12px;">${t.label}${typeTag} <span style="color:var(--text-dim);font-size:10px;font-family:Share Tech Mono,monospace;">${t.vid}</span></span>`;
     const db = document.createElement('button');
