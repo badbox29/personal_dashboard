@@ -21497,7 +21497,7 @@ function ttOpenExplorer(onChanged){
     }
 
     /* Stats + log history — side by side */
-    const statsAndHistory=el('div'); statsAndHistory.style.cssText='display:flex;gap:10px;margin-bottom:12px;align-items:stretch;flex-shrink:0;';
+    const statsAndHistory=el('div'); statsAndHistory.style.cssText='display:flex;gap:10px;margin-bottom:12px;align-items:stretch;flex-shrink:0;height:160px;';
     /* Left: stacked stat boxes */
     const statsCol=el('div'); statsCol.style.cssText='display:flex;flex-direction:column;gap:6px;flex-shrink:0;';
     const s1=el('div','tt-stat-box'); s1.innerHTML='<span>TOTAL HOURS</span><span>'+totalHrs+'</span>';
@@ -21505,13 +21505,13 @@ function ttOpenExplorer(onChanged){
     statsCol.append(s1,s2);
     statsAndHistory.appendChild(statsCol);
     /* Right: scrollable log history */
-    const histCol=el('div'); histCol.style.cssText='flex:1;min-width:0;';
+    const histCol=el('div'); histCol.style.cssText='flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;';
     if(task.workLogs&&task.workLogs.length){
       const lhdr=el('div','tt-section-hdr'); lhdr.textContent='Work Log History'; histCol.appendChild(lhdr);
-      const llist=el('div'); llist.style.cssText='max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;';
+      const llist=el('div'); llist.style.cssText='flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;min-height:0;';
       task.workLogs.forEach(log=>{
         const logRow=el('div','tt-log-entry');
-        logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;height:52px;overflow:hidden;box-sizing:border-box;';
+        logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;height:68px;overflow:hidden;box-sizing:border-box;flex-shrink:0;';
         logRow.title='Click to load into form below';
         const d=(log.entryDate?new Date(log.entryDate+'T12:00:00'):new Date(log.loggedAt)).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
         const mainLine=el('div');
@@ -21523,7 +21523,7 @@ function ttOpenExplorer(onChanged){
         logRow.appendChild(mainLine);
         if(log.journalNotes){
           const jn=el('div'); jn.textContent=log.journalNotes;
-          jn.style.cssText='color:var(--text-dim);font-size:10px;margin-top:2px;font-style:italic;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;';
+          jn.style.cssText='color:var(--text-dim);font-size:10px;margin-top:2px;font-style:italic;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;';
           logRow.appendChild(jn);
         }
         /* Delete button */
