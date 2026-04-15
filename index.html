@@ -21476,12 +21476,6 @@ function ttOpenExplorer(onChanged){
     }
     detail.appendChild(trow);
 
-    if(task.description){
-      const desc=el('div'); desc.textContent=task.description;
-      desc.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;margin-bottom:10px;';
-      detail.appendChild(desc);
-    }
-
     /* Stats bar */
     const stats=el('div'); stats.style.cssText='display:flex;gap:10px;margin-bottom:12px;';
     const s1=el('div','tt-stat-box'); s1.innerHTML='<span>TOTAL HOURS</span><span>'+totalHrs+'</span>';
@@ -21490,7 +21484,7 @@ function ttOpenExplorer(onChanged){
     detail.appendChild(stats);
 
     /* ── Hoist form field refs so history click handlers can populate them ── */
-    let hinp=null, sdinp=null, flagChk=null, ninp=null, tickInps={};
+    let hinp=null, sdinp=null, ninp=null, tickInps={};
     const tickTypes=[['Incident','INC'],['Service Request','REQ'],['Change','CHG'],['Problem','PRB']];
 
     function populateForm(log){
@@ -21498,7 +21492,6 @@ function ttOpenExplorer(onChanged){
       hinp.value=log.hours||'';
       hinp.oninput();
       sdinp.value=log.shortDescription||'';
-      flagChk.checked=!!log.flagStatusReport;
       ninp.value=log.journalNotes||'';
       tickTypes.forEach(([,abbr])=>{
         const t=log.tickets&&log.tickets[abbr]||{};
@@ -21522,7 +21515,7 @@ function ttOpenExplorer(onChanged){
         mainLine.innerHTML='<span style="color:var(--cyan);font-family:Share Tech Mono,monospace;">'+log.hours+'h</span>'
           +' <span style="color:var(--text-dim);font-size:10px;">'+d+'</span>'
           +(log.shortDescription?' — '+log.shortDescription:'')
-          +(log.flagStatusReport?' <span style="color:#f0c040;font-size:9px;">★ STATUS</span>':'');
+          +'';
         logRow.appendChild(mainLine);
         if(log.journalNotes){
           const jn=el('div'); jn.textContent=log.journalNotes;
@@ -21584,14 +21577,6 @@ function ttOpenExplorer(onChanged){
     const sdwrap=el('div'); sdwrap.append(sdlbl,sdinp);
     lc.appendChild(sdwrap);
 
-    /* Flag checkbox */
-    const flagRow=el('div'); flagRow.style.cssText='display:flex;align-items:center;gap:6px;';
-    flagChk=el('input'); flagChk.type='checkbox'; flagChk.id='ttFlagChk';
-    const flagLbl=el('label'); flagLbl.htmlFor='ttFlagChk'; flagLbl.textContent='Flag for Status Report';
-    flagLbl.style.cssText='font-size:11px;cursor:pointer;';
-    flagRow.append(flagChk,flagLbl);
-    lc.appendChild(flagRow);
-
     /* Right col — ticket numbers */
     const rc=el('div');
     const thdr=el('div','tt-ticket-grid');
@@ -21614,6 +21599,10 @@ function ttOpenExplorer(onChanged){
     const nlbl=el('div'); nlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;margin-top:10px;'; nlbl.textContent='Journal Notes';
     ninp=el('textarea','cfg-input'); ninp.placeholder='Detailed notes…'; ninp.rows=4;
     ninp.style.cssText='width:100%;box-sizing:border-box;resize:vertical;';
+    // Pre-populate: short desc from task description, journal from last log entry
+    if(task.description) sdinp.value=task.description;
+    const lastLog=(task.workLogs&&task.workLogs.length)?task.workLogs[0]:null;
+    if(lastLog&&lastLog.journalNotes) ninp.value=lastLog.journalNotes;
     detail.append(nlbl,ninp);
 
     /* Actions */
@@ -21633,7 +21622,7 @@ function ttOpenExplorer(onChanged){
       task.workLogs.unshift({
         id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
         hours:hrs, shortDescription:sdinp.value.trim(),
-        flagStatusReport:flagChk.checked, journalNotes:ninp.value.trim(),
+        journalNotes:ninp.value.trim(),
         loggedAt:new Date().toISOString(), tickets
       });
       persist(); renderList(); renderDetail(); if(onChanged) onChanged();
