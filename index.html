@@ -21345,7 +21345,7 @@ function ttOpenExplorer(onChanged){
   if(!ov){
     ov=el('div','overlay'); ov.id='ttExplorerOverlay';
     const m=el('div','modal'); m.id='ttExplorerModal';
-    m.style.cssText='width:720px;max-height:92vh;display:flex;flex-direction:column;';
+    m.style.cssText='width:720px;height:min(820px,92vh);max-height:92vh;display:flex;flex-direction:column;';
     ov.appendChild(m); document.body.appendChild(ov);
   }
   const modal=document.getElementById('ttExplorerModal');
@@ -21419,9 +21419,46 @@ function ttOpenExplorer(onChanged){
   function renderDetail(){
     detail.innerHTML='';
     if(!selTask){
-      const hint=el('div'); hint.style.cssText='font-size:11px;color:var(--text-dim);padding:6px 0;';
-      hint.textContent='Select a task above to view details and log work.';
-      detail.appendChild(hint); return;
+      /* Dimmed placeholder — shows form shape but locked until a task is selected */
+      const lockWrap=el('div'); lockWrap.style.cssText='opacity:0.28;pointer-events:none;user-select:none;';
+      // Fake stats bar
+      const fstats=el('div'); fstats.style.cssText='display:flex;gap:10px;margin-bottom:12px;';
+      const fs1=el('div','tt-stat-box'); fs1.innerHTML='<span>TOTAL HOURS</span><span>—</span>';
+      const fs2=el('div','tt-stat-box'); fs2.innerHTML='<span>LOG ENTRIES</span><span>—</span>';
+      fstats.append(fs1,fs2); lockWrap.appendChild(fstats);
+      // Divider + section header
+      const fdiv=el('div'); fdiv.style.cssText='height:1px;background:rgba(255,255,255,0.08);margin-bottom:10px;';
+      const ffhdr=el('div','tt-section-hdr'); ffhdr.textContent='Add Work Log Entry';
+      ffhdr.style.cssText='font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);';
+      lockWrap.append(fdiv,ffhdr);
+      // Fake form grid
+      const fg=el('div'); fg.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:10px;';
+      const flc=el('div'); flc.style.cssText='display:flex;flex-direction:column;gap:10px;';
+      const fhl=el('div'); fhl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; fhl.textContent='Hours (this entry)';
+      const fhi=el('input','cfg-input'); fhi.placeholder='0.25'; fhi.style.cssText='width:80px;';
+      flc.append(fhl,fhi);
+      const fsdl=el('div'); fsdl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; fsdl.textContent='Short Description';
+      const fsdi=el('input','cfg-input'); fsdi.placeholder='Brief summary…'; fsdi.style.cssText='width:100%;box-sizing:border-box;';
+      flc.append(fsdl,fsdi);
+      const frc=el('div');
+      const fth=el('div','tt-ticket-grid'); fth.style.cssText='margin-bottom:5px;font-size:9px;color:var(--text-dim);display:grid;grid-template-columns:110px 1fr 1fr;gap:4px;';
+      fth.innerHTML='<span></span><span style="text-align:right;">Ticket #</span><span style="text-align:right;">Task #</span>';
+      frc.appendChild(fth);
+      [['Incident'],['Service Request'],['Change'],['Problem']].forEach(([label])=>{
+        const tr=el('div','tt-ticket-grid'); const tl=el('span'); tl.textContent=label; tl.style.cssText='font-size:10px;color:var(--text-dim);';
+        const ti=el('input','cfg-input'); ti.placeholder='0'; const tk=el('input','cfg-input'); tk.placeholder='0';
+        tr.append(tl,ti,tk); frc.appendChild(tr);
+      });
+      fg.append(flc,frc); lockWrap.appendChild(fg);
+      const fnl=el('div'); fnl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; fnl.textContent='Journal Notes';
+      const fni=el('textarea','cfg-input'); fni.placeholder='Detailed notes…'; fni.rows=4; fni.style.cssText='width:100%;box-sizing:border-box;resize:vertical;';
+      lockWrap.append(fnl,fni);
+      // Centered hint overlay
+      const hint=el('div');
+      hint.style.cssText='text-align:center;font-size:11px;color:var(--text-dim);padding:8px 0 4px;letter-spacing:0.04em;';
+      hint.textContent='← Select a task to view details and log work';
+      detail.append(hint,lockWrap);
+      return;
     }
     const task=selTask;
     const totalHrs=ttTotalHours(task);
