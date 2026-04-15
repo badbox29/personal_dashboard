@@ -3017,6 +3017,49 @@ body.edit-mode .todo-del { display: block; }
 body.edit-mode .todo-clear-btn { display: block; }
 
 /* ============================================================
+   TASK TRACKER WIDGET
+   ============================================================ */
+.tt-task-row {
+  display:flex; align-items:center; padding:5px 7px;
+  background:rgba(255,255,255,0.04); border-radius:4px;
+  font-size:12px; cursor:default; gap:6px;
+  transition: background 0.12s;
+}
+.tt-task-row:hover { background:rgba(255,255,255,0.07); }
+.tt-tab-btn {
+  background:none; border:1px solid rgba(255,255,255,0.12);
+  border-radius:4px; color:var(--text-dim); font-size:11px;
+  padding:3px 12px; cursor:pointer; font-family:'Outfit',sans-serif;
+  transition: border-color 0.15s, color 0.15s;
+}
+.tt-tab-btn:hover { border-color:var(--cyan); color:var(--cyan); }
+.tt-tab-btn.active { border-color:var(--cyan); color:var(--cyan); background:rgba(var(--cyan-rgb),0.08); }
+.tt-list-row {
+  display:flex; align-items:center; padding:7px 10px;
+  font-size:12px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05);
+  gap:6px; transition:background 0.1s;
+}
+.tt-list-row:hover { background:rgba(255,255,255,0.04); }
+.tt-list-row.selected { background:rgba(var(--cyan-rgb,100,200,220),0.1); }
+.tt-list-row:last-child { border-bottom:none; }
+.tt-stat-box { padding:6px 10px; background:rgba(255,255,255,0.04); border-radius:4px; min-width:80px; }
+.tt-stat-box span:first-child { font-size:9px; color:var(--text-dim); display:block; letter-spacing:0.06em; }
+.tt-stat-box span:last-child { font-size:16px; font-family:'Share Tech Mono',monospace; color:var(--cyan); }
+.tt-log-entry {
+  font-size:11px; padding:5px 8px; background:rgba(255,255,255,0.03);
+  border-radius:3px; border-left:2px solid rgba(var(--cyan-rgb,100,200,220),0.35);
+}
+.tt-ticket-grid {
+  display:grid; grid-template-columns:110px 1fr 1fr; gap:4px;
+  align-items:center;
+}
+.tt-ticket-grid input { text-align:right; padding:2px 5px; font-size:11px; }
+.tt-section-hdr {
+  font-size:9px; color:var(--text-dim); text-transform:uppercase;
+  letter-spacing:0.08em; margin-bottom:6px;
+}
+
+/* ============================================================
    FOCUS PANEL — Pomodoro Timer (Row 3)
    ============================================================ */
 .pomo-row {
@@ -6022,6 +6065,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swAbs"      onclick="selectWidgetType('abs')">
           🎧 Audiobookshelf<span>Self-hosted audiobook player</span>
         </button>
+        <button class="sec-type-card" id="swTaskTracker" onclick="selectWidgetType('tasktracker')">
+          📋 Task Tracker<span>Tasks, logs &amp; time</span>
+        </button>
       </div>
       <!-- Network Engineering widgets -->
       <div class="widget-cat-panel" id="wcPanelNetwork">
@@ -6770,7 +6816,7 @@ const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','r
                       'abs',
                       'ports','myip','rfc','cve','bgp','dns','subnet','otx','tap',
                       'github','regex','jsonformat','base64','hash','jwt',
-                      'compose','met','artspot','unsplash'];
+                      'compose','met','artspot','unsplash','tasktracker'];
 
 const UNIT_CATS = {
   Length:      { units:['mm','cm','m','km','in','ft','yd','mi'],                       toBase:{ mm:0.001,cm:0.01,m:1,km:1000,in:0.0254,ft:0.3048,yd:0.9144,mi:1609.344 } },
@@ -7034,6 +7080,7 @@ function generateSyncToken(){
   if(!Array.isArray(D.otxIndustries))    D.otxIndustries    = [];
   if(!Array.isArray(D.otxAlarmHistory))  D.otxAlarmHistory  = [];
   if(!Array.isArray(D.otxDailyCounts))   D.otxDailyCounts   = [];
+  if(!Array.isArray(D.taskTrackerTasks)) D.taskTrackerTasks = [];
   if(!Array.isArray(D.tapSeenClickGuids)) D.tapSeenClickGuids = [];
   if(!Array.isArray(D.tapKnownVapEmails)) D.tapKnownVapEmails = [];
   if(D.tapLastFetchTime === undefined)    D.tapLastFetchTime   = 0;
@@ -7156,6 +7203,7 @@ const KV_MERGE_KEYS = {
   // dedup by .timestamp
   energyEntries:      e => e.timestamp,
   otxDailyCounts:     e => e.date,
+  taskTrackerTasks:   e => e.id,
   // primitive arrays — dedup by value
   tapSeenClickGuids:  e => e,
   tapKnownVapEmails:  e => e,
@@ -7706,6 +7754,7 @@ function buildWidgetBody(sec, tabId){
     case 'drinks':     return buildDrinksWidget(sec);
     case 'abs':        return buildAbsWidget(sec);
     case 'poem':       return buildPoemWidget(sec);
+    case 'tasktracker': return buildTaskTrackerWidget(sec);
     default:
       const msg = el('div'); msg.style.cssText='padding:8px;font-size:12px;color:var(--text-dim);';
       msg.textContent = 'Unknown widget type: ' + (sec.widgetType||'none');
@@ -21150,6 +21199,346 @@ function bgGridTrail(){
     bgAnimFrame=requestAnimationFrame(draw);
   }
   draw();
+}
+
+/* ================================================================
+   TASK TRACKER WIDGET
+   ================================================================ */
+
+function ttTotalHours(task){
+  return (task.workLogs||[]).reduce((s,l)=>s+(l.hours||0),0);
+}
+function ttRoundToQuarter(n){
+  if(!n||n<=0) return 0.25;
+  return Math.ceil(n*4)/4;
+}
+function ttLastLogSummary(task){
+  const logs=task.workLogs||[];
+  if(!logs.length) return 'No entries yet';
+  const l=logs[0];
+  return (l.hours||0)+'h — '+(l.shortDescription||'(no description)');
+}
+
+function buildTaskTrackerWidget(sec){
+  if(!Array.isArray(D.taskTrackerTasks)) D.taskTrackerTasks=[];
+  const wrap=el('div');
+  wrap.style.cssText='display:flex;flex-direction:column;gap:6px;';
+
+  const taskList=el('div');
+  taskList.style.cssText='display:flex;flex-direction:column;gap:4px;min-height:36px;';
+
+  function renderMainList(){
+    taskList.innerHTML='';
+    const open=D.taskTrackerTasks.filter(t=>t.status==='open');
+    if(!open.length){
+      const empty=el('div');
+      empty.style.cssText='font-size:11px;color:var(--text-dim);padding:4px 0;';
+      empty.textContent='No active tasks.';
+      taskList.appendChild(empty);
+      return;
+    }
+    open.forEach(task=>{
+      const row=el('div','tt-task-row');
+      const name=el('span'); name.textContent=task.name;
+      name.style.cssText='flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      const total=ttTotalHours(task);
+      const hrs=el('span');
+      hrs.textContent=total>0?total+'h':'';
+      hrs.style.cssText='color:var(--cyan);font-size:10px;font-family:Share Tech Mono,monospace;flex-shrink:0;';
+      const tipParts=[
+        task.description?'Desc: '+task.description:'',
+        'Hours: '+(total||0),
+        (task.workLogs&&task.workLogs.length)?'Last: '+ttLastLogSummary(task):''
+      ].filter(Boolean);
+      row.title=tipParts.join('\n');
+      row.append(name,hrs);
+      taskList.appendChild(row);
+    });
+  }
+
+  const btnRow=el('div');
+  btnRow.style.cssText='display:flex;gap:6px;margin-top:4px;';
+  const addBtn=el('button','mbtn');
+  addBtn.textContent='＋ Add Task'; addBtn.style.cssText='font-size:11px;padding:3px 8px;';
+  addBtn.onclick=()=>ttOpenAddDialog(renderMainList);
+  const explorerBtn=el('button','mbtn');
+  explorerBtn.textContent='📋 Task Explorer'; explorerBtn.style.cssText='font-size:11px;padding:3px 8px;';
+  explorerBtn.onclick=()=>ttOpenExplorer(renderMainList);
+  btnRow.append(addBtn,explorerBtn);
+
+  wrap.append(taskList,btnRow);
+  renderMainList();
+  return wrap;
+}
+
+function ttOpenAddDialog(onAdded){
+  if(!Array.isArray(D.taskTrackerTasks)) D.taskTrackerTasks=[];
+  let ov=document.getElementById('ttAddOverlay');
+  if(!ov){
+    ov=el('div','overlay'); ov.id='ttAddOverlay';
+    const m=el('div','modal'); m.style.cssText='width:420px;';
+    const h3=el('h3'); h3.textContent='Add Task'; h3.style.cssText='margin:0 0 14px;font-size:13px;';
+    const nlbl=el('div'); nlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; nlbl.textContent='Task Name';
+    const ninp=el('input','cfg-input'); ninp.id='ttAddName'; ninp.placeholder='Max 30 characters'; ninp.maxLength=30;
+    ninp.style.cssText='width:100%;box-sizing:border-box;margin-bottom:4px;';
+    const ncount=el('div'); ncount.id='ttAddCount'; ncount.style.cssText='font-size:9px;color:var(--text-dim);text-align:right;margin-bottom:10px;'; ncount.textContent='0 / 30';
+    ninp.oninput=()=>{
+      const l=ninp.value.length;
+      ncount.textContent=l+' / 30';
+      ncount.style.color=l>=28?'#ff8844':'var(--text-dim)';
+    };
+    const dlbl=el('div'); dlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; dlbl.textContent='Description (optional)';
+    const dinp=el('textarea','cfg-input'); dinp.id='ttAddDesc'; dinp.placeholder='Brief description…'; dinp.rows=3;
+    dinp.style.cssText='width:100%;box-sizing:border-box;resize:vertical;margin-bottom:14px;';
+    const acts=el('div','modal-actions');
+    const ok=el('button','mbtn mbtn-ok'); ok.id='ttAddOk'; ok.textContent='OK';
+    const cancel=el('button','mbtn mbtn-cancel'); cancel.textContent='Cancel';
+    cancel.onclick=()=>closeOverlay('ttAddOverlay');
+    acts.append(cancel,ok);
+    m.append(h3,nlbl,ninp,ncount,dlbl,dinp,acts);
+    ov.appendChild(m); document.body.appendChild(ov);
+  }
+  const ninp=document.getElementById('ttAddName');
+  const dinp=document.getElementById('ttAddDesc');
+  const ncount=document.getElementById('ttAddCount');
+  ninp.value=''; dinp.value=''; ncount.textContent='0 / 30'; ncount.style.color='var(--text-dim)';
+  document.getElementById('ttAddOk').onclick=()=>{
+    const name=ninp.value.trim().slice(0,30);
+    if(!name) return;
+    D.taskTrackerTasks.unshift({
+      id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      name, description:dinp.value.trim(),
+      status:'open', createdAt:new Date().toISOString(), closedAt:null, workLogs:[]
+    });
+    persist(); closeOverlay('ttAddOverlay');
+    if(onAdded) onAdded();
+  };
+  openOverlay('ttAddOverlay');
+  setTimeout(()=>document.getElementById('ttAddName').focus(),50);
+}
+
+function ttOpenExplorer(onChanged){
+  if(!Array.isArray(D.taskTrackerTasks)) D.taskTrackerTasks=[];
+  let ov=document.getElementById('ttExplorerOverlay');
+  if(!ov){
+    ov=el('div','overlay'); ov.id='ttExplorerOverlay';
+    const m=el('div','modal'); m.id='ttExplorerModal';
+    m.style.cssText='width:720px;max-height:92vh;display:flex;flex-direction:column;';
+    ov.appendChild(m); document.body.appendChild(ov);
+  }
+  const modal=document.getElementById('ttExplorerModal');
+  modal.innerHTML='';
+
+  let selTask=null, activeTab='open';
+
+  /* ── Header ── */
+  const hdr=el('div');
+  hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-shrink:0;';
+  const htitle=el('h3'); htitle.textContent='📋 Task Explorer';
+  htitle.style.cssText='margin:0;flex:1;font-size:13px;';
+  const hclose=el('button','mbtn mbtn-cancel'); hclose.textContent='Close';
+  hclose.onclick=()=>{ closeOverlay('ttExplorerOverlay'); if(onChanged) onChanged(); };
+  hdr.append(htitle,hclose);
+
+  /* ── Tab bar ── */
+  const tabBar=el('div');
+  tabBar.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:8px;';
+  const tabCur=el('button','tt-tab-btn active'); tabCur.textContent='Current';
+  const tabClosed=el('button','tt-tab-btn'); tabClosed.textContent='Closed';
+  const tabSep=el('span'); tabSep.style.cssText='flex:1;';
+  const tabAdd=el('button','mbtn'); tabAdd.textContent='＋ Add Task'; tabAdd.style.cssText='font-size:11px;padding:3px 8px;';
+  tabAdd.onclick=()=>ttOpenAddDialog(()=>{ renderList(); if(onChanged) onChanged(); });
+  tabBar.append(tabCur,tabClosed,tabSep,tabAdd);
+
+  /* ── Task list ── */
+  const listWrap=el('div');
+  listWrap.style.cssText='flex-shrink:0;max-height:190px;overflow-y:auto;border:1px solid rgba(255,255,255,0.08);border-radius:4px;margin-bottom:10px;';
+
+  /* ── Detail panel ── */
+  const detail=el('div');
+  detail.style.cssText='flex:1;overflow-y:auto;min-height:0;';
+
+  /* ── Divider ── */
+  const div=el('div'); div.style.cssText='height:1px;background:rgba(255,255,255,0.08);margin-bottom:10px;flex-shrink:0;';
+
+  function renderList(){
+    listWrap.innerHTML='';
+    const tasks=D.taskTrackerTasks.filter(t=>t.status===(activeTab==='open'?'open':'closed'));
+    if(!tasks.length){
+      const e=el('div'); e.style.cssText='padding:10px;font-size:11px;color:var(--text-dim);';
+      e.textContent=activeTab==='open'?'No active tasks.':'No closed tasks.';
+      listWrap.appendChild(e); return;
+    }
+    tasks.forEach(task=>{
+      const row=el('div','tt-list-row');
+      if(selTask&&selTask.id===task.id) row.classList.add('selected');
+      const name=el('span'); name.textContent=task.name; name.style.cssText='flex:1;';
+      const total=ttTotalHours(task);
+      const hrs=el('span'); hrs.textContent=total>0?total+'h':'—';
+      hrs.style.cssText='color:var(--cyan);font-size:10px;font-family:Share Tech Mono,monospace;margin-right:6px;flex-shrink:0;';
+      row.append(name,hrs);
+      if(activeTab==='closed'){
+        const rb=el('button','mbtn'); rb.textContent='Reopen'; rb.style.cssText='font-size:10px;padding:2px 6px;flex-shrink:0;';
+        rb.onclick=e=>{ e.stopPropagation(); task.status='open'; task.closedAt=null; persist(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
+        row.appendChild(rb);
+      }
+      row.onclick=()=>{ selTask=task; renderList(); renderDetail(); };
+      listWrap.appendChild(row);
+    });
+  }
+
+  function renderDetail(){
+    detail.innerHTML='';
+    if(!selTask){
+      const hint=el('div'); hint.style.cssText='font-size:11px;color:var(--text-dim);padding:6px 0;';
+      hint.textContent='Select a task above to view details and log work.';
+      detail.appendChild(hint); return;
+    }
+    const task=selTask;
+    const totalHrs=ttTotalHours(task);
+
+    /* Task name + close button row */
+    const trow=el('div'); trow.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+    const tname=el('div'); tname.textContent=task.name; tname.style.cssText='font-size:13px;font-weight:600;flex:1;';
+    trow.appendChild(tname);
+    if(task.status==='open'){
+      const cb=el('button','mbtn'); cb.textContent='✓ Close Task'; cb.style.cssText='font-size:10px;padding:2px 8px;border-color:#50c878;color:#50c878;';
+      cb.onclick=()=>{ task.status='closed'; task.closedAt=new Date().toISOString(); persist(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
+      trow.appendChild(cb);
+    }
+    detail.appendChild(trow);
+
+    if(task.description){
+      const desc=el('div'); desc.textContent=task.description;
+      desc.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;margin-bottom:10px;';
+      detail.appendChild(desc);
+    }
+
+    /* Stats bar */
+    const stats=el('div'); stats.style.cssText='display:flex;gap:10px;margin-bottom:12px;';
+    const s1=el('div','tt-stat-box'); s1.innerHTML='<span>TOTAL HOURS</span><span>'+totalHrs+'</span>';
+    const s2=el('div','tt-stat-box'); s2.innerHTML='<span>LOG ENTRIES</span><span>'+((task.workLogs||[]).length)+'</span>';
+    stats.append(s1,s2);
+    detail.appendChild(stats);
+
+    /* Work log history */
+    if(task.workLogs&&task.workLogs.length){
+      const lhdr=el('div','tt-section-hdr'); lhdr.textContent='Work Log History';
+      const llist=el('div'); llist.style.cssText='max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:12px;';
+      task.workLogs.forEach(log=>{
+        const logRow=el('div','tt-log-entry');
+        const d=new Date(log.loggedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        logRow.innerHTML='<span style="color:var(--cyan);font-family:Share Tech Mono,monospace;">'+log.hours+'h</span>'
+          +' <span style="color:var(--text-dim);font-size:10px;">'+d+'</span>'
+          +(log.shortDescription?' — '+log.shortDescription:'')
+          +(log.flagStatusReport?' <span style="color:#f0c040;font-size:9px;">★ STATUS</span>':'');
+        if(log.journalNotes){
+          const jn=el('div'); jn.textContent=log.journalNotes;
+          jn.style.cssText='color:var(--text-dim);font-size:10px;margin-top:3px;font-style:italic;white-space:pre-wrap;';
+          logRow.appendChild(jn);
+        }
+        llist.appendChild(logRow);
+      });
+      detail.append(lhdr,llist);
+    }
+
+    /* New log entry form — only for open tasks */
+    if(task.status!=='open') return;
+
+    const fhdr=el('div','tt-section-hdr');
+    fhdr.style.cssText='font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;';
+    fhdr.textContent='Add Work Log Entry';
+    detail.appendChild(fhdr);
+
+    /* Two-column form grid */
+    const formGrid=el('div'); formGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:16px;';
+
+    /* Left col */
+    const lc=el('div'); lc.style.cssText='display:flex;flex-direction:column;gap:10px;';
+
+    /* Hours input */
+    const hlbl=el('div'); hlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; hlbl.textContent='Hours (this entry)';
+    const hrow=el('div'); hrow.style.cssText='display:flex;align-items:center;gap:8px;';
+    const hinp=el('input','cfg-input'); hinp.type='number'; hinp.min='0.25'; hinp.step='0.25'; hinp.placeholder='0.25';
+    hinp.style.cssText='width:80px;';
+    const hmins=el('span'); hmins.style.cssText='font-size:10px;color:var(--text-dim);';
+    hinp.oninput=()=>{ const v=parseFloat(hinp.value); hmins.textContent=(!isNaN(v)&&v>0)?Math.round(v*60)+' min':''; };
+    hinp.onblur=()=>{ const v=parseFloat(hinp.value); if(!isNaN(v)&&v>0){ hinp.value=ttRoundToQuarter(v); hinp.oninput(); } };
+    hrow.append(hinp,hmins);
+    const hwrap=el('div'); hwrap.append(hlbl,hrow);
+    lc.appendChild(hwrap);
+
+    /* Short description */
+    const sdlbl=el('div'); sdlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; sdlbl.textContent='Short Description';
+    const sdinp=el('input','cfg-input'); sdinp.placeholder='Brief summary…'; sdinp.style.cssText='width:100%;box-sizing:border-box;';
+    const sdwrap=el('div'); sdwrap.append(sdlbl,sdinp);
+    lc.appendChild(sdwrap);
+
+    /* Flag checkbox */
+    const flagRow=el('div'); flagRow.style.cssText='display:flex;align-items:center;gap:6px;';
+    const flagChk=el('input'); flagChk.type='checkbox'; flagChk.id='ttFlagChk';
+    const flagLbl=el('label'); flagLbl.htmlFor='ttFlagChk'; flagLbl.textContent='Flag for Status Report';
+    flagLbl.style.cssText='font-size:11px;cursor:pointer;';
+    flagRow.append(flagChk,flagLbl);
+    lc.appendChild(flagRow);
+
+    /* Right col — ticket numbers */
+    const rc=el('div');
+    const thdr=el('div','tt-ticket-grid');
+    thdr.style.cssText='margin-bottom:5px;font-size:9px;color:var(--text-dim);display:grid;grid-template-columns:110px 1fr 1fr;gap:4px;';
+    thdr.innerHTML='<span></span><span style="text-align:right;">Ticket #</span><span style="text-align:right;">Task #</span>';
+    rc.appendChild(thdr);
+    const tickTypes=[['Incident','INC'],['Service Request','REQ'],['Change','CHG'],['Problem','PRB']];
+    const tickInps={};
+    tickTypes.forEach(([label,abbr])=>{
+      const tr=el('div','tt-ticket-grid');
+      const tl=el('span'); tl.textContent=label; tl.style.cssText='font-size:10px;color:var(--text-dim);';
+      const ti=el('input','cfg-input'); ti.placeholder='0';
+      const tk=el('input','cfg-input'); tk.placeholder='0';
+      tr.append(tl,ti,tk); rc.appendChild(tr);
+      tickInps[abbr]={ticketNum:ti,taskNum:tk};
+    });
+
+    formGrid.append(lc,rc);
+    detail.appendChild(formGrid);
+
+    /* Journal notes — full width */
+    const nlbl=el('div'); nlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;margin-top:10px;'; nlbl.textContent='Journal Notes';
+    const ninp=el('textarea','cfg-input'); ninp.placeholder='Detailed notes…'; ninp.rows=4;
+    ninp.style.cssText='width:100%;box-sizing:border-box;resize:vertical;';
+    detail.append(nlbl,ninp);
+
+    /* Actions */
+    const acts=el('div','modal-actions'); acts.style.marginTop='10px;';
+    const acCancel=el('button','mbtn mbtn-cancel'); acCancel.textContent='Cancel';
+    acCancel.onclick=()=>renderDetail();
+    const acOk=el('button','mbtn mbtn-ok'); acOk.textContent='OK';
+    acOk.onclick=()=>{
+      const hrs=ttRoundToQuarter(parseFloat(hinp.value)||0);
+      if(hrs<=0){ hinp.focus(); return; }
+      const tickets={};
+      tickTypes.forEach(([,abbr])=>{
+        tickets[abbr]={ ticketNum:tickInps[abbr].ticketNum.value.trim()||'0', taskNum:tickInps[abbr].taskNum.value.trim()||'0' };
+      });
+      if(!Array.isArray(task.workLogs)) task.workLogs=[];
+      task.workLogs.unshift({
+        id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+        hours:hrs, shortDescription:sdinp.value.trim(),
+        flagStatusReport:flagChk.checked, journalNotes:ninp.value.trim(),
+        loggedAt:new Date().toISOString(), tickets
+      });
+      persist(); renderList(); renderDetail(); if(onChanged) onChanged();
+    };
+    acts.append(acCancel,acOk);
+    detail.appendChild(acts);
+  }
+
+  tabCur.onclick=()=>{ activeTab='open'; tabCur.classList.add('active'); tabClosed.classList.remove('active'); selTask=null; renderList(); renderDetail(); };
+  tabClosed.onclick=()=>{ activeTab='closed'; tabClosed.classList.add('active'); tabCur.classList.remove('active'); selTask=null; renderList(); renderDetail(); };
+
+  modal.append(hdr,tabBar,listWrap,div,detail);
+  renderList(); renderDetail();
+  openOverlay('ttExplorerOverlay');
 }
 
 /* ================================================================
