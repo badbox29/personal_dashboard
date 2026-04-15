@@ -7236,7 +7236,24 @@ function kvMergeD(remote) {
     const localArr  = Array.isArray(D[key])      ? D[key]      : [];
     const remoteArr = Array.isArray(remote[key])  ? remote[key] : [];
     const seen = new Map(localArr.map(e => [idFn(e), e]));
-    remoteArr.forEach(e => { const k = idFn(e); if(!seen.has(k)) seen.set(k, e); });
+    remoteArr.forEach(e => {
+      const k = idFn(e);
+      if(!seen.has(k)){
+        seen.set(k, e);
+      } else if(key === 'taskTrackerTasks'){
+        // Deep-merge workLogs so logs from both devices are preserved
+        const local = seen.get(k);
+        const mergedLogs = new Map((local.workLogs||[]).map(l => [l.id, l]));
+        (e.workLogs||[]).forEach(l => { if(!mergedLogs.has(l.id)) mergedLogs.set(l.id, l); });
+        // Keep whichever task metadata is newer (status, name, description, closedAt)
+        const localAt  = new Date(local.createdAt||0).getTime();
+        const remoteAt = new Date(e.createdAt||0).getTime();
+        const base = remoteAt > localAt ? {...e} : {...local};
+        base.workLogs = Array.from(mergedLogs.values())
+          .sort((a,b) => new Date(b.loggedAt||0) - new Date(a.loggedAt||0));
+        seen.set(k, base);
+      }
+    });
     D[key] = Array.from(seen.values());
     // Keep energyEntries sorted newest-first so [0] is always the most recent
     if(key === 'energyEntries') D[key].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
