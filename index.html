@@ -6014,10 +6014,13 @@ body.edit-mode .gh-add-row { display: flex; }
       <label>Widget Type</label>
       <!-- Category tabs -->
       <div class="widget-cat-tabs" style="margin-top:6px;">
-        <button class="widget-cat-tab active" id="wcTabGeneral" onclick="selectWidgetCat('general')">🧩 General</button>
-        <button class="widget-cat-tab" id="wcTabNetwork" onclick="selectWidgetCat('network')">🌐 Network Engineering</button>
-        <button class="widget-cat-tab" id="wcTabCoding"  onclick="selectWidgetCat('coding')">💻 Coding</button>
-        <button class="widget-cat-tab" id="wcTabCreative" onclick="selectWidgetCat('creative')">🎨 Creative</button>
+        <button class="widget-cat-tab active" id="wcTabGeneral"   onclick="selectWidgetCat('general')">🧩 General</button>
+        <button class="widget-cat-tab" id="wcTabPersonal"         onclick="selectWidgetCat('personal')">🙋 Personal</button>
+        <button class="widget-cat-tab" id="wcTabInfo"             onclick="selectWidgetCat('info')">📰 Info &amp; Media</button>
+        <button class="widget-cat-tab" id="wcTabTools"            onclick="selectWidgetCat('tools')">🔧 Tools</button>
+        <button class="widget-cat-tab" id="wcTabNetwork"          onclick="selectWidgetCat('network')">🌐 Network Engineering</button>
+        <button class="widget-cat-tab" id="wcTabCoding"           onclick="selectWidgetCat('coding')">💻 Coding</button>
+        <button class="widget-cat-tab" id="wcTabCreative"         onclick="selectWidgetCat('creative')">🎨 Creative</button>
       </div>
       <!-- General widgets -->
       <div class="widget-cat-panel active" id="wcPanelGeneral">
@@ -6030,12 +6033,6 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swCountdown" onclick="selectWidgetType('countdown')">
           ⏳ Countdown<span>Event timers</span>
         </button>
-        <button class="sec-type-card" id="swDice"      onclick="selectWidgetType('dice')">
-          🎲 Dice Roller<span>Polyhedral dice</span>
-        </button>
-        <button class="sec-type-card" id="swConverter" onclick="selectWidgetType('converter')">
-          📐 Unit Converter<span>Length, weight, temp…</span>
-        </button>
         <button class="sec-type-card" id="swClocks"    onclick="selectWidgetType('clocks')">
           🌍 World Clocks<span>Multiple timezones</span>
         </button>
@@ -6045,6 +6042,27 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swTodo"      onclick="selectWidgetType('todo')">
           ✅ To-Do List<span>Checklist</span>
         </button>
+        <button class="sec-type-card" id="swTaskTracker" onclick="selectWidgetType('tasktracker')">
+          📋 Task Tracker<span>Tasks, logs &amp; time</span>
+        </button>
+      </div>
+      <!-- Personal widgets -->
+      <div class="widget-cat-panel" id="wcPanelPersonal">
+        <button class="sec-type-card" id="swEnergy"    onclick="selectWidgetType('energy')">
+          ⚡ Energy Tracker<span>Log &amp; spot patterns</span>
+        </button>
+        <button class="sec-type-card" id="swDrinks"   onclick="selectWidgetType('drinks')">
+          💧 Drink Tracker<span>Water, coffee &amp; more</span>
+        </button>
+        <button class="sec-type-card" id="swBible"    onclick="selectWidgetType('bible')">
+          📖 Bible<span>Daily verse &amp; browser</span>
+        </button>
+        <button class="sec-type-card" id="swAbs"      onclick="selectWidgetType('abs')">
+          🎧 Audiobookshelf<span>Self-hosted audiobook player</span>
+        </button>
+      </div>
+      <!-- Info & Media widgets -->
+      <div class="widget-cat-panel" id="wcPanelInfo">
         <button class="sec-type-card" id="swRss"       onclick="selectWidgetType('rss')">
           📡 RSS Feed<span>Live feed reader</span>
         </button>
@@ -6054,17 +6072,8 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swWiki"      onclick="selectWidgetType('wiki')">
           📖 Featured Article<span>Wikipedia's pick today</span>
         </button>
-        <button class="sec-type-card" id="swDecision"  onclick="selectWidgetType('decision')">
-          🎲 Decision Helper<span>Pick, weight &amp; randomize</span>
-        </button>
         <button class="sec-type-card" id="swSports"    onclick="selectWidgetType('sports')">
           🏆 Sports Scores<span>Scores &amp; schedules</span>
-        </button>
-        <button class="sec-type-card" id="swEnergy"    onclick="selectWidgetType('energy')">
-          ⚡ Energy Tracker<span>Log &amp; spot patterns</span>
-        </button>
-        <button class="sec-type-card" id="swBible"    onclick="selectWidgetType('bible')">
-          📖 Bible<span>Daily verse &amp; browser</span>
         </button>
         <button class="sec-type-card" id="swWotd"     onclick="selectWidgetType('wotd')">
           📚 Word of the Day<span>Vocabulary builder</span>
@@ -6072,17 +6081,20 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swApod"     onclick="selectWidgetType('apod')">
           🔭 NASA APOD<span>Astronomy Picture of the Day</span>
         </button>
-        <button class="sec-type-card" id="swDrinks"   onclick="selectWidgetType('drinks')">
-          💧 Drink Tracker<span>Water, coffee &amp; more</span>
-        </button>
         <button class="sec-type-card" id="swPoem"     onclick="selectWidgetType('poem')">
           📜 Poem of the Day<span>Daily poem with favorites</span>
         </button>
-        <button class="sec-type-card" id="swAbs"      onclick="selectWidgetType('abs')">
-          🎧 Audiobookshelf<span>Self-hosted audiobook player</span>
+      </div>
+      <!-- Tools widgets -->
+      <div class="widget-cat-panel" id="wcPanelTools">
+        <button class="sec-type-card" id="swDice"      onclick="selectWidgetType('dice')">
+          🎲 Dice Roller<span>Polyhedral dice</span>
         </button>
-        <button class="sec-type-card" id="swTaskTracker" onclick="selectWidgetType('tasktracker')">
-          📋 Task Tracker<span>Tasks, logs &amp; time</span>
+        <button class="sec-type-card" id="swConverter" onclick="selectWidgetType('converter')">
+          📐 Unit Converter<span>Length, weight, temp…</span>
+        </button>
+        <button class="sec-type-card" id="swDecision"  onclick="selectWidgetType('decision')">
+          🎲 Decision Helper<span>Pick, weight &amp; randomize</span>
         </button>
       </div>
       <!-- Network Engineering widgets -->
@@ -17623,13 +17635,19 @@ function deleteTab(tabId){
 let addSecCtx = null; // {tabId, colId}
 
 function selectWidgetCat(cat){
-  document.getElementById('wcTabGeneral')?.classList.toggle('active', cat==='general');
-  document.getElementById('wcTabNetwork')?.classList.toggle('active', cat==='network');
-  document.getElementById('wcTabCoding')?.classList.toggle('active',  cat==='coding');
+  document.getElementById('wcTabGeneral')?.classList.toggle('active',  cat==='general');
+  document.getElementById('wcTabPersonal')?.classList.toggle('active', cat==='personal');
+  document.getElementById('wcTabInfo')?.classList.toggle('active',     cat==='info');
+  document.getElementById('wcTabTools')?.classList.toggle('active',    cat==='tools');
+  document.getElementById('wcTabNetwork')?.classList.toggle('active',  cat==='network');
+  document.getElementById('wcTabCoding')?.classList.toggle('active',   cat==='coding');
   document.getElementById('wcTabCreative')?.classList.toggle('active', cat==='creative');
-  document.getElementById('wcPanelGeneral')?.classList.toggle('active', cat==='general');
-  document.getElementById('wcPanelNetwork')?.classList.toggle('active', cat==='network');
-  document.getElementById('wcPanelCoding')?.classList.toggle('active',  cat==='coding');
+  document.getElementById('wcPanelGeneral')?.classList.toggle('active',  cat==='general');
+  document.getElementById('wcPanelPersonal')?.classList.toggle('active', cat==='personal');
+  document.getElementById('wcPanelInfo')?.classList.toggle('active',     cat==='info');
+  document.getElementById('wcPanelTools')?.classList.toggle('active',    cat==='tools');
+  document.getElementById('wcPanelNetwork')?.classList.toggle('active',  cat==='network');
+  document.getElementById('wcPanelCoding')?.classList.toggle('active',   cat==='coding');
   document.getElementById('wcPanelCreative')?.classList.toggle('active', cat==='creative');
 }
 
