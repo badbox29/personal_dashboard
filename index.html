@@ -7033,6 +7033,7 @@ function generateSyncToken(){
   if(!Array.isArray(D.energyEntries)) D.energyEntries = [];
   if(!Array.isArray(D.otxIndustries))    D.otxIndustries    = [];
   if(!Array.isArray(D.otxAlarmHistory))  D.otxAlarmHistory  = [];
+  if(!Array.isArray(D.otxDailyCounts))   D.otxDailyCounts   = [];
   if(!Array.isArray(D.tapSeenClickGuids)) D.tapSeenClickGuids = [];
   if(!Array.isArray(D.tapKnownVapEmails)) D.tapKnownVapEmails = [];
   if(D.tapLastFetchTime === undefined)    D.tapLastFetchTime   = 0;
@@ -7154,6 +7155,7 @@ const KV_MERGE_KEYS = {
   cveVendorList:      e => e.vendor,
   // dedup by .timestamp
   energyEntries:      e => e.timestamp,
+  otxDailyCounts:     e => e.date,
   // primitive arrays — dedup by value
   tapSeenClickGuids:  e => e,
   tapKnownVapEmails:  e => e,
@@ -9386,15 +9388,15 @@ function buildOtxWidget(sec, tabId){
     (indicators||[]).forEach(ind=>{ const t=ind.type||'Unknown'; counts[t]=(counts[t]||0)+1; });
     return counts;
   }
-  // 7-day rolling average, threshold 1.5x
-  function isElevated(pulses){
-    if(!pulses||pulses.length<3) return false;
-    const now=Date.now(), dayMs=86400000, weekMs=7*dayMs;
-    const weekPulses=pulses.filter(p=>now-new Date(p.modified).getTime()<weekMs);
-    if(!weekPulses.length) return false;
-    const dailyAvg=weekPulses.length/7;
-    const todayCount=pulses.filter(p=>now-new Date(p.modified).getTime()<dayMs).length;
-    return todayCount>0 && dailyAvg>0 && todayCount>dailyAvg*1.5;
+  // 7-day rolling average using stored daily history — needs ≥3 prior days to fire
+  function isElevated(todayCount){
+    const history = D.otxDailyCounts || [];
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    // Prior days only (exclude today's entry if already stored)
+    const prior = history.filter(e => e.date < todayStr).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+    if(prior.length < 3) return false; // not enough history yet
+    const avg = prior.reduce((s,e)=>s+e.count,0) / prior.length;
+    return avg > 0 && todayCount > avg * 1.5;
   }
   function topAdversaries(pulses){
     const counts={};
@@ -9603,7 +9605,15 @@ function buildOtxWidget(sec, tabId){
     statTotal.textContent=totalCount?totalCount.toLocaleString():'—';
     statToday.textContent=todayCount;
     statWeek.textContent=weekCount;
-    elevBanner.style.display=isElevated(allPulses)?'':'none';
+    // Persist today's count into rolling history (dedupe by date, trim to 30 days)
+    const todayStr=new Date().toLocaleDateString('en-CA');
+    if(!Array.isArray(D.otxDailyCounts)) D.otxDailyCounts=[];
+    const existIdx=D.otxDailyCounts.findIndex(e=>e.date===todayStr);
+    if(existIdx>=0){ D.otxDailyCounts[existIdx].count=todayCount; }
+    else { D.otxDailyCounts.unshift({date:todayStr,count:todayCount}); }
+    D.otxDailyCounts=D.otxDailyCounts.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
+    persist();
+    elevBanner.style.display=isElevated(todayCount)?'':'none';
 
     // Top adversaries strip
     adversaryStrip.innerHTML='';
