@@ -21586,12 +21586,12 @@ function ttOpenExplorer(onChanged){
     statsAndHistory.appendChild(histCol);
     detail.appendChild(statsAndHistory);
 
-    /* New log entry form — only for open tasks */
-    if(task.status!=='open') return;
+    const taskClosed = task.status!=='open';
 
     fhdr=el('div','tt-section-hdr');
     fhdr.style.cssText='font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;';
-    fhdr.textContent='Add Work Log Entry';
+    fhdr.textContent=taskClosed?'Work Log Entry (Read Only)':'Add Work Log Entry';
+    if(taskClosed) fhdr.style.color='var(--text-dim)';
     detail.appendChild(fhdr);
 
     /* Two-column form grid */
@@ -21654,6 +21654,12 @@ function ttOpenExplorer(onChanged){
     jWrap.append(nlbl,ninp);
     detail.appendChild(jWrap);
 
+    /* Disable all form inputs for closed tasks */
+    if(taskClosed){
+      [hinp,dinp,sdinp,ninp].forEach(inp=>{ if(inp){ inp.disabled=true; inp.style.opacity='0.5'; inp.style.cursor='not-allowed'; } });
+      Object.values(tickInps).forEach(({ticketNum,taskNum})=>{ ticketNum.disabled=true; taskNum.disabled=true; ticketNum.style.opacity='0.5'; taskNum.style.opacity='0.5'; ticketNum.style.cursor='not-allowed'; taskNum.style.cursor='not-allowed'; });
+    }
+
     /* Actions */
     const acts=el('div','modal-actions'); acts.style.cssText='margin-top:10px;flex-shrink:0;';
     acCancel=el('button'); acCancel.textContent='Clear'; acCancel.style.cssText='font-size:12px;padding:5px 14px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
@@ -21688,7 +21694,7 @@ function ttOpenExplorer(onChanged){
       }
       persist(); renderList(); renderDetail(); if(onChanged) onChanged();
     };
-    acts.append(acCancel,acOk);
+    if(!taskClosed) acts.append(acCancel,acOk);
     detail.appendChild(acts);
   }
 
