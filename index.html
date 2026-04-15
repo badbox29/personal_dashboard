@@ -21859,19 +21859,20 @@ function buildLastfmWidget(sec){
 
   wrap.append(cfgNote, nowCard, recentHdr, recentList, statStrip, topHdr, topList);
 
+  let _lfmIniting = true;
   function setMode(mode){
     cfg.topMode = mode;
-    persistConfig();
+    if(!_lfmIniting) persistConfig();
     btnArtists.classList.toggle('active', mode==='artists');
     btnTracks.classList.toggle('active',  mode==='tracks');
     topLabel.textContent = mode==='artists' ? 'Top Artists' : 'Top Tracks';
-    fetchTop();
+    if(!_lfmIniting) fetchTop();
   }
   function setPeriod(p){
     cfg.period = p;
-    persistConfig();
+    if(!_lfmIniting) persistConfig();
     periodBtns.forEach(b=>b.classList.toggle('active', b.dataset.period===p));
-    fetchTop();
+    if(!_lfmIniting) fetchTop();
   }
   btnArtists.onclick = ()=>setMode('artists');
   btnTracks.onclick  = ()=>setMode('tracks');
@@ -22040,9 +22041,10 @@ function buildLastfmWidget(sec){
   obs.observe(document.body, {attributes:true, attributeFilter:['class']});
   editPanel.style.display = document.body.classList.contains('edit-mode') ? 'flex' : 'none';
 
-  // Init
+  // Init — flag prevents premature persistConfig/fetch during construction
   setMode(cfg.topMode);
   setPeriod(cfg.period);
+  _lfmIniting = false;
   refresh();
 
   // Auto-refresh recent tracks every 30s
