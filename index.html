@@ -21274,11 +21274,16 @@ function buildTaskTrackerWidget(sec){
 
   const btnRow=el('div');
   btnRow.style.cssText='display:flex;gap:6px;margin-top:4px;';
-  const addBtn=el('button','mbtn');
-  addBtn.textContent='＋ Add Task'; addBtn.style.cssText='font-size:11px;padding:3px 8px;';
+  const btnStyle='font-size:11px;padding:3px 10px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
+  const btnHover=e=>{ e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)'; };
+  const btnLeave=e=>{ e.currentTarget.style.background='transparent'; };
+  const addBtn=el('button');
+  addBtn.textContent='＋ Add Task'; addBtn.style.cssText=btnStyle;
+  addBtn.onmouseenter=btnHover; addBtn.onmouseleave=btnLeave;
   addBtn.onclick=()=>ttOpenAddDialog(renderMainList);
-  const explorerBtn=el('button','mbtn');
-  explorerBtn.textContent='📋 Task Explorer'; explorerBtn.style.cssText='font-size:11px;padding:3px 8px;';
+  const explorerBtn=el('button');
+  explorerBtn.textContent='📋 Task Explorer'; explorerBtn.style.cssText=btnStyle;
+  explorerBtn.onmouseenter=btnHover; explorerBtn.onmouseleave=btnLeave;
   explorerBtn.onclick=()=>ttOpenExplorer(renderMainList);
   btnRow.append(addBtn,explorerBtn);
 
@@ -21308,7 +21313,8 @@ function ttOpenAddDialog(onAdded){
     dinp.style.cssText='width:100%;box-sizing:border-box;resize:vertical;margin-bottom:14px;';
     const acts=el('div','modal-actions');
     const ok=el('button','mbtn mbtn-primary'); ok.id='ttAddOk'; ok.textContent='OK';
-    const cancel=el('button','mbtn mbtn-cancel'); cancel.textContent='Cancel';
+    const cancel=el('button'); cancel.textContent='Cancel'; cancel.style.cssText='font-size:12px;padding:5px 14px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
+    cancel.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)'; cancel.onmouseleave=e=>e.currentTarget.style.background='transparent';
     cancel.onclick=()=>closeOverlay('ttAddOverlay');
     acts.append(cancel,ok);
     m.append(h3,nlbl,ninp,ncount,dlbl,dinp,acts);
@@ -21352,7 +21358,10 @@ function ttOpenExplorer(onChanged){
   hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-shrink:0;';
   const htitle=el('h3'); htitle.textContent='📋 Task Explorer';
   htitle.style.cssText='margin:0;flex:1;font-size:13px;';
-  const hclose=el('button','mbtn mbtn-cancel'); hclose.textContent='Close';
+  const hclose=el('button');
+  hclose.textContent='Close'; hclose.style.cssText='font-size:12px;padding:5px 14px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
+  hclose.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)';
+  hclose.onmouseleave=e=>e.currentTarget.style.background='transparent';
   hclose.onclick=()=>{ closeOverlay('ttExplorerOverlay'); if(onChanged) onChanged(); };
   hdr.append(htitle,hclose);
 
@@ -21362,7 +21371,10 @@ function ttOpenExplorer(onChanged){
   const tabCur=el('button','tt-tab-btn active'); tabCur.textContent='Current';
   const tabClosed=el('button','tt-tab-btn'); tabClosed.textContent='Closed';
   const tabSep=el('span'); tabSep.style.cssText='flex:1;';
-  const tabAdd=el('button','mbtn'); tabAdd.textContent='＋ Add Task'; tabAdd.style.cssText='font-size:11px;padding:3px 8px;';
+  const tabAdd=el('button');
+  tabAdd.textContent='＋ Add Task'; tabAdd.style.cssText='font-size:11px;padding:3px 10px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
+  tabAdd.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)';
+  tabAdd.onmouseleave=e=>e.currentTarget.style.background='transparent';
   tabAdd.onclick=()=>ttOpenAddDialog(()=>{ renderList(); if(onChanged) onChanged(); });
   tabBar.append(tabCur,tabClosed,tabSep,tabAdd);
 
@@ -21394,7 +21406,8 @@ function ttOpenExplorer(onChanged){
       hrs.style.cssText='color:var(--cyan);font-size:10px;font-family:Share Tech Mono,monospace;margin-right:6px;flex-shrink:0;';
       row.append(name,hrs);
       if(activeTab==='closed'){
-        const rb=el('button','mbtn'); rb.textContent='Reopen'; rb.style.cssText='font-size:10px;padding:2px 6px;flex-shrink:0;';
+        const rb=el('button'); rb.textContent='Reopen'; rb.style.cssText='font-size:10px;padding:2px 10px;flex-shrink:0;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
+        rb.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)'; rb.onmouseleave=e=>e.currentTarget.style.background='transparent';
         rb.onclick=e=>{ e.stopPropagation(); task.status='open'; task.closedAt=null; persist(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
         row.appendChild(rb);
       }
@@ -21418,7 +21431,9 @@ function ttOpenExplorer(onChanged){
     const tname=el('div'); tname.textContent=task.name; tname.style.cssText='font-size:13px;font-weight:600;flex:1;';
     trow.appendChild(tname);
     if(task.status==='open'){
-      const cb=el('button','mbtn'); cb.textContent='✓ Close Task'; cb.style.cssText='font-size:10px;padding:2px 8px;border-color:#50c878;color:#50c878;';
+      const cb=el('button'); cb.textContent='✓ Close Task'; cb.style.cssText='font-size:10px;padding:2px 10px;background:transparent;border:1px solid #50c878;color:#50c878;border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
+      cb.onmouseenter=e=>e.currentTarget.style.background='rgba(80,200,120,0.12)';
+      cb.onmouseleave=e=>e.currentTarget.style.background='transparent';
       cb.onclick=()=>{ task.status='closed'; task.closedAt=new Date().toISOString(); persist(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
       trow.appendChild(cb);
     }
@@ -21566,7 +21581,8 @@ function ttOpenExplorer(onChanged){
 
     /* Actions */
     const acts=el('div','modal-actions'); acts.style.marginTop='10px;';
-    const acCancel=el('button','mbtn mbtn-cancel'); acCancel.textContent='Clear';
+    const acCancel=el('button'); acCancel.textContent='Clear'; acCancel.style.cssText='font-size:12px;padding:5px 14px;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
+    acCancel.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)'; acCancel.onmouseleave=e=>e.currentTarget.style.background='transparent';
     acCancel.onclick=()=>renderDetail();
     const acOk=el('button','mbtn mbtn-primary'); acOk.textContent='OK';
     acOk.onclick=()=>{
