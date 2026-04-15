@@ -21476,13 +21476,6 @@ function ttOpenExplorer(onChanged){
     }
     detail.appendChild(trow);
 
-    /* Stats bar */
-    const stats=el('div'); stats.style.cssText='display:flex;gap:10px;margin-bottom:12px;';
-    const s1=el('div','tt-stat-box'); s1.innerHTML='<span>TOTAL HOURS</span><span>'+totalHrs+'</span>';
-    const s2=el('div','tt-stat-box'); s2.innerHTML='<span>LOG ENTRIES</span><span>'+((task.workLogs||[]).length)+'</span>';
-    stats.append(s1,s2);
-    detail.appendChild(stats);
-
     /* ── Hoist form field refs so history click handlers can populate them ── */
     let hinp=null, sdinp=null, ninp=null, tickInps={};
     const tickTypes=[['Incident','INC'],['Service Request','REQ'],['Change','CHG'],['Problem','PRB']];
@@ -21502,10 +21495,19 @@ function ttOpenExplorer(onChanged){
       hinp.focus();
     }
 
-    /* Work log history */
+    /* Stats + log history — side by side */
+    const statsAndHistory=el('div'); statsAndHistory.style.cssText='display:flex;gap:10px;margin-bottom:12px;align-items:stretch;flex-shrink:0;';
+    /* Left: stacked stat boxes */
+    const statsCol=el('div'); statsCol.style.cssText='display:flex;flex-direction:column;gap:6px;flex-shrink:0;';
+    const s1=el('div','tt-stat-box'); s1.innerHTML='<span>TOTAL HOURS</span><span>'+totalHrs+'</span>';
+    const s2=el('div','tt-stat-box'); s2.innerHTML='<span>LOG ENTRIES</span><span>'+((task.workLogs||[]).length)+'</span>';
+    statsCol.append(s1,s2);
+    statsAndHistory.appendChild(statsCol);
+    /* Right: scrollable log history */
+    const histCol=el('div'); histCol.style.cssText='flex:1;min-width:0;';
     if(task.workLogs&&task.workLogs.length){
-      const lhdr=el('div','tt-section-hdr'); lhdr.textContent='Work Log History';
-      const llist=el('div'); llist.style.cssText='max-height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:12px;';
+      const lhdr=el('div','tt-section-hdr'); lhdr.textContent='Work Log History'; histCol.appendChild(lhdr);
+      const llist=el('div'); llist.style.cssText='max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;';
       task.workLogs.forEach(log=>{
         const logRow=el('div','tt-log-entry');
         logRow.style.cssText='cursor:pointer;position:relative;padding-right:28px;';
@@ -21542,8 +21544,10 @@ function ttOpenExplorer(onChanged){
         logRow.onmouseleave=()=>{ logRow.style.background=''; };
         llist.appendChild(logRow);
       });
-      detail.append(lhdr,llist);
+      histCol.appendChild(llist);
     }
+    statsAndHistory.appendChild(histCol);
+    detail.appendChild(statsAndHistory);
 
     /* New log entry form — only for open tasks */
     if(task.status!=='open') return;
@@ -21600,10 +21604,7 @@ function ttOpenExplorer(onChanged){
     const nlbl=el('div'); nlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;flex-shrink:0;'; nlbl.textContent='Journal Notes';
     ninp=el('textarea','cfg-input'); ninp.placeholder='Detailed notes…';
     ninp.style.cssText='width:100%;box-sizing:border-box;resize:none;flex:1;min-height:0;';
-    // Pre-populate: short desc from task description, journal from last log entry
-    if(task.description) sdinp.value=task.description;
-    const lastLog=(task.workLogs&&task.workLogs.length)?task.workLogs[0]:null;
-    if(lastLog&&lastLog.journalNotes) ninp.value=lastLog.journalNotes;
+
     jWrap.append(nlbl,ninp);
     detail.appendChild(jWrap);
 
