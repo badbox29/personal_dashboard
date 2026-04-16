@@ -3638,28 +3638,93 @@ body.edit-mode .cve-watch-key-row { display: flex; }
   user-select: none;
 }
 .energy-chip:hover { border-color: var(--cyan); color: var(--text); }
-/* Energy chip selected states */
-.energy-chip.sel-drained   { border-color:#cc4444; background:rgba(204,68,68,0.15); color:#ff8888; }
-.energy-chip.sel-low       { border-color:#cc7744; background:rgba(204,119,68,0.15); color:#ffaa88; }
-.energy-chip.sel-normal    { border-color:var(--cyan); background:rgba(15,184,221,0.12); color:var(--cyan); }
-.energy-chip.sel-high      { border-color:#44cc88; background:rgba(68,204,136,0.15); color:#44cc88; }
-.energy-chip.sel-wired     { border-color:var(--gold); background:rgba(221,176,75,0.15); color:var(--gold); }
-/* Focus chip selected states */
-.energy-chip.sel-scattered { border-color:#cc4444; background:rgba(204,68,68,0.15); color:#ff8888; }
-.energy-chip.sel-foggy     { border-color:#cc7744; background:rgba(204,119,68,0.15); color:#ffaa88; }
-.energy-chip.sel-steady    { border-color:var(--cyan); background:rgba(15,184,221,0.12); color:var(--cyan); }
-.energy-chip.sel-locked-in { border-color:#44cc88; background:rgba(68,204,136,0.15); color:#44cc88; }
-/* Friction chip selected states */
-.energy-chip.sel-resistant { border-color:#cc4444; background:rgba(204,68,68,0.15); color:#ff8888; }
-.energy-chip.sel-neutral   { border-color:var(--cyan); background:rgba(15,184,221,0.12); color:var(--cyan); }
-.energy-chip.sel-engaged   { border-color:#44cc88; background:rgba(68,204,136,0.15); color:#44cc88; }
-.energy-chip.sel-restless  { border-color:var(--gold); background:rgba(221,176,75,0.15); color:var(--gold); }
-
-.energy-chip.sel-coding    { border-color:var(--cyan); background:rgba(15,184,221,0.12); color:var(--cyan); }
-.energy-chip.sel-meetings  { border-color:var(--gold); background:rgba(221,176,75,0.15); color:var(--gold); }
-.energy-chip.sel-exercise  { border-color:#44cc88; background:rgba(68,204,136,0.15); color:#44cc88; }
-.energy-chip.sel-relaxing  { border-color:#aa88ff; background:rgba(170,136,255,0.15); color:#aa88ff; }
-.energy-chip.sel-other     { border-color:var(--text-dim); background:rgba(255,255,255,0.07); color:var(--text); }
+/* chip selected state — color applied via inline style by JS */
+.energy-chip.sel-active { filter: brightness(1.05); }
+/* Row label + tooltip wrapper */
+.energy-lbl-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 52px;
+  flex-shrink: 0;
+}
+.energy-info-icon {
+  font-size: 9px;
+  color: var(--text-dim);
+  cursor: default;
+  opacity: 0.6;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.energy-tooltip {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 4px;
+  width: 200px;
+  background: var(--modal-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 6px 9px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--text);
+  z-index: 9999;
+  pointer-events: none;
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+.energy-lbl-wrap:hover .energy-tooltip { display: block; }
+/* Label tabs in edit section */
+.energy-label-tabs {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.energy-label-tab {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.energy-label-tab:hover { border-color: var(--cyan); color: var(--text); }
+.energy-label-tab.active { border-color: var(--cyan); color: var(--cyan); background: rgba(15,184,221,0.08); }
+.energy-label-panel { display: none; flex-direction: column; gap: 5px; }
+.energy-label-panel.active { display: flex; }
+.energy-slot-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.energy-slot-label {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  min-width: 96px;
+  flex-shrink: 0;
+}
+.energy-slot-inp {
+  flex: 1;
+  font-size: 11px;
+  padding: 3px 7px;
+  background: var(--inp-bg);
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  outline: none;
+  font-family: 'Share Tech Mono', monospace;
+}
+.energy-slot-inp:focus { border-color: var(--cyan); }
 /* Location chip row — dashed border, gold selected state */
 .energy-loc-row {
   display: flex;
@@ -3694,6 +3759,18 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 }
 .energy-loc-chip:hover { border-color: rgba(221,176,75,0.5); color: var(--gold); }
 .energy-loc-chip.loc-active { border-color: var(--gold); border-style: solid; background: rgba(221,176,75,0.1); color: var(--gold); }
+/* Tooltip */
+.energy-tip-wrap { position:relative; display:inline-block; margin-left:3px; vertical-align:middle; }
+.energy-tip-icon { font-size:9px; color:var(--text-dim); cursor:help; opacity:0.55; transition:opacity 0.15s; }
+.energy-tip-wrap:hover .energy-tip-icon { opacity:1; }
+.energy-tip-popup { display:none; position:absolute; left:0; top:16px; z-index:300; background:var(--modal-bg); border:1px solid var(--border); border-radius:4px; padding:6px 9px; font-size:10px; color:var(--text); width:210px; white-space:normal; font-family:'Share Tech Mono',monospace; text-transform:none; letter-spacing:0; line-height:1.5; pointer-events:none; box-shadow:0 4px 14px rgba(0,0,0,0.4); }
+.energy-tip-wrap:hover .energy-tip-popup { display:block; }
+/* Labels tab strip */
+.energy-labels-tabs { display:flex; gap:3px; flex-wrap:wrap; margin:6px 0 8px; }
+.energy-labels-tab { font-size:10px; font-family:'Share Tech Mono',monospace; padding:3px 8px; border-radius:3px; cursor:pointer; border:1px solid var(--border); background:var(--inp-bg); color:var(--text-dim); transition:all 0.15s; }
+.energy-labels-tab:hover { border-color:var(--cyan); color:var(--text); }
+.energy-labels-tab.active { border-color:var(--cyan); background:rgba(15,184,221,0.1); color:var(--cyan); }
+.energy-labels-panel { margin-bottom:6px; }
 .energy-log-row {
   display: flex;
   align-items: center;
@@ -10771,21 +10848,41 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
 }
 
 /* ---- ENERGY TRACKER ---- */
+const DEFAULT_ENERGY   = ['Drained','Low','Normal','High','Wired'];
+const DEFAULT_FOCUS    = ['Scattered','Foggy','Steady','Locked In'];
+const DEFAULT_FRICTION = ['Resistant','Restless','Neutral','Engaged'];
+const DEFAULT_CONTEXT  = ['Coding','Meetings','Exercise','Relaxing','Other'];
+function getSlotColor(idx,total){
+  const r4=['#ff8888','#ffaa88','#0fb8dd','#44cc88'];
+  const r5=['#ff8888','#ffaa88','#0fb8dd','#44cc88','#ddb04b'];
+  const r=total===5?r5:r4; return r[Math.min(idx,r.length-1)];
+}
+function energyValColor(field,val){
+  if(!val) return 'var(--text-dim)';
+  const cfg=_energyWidgetSec?.widgetConfig;
+  const map={energy:cfg?.energyLabels||DEFAULT_ENERGY,focus:cfg?.focusLabels||DEFAULT_FOCUS,friction:cfg?.frictionLabels||DEFAULT_FRICTION,context:cfg?.contextLabels||DEFAULT_CONTEXT};
+  const labels=map[field]; if(!labels) return 'var(--text-dim)';
+  const idx=labels.indexOf(val); return idx===-1?'var(--text-dim)':getSlotColor(idx,labels.length);
+}
 var _energyWidgetSec = null; // stored so history/edit modals can access widget config
 function buildEnergyWidget(sec, tabId){
-  const ENERGY_OPTS   = ['Drained','Low','Normal','High','Wired'];
-  const FOCUS_OPTS    = ['Scattered','Foggy','Steady','Locked In'];
-  const FRICTION_OPTS = ['Resistant','Neutral','Engaged','Restless'];
-  const CONTEXT_TAGS  = ['Coding','Meetings','Exercise','Relaxing','Other'];
-  const DEFAULT_LOCS  = ['Home','Work','Traveling','Social'];
+  const DEFAULT_ENERGY   = ['Drained','Low','Normal','High','Wired'];
+  const DEFAULT_FOCUS    = ['Scattered','Foggy','Steady','Locked In'];
+  const DEFAULT_FRICTION = ['Resistant','Restless','Neutral','Engaged'];
+  const DEFAULT_CONTEXT  = ['Coding','Meetings','Exercise','Relaxing','Other'];
+  const DEFAULT_LOCS     = ['Home','Work','Traveling','Social'];
   const MAX_ENTRIES   = 500;
   const SNOOZE_MS     = 30 * 60 * 1000;
 
-  const VAL_COLORS = {
-    Drained:'#ff8888',Low:'#ffaa88',Normal:'#0fb8dd',High:'#44cc88',Wired:'#ddb04b',
-    Scattered:'#ff8888',Foggy:'#ffaa88',Steady:'#0fb8dd','Locked In':'#44cc88',
-    Resistant:'#ff8888',Neutral:'#0fb8dd',Engaged:'#44cc88',Restless:'#ddb04b',
-  };
+  // Position-based color palette: worst(0) → best(4)
+  const CHIP_PALETTE = [
+    {color:'#ff8888',border:'#cc4444',bg:'rgba(204,68,68,0.15)'},
+    {color:'#ffaa88',border:'#cc7744',bg:'rgba(204,119,68,0.15)'},
+    {color:'#0fb8dd',border:'#0fb8dd',bg:'rgba(15,184,221,0.12)'},
+    {color:'#44cc88',border:'#44cc88',bg:'rgba(68,204,136,0.15)'},
+    {color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.15)'},
+  ];
+  function chipColor(i, total){ return CHIP_PALETTE[Math.round((i/Math.max(total-1,1))*4)]; }
 
   const FREQ_OPTIONS = [
     { label:'Every 1 hour',   ms: 1  * 60 * 60 * 1000 },
@@ -10801,7 +10898,11 @@ function buildEnergyWidget(sec, tabId){
   if(cfg.remindersEnabled === undefined) cfg.remindersEnabled = false;
   if(!cfg.reminderFreqMs) cfg.reminderFreqMs = 4 * 60 * 60 * 1000;
   if(!cfg.snoozeUntil)    cfg.snoozeUntil    = 0;
-  if(!Array.isArray(cfg.locations)||!cfg.locations.length) cfg.locations = [...DEFAULT_LOCS];
+  if(!Array.isArray(cfg.energyLabels)||cfg.energyLabels.length!==5)   cfg.energyLabels   = [...DEFAULT_ENERGY];
+  if(!Array.isArray(cfg.focusLabels)||cfg.focusLabels.length!==4)     cfg.focusLabels    = [...DEFAULT_FOCUS];
+  if(!Array.isArray(cfg.frictionLabels)||cfg.frictionLabels.length!==4) cfg.frictionLabels = [...DEFAULT_FRICTION];
+  if(!Array.isArray(cfg.contextTags)||!cfg.contextTags.length)        cfg.contextTags    = [...DEFAULT_CONTEXT];
+  if(!Array.isArray(cfg.locations)||!cfg.locations.length)            cfg.locations      = [...DEFAULT_LOCS];
   _energyWidgetSec = sec;
 
   let selEnergy=null, selFocus=null, selFriction=null, selContext=null, selLocation=null;
@@ -10820,30 +10921,69 @@ function buildEnergyWidget(sec, tabId){
   wrap.appendChild(reminderBanner);
 
   // ── Chip row builder (Energy / Focus / Friction / Context) ──────────────
-  function makeChipRow(label, opts, getter, setter){
+  const TOOLTIPS = {
+    Energy:   'Your overall physical and mental energy level right now.',
+    Focus:    'How clearly and easily you\'re able to concentrate on the task at hand.',
+    Friction: 'Your sense of internal resistance toward work. Resistant = blocked or reluctant. Engaged = in flow and energized.',
+    Context:  'What you\'re currently doing or what kind of activity this entry describes.',
+  };
+
+  function makeChipRow(label, getOpts, getter, setter){
     const row=el('div','energy-row');
+    const lblWrap=el('div','energy-lbl-wrap');
     const lbl=el('div','energy-row-label'); lbl.textContent=label;
+    lblWrap.appendChild(lbl);
+    if(TOOLTIPS[label]){
+      const info=el('span','energy-info-icon'); info.textContent='ⓘ';
+      const tip=el('div','energy-tooltip'); tip.textContent=TOOLTIPS[label];
+      lblWrap.append(info,tip);
+    }
     const chips=el('div','energy-chips');
-    opts.forEach(opt=>{
-      const chip=el('div','energy-chip'); chip.textContent=opt; chip.dataset.val=opt;
-      const selClass='sel-'+opt.toLowerCase().replace(/\s+/g,'-');
-      chip.onclick=()=>{
-        if(getter()===opt){ setter(null); chip.classList.remove(selClass); }
-        else {
-          setter(opt);
-          chips.querySelectorAll('.energy-chip').forEach(c=>c.classList.remove('sel-'+c.dataset.val.toLowerCase().replace(/\s+/g,'-')));
-          chip.classList.add(selClass);
-        }
-      };
-      chips.appendChild(chip);
-    });
-    row.append(lbl,chips); return row;
+
+    function applyChipSel(chip,pal){
+      chip.style.borderColor=pal.border;
+      chip.style.background=pal.bg;
+      chip.style.color=pal.color;
+      chip.classList.add('sel-active');
+    }
+    function clearChipSel(chip){
+      chip.style.borderColor='';
+      chip.style.background='';
+      chip.style.color='';
+      chip.classList.remove('sel-active');
+    }
+
+    function buildChips(){
+      chips.innerHTML='';
+      const opts=getOpts();
+      opts.forEach((opt,i)=>{
+        const chip=el('div','energy-chip'); chip.textContent=opt; chip.dataset.val=opt;
+        const pal=chipColor(i,opts.length);
+        chip.onclick=()=>{
+          if(getter()===opt){ setter(null); clearChipSel(chip); }
+          else {
+            setter(opt);
+            chips.querySelectorAll('.energy-chip').forEach(c=>clearChipSel(c));
+            applyChipSel(chip,pal);
+          }
+        };
+        chips.appendChild(chip);
+      });
+    }
+    buildChips();
+    row.append(lblWrap,chips);
+    return { row, buildChips };
   }
 
-  wrap.appendChild(makeChipRow('Energy',   ENERGY_OPTS,   ()=>selEnergy,   v=>{ selEnergy=v; }));
-  wrap.appendChild(makeChipRow('Focus',    FOCUS_OPTS,    ()=>selFocus,    v=>{ selFocus=v; }));
-  wrap.appendChild(makeChipRow('Friction', FRICTION_OPTS, ()=>selFriction, v=>{ selFriction=v; }));
-  wrap.appendChild(makeChipRow('Context',  CONTEXT_TAGS,  ()=>selContext,  v=>{ selContext=v; }));
+  const energyRow   = makeChipRow('Energy',   ()=>cfg.energyLabels,   ()=>selEnergy,   v=>{ selEnergy=v; });
+  const focusRow    = makeChipRow('Focus',     ()=>cfg.focusLabels,    ()=>selFocus,    v=>{ selFocus=v; });
+  const frictionRow = makeChipRow('Friction',  ()=>cfg.frictionLabels, ()=>selFriction, v=>{ selFriction=v; });
+  const contextRow  = makeChipRow('Context',   ()=>cfg.contextTags,    ()=>selContext,  v=>{ selContext=v; });
+
+  wrap.appendChild(energyRow.row);
+  wrap.appendChild(focusRow.row);
+  wrap.appendChild(frictionRow.row);
+  wrap.appendChild(contextRow.row);
 
   // ── Location chip row (user-configurable, dashed style) ─────────────────
   const locRow=el('div','energy-loc-row');
@@ -10882,7 +11022,7 @@ function buildEnergyWidget(sec, tabId){
 
   const resetAll=()=>{
     selEnergy=null; selFocus=null; selFriction=null; selContext=null; selLocation=null;
-    wrap.querySelectorAll('.energy-chip').forEach(c=>c.classList.remove(...[...c.classList].filter(cl=>cl.startsWith('sel-'))));
+    wrap.querySelectorAll('.energy-chip').forEach(c=>{ c.style.borderColor=''; c.style.background=''; c.style.color=''; c.classList.remove('sel-active'); });
     locChips.forEach(c=>c.classList.remove('loc-active'));
     noteInp.value='';
   };
@@ -10901,7 +11041,7 @@ function buildEnergyWidget(sec, tabId){
   logRow.append(logBtn,lastLogEl,histBtn,insBtn);
   wrap.appendChild(logRow);
 
-  // ── Edit mode: reminder + location settings ──────────────────────────────
+  // ── Edit mode: reminder + labels settings ──────────────────────────────
   const editSection=el('div','energy-edit-section');
 
   const remLbl=el('div','sports-edit-section-lbl'); remLbl.textContent='Reminder Settings';
@@ -10915,47 +11055,145 @@ function buildEnergyWidget(sec, tabId){
   remRow.append(remChkLbl,freqSel);
   editSection.append(remLbl,remRow);
 
-  // Location list manager
-  const locEditLbl=el('div','sports-edit-section-lbl'); locEditLbl.style.marginTop='10px'; locEditLbl.textContent='Location Labels (max 8)';
-  editSection.appendChild(locEditLbl);
+  // ── Labels section ──
+  const labelsLbl=el('div','sports-edit-section-lbl'); labelsLbl.style.marginTop='10px'; labelsLbl.textContent='Labels';
+  editSection.appendChild(labelsLbl);
 
-  const locList=el('div'); locList.style.cssText='display:flex;flex-direction:column;gap:4px;margin-bottom:6px;';
+  const tabStrip=el('div','energy-label-tabs');
+  const tabDefs=[
+    {id:'energy',   label:'Energy'},
+    {id:'focus',    label:'Focus'},
+    {id:'friction', label:'Friction'},
+    {id:'context',  label:'Context'},
+    {id:'location', label:'Location'},
+  ];
+  const panels={};
+  tabDefs.forEach(td=>{
+    const btn=el('button','energy-label-tab'); btn.textContent=td.label; btn.dataset.tab=td.id;
+    const panel=el('div','energy-label-panel'); panel.dataset.tab=td.id;
+    panels[td.id]={btn,panel};
+    tabStrip.appendChild(btn);
+  });
+  editSection.appendChild(tabStrip);
 
-  function renderLocList(){
-    locList.innerHTML='';
-    cfg.locations.forEach((loc,i)=>{
-      const row=el('div'); row.style.cssText='display:flex;align-items:center;gap:5px;';
-      const nameSp=el('span'); nameSp.style.cssText='font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text);flex:1;'; nameSp.textContent=loc;
-      const del=icBtn('\u2715','Remove',()=>{
-        cfg.locations.splice(i,1); persist();
-        renderLocList(); buildLocChips();
-        addBtn.disabled=cfg.locations.length>=8;
-      }); del.classList.add('ic-del');
-      row.append(nameSp,del); locList.appendChild(row);
+  function switchTab(id){
+    tabDefs.forEach(td=>{
+      panels[td.id].btn.classList.toggle('active',td.id===id);
+      panels[td.id].panel.classList.toggle('active',td.id===id);
     });
   }
-  renderLocList();
-  editSection.appendChild(locList);
+  tabDefs.forEach(td=>{ panels[td.id].btn.onclick=()=>switchTab(td.id); });
 
-  const addRow=el('div'); addRow.style.cssText='display:flex;gap:5px;';
-  const addInp=el('input'); addInp.type='text'; addInp.placeholder='New location label\u2026'; addInp.maxLength=20;
-  addInp.style.cssText='flex:1;font-size:11px;padding:3px 7px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;font-family:Share Tech Mono,monospace;';
-  const addBtn=el('button','monitor-check-btn'); addBtn.textContent='Add'; addBtn.disabled=cfg.locations.length>=8;
-  addBtn.onclick=()=>{
-    const v=addInp.value.trim(); if(!v||cfg.locations.length>=8) return;
-    cfg.locations.push(v); persist(); addInp.value='';
-    renderLocList(); buildLocChips();
-    addBtn.disabled=cfg.locations.length>=8;
-  };
-  addInp.onkeydown=e=>{ if(e.key==='Enter') addBtn.click(); };
-  const resetBtn=el('button','monitor-check-btn'); resetBtn.textContent='Reset'; resetBtn.title='Restore defaults';
-  resetBtn.onclick=()=>{ cfg.locations=[...DEFAULT_LOCS]; persist(); renderLocList(); buildLocChips(); addBtn.disabled=false; };
-  addRow.append(addInp,addBtn,resetBtn);
-  editSection.appendChild(addRow);
+  // ── Ordered label panel builder (Energy / Focus / Friction) ──
+  function buildOrderedPanel(panelEl, cfgKey, defaults, slotLabels, chipBuildFn){
+    panelEl.innerHTML='';
+    cfgKey.forEach((val,i)=>{
+      const row=el('div','energy-slot-row');
+      const lbl=el('span','energy-slot-label'); lbl.textContent=slotLabels[i];
+      const inp=el('input','energy-slot-inp'); inp.value=val; inp.maxLength=18;
+      inp.oninput=()=>{
+        const v=inp.value.trim()||defaults[i];
+        // Update live when user pauses
+        inp._pending=v;
+      };
+      inp.onchange=()=>{
+        const v=inp.value.trim()||defaults[i];
+        inp.value=v;
+        sec.widgetConfig[panelEl._cfgProp][i]=v;
+        persist();
+        chipBuildFn();
+      };
+      row.append(lbl,inp);
+      panelEl.appendChild(row);
+    });
+    const resetBtn=el('button','monitor-check-btn'); resetBtn.textContent='Reset'; resetBtn.style.cssText='margin-top:4px;align-self:flex-start;';
+    resetBtn.onclick=()=>{
+      sec.widgetConfig[panelEl._cfgProp]=[...defaults];
+      persist();
+      buildOrderedPanel(panelEl, sec.widgetConfig[panelEl._cfgProp], defaults, slotLabels, chipBuildFn);
+      chipBuildFn();
+    };
+    panelEl.appendChild(resetBtn);
+  }
 
-  const locHint=el('div'); locHint.style.cssText='font-size:9.5px;color:var(--text-dim);margin-top:4px;'; locHint.textContent='Max 8 labels. Short names work best (10 chars or fewer).';
-  editSection.appendChild(locHint);
+  // Energy panel
+  const energyPanel=panels.energy.panel;
+  energyPanel._cfgProp='energyLabels';
+  buildOrderedPanel(energyPanel, cfg.energyLabels, DEFAULT_ENERGY,
+    ['Most drained','More drained','Neutral','More energized','Most energized'],
+    energyRow.buildChips);
+  editSection.appendChild(energyPanel);
 
+  // Focus panel
+  const focusPanel=panels.focus.panel;
+  focusPanel._cfgProp='focusLabels';
+  buildOrderedPanel(focusPanel, cfg.focusLabels, DEFAULT_FOCUS,
+    ['Least focused','Less focused','More focused','Most focused'],
+    focusRow.buildChips);
+  editSection.appendChild(focusPanel);
+
+  // Friction panel
+  const frictionPanel=panels.friction.panel;
+  frictionPanel._cfgProp='frictionLabels';
+  buildOrderedPanel(frictionPanel, cfg.frictionLabels, DEFAULT_FRICTION,
+    ['Most resistant','More resistant','Less resistant','Least resistant'],
+    frictionRow.buildChips);
+  editSection.appendChild(frictionPanel);
+
+  // ── Free-form panel builder (Context / Location) ──
+  function buildFreeformPanel(panelEl, cfgKey, defaults, chipBuildFn, maxItems, placeholder){
+    panelEl.innerHTML='';
+    const list=el('div'); list.style.cssText='display:flex;flex-direction:column;gap:4px;margin-bottom:6px;';
+
+    function renderList(){
+      list.innerHTML='';
+      sec.widgetConfig[cfgKey].forEach((item,i)=>{
+        const row=el('div'); row.style.cssText='display:flex;align-items:center;gap:5px;';
+        const nameSp=el('span'); nameSp.style.cssText='font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text);flex:1;'; nameSp.textContent=item;
+        const del=icBtn('\u2715','Remove',()=>{
+          sec.widgetConfig[cfgKey].splice(i,1); persist();
+          renderList(); chipBuildFn();
+          addBtn.disabled=sec.widgetConfig[cfgKey].length>=maxItems;
+        }); del.classList.add('ic-del');
+        row.append(nameSp,del); list.appendChild(row);
+      });
+    }
+    renderList();
+    panelEl.appendChild(list);
+
+    const addRow=el('div'); addRow.style.cssText='display:flex;gap:5px;';
+    const addInp=el('input'); addInp.type='text'; addInp.placeholder=placeholder; addInp.maxLength=20;
+    addInp.style.cssText='flex:1;font-size:11px;padding:3px 7px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;font-family:Share Tech Mono,monospace;';
+    const addBtn=el('button','monitor-check-btn'); addBtn.textContent='Add'; addBtn.disabled=sec.widgetConfig[cfgKey].length>=maxItems;
+    addBtn.onclick=()=>{
+      const v=addInp.value.trim(); if(!v||sec.widgetConfig[cfgKey].length>=maxItems) return;
+      sec.widgetConfig[cfgKey].push(v); persist(); addInp.value='';
+      renderList(); chipBuildFn();
+      addBtn.disabled=sec.widgetConfig[cfgKey].length>=maxItems;
+    };
+    addInp.onkeydown=e=>{ if(e.key==='Enter') addBtn.click(); };
+    const resetBtn=el('button','monitor-check-btn'); resetBtn.textContent='Reset';
+    resetBtn.onclick=()=>{
+      sec.widgetConfig[cfgKey]=[...defaults]; persist();
+      renderList(); chipBuildFn(); addBtn.disabled=false;
+    };
+    addRow.append(addInp,addBtn,resetBtn);
+    panelEl.appendChild(addRow);
+    const hint=el('div'); hint.style.cssText='font-size:9.5px;color:var(--text-dim);margin-top:4px;'; hint.textContent='Max '+maxItems+' labels. Short names work best (10 chars or fewer).';
+    panelEl.appendChild(hint);
+  }
+
+  // Context panel
+  const contextPanel=panels.context.panel;
+  buildFreeformPanel(contextPanel,'contextTags',DEFAULT_CONTEXT,contextRow.buildChips,8,'New context tag\u2026');
+  editSection.appendChild(contextPanel);
+
+  // Location panel
+  const locationPanel=panels.location.panel;
+  buildFreeformPanel(locationPanel,'locations',DEFAULT_LOCS,buildLocChips,8,'New location label\u2026');
+  editSection.appendChild(locationPanel);
+
+  switchTab('energy');
   wrap.appendChild(editSection);
 
   function checkReminder(){
@@ -10974,7 +11212,20 @@ function buildEnergyWidget(sec, tabId){
 
 // Shared energy analytics helpers
 function energyMostCommon(entries,field){ const counts={}; entries.forEach(e=>{ if(e[field]) counts[e[field]]=(counts[e[field]]||0)+1; }); return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null; }
-function energyFieldScore(field,val){ if(!val) return null; const maps={energy:{Drained:0,Low:1,Normal:2,High:3,Wired:4},focus:{Scattered:0,Foggy:1,Steady:2,'Locked In':3},friction:{Resistant:0,Neutral:1,Restless:1.5,Engaged:2}}; const s=maps[field]?.[val]; return s===undefined?null:s; }
+function energyLabelColor(field,val){
+  const cfg=_energyWidgetSec?.widgetConfig||{};
+  const E_PAL=['#ff8888','#ffaa88','#0fb8dd','#44cc88','#ddb04b'];
+  const arr=field==='energy'?cfg.energyLabels:field==='focus'?cfg.focusLabels:field==='friction'?cfg.frictionLabels:null;
+  if(!arr) return null;
+  const idx=arr.indexOf(val); if(idx===-1) return null;
+  return E_PAL[Math.round((idx/Math.max(arr.length-1,1))*4)];
+}
+function energyFieldScore(field,val){
+  const cfg=_energyWidgetSec?.widgetConfig||{};
+  const arr=field==='energy'?cfg.energyLabels:field==='focus'?cfg.focusLabels:field==='friction'?cfg.frictionLabels:null;
+  if(!arr) return null;
+  const idx=arr.indexOf(val); return idx===-1?null:idx;
+}
 function energyAvgScore(entries,field){ const sc=entries.map(e=>energyFieldScore(field,e[field])).filter(v=>v!==null); return sc.length?sc.reduce((a,b)=>a+b,0)/sc.length:null; }
 function energyTimeOfDay(ts){ const h=new Date(ts).getHours(); if(h>=5&&h<11) return 'Morning'; if(h>=11&&h<17) return 'Afternoon'; if(h>=17&&h<22) return 'Evening'; return 'Late Night'; }
 function energyTrendArrow(last3,prior4,field){ const a=energyAvgScore(last3,field),b=energyAvgScore(prior4,field); if(a===null||b===null) return null; const d=a-b; return d>0.3?'\u2191':d<-0.3?'\u2193':'\u2192'; }
@@ -11003,7 +11254,7 @@ function energyGenerateInsights(allEntries){
 
 // Energy history modal
 function openEnergyModal(){
-  const EC={Drained:'#ff8888',Low:'#ffaa88',Normal:'var(--cyan)',High:'#44cc88',Wired:'var(--gold)',Scattered:'#ff8888',Foggy:'#ffaa88',Steady:'var(--cyan)','Locked In':'#44cc88',Resistant:'#ff8888',Neutral:'var(--cyan)',Engaged:'#44cc88',Restless:'var(--gold)'};
+  function EC(val){ return energyLabelColor('energy',val)||energyLabelColor('focus',val)||energyLabelColor('friction',val)||'var(--text-dim)'; }
   let overlay=document.getElementById('energyHistoryOverlay');
   if(!overlay){
     overlay=el('div','overlay'); overlay.id='energyHistoryOverlay';
@@ -11019,7 +11270,7 @@ function openEnergyModal(){
     actions.appendChild(closeBtn); modal.append(mhdr,body,actions); overlay.appendChild(modal); document.body.appendChild(overlay);
   }
   function section(title){ const s=el('div','energy-pattern-section'); const t=el('div','energy-pattern-title'); t.textContent=title; s.appendChild(t); return s; }
-  function badge(val){ const b=el('span','energy-history-badge'); b.textContent=val||'\u2014'; if(val&&EC[val]){b.style.borderColor=EC[val];b.style.color=EC[val];} return b; }
+  function badge(val){ const b=el('span','energy-history-badge'); b.textContent=val||'\u2014'; const c=EC(val); if(val&&c){b.style.borderColor=c;b.style.color=c;} return b; }
   function renderModal(){
     const body=document.getElementById('energyModalBody'); body.innerHTML='';
     const now=new Date(),todayStr=now.toLocaleDateString('en-CA'),sevenDaysAgo=Date.now()-7*24*60*60*1000,threeDaysAgo=Date.now()-3*24*60*60*1000;
@@ -11037,7 +11288,7 @@ function openEnergyModal(){
         const tile=el('div'); tile.style.cssText='flex:1;min-width:100px;padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;';
         const tl=el('div'); tl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;'; tl.textContent='Most common '+lbl;
         const vr=el('div'); vr.style.cssText='display:flex;align-items:baseline;gap:5px;';
-        const tv=el('div'); tv.style.cssText='font-size:13px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+(EC[val]||'var(--text)')+';'; tv.textContent=val;
+        const tv=el('div'); tv.style.cssText='font-size:13px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+(EC(val)||'var(--text)')+';'; tv.textContent=val;
         const arrow=energyTrendArrow(last3,prior4,field);
         if(arrow){ const ta=el('span'); ta.style.cssText='font-size:13px;font-weight:700;color:'+energyTrendColor(arrow)+';'; ta.textContent=arrow; vr.append(tv,ta); } else vr.appendChild(tv);
         tile.append(tl,vr); sg.appendChild(tile);
@@ -11085,9 +11336,13 @@ function openEnergyModal(){
 // Entry edit modal
 function openEnergyEditModal(entryIdx, sec){
   const entry=D.energyEntries[entryIdx]; if(!entry) return;
-  const ENERGY_OPTS=['Drained','Low','Normal','High','Wired'],FOCUS_OPTS=['Scattered','Foggy','Steady','Locked In'],FRICTION_OPTS=['Resistant','Neutral','Engaged','Restless'],CONTEXT_TAGS=['Coding','Meetings','Exercise','Relaxing','Other'];
-  const VC={Drained:'#ff8888',Low:'#ffaa88',Normal:'#0fb8dd',High:'#44cc88',Wired:'#ddb04b',Scattered:'#ff8888',Foggy:'#ffaa88',Steady:'#0fb8dd','Locked In':'#44cc88',Resistant:'#ff8888',Neutral:'#0fb8dd',Engaged:'#44cc88',Restless:'#ddb04b'};
-  const vc=v=>VC[v]||null;
+  const cfg=sec?.widgetConfig||{};
+  const eLabels=cfg.energyLabels||['Drained','Low','Normal','High','Wired'];
+  const fLabels=cfg.focusLabels||['Scattered','Foggy','Steady','Locked In'];
+  const frLabels=cfg.frictionLabels||['Resistant','Restless','Neutral','Engaged'];
+  const ctxLabels=cfg.contextTags||['Coding','Meetings','Exercise','Relaxing','Other'];
+  const E_PAL=[{color:'#ff8888',border:'#cc4444',bg:'rgba(204,68,68,0.15)'},{color:'#ffaa88',border:'#cc7744',bg:'rgba(204,119,68,0.15)'},{color:'#0fb8dd',border:'#0fb8dd',bg:'rgba(15,184,221,0.12)'},{color:'#44cc88',border:'#44cc88',bg:'rgba(68,204,136,0.15)'},{color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.15)'}];
+  function editPal(i,total){ return E_PAL[Math.round((i/Math.max(total-1,1))*4)]; }
   let ov=document.getElementById('energyEditOverlay'); if(ov) ov.remove();
   ov=el('div','overlay'); ov.id='energyEditOverlay';
   const modal=el('div','modal'); modal.style.cssText='width:420px;';
@@ -11095,27 +11350,28 @@ function openEnergyEditModal(entryIdx, sec){
   const ts=el('div'); ts.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-bottom:12px;';
   ts.textContent=new Date(entry.timestamp).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); modal.appendChild(ts);
   function mrow(){ const r=el('div'); r.style.cssText='display:flex;gap:6px;margin-bottom:7px;'; return r; }
-  // Chip selectors for Energy/Focus/Friction/Context
   let eV=entry.energy, fV=entry.focus, frV=entry.friction, cV=entry.context, lV=entry.location;
-  function editChipRow(label,opts,getter,setter,colorMap){
+  function editChipRow(label,opts,getter,setter){
     const row=el('div','energy-row'); const lbl=el('div','energy-row-label'); lbl.textContent=label;
     const chips=el('div','energy-chips');
-    opts.forEach(opt=>{
+    opts.forEach((opt,i)=>{
       const chip=el('div','energy-chip'); chip.textContent=opt; chip.dataset.val=opt;
-      const sc='sel-'+opt.toLowerCase().replace(/\s+/g,'-');
-      if(getter()===opt) chip.classList.add(sc);
+      const pal=editPal(i,opts.length);
+      function applySel(){ chip.style.borderColor=pal.border; chip.style.background=pal.bg; chip.style.color=pal.color; }
+      function clearSel(){ chip.style.borderColor=''; chip.style.background=''; chip.style.color=''; }
+      if(getter()===opt) applySel();
       chip.onclick=()=>{
-        if(getter()===opt){ setter(null); chip.classList.remove(sc); }
-        else { setter(opt); chips.querySelectorAll('.energy-chip').forEach(c=>c.classList.remove('sel-'+c.dataset.val.toLowerCase().replace(/\s+/g,'-'))); chip.classList.add(sc); }
+        if(getter()===opt){ setter(null); clearSel(); }
+        else { setter(opt); chips.querySelectorAll('.energy-chip').forEach(c=>{ c.style.borderColor=''; c.style.background=''; c.style.color=''; }); applySel(); }
       };
       chips.appendChild(chip);
     });
     row.append(lbl,chips); return row;
   }
-  modal.appendChild(editChipRow('Energy',   ENERGY_OPTS,   ()=>eV,  v=>{ eV=v; },  VC));
-  modal.appendChild(editChipRow('Focus',    FOCUS_OPTS,    ()=>fV,  v=>{ fV=v; },  VC));
-  modal.appendChild(editChipRow('Friction', FRICTION_OPTS, ()=>frV, v=>{ frV=v; }, VC));
-  modal.appendChild(editChipRow('Context',  CONTEXT_TAGS,  ()=>cV,  v=>{ cV=v; },  null));
+  modal.appendChild(editChipRow('Energy',   eLabels,   ()=>eV,  v=>{ eV=v; }));
+  modal.appendChild(editChipRow('Focus',    fLabels,   ()=>fV,  v=>{ fV=v; }));
+  modal.appendChild(editChipRow('Friction', frLabels,  ()=>frV, v=>{ frV=v; }));
+  modal.appendChild(editChipRow('Context',  ctxLabels, ()=>cV,  v=>{ cV=v; }));
 
   // Location chips using configured list
   const editLocRow=el('div','energy-loc-row');
@@ -11145,7 +11401,7 @@ function openEnergyEditModal(entryIdx, sec){
 
 // Insights Viewer modal
 function openEnergyInsightsModal(){
-  const EC={Drained:'#ff8888',Low:'#ffaa88',Normal:'#0fb8dd',High:'#44cc88',Wired:'#ddb04b',Scattered:'#ff8888',Foggy:'#ffaa88',Steady:'#0fb8dd','Locked In':'#44cc88',Resistant:'#ff8888',Neutral:'#0fb8dd',Engaged:'#44cc88',Restless:'#ddb04b'};
+  function EC(val){ return energyLabelColor('energy',val)||energyLabelColor('focus',val)||energyLabelColor('friction',val)||'var(--text-dim)'; }
   let ov=document.getElementById('energyInsightsOverlay'); if(ov) ov.remove();
   ov=el('div','overlay'); ov.id='energyInsightsOverlay';
   const modal=el('div','modal'); modal.style.cssText='width:680px;max-height:88vh;display:flex;flex-direction:column;';
@@ -11169,7 +11425,7 @@ function openEnergyInsightsModal(){
     const tile=el('div'); tile.style.cssText='flex:1;min-width:120px;padding:7px 10px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;';
     const tl=el('div'); tl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'; tl.textContent='Most common '+lbl;
     const vr=el('div'); vr.style.cssText='display:flex;align-items:baseline;gap:6px;';
-    const tv=el('div'); tv.style.cssText='font-size:13px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+(val?(EC[val]||'var(--text)'):'var(--text-dim)')+';'; tv.textContent=val||'\u2014';
+    const tv=el('div'); tv.style.cssText='font-size:13px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+(val?(EC(val)||'var(--text)'):'var(--text-dim)')+';'; tv.textContent=val||'\u2014';
     vr.appendChild(tv); if(arrow){ const ta=el('span'); ta.style.cssText='font-size:14px;font-weight:700;color:'+energyTrendColor(arrow)+';'; ta.textContent=arrow; vr.appendChild(ta); }
     tile.append(tl,vr); tg.appendChild(tile);
   }); body.appendChild(tg);
@@ -11256,7 +11512,7 @@ function openEnergyInsightsModal(){
     const table=el('table'); table.style.cssText='width:100%;border-collapse:collapse;font-size:10.5px;font-family:Share Tech Mono,monospace;';
     const thead=el('thead'),hr=el('tr'); ['Context','Energy','Focus','Friction'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
     const tbody=el('tbody');
-    ctxs.forEach(ctx=>{ const ce=weekEntries.filter(e=>e.context===ctx); if(ce.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=ctx; tr.appendChild(tdL); ['energy','focus','friction'].forEach(f=>{ const val=energyMostCommon(ce,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; td.style.color=val&&EC[val]?EC[val]:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
+    ctxs.forEach(ctx=>{ const ce=weekEntries.filter(e=>e.context===ctx); if(ce.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=ctx; tr.appendChild(tdL); ['energy','focus','friction'].forEach(f=>{ const val=energyMostCommon(ce,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; const c=EC(val);td.style.color=val&&c?c:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
   }
   // Location correlations
   const locs=[...new Set(weekEntries.map(e=>e.location).filter(Boolean))];
@@ -11267,7 +11523,7 @@ function openEnergyInsightsModal(){
     const table=el('table'); table.style.cssText='width:100%;border-collapse:collapse;font-size:10.5px;font-family:Share Tech Mono,monospace;';
     const thead=el('thead'),hr=el('tr'); ['Location','Energy','Focus','Friction'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
     const tbody=el('tbody');
-    locs.forEach(loc=>{ const le=weekEntries.filter(e=>e.location===loc); if(le.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=loc; tr.appendChild(tdL); ['energy','focus','friction'].forEach(f=>{ const val=energyMostCommon(le,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; td.style.color=val&&EC[val]?EC[val]:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
+    locs.forEach(loc=>{ const le=weekEntries.filter(e=>e.location===loc); if(le.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=loc; tr.appendChild(tdL); ['energy','focus','friction'].forEach(f=>{ const val=energyMostCommon(le,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; const c=EC(val);td.style.color=val&&c?c:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
   }
   // Day-of-week
   if(D.energyEntries.length>=7){
