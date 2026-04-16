@@ -10898,11 +10898,13 @@ function buildEnergyWidget(sec, tabId){
   if(cfg.remindersEnabled === undefined) cfg.remindersEnabled = false;
   if(!cfg.reminderFreqMs) cfg.reminderFreqMs = 4 * 60 * 60 * 1000;
   if(!cfg.snoozeUntil)    cfg.snoozeUntil    = 0;
-  if(!Array.isArray(cfg.energyLabels)||cfg.energyLabels.length!==5)   cfg.energyLabels   = [...DEFAULT_ENERGY];
-  if(!Array.isArray(cfg.focusLabels)||cfg.focusLabels.length!==4)     cfg.focusLabels    = [...DEFAULT_FOCUS];
-  if(!Array.isArray(cfg.frictionLabels)||cfg.frictionLabels.length!==4) cfg.frictionLabels = [...DEFAULT_FRICTION];
-  if(!Array.isArray(cfg.contextTags)||!cfg.contextTags.length)        cfg.contextTags    = [...DEFAULT_CONTEXT];
-  if(!Array.isArray(cfg.locations)||!cfg.locations.length)            cfg.locations      = [...DEFAULT_LOCS];
+  // Read label arrays with fallback to defaults — never write defaults into cfg
+  // so a browser that hasn't customized never clobbers KV with stale defaults
+  const eLabels  = ()=> (Array.isArray(cfg.energyLabels)  && cfg.energyLabels.length===5)  ? cfg.energyLabels   : DEFAULT_ENERGY;
+  const fLabels  = ()=> (Array.isArray(cfg.focusLabels)   && cfg.focusLabels.length===4)   ? cfg.focusLabels    : DEFAULT_FOCUS;
+  const frLabels = ()=> (Array.isArray(cfg.frictionLabels)&& cfg.frictionLabels.length===4) ? cfg.frictionLabels : DEFAULT_FRICTION;
+  const ctxTags  = ()=> (Array.isArray(cfg.contextTags)   && cfg.contextTags.length)        ? cfg.contextTags    : DEFAULT_CONTEXT;
+  const locs     = ()=> (Array.isArray(cfg.locations)     && cfg.locations.length)          ? cfg.locations      : DEFAULT_LOCS;
   _energyWidgetSec = sec;
 
   let selEnergy=null, selFocus=null, selFriction=null, selContext=null, selLocation=null;
@@ -10975,10 +10977,10 @@ function buildEnergyWidget(sec, tabId){
     return { row, buildChips };
   }
 
-  const energyRow   = makeChipRow('Energy',   ()=>cfg.energyLabels,   ()=>selEnergy,   v=>{ selEnergy=v; });
-  const focusRow    = makeChipRow('Focus',     ()=>cfg.focusLabels,    ()=>selFocus,    v=>{ selFocus=v; });
-  const frictionRow = makeChipRow('Friction',  ()=>cfg.frictionLabels, ()=>selFriction, v=>{ selFriction=v; });
-  const contextRow  = makeChipRow('Context', ()=>cfg.contextTags, ()=>selContext, v=>{ selContext=v; }, {color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.1)'});
+  const energyRow   = makeChipRow('Energy',   ()=>eLabels(),   ()=>selEnergy,   v=>{ selEnergy=v; });
+  const focusRow    = makeChipRow('Focus',     ()=>fLabels(),   ()=>selFocus,    v=>{ selFocus=v; });
+  const frictionRow = makeChipRow('Friction',  ()=>frLabels(),  ()=>selFriction, v=>{ selFriction=v; });
+  const contextRow  = makeChipRow('Context',   ()=>ctxTags(),   ()=>selContext,  v=>{ selContext=v; }, {color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.1)'});
 
   wrap.appendChild(energyRow.row);
   wrap.appendChild(focusRow.row);
@@ -10993,7 +10995,7 @@ function buildEnergyWidget(sec, tabId){
 
   function buildLocChips(){
     locChips.forEach(c=>c.remove()); locChips=[];
-    cfg.locations.forEach(loc=>{
+    locs().forEach(loc=>{
       const chip=el('div','energy-loc-chip'); chip.textContent=loc; chip.dataset.loc=loc;
       chip.onclick=()=>{
         if(selLocation===loc){ selLocation=null; chip.classList.remove('loc-active'); }
@@ -11119,7 +11121,7 @@ function buildEnergyWidget(sec, tabId){
   // Energy panel
   const energyPanel=panels.energy.panel;
   energyPanel._cfgProp='energyLabels';
-  buildOrderedPanel(energyPanel, cfg.energyLabels, DEFAULT_ENERGY,
+  buildOrderedPanel(energyPanel, eLabels(), DEFAULT_ENERGY,
     ['Most drained','More drained','Neutral','More energized','Most energized'],
     energyRow.buildChips);
   editSection.appendChild(energyPanel);
@@ -11127,7 +11129,7 @@ function buildEnergyWidget(sec, tabId){
   // Focus panel
   const focusPanel=panels.focus.panel;
   focusPanel._cfgProp='focusLabels';
-  buildOrderedPanel(focusPanel, cfg.focusLabels, DEFAULT_FOCUS,
+  buildOrderedPanel(focusPanel, fLabels(), DEFAULT_FOCUS,
     ['Least focused','Less focused','More focused','Most focused'],
     focusRow.buildChips);
   editSection.appendChild(focusPanel);
@@ -11135,25 +11137,27 @@ function buildEnergyWidget(sec, tabId){
   // Friction panel
   const frictionPanel=panels.friction.panel;
   frictionPanel._cfgProp='frictionLabels';
-  buildOrderedPanel(frictionPanel, cfg.frictionLabels, DEFAULT_FRICTION,
+  buildOrderedPanel(frictionPanel, frLabels(), DEFAULT_FRICTION,
     ['Most resistant','More resistant','Less resistant','Least resistant'],
     frictionRow.buildChips);
   editSection.appendChild(frictionPanel);
 
   // ── Free-form panel builder (Context / Location) ──
-  function buildFreeformPanel(panelEl, cfgKey, defaults, chipBuildFn, maxItems, placeholder){
+  function buildFreeformPanel(panelEl, cfgKey, defaults, chipBuildFn, maxItems, placeholder, readFn){
     panelEl.innerHTML='';
     const list=el('div'); list.style.cssText='display:flex;flex-direction:column;gap:4px;margin-bottom:6px;';
+    // Ensure cfg has the key before any write operations
+    function ensureKey(){ if(!Array.isArray(sec.widgetConfig[cfgKey])||!sec.widgetConfig[cfgKey].length) sec.widgetConfig[cfgKey]=[...readFn()]; }
 
     function renderList(){
       list.innerHTML='';
-      sec.widgetConfig[cfgKey].forEach((item,i)=>{
+      readFn().forEach((item,i)=>{
         const row=el('div'); row.style.cssText='display:flex;align-items:center;gap:5px;';
         const nameSp=el('span'); nameSp.style.cssText='font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text);flex:1;'; nameSp.textContent=item;
         const del=icBtn('\u2715','Remove',()=>{
-          sec.widgetConfig[cfgKey].splice(i,1); persist();
+          ensureKey(); sec.widgetConfig[cfgKey].splice(i,1); persist();
           renderList(); chipBuildFn();
-          addBtn.disabled=sec.widgetConfig[cfgKey].length>=maxItems;
+          addBtn.disabled=readFn().length>=maxItems;
         }); del.classList.add('ic-del');
         row.append(nameSp,del); list.appendChild(row);
       });
@@ -11164,12 +11168,12 @@ function buildEnergyWidget(sec, tabId){
     const addRow=el('div'); addRow.style.cssText='display:flex;gap:5px;';
     const addInp=el('input'); addInp.type='text'; addInp.placeholder=placeholder; addInp.maxLength=20;
     addInp.style.cssText='flex:1;font-size:11px;padding:3px 7px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;font-family:Share Tech Mono,monospace;';
-    const addBtn=el('button','monitor-check-btn'); addBtn.textContent='Add'; addBtn.disabled=sec.widgetConfig[cfgKey].length>=maxItems;
+    const addBtn=el('button','monitor-check-btn'); addBtn.textContent='Add'; addBtn.disabled=readFn().length>=maxItems;
     addBtn.onclick=()=>{
-      const v=addInp.value.trim(); if(!v||sec.widgetConfig[cfgKey].length>=maxItems) return;
-      sec.widgetConfig[cfgKey].push(v); persist(); addInp.value='';
+      const v=addInp.value.trim(); if(!v||readFn().length>=maxItems) return;
+      ensureKey(); sec.widgetConfig[cfgKey].push(v); persist(); addInp.value='';
       renderList(); chipBuildFn();
-      addBtn.disabled=sec.widgetConfig[cfgKey].length>=maxItems;
+      addBtn.disabled=readFn().length>=maxItems;
     };
     addInp.onkeydown=e=>{ if(e.key==='Enter') addBtn.click(); };
     const resetBtn=el('button','monitor-check-btn'); resetBtn.textContent='Reset';
@@ -11185,12 +11189,12 @@ function buildEnergyWidget(sec, tabId){
 
   // Context panel
   const contextPanel=panels.context.panel;
-  buildFreeformPanel(contextPanel,'contextTags',DEFAULT_CONTEXT,contextRow.buildChips,12,'New context tag\u2026');
+  buildFreeformPanel(contextPanel,'contextTags',DEFAULT_CONTEXT,contextRow.buildChips,12,'New context tag\u2026',ctxTags);
   editSection.appendChild(contextPanel);
 
   // Location panel
   const locationPanel=panels.location.panel;
-  buildFreeformPanel(locationPanel,'locations',DEFAULT_LOCS,buildLocChips,8,'New location label\u2026');
+  buildFreeformPanel(locationPanel,'locations',DEFAULT_LOCS,buildLocChips,8,'New location label\u2026',locs);
   editSection.appendChild(locationPanel);
 
   switchTab('energy');
@@ -11215,14 +11219,16 @@ function energyMostCommon(entries,field){ const counts={}; entries.forEach(e=>{ 
 function energyLabelColor(field,val){
   const cfg=_energyWidgetSec?.widgetConfig||{};
   const E_PAL=['#ff8888','#ffaa88','#0fb8dd','#44cc88','#ddb04b'];
-  const arr=field==='energy'?cfg.energyLabels:field==='focus'?cfg.focusLabels:field==='friction'?cfg.frictionLabels:null;
+  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Restless','Neutral','Engaged']};
+  const arr=(field==='energy'?(Array.isArray(cfg.energyLabels)&&cfg.energyLabels.length===5?cfg.energyLabels:DEF.energy):field==='focus'?(Array.isArray(cfg.focusLabels)&&cfg.focusLabels.length===4?cfg.focusLabels:DEF.focus):field==='friction'?(Array.isArray(cfg.frictionLabels)&&cfg.frictionLabels.length===4?cfg.frictionLabels:DEF.friction):null);
   if(!arr) return null;
   const idx=arr.indexOf(val); if(idx===-1) return null;
   return E_PAL[Math.round((idx/Math.max(arr.length-1,1))*4)];
 }
 function energyFieldScore(field,val){
   const cfg=_energyWidgetSec?.widgetConfig||{};
-  const arr=field==='energy'?cfg.energyLabels:field==='focus'?cfg.focusLabels:field==='friction'?cfg.frictionLabels:null;
+  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Restless','Neutral','Engaged']};
+  const arr=(field==='energy'?(Array.isArray(cfg.energyLabels)&&cfg.energyLabels.length===5?cfg.energyLabels:DEF.energy):field==='focus'?(Array.isArray(cfg.focusLabels)&&cfg.focusLabels.length===4?cfg.focusLabels:DEF.focus):field==='friction'?(Array.isArray(cfg.frictionLabels)&&cfg.frictionLabels.length===4?cfg.frictionLabels:DEF.friction):null);
   if(!arr) return null;
   const idx=arr.indexOf(val); return idx===-1?null:idx;
 }
