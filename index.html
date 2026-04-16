@@ -20683,9 +20683,9 @@ function bgMatrix(){
   const {r,g,b} = hexRgb(D.bgColor);
   const cols = Math.floor(w/16);
   const drops = Array.from({length:cols},()=>Math.random()*-50);
+  const resetAt = Array.from({length:cols},()=> (h*0.2 + Math.random()*h*1.4) / 16);
   const chars = 'ｦｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃ01アイウエオカキクケコ';
   function draw(){
-    // Semi-transparent black over canvas only — creates the trail fade
     c.fillStyle='rgba(0,0,0,0.08)';
     c.fillRect(0,0,w,h);
     c.font='14px Share Tech Mono, monospace';
@@ -20693,7 +20693,10 @@ function bgMatrix(){
       const ch = chars[Math.floor(Math.random()*chars.length)];
       c.fillStyle=`rgba(${r},${g},${b},0.9)`;
       c.fillText(ch, i*16, y*16);
-      if(y*16>h && Math.random()>0.975) drops[i]=0;
+      if(y > resetAt[i]){
+        drops[i] = 0;
+        resetAt[i] = (h*0.2 + Math.random()*h*1.4) / 16;
+      }
       drops[i]+=0.5;
     });
     bgAnimFrame = requestAnimationFrame(draw);
