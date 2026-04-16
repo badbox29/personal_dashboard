@@ -18813,10 +18813,11 @@ function paintWeather(loc){
 
       if(types.length){
         const dominant = types.reduce((a,b) => pollenRank(b.val) > pollenRank(a.val) ? b : a);
-        pillPollenHtml = `<span class="w-pill-sep">·</span><span class="w-pill-pollen" style="color:${pollenColor(dominant.val)}">🌿 ${dominant.val}</span>`;
+        const pollenIcon = { Tree:'🌲', Grass:'🌿', Weed:'🌾' }[dominant.name] || '🌿';
+        pillPollenHtml = `<span class="w-pill-sep">·</span><span class="w-pill-pollen" style="color:${pollenColor(dominant.val)}">${pollenIcon} ${dominant.val}</span>`;
         pollenPanel = `
           <div class="w-pollen">
-            <div class="w-pollen-icon">🌿</div>
+            <div class="w-pollen-icon">${pollenIcon}</div>
             <div class="w-pollen-label" style="color:${pollenColor(dominant.val)}">${dominant.val}</div>
             <div class="w-pollen-tag">${dominant.name}</div>
             <div class="w-pollen-tooltip">
