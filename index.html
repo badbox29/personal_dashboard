@@ -20978,15 +20978,15 @@ function bgWarp(){
 function bgFireflies(){
   const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
   const {r,g,b} = hexRgb(D.bgColor);
-  const flies = Array.from({length:55},()=>{
+  const flies = Array.from({length:55},(_, i)=>{
     const s = Math.random()*1.5+0.8;
     return {
       x: Math.random()*w,
       y: Math.random()*h,
       ang: Math.random()*Math.PI*2,
       v: s*s/4,
-      phase: Math.random()*Math.PI*2,
-      freq: Math.random()*0.025+0.012,
+      phase: (i/55)*Math.PI*2 + Math.random()*Math.PI,
+      freq: Math.random()*0.04+0.008,
       radius: s+0.8
     };
   });
