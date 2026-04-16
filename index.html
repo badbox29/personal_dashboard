@@ -20978,21 +20978,25 @@ function bgWarp(){
 function bgFireflies(){
   const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
   const {r,g,b} = hexRgb(D.bgColor);
-  const flies = Array.from({length:55},()=>({
-    x: Math.random()*w,
-    y: Math.random()*h,
-    vx: (Math.random()-0.5)*0.35,
-    vy: (Math.random()-0.5)*0.35,
-    phase: Math.random()*Math.PI*2,
-    freq: Math.random()*0.025+0.012,
-    radius: Math.random()*2.5+1.2
-  }));
+  const flies = Array.from({length:55},()=>{
+    const s = Math.random()*1.5+0.8;
+    return {
+      x: Math.random()*w,
+      y: Math.random()*h,
+      ang: Math.random()*Math.PI*2,
+      v: s*s/4,
+      phase: Math.random()*Math.PI*2,
+      freq: Math.random()*0.025+0.012,
+      radius: s+0.8
+    };
+  });
   function draw(){
     c.clearRect(0,0,w,h);
     flies.forEach(f=>{
+      f.ang += Math.random()*20*Math.PI/180 - 10*Math.PI/180;
+      f.x += f.v*Math.cos(f.ang);
+      f.y += f.v*Math.sin(f.ang);
       f.phase += f.freq;
-      f.x += f.vx + Math.sin(f.phase*0.7)*0.3;
-      f.y += f.vy + Math.cos(f.phase*0.5)*0.3;
       if(f.x<0) f.x=w; if(f.x>w) f.x=0;
       if(f.y<0) f.y=h; if(f.y>h) f.y=0;
       const brightness = 0.35+Math.sin(f.phase)*0.35;
