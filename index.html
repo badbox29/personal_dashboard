@@ -10381,12 +10381,14 @@ function buildBgpWidget(sec){
 /* ---- ABSTRACT COMPOSITION GENERATOR ---- */
 function buildComposeWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
-  if(!cfg.sections)    cfg.sections    = {palette:true,structure:true,texture:true,tension:true,concept:true};
-  if(!cfg.complexity)  cfg.complexity  = 'balanced';
-  if(!cfg.mood)        cfg.mood        = 'mixed';
-  if(!cfg.styleLean)   cfg.styleLean   = 'mixed';
   if(!cfg.saved)       cfg.saved       = [];
   if(cfg.spark === undefined) cfg.spark = false;
+  // Read-through accessors — never write defaults into cfg at render time
+  const DEFAULT_SECTIONS = {palette:true,structure:true,texture:true,tension:true,concept:true};
+  const cfgSections   = ()=> cfg.sections   || DEFAULT_SECTIONS;
+  const cfgComplexity = ()=> cfg.complexity || 'balanced';
+  const cfgMood       = ()=> cfg.mood       || 'mixed';
+  const cfgStyleLean  = ()=> cfg.styleLean  || 'mixed';
 
   // ── Data pools ────────────────────────────────────────
   const PALETTES = {
@@ -10552,15 +10554,15 @@ function buildComposeWidget(sec){
   function getPool(pools, key){
     const spark = cfg.spark;
     if(key==='palette'){
-      const tone = cfg.mood==='calm'?'cool': cfg.mood==='tense'?'dramatic': cfg.mood==='chaotic'?'dramatic':
-                   cfg.mood==='meditative'?'neutral':'warm';
+      const tone = cfgMood()==='calm'?'cool': cfgMood()==='tense'?'dramatic': cfgMood()==='chaotic'?'dramatic':
+                   cfgMood()==='meditative'?'neutral':'warm';
       const combined = spark
         ? [...(pools.warm||[]),...(pools.cool||[]),...(pools.neutral||[]),...(pools.dramatic||[]),...SPARK_PALETTES]
         : [...(pools[tone]||[]),...(pools.warm||[]),...(pools.cool||[])];
       return combined;
     }
     if(key==='structure'){
-      const style = cfg.styleLean;
+      const style = cfgStyleLean();
       const combined = spark
         ? [...(pools.geometric||[]),...(pools.organic||[]),...(pools.mixed||[]),...SPARK_STRUCTURES]
         : style==='mixed'?[...(pools.geometric||[]),...(pools.organic||[]),...(pools.mixed||[])]
@@ -10568,7 +10570,7 @@ function buildComposeWidget(sec){
       return combined;
     }
     if(key==='texture'){
-      const cx = cfg.complexity;
+      const cx = cfgComplexity();
       const combined = spark
         ? [...(pools.minimal||[]),...(pools.balanced||[]),...(pools.complex||[])]
         : (pools[cx]||[]).concat(pools.balanced||[]);
@@ -10577,7 +10579,7 @@ function buildComposeWidget(sec){
     if(key==='tension'){
       const combined = spark
         ? [...(pools.calm||[]),...(pools.tense||[]),...(pools.chaotic||[]),...(pools.meditative||[])]
-        : (pools[cfg.mood]||pools.tense||[]).concat(pools.meditative||[]);
+        : (pools[cfgMood()]||pools.tense||[]).concat(pools.meditative||[]);
       return combined;
     }
     if(key==='concept'){
@@ -10592,7 +10594,7 @@ function buildComposeWidget(sec){
     const sections = ['palette','structure','texture','tension','concept'];
     if(refine && prev){
       // Refine: change 1-2 unlocked sections
-      const unlocked = sections.filter(s=>!locks[s] && cfg.sections[s]);
+      const unlocked = sections.filter(s=>!locks[s] && cfgSections()[s]);
       const toChange = unlocked.sort(()=>Math.random()-0.5).slice(0, Math.min(2,unlocked.length));
       toChange.forEach(s=> current[s] = pickSection(s));
     } else {
@@ -10669,7 +10671,7 @@ function buildComposeWidget(sec){
     }
     const card=el('div','comp-result');
     SECTION_DEFS.forEach(({key,label,cls})=>{
-      if(!cfg.sections[key]) return;
+      if(!cfgSections()[key]) return;
       const row=el('div','comp-section');
       const lbl=el('span','comp-section-lbl'); lbl.textContent=label;
       const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=current[key]||'—';
@@ -10711,8 +10713,8 @@ function buildComposeWidget(sec){
   togRow.style.flexWrap='wrap'; togRow.style.gap='6px';
   SECTION_DEFS.forEach(({key,label})=>{
     const tog=el('label'); tog.style.cssText='display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;';
-    const chk=el('input'); chk.type='checkbox'; chk.checked=!!cfg.sections[key];
-    chk.onchange=()=>{ cfg.sections[key]=chk.checked; persist(); };
+    const chk=el('input'); chk.type='checkbox'; chk.checked=!!cfgSections()[key];
+    chk.onchange=()=>{ if(!cfg.sections) cfg.sections={...DEFAULT_SECTIONS}; cfg.sections[key]=chk.checked; persist(); };
     tog.append(chk, document.createTextNode(label));
     togRow.appendChild(tog);
   });
@@ -10723,7 +10725,8 @@ function buildComposeWidget(sec){
     const wrap2=el('div'); wrap2.style.cssText='display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px;';
     const l=el('div'); l.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;'; l.textContent=lbl;
     const s=el('select','comp-bias-sel');
-    opts.forEach(([v,t])=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; if(cfg[key]===v) o.selected=true; s.appendChild(o); });
+    const readKey = key==='complexity'?cfgComplexity():key==='mood'?cfgMood():cfgStyleLean();
+    opts.forEach(([v,t])=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; if(readKey===v) o.selected=true; s.appendChild(o); });
     s.onchange=()=>{ cfg[key]=s.value; persist(); };
     wrap2.append(l,s); return wrap2;
   };
@@ -10781,7 +10784,7 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
       {key:'tension',  label:'Tension',   cls:''},
       {key:'concept',  label:'Concept',   cls:'concept'},
     ].forEach(({key,label,cls})=>{
-      if(!(cfg.sections[key])) return;
+      if(!((cfg.sections||{palette:true,structure:true,texture:true,tension:true,concept:true})[key])) return;
       const row=el('div','comp-section');
       const lbl=el('span','comp-section-lbl'); lbl.textContent=label;
       const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=comp[key]||'—';
