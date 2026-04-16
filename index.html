@@ -10928,7 +10928,7 @@ function buildEnergyWidget(sec, tabId){
     Context:  'What you\'re currently doing or what kind of activity this entry describes.',
   };
 
-  function makeChipRow(label, getOpts, getter, setter){
+  function makeChipRow(label, getOpts, getter, setter, fixedPal){
     const row=el('div','energy-row');
     const lblWrap=el('div','energy-lbl-wrap');
     const lbl=el('div','energy-row-label'); lbl.textContent=label;
@@ -10958,7 +10958,7 @@ function buildEnergyWidget(sec, tabId){
       const opts=getOpts();
       opts.forEach((opt,i)=>{
         const chip=el('div','energy-chip'); chip.textContent=opt; chip.dataset.val=opt;
-        const pal=chipColor(i,opts.length);
+        const pal=fixedPal||chipColor(i,opts.length);
         chip.onclick=()=>{
           if(getter()===opt){ setter(null); clearChipSel(chip); }
           else {
@@ -10978,7 +10978,7 @@ function buildEnergyWidget(sec, tabId){
   const energyRow   = makeChipRow('Energy',   ()=>cfg.energyLabels,   ()=>selEnergy,   v=>{ selEnergy=v; });
   const focusRow    = makeChipRow('Focus',     ()=>cfg.focusLabels,    ()=>selFocus,    v=>{ selFocus=v; });
   const frictionRow = makeChipRow('Friction',  ()=>cfg.frictionLabels, ()=>selFriction, v=>{ selFriction=v; });
-  const contextRow  = makeChipRow('Context',   ()=>cfg.contextTags,    ()=>selContext,  v=>{ selContext=v; });
+  const contextRow  = makeChipRow('Context', ()=>cfg.contextTags, ()=>selContext, v=>{ selContext=v; }, {color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.1)'});
 
   wrap.appendChild(energyRow.row);
   wrap.appendChild(focusRow.row);
@@ -11185,7 +11185,7 @@ function buildEnergyWidget(sec, tabId){
 
   // Context panel
   const contextPanel=panels.context.panel;
-  buildFreeformPanel(contextPanel,'contextTags',DEFAULT_CONTEXT,contextRow.buildChips,8,'New context tag\u2026');
+  buildFreeformPanel(contextPanel,'contextTags',DEFAULT_CONTEXT,contextRow.buildChips,12,'New context tag\u2026');
   editSection.appendChild(contextPanel);
 
   // Location panel
@@ -11351,12 +11351,12 @@ function openEnergyEditModal(entryIdx, sec){
   ts.textContent=new Date(entry.timestamp).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); modal.appendChild(ts);
   function mrow(){ const r=el('div'); r.style.cssText='display:flex;gap:6px;margin-bottom:7px;'; return r; }
   let eV=entry.energy, fV=entry.focus, frV=entry.friction, cV=entry.context, lV=entry.location;
-  function editChipRow(label,opts,getter,setter){
+  function editChipRow(label,opts,getter,setter,fixedPal){
     const row=el('div','energy-row'); const lbl=el('div','energy-row-label'); lbl.textContent=label;
     const chips=el('div','energy-chips');
     opts.forEach((opt,i)=>{
       const chip=el('div','energy-chip'); chip.textContent=opt; chip.dataset.val=opt;
-      const pal=editPal(i,opts.length);
+      const pal=fixedPal||editPal(i,opts.length);
       function applySel(){ chip.style.borderColor=pal.border; chip.style.background=pal.bg; chip.style.color=pal.color; }
       function clearSel(){ chip.style.borderColor=''; chip.style.background=''; chip.style.color=''; }
       if(getter()===opt) applySel();
@@ -11371,7 +11371,8 @@ function openEnergyEditModal(entryIdx, sec){
   modal.appendChild(editChipRow('Energy',   eLabels,   ()=>eV,  v=>{ eV=v; }));
   modal.appendChild(editChipRow('Focus',    fLabels,   ()=>fV,  v=>{ fV=v; }));
   modal.appendChild(editChipRow('Friction', frLabels,  ()=>frV, v=>{ frV=v; }));
-  modal.appendChild(editChipRow('Context',  ctxLabels, ()=>cV,  v=>{ cV=v; }));
+  const GOLD_PAL={color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.1)'};
+  modal.appendChild(editChipRow('Context',  ctxLabels, ()=>cV,  v=>{ cV=v; }, GOLD_PAL));
 
   // Location chips using configured list
   const editLocRow=el('div','energy-loc-row');
