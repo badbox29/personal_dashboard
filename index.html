@@ -2924,6 +2924,7 @@ body.edit-mode .world-clock-add-row { display: flex; }
 /* ============================================================
    WIDGET — To-Do List
    ============================================================ */
+.todo-widget { display: flex; flex-direction: column; }
 .todo-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; }
 .todo-item {
   display: flex;
@@ -3003,18 +3004,20 @@ body.edit-mode .todo-del { display: block; }
 .todo-add-btn:hover { border-color: var(--cyan); color: var(--cyan); }
 .todo-clear-btn {
   display: none;
+  align-self: flex-end;
   background: none;
   border: none;
   color: var(--text-dim);
   font-size: 11px;
   font-family: 'Outfit', sans-serif;
   cursor: pointer;
-  padding: 4px 0 0;
+  padding: 6px 2px 2px;
+  margin-top: 8px;
   text-decoration: underline;
   transition: color 0.15s;
 }
 .todo-clear-btn:hover { color: var(--del-color); }
-body.edit-mode .todo-clear-btn { display: block; }
+body.edit-mode .todo-clear-btn.has-completed { display: block; }
 /* cfg-input — shared input/textarea style used by widget config forms */
 .cfg-input {
   background: var(--inp-bg);
@@ -8323,6 +8326,7 @@ function buildTodoWidget(sec){
         item.classList.toggle('done', todo.done);
         lbl.style.textDecoration = todo.done ? 'line-through' : '';
         persist();
+        updateClearBtn();
       };
       const lbl = el('div','todo-label'); lbl.textContent = todo.text;
       lbl.onclick = ()=>{ chk.checked=!chk.checked; chk.onchange(); };
@@ -8331,15 +8335,8 @@ function buildTodoWidget(sec){
       item.append(chk, lbl, del);
       list.appendChild(item);
     });
+    updateClearBtn();
   }
-
-  // Clear completed button (edit mode)
-  const clearBtn = el('button','todo-clear-btn'); clearBtn.textContent='Clear completed';
-  clearBtn.onclick = ()=>{
-    cfg.todos = cfg.todos.filter(t=>!t.done);
-    persist(); renderTodos();
-  };
-  wrap.appendChild(clearBtn);
 
   // Add row
   const addRow = el('div','todo-add-row');
@@ -8356,6 +8353,18 @@ function buildTodoWidget(sec){
   addBtn.onclick = doAdd;
   addRow.append(addInp, addBtn);
   wrap.appendChild(addRow);
+
+  // Clear completed button (edit mode, only when there are completed items)
+  const clearBtn = el('button','todo-clear-btn'); clearBtn.textContent='Clear completed';
+  clearBtn.onclick = ()=>{
+    cfg.todos = cfg.todos.filter(t=>!t.done);
+    persist(); renderTodos();
+  };
+  wrap.appendChild(clearBtn);
+
+  function updateClearBtn(){
+    clearBtn.classList.toggle('has-completed', cfg.todos.some(t=>t.done));
+  }
 
   renderTodos();
   return wrap;
