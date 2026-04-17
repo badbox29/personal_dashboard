@@ -5703,6 +5703,7 @@ body.edit-mode .gh-add-row { display: flex; }
       <button class="noise-btn" onclick="setBgStyle('grid',this)">⊞ Grid</button>
       <button class="noise-btn" onclick="setBgStyle('particles',this)">· Particles</button>
       <button class="noise-btn" onclick="setBgStyle('synthwave',this)">🌅 Synthwave</button>
+      <button class="noise-btn" onclick="setBgStyle('synthcity',this)">🌇 Synthcity</button>
       <button class="noise-btn" onclick="setBgStyle('rain',this)">🌧 Rain</button>
       <button class="noise-btn" onclick="setBgStyle('warp',this)">⟡ Warp</button>
       <button class="noise-btn" onclick="setBgStyle('fireflies',this)">✦ Fireflies</button>
@@ -20656,6 +20657,7 @@ function applyBg(){
     grid:       bgGrid,
     particles:  bgParticles,
     synthwave:  bgSynthwave,
+    synthcity:  bgSynthcity,
     rain:       bgRain,
     warp:       bgWarp,
     fireflies:  bgFireflies,
@@ -20919,17 +20921,304 @@ function bgSynthwave(){
       c.lineTo(w/2+i*(w*0.5),  h+100);
       c.stroke();
     }
-    // Horizontal scrolling lines
+    // Horizontal scrolling lines — span full canvas width
     for(let i=0;i<12;i++){
       const p  = (i/12+t*0.3)%1;
       const y  = horizon + (h-horizon)*p*p;
-      const xw = (w*0.5)*p;
       c.beginPath();
-      c.moveTo(w/2-xw,y); c.lineTo(w/2+xw,y);
+      c.moveTo(0,y); c.lineTo(w,y);
       c.globalAlpha=p*0.9; c.stroke(); c.globalAlpha=1;
     }
     t+=0.01;
     bgAnimFrame=requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ---- SYNTHCITY ---- */
+function bgSynthcity(){
+  const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
+  const {r,g,b} = hexRgb(D.bgColor);
+
+  const horizon = h * 0.62;
+  const sunR    = Math.min(w,h) * 0.19;
+  const sunCX   = w / 2;
+  const sunCY   = horizon - sunR*1.1;
+
+  const cityStart = w * 0.20, cityEnd = w * 0.80;
+
+  // ── Scene generation (runs once per invocation) ──
+  function buildMesas(maxH,minP,maxP,minS,maxS,minG,maxG){
+    const path=[],baseY=horizon+2; let mx=-40;
+    path.push({x:mx,y:baseY});
+    while(mx < w+40){
+      const su=minS+Math.random()*(maxS-minS);
+      const pw=minP+Math.random()*(maxP-minP);
+      const sd=minS+Math.random()*(maxS-minS);
+      const mh=maxH*(0.5+Math.random()*0.5);
+      path.push({x:mx+su,y:baseY-mh},{x:mx+su+pw,y:baseY-mh});
+      mx+=su+pw+sd; path.push({x:mx,y:baseY});
+      mx+=minG+Math.random()*(maxG-minG); path.push({x:mx,y:baseY});
+    }
+    return path;
+  }
+  function buildOutskirts(){
+    const path=[],baseY=horizon+1;
+    const ls=Math.max(-20,cityStart-w*0.20), re=Math.min(w+20,cityEnd+w*0.20);
+    path.push({x:ls,y:baseY});
+    let x=ls;
+    while(x<re){
+      const step=8+Math.random()*18;
+      const bump=(1+Math.random()*5)+(Math.random()<0.15?4:0);
+      const dist=Math.abs(x-(cityStart+cityEnd)/2);
+      const bias=Math.max(0,1-dist/((cityEnd-cityStart)/2*1.5));
+      path.push({x,y:baseY-bump*(0.4+bias*0.6)});
+      x+=step;
+    }
+    path.push({x:re,y:baseY});
+    return path;
+  }
+  function clumpNoise(xn,seed){
+    return (Math.sin(xn*11+seed*1.3)*0.5+0.5)*0.55
+         + (Math.sin(xn*23+seed*2.7)*0.5+0.5)*0.30
+         + (Math.sin(xn*47+seed*4.1)*0.5+0.5)*0.15;
+  }
+  function buildLayer(cs,ce,minW,maxW,maxH,minH,ep,fill,wd,wom,seed,cs2){
+    const arr=[],cc=(cs+ce)/2,ch=(ce-cs)/2;
+    let x=cs;
+    while(x<ce){
+      const bw=minW+Math.random()*(maxW-minW),cx=x+bw/2;
+      const d=Math.abs(cx-cc)/ch,env=Math.pow(Math.max(0,1-d),ep);
+      const xn=(cx-cs)/(ce-cs),cl=clumpNoise(xn,seed);
+      const hf=env*(1-cs2)+env*cl*cs2+env*cl*0.4,jit=0.85+Math.random()*0.30;
+      const bh=Math.max(minH,minH+(maxH-minH)*hf*jit);
+      const type=Math.random();
+      let feature='flat';
+      if(type>0.78) feature='antenna';
+      else if(type>0.58) feature='stepped';
+      else if(type>0.42) feature='slanted';
+      const b={x,w:bw,h:bh,feature,
+        antennaH:12+Math.random()*28, stepDrop:6+Math.random()*14,
+        fill, windows:[]};
+      const bTop=horizon-bh;
+      const cols=Math.max(1,Math.floor(bw/3.5));
+      const rows=Math.max(1,Math.floor(bh/5));
+      for(let row=1;row<rows;row++){
+        for(let col=0;col<cols;col++){
+          if(Math.random()<wd){
+            const wx=b.x+1+col*(b.w-1.5)/Math.max(cols,1);
+            const wy=bTop+2+row*4;
+            if(wy<horizon-2 && wx<b.x+b.w-1){
+              const rr=Math.random();
+              const color = rr>0.6 ? [255,220,140] : rr>0.3 ? [140,200,255] : [255,150,200];
+              b.windows.push({x:wx,y:wy,w:1,h:2,color,
+                baseOp:(0.3+Math.random()*0.4)*wom,
+                phase:Math.random()*Math.PI*2,
+                freq:0.003+Math.random()*0.008});
+            }
+          }
+        }
+      }
+      arr.push(b);
+      x+=bw+0.5+Math.random()*2.5;
+    }
+    return arr;
+  }
+
+  const backLayer  = buildLayer(cityStart+w*0.05, cityEnd-w*0.05, 4,11,  horizon*0.52, horizon*0.08, 2.2, '#3a1a50', 0.55, 1.0, 1.7, 0.75);
+  const midLayer   = buildLayer(cityStart+w*0.02, cityEnd-w*0.02, 5,13,  horizon*0.32, horizon*0.06, 1.8, '#130420', 0.5,  0.9, 3.3, 0.7);
+  const frontLayer = buildLayer(cityStart,        cityEnd,        7,16,  horizon*0.18, horizon*0.04, 1.4, '#02000a', 0.45, 0.85,5.9, 0.65);
+  const layers = [backLayer, midLayer, frontLayer];
+  let maxBH=0; backLayer.forEach(bb=>{ if(bb.h>maxBH) maxBH=bb.h; });
+  const cityBounds = {start:cityStart,end:cityEnd,center:w/2,topY:horizon-maxBH,horizon};
+  const farMountains  = buildMesas(horizon*0.34, 80,180, 60,110, 5,25);
+  const nearMountains = buildMesas(horizon*0.22, 40,100, 40,70, 15,50);
+  const outskirtsPath = buildOutskirts();
+
+  const stars = Array.from({length:120},()=>({
+    x:Math.random(), y:Math.random()*0.85,
+    sz:Math.random()*1.2+0.2, op:Math.random()*0.6+0.2
+  }));
+
+  function drawMesa(path,fill){
+    c.beginPath(); c.moveTo(path[0].x,horizon+2);
+    path.forEach(p=>c.lineTo(p.x,p.y));
+    c.lineTo(w+40,horizon+2); c.closePath();
+    c.fillStyle=fill; c.fill();
+  }
+  function drawOutskirts(path,fill){
+    c.beginPath(); c.moveTo(path[0].x,horizon+2);
+    path.forEach(p=>c.lineTo(p.x,p.y));
+    c.lineTo(path[path.length-1].x,horizon+2); c.closePath();
+    c.fillStyle=fill; c.fill();
+  }
+  function drawLayer(layer){
+    if(!layer.length) return;
+    c.beginPath(); let started=false;
+    layer.forEach(bb=>{
+      const bTop=horizon-bb.h;
+      if(!started){ c.moveTo(bb.x,horizon); started=true; } else c.lineTo(bb.x,horizon);
+      if(bb.feature==='stepped'){
+        c.lineTo(bb.x,bTop+bb.stepDrop); c.lineTo(bb.x+2,bTop+bb.stepDrop);
+        c.lineTo(bb.x+2,bTop); c.lineTo(bb.x+bb.w-2,bTop);
+        c.lineTo(bb.x+bb.w-2,bTop+bb.stepDrop); c.lineTo(bb.x+bb.w,bTop+bb.stepDrop);
+      } else if(bb.feature==='slanted'){
+        c.lineTo(bb.x,bTop+3); c.lineTo(bb.x+bb.w,bTop);
+      } else if(bb.feature==='antenna'){
+        c.lineTo(bb.x,bTop);
+        const mid=bb.x+bb.w/2;
+        c.lineTo(mid-0.5,bTop); c.lineTo(mid-0.5,bTop-bb.antennaH);
+        c.lineTo(mid+0.5,bTop-bb.antennaH); c.lineTo(mid+0.5,bTop);
+        c.lineTo(bb.x+bb.w,bTop);
+      } else {
+        c.lineTo(bb.x,bTop); c.lineTo(bb.x+bb.w,bTop);
+      }
+      c.lineTo(bb.x+bb.w,horizon);
+    });
+    const last=layer[layer.length-1];
+    c.lineTo(last.x+last.w,horizon); c.closePath();
+    c.fillStyle=layer[0].fill; c.fill();
+  }
+  function drawWindows(layer,t){
+    layer.forEach(bb=>bb.windows.forEach(win=>{
+      const breathe = 0.5 + 0.5*Math.sin(t*win.freq*60+win.phase);
+      const op = win.baseOp * (0.35 + breathe*0.65);
+      c.fillStyle = `rgba(${win.color[0]},${win.color[1]},${win.color[2]},${op})`;
+      c.fillRect(win.x,win.y,win.w,win.h);
+    }));
+  }
+
+  let t=0;
+  function draw(){
+    // Hot pink dominant glow — bgColor contributes 20%
+    const gr = Math.round(r*0.2 + 255*0.8);
+    const gg = Math.round(g*0.2 + 30*0.8);
+    const gb = Math.round(b*0.2 + 170*0.8);
+
+    c.clearRect(0,0,w,h);
+
+    // Sky
+    const skyG = c.createLinearGradient(0,0,0,horizon);
+    skyG.addColorStop(0,   '#0a0320');
+    skyG.addColorStop(0.4, '#1a0535');
+    skyG.addColorStop(0.75,'#6a0a5a');
+    skyG.addColorStop(1,   '#cc1070');
+    c.fillStyle=skyG; c.fillRect(0,0,w,horizon);
+
+    // Stars
+    stars.forEach(s=>{
+      if(s.y*horizon < horizon*0.62){
+        c.beginPath(); c.arc(s.x*w, s.y*horizon, s.sz, 0, Math.PI*2);
+        c.fillStyle=`rgba(255,255,255,${s.op})`; c.fill();
+      }
+    });
+
+    // Sun bloom
+    const bloom = c.createRadialGradient(sunCX,sunCY,sunR*0.3,sunCX,sunCY,sunR*3.5);
+    bloom.addColorStop(0,   'rgba(255,220,50,0.55)');
+    bloom.addColorStop(0.2, 'rgba(255,120,20,0.35)');
+    bloom.addColorStop(0.45,'rgba(220,30,120,0.22)');
+    bloom.addColorStop(0.7, 'rgba(140,10,180,0.10)');
+    bloom.addColorStop(1,   'rgba(60,0,120,0)');
+    c.fillStyle=bloom; c.fillRect(0,0,w,horizon);
+
+    // Sun body on offscreen canvas so stripes punch through correctly
+    const ofc = document.createElement('canvas'); ofc.width=w; ofc.height=h;
+    const oc = ofc.getContext('2d');
+    const innerG = oc.createRadialGradient(sunCX,sunCY,sunR*0.6,sunCX,sunCY,sunR*1.6);
+    innerG.addColorStop(0,   'rgba(255,240,100,0.7)');
+    innerG.addColorStop(0.4, 'rgba(255,100,20,0.35)');
+    innerG.addColorStop(1,   'rgba(255,20,100,0)');
+    oc.fillStyle=innerG;
+    oc.beginPath(); oc.arc(sunCX,sunCY,sunR*1.6,0,Math.PI*2); oc.fill();
+    oc.save();
+    oc.beginPath(); oc.arc(sunCX,sunCY,sunR,0,Math.PI*2); oc.clip();
+    const sunG = oc.createLinearGradient(sunCX,sunCY-sunR,sunCX,sunCY+sunR);
+    sunG.addColorStop(0,   '#ffee44');
+    sunG.addColorStop(0.28,'#ffaa00');
+    sunG.addColorStop(0.58,'#ff4400');
+    sunG.addColorStop(1,   '#cc1040');
+    oc.fillStyle=sunG;
+    oc.fillRect(sunCX-sunR,sunCY-sunR,sunR*2,sunR*2);
+    const stripes=[0.5,0.7,0.95,1.25,1.6,2.0];
+    const zone=(sunCY+sunR)-(sunCY-sunR*0.35);
+    const gapUnit=zone/(stripes.reduce((a,bb)=>a+bb,0)+(stripes.length-1)*0.65);
+    oc.globalCompositeOperation='destination-out';
+    oc.fillStyle='rgba(0,0,0,1)';
+    let sy=sunCY-sunR*0.35;
+    stripes.forEach(sw=>{ const sh=sw*gapUnit; oc.fillRect(sunCX-sunR,sy,sunR*2,sh); sy+=sh+gapUnit*0.65; });
+    oc.restore();
+    c.drawImage(ofc,0,0);
+
+    // Mountains — far then near
+    drawMesa(farMountains,  'rgba(50,20,75,0.75)');
+    drawMesa(nearMountains, 'rgb(95,55,115)');
+
+    // City back aura
+    c.save();
+    c.beginPath(); c.rect(0,0,w,horizon); c.clip();
+    c.globalCompositeOperation='lighter';
+    const ax=cityBounds.center, ar=(cityBounds.end-cityBounds.start)*0.75;
+    const ay=cityBounds.topY + (cityBounds.horizon-cityBounds.topY)*0.5;
+    const a1=c.createRadialGradient(ax,ay,ar*0.1,ax,ay,ar);
+    a1.addColorStop(0,   `rgba(${gr},${gg},${gb},0.28)`);
+    a1.addColorStop(0.35,`rgba(${gr},${gg},${gb},0.12)`);
+    a1.addColorStop(1,   `rgba(${gr},${gg},${gb},0)`);
+    c.fillStyle=a1; c.fillRect(0,0,w,horizon);
+    c.restore();
+
+    // City silhouettes + windows
+    drawLayer(layers[0]); drawWindows(layers[0],t);
+    drawLayer(layers[1]); drawWindows(layers[1],t);
+    drawLayer(layers[2]); drawWindows(layers[2],t);
+    drawOutskirts(outskirtsPath,'#02000a');
+
+    // Horizon glow — thin sharp neon strip, painted AFTER buildings with lighter blend
+    c.save();
+    c.beginPath(); c.rect(0,0,w,horizon); c.clip();
+    c.globalCompositeOperation='lighter';
+    // Soft upper bloom
+    const upper = c.createLinearGradient(0,horizon,0,horizon-horizon*0.35);
+    upper.addColorStop(0,   `rgba(${gr},${gg},${gb},0.55)`);
+    upper.addColorStop(0.3, `rgba(${gr},${gg},${gb},0.22)`);
+    upper.addColorStop(1,   `rgba(${gr},${gg},${gb},0)`);
+    c.fillStyle=upper; c.fillRect(0,horizon-horizon*0.35,w,horizon*0.35);
+    // Sharp hot core
+    const coreTop=horizon-6, coreBot=horizon+3;
+    const coreG = c.createLinearGradient(0,coreTop,0,coreBot);
+    coreG.addColorStop(0,   `rgba(${gr},${gg},${gb},0.0)`);
+    coreG.addColorStop(0.35,`rgba(${gr},${gg},${gb},0.85)`);
+    coreG.addColorStop(0.55,`rgba(255,255,255,0.95)`);
+    coreG.addColorStop(0.75,`rgba(${gr},${gg},${gb},0.85)`);
+    coreG.addColorStop(1,   `rgba(${gr},${gg},${gb},0.0)`);
+    c.fillStyle=coreG; c.fillRect(0,coreTop,w,coreBot-coreTop);
+    // 2px laser line
+    c.fillStyle='rgba(255,255,255,0.9)';
+    c.fillRect(0,horizon-1,w,2);
+    c.restore();
+
+    // Ground
+    c.fillStyle='#050112'; c.fillRect(0,horizon,w,h-horizon);
+
+    // Grid — bgColor-tinted, horizontals span full canvas width
+    c.strokeStyle=`rgba(${r},${g},${b},0.65)`;
+    c.lineWidth=1;
+    for(let i=-10;i<=10;i++){
+      c.beginPath();
+      c.moveTo(w/2+i*(w*0.06), horizon);
+      c.lineTo(w/2+i*(w*0.5),  h+100);
+      c.stroke();
+    }
+    for(let i=0;i<12;i++){
+      const p = (i/12 + t*0.3) % 1;
+      const y = horizon + (h-horizon)*p*p;
+      c.beginPath();
+      c.moveTo(0,y); c.lineTo(w,y);
+      c.globalAlpha=p*0.9; c.stroke(); c.globalAlpha=1;
+    }
+
+    t += 0.01;
+    bgAnimFrame = requestAnimationFrame(draw);
   }
   draw();
 }
