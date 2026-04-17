@@ -21478,7 +21478,7 @@ function bgCircuit(){
   const oc = off.getContext('2d');
   const rr=(a=1,b0=0)=>Math.random()*(a-b0)+b0;
   const ch=a=>a[Math.floor(Math.random()*a.length)];
-  const st={tr:[],jn:[],lim:180};
+  const st={tr:[],jn:[],lim:360};
   // Build a trace: 4 waypoints with right-angle PCB turns
   function mk(p,ang_in){
     const s=p||{x:rr(off.width),y:rr(off.height)};
@@ -21528,15 +21528,15 @@ function bgCircuit(){
       // Branch forward from endpoint
       if(!tr.be){
         tr.be=1;
-        if(Math.random()<0.4)return;
-        if(Math.random()<0.08&&st.tr.length<st.lim){
+        if(Math.random()<0.18)return;
+        if(Math.random()<0.166&&st.tr.length<st.lim){
           const dx=tr.pts[3].x-tr.pts[2].x,dy=tr.pts[3].y-tr.pts[2].y;
           const ang=Math.atan2(dy,dx)*180/Math.PI;
           for(const o of[-90,0,90])st.tr.push(mk(tr.pts[3],ang+o));
         }
       }
       // Branch backward from start
-      if(!tr.bs&&Math.random()<0.08&&st.tr.length<st.lim){
+      if(!tr.bs&&Math.random()<0.166&&st.tr.length<st.lim){
         tr.bs=1;
         const dx=tr.pts[1].x-tr.pts[0].x,dy=tr.pts[1].y-tr.pts[0].y;
         const ang=Math.atan2(dy,dx)*180/Math.PI+180;
@@ -21545,12 +21545,12 @@ function bgCircuit(){
     }
   }
   // Seed a handful of initial traces so the screen isn't empty at start
-  for(let i=0;i<6;i++) st.tr.push(mk());
+  for(let i=0;i<18;i++) st.tr.push(mk());
   function draw(now){
     // Draw all traces to off-screen canvas
     oc.setTransform(1,0,0,1,0,0);
     oc.clearRect(0,0,off.width,off.height);
-    if(Math.random()<0.02&&st.tr.length<st.lim) st.tr.push(mk());
+    if(Math.random()<0.089&&st.tr.length<st.lim) st.tr.push(mk());
     for(let i=st.tr.length-1;i>=0;i--){
       drawTrace(st.tr[i],now);
       if(st.tr[i].d) st.tr.splice(i,1);
