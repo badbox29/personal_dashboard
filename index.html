@@ -5717,6 +5717,7 @@ body.edit-mode .gh-add-row { display: flex; }
       <button class="noise-btn" onclick="setBgStyle('parallax',this)">║ Parallax</button>
       <button class="noise-btn" onclick="setBgStyle('glitter',this)">✧ Glitter</button>
       <button class="noise-btn" onclick="setBgStyle('bubbles',this)">◎ Bubbles</button>
+      <button class="noise-btn" onclick="setBgStyle('lavalamp',this)">🫧 Lava Lamp</button>
       <button class="noise-btn" onclick="setBgStyle('gridtrail',this)">⊞ Grid Trail</button>
     </div>
     <div class="bg-color-row">
@@ -20625,6 +20626,10 @@ function applyBg(){
     bgCtx.canvas._gridTrailHandler = null;
   }
 
+  // Clean up lava lamp DOM layer if switching away
+  const oldLava = document.getElementById('lavaLampLayer');
+  if(oldLava) oldLava.remove();
+
   // Custom URL mode — apply as body background, hide canvas
   if(D.bgUrlActive && D.bgUrl){
     canvas.style.opacity = '0';
@@ -20643,6 +20648,9 @@ function applyBg(){
     document.getElementById('bgDimOverlay').style.opacity = '0';
     return;
   }
+
+  // Lava lamp — DOM-based, no canvas needed
+  if(D.bgStyle === 'lavalamp'){ bgLavaLamp(); return; }
 
   bgCtx = canvas.getContext('2d');
   bgCtx.globalCompositeOperation = 'source-over';
@@ -20673,6 +20681,7 @@ function applyBg(){
     bubbles:    bgBubbles,
     scales:     bgBubbles,
     gridtrail:  bgGridTrail,
+    lavalamp:   bgLavaLamp,
   };
   fns[D.bgStyle]?.();
 }
@@ -21788,6 +21797,74 @@ function bgGlitter(){
     bgAnimFrame=requestAnimationFrame(draw);
   }
   draw();
+}
+
+/* ---- LAVA LAMP ---- */
+function bgLavaLamp(){
+  const canvas = document.getElementById('bgCanvas');
+  canvas.style.opacity = '0';
+  document.getElementById('bgDimOverlay').style.opacity = D.bgDim / 100;
+
+  const {r,g,b} = hexRgb(D.bgColor);
+  const dr = Math.round(r*0.07), dg = Math.round(g*0.07), db = Math.round(b*0.07);
+  const mr = Math.round(r*0.16), mg = Math.round(g*0.16), mb = Math.round(b*0.16);
+  const bgCss = `radial-gradient(ellipse at bottom, rgb(${mr},${mg},${mb}), rgb(${dr},${dg},${db}))`;
+
+  // Inject SVG filter once
+  if(!document.getElementById('lavaGooFilter')){
+    const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.id = 'lavaGooFilter';
+    svg.setAttribute('style','position:absolute;width:0;height:0;');
+    svg.innerHTML = `<defs><filter id="goo">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/>
+      <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo"/>
+      <feBlend in="SourceGraphic" in2="goo"/>
+    </filter></defs>`;
+    document.body.appendChild(svg);
+  }
+
+  const layer = document.createElement('div');
+  layer.id = 'lavaLampLayer';
+  layer.style.cssText = `position:fixed;inset:0;z-index:1;opacity:${D.bgOpacity/100};background:${bgCss};`;
+
+  layer.innerHTML = `
+    <div class="lava-lamp" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);height:100vh;width:100vw;min-width:100vw;z-index:-1;">
+      <div class="lava-inner" style="filter:url('#goo');position:absolute;height:100%;width:100%;top:0;left:0;">
+        <div class="lava-blob" style="width:200px;height:200px;left:35%;bottom:-15%;animation:lvWobble 4s ease-in-out alternate infinite,lvOne ease-in-out 28s infinite;"></div>
+        <div class="lava-blob" style="width:330px;height:330px;right:24%;bottom:-65%;animation:lvWobble 5s ease-in-out alternate infinite,lvTwo ease-in-out 50s infinite;"></div>
+        <div class="lava-blob" style="width:150px;height:150px;left:34%;bottom:-15%;animation:lvWobble 6s ease-in-out alternate infinite,lvThree ease-in-out 38s infinite;"></div>
+        <div class="lava-blob" style="width:235px;height:235px;left:30%;bottom:-19%;animation:lvWobble 8s ease-in-out alternate infinite,lvFour ease-in-out 30s infinite;"></div>
+        <div class="lava-blob" style="width:55px;height:55px;left:34%;bottom:-25%;animation:lvWobble 9s ease-in-out alternate infinite,lvFive ease-in-out 72s infinite;"></div>
+        <div class="lava-blob" style="width:35px;height:35px;right:34%;bottom:-25%;animation:lvWobble 10s ease-in-out alternate infinite,lvSix ease-in-out 30s infinite;"></div>
+        <div class="lava-blob" style="width:435px;height:435px;right:40%;bottom:-85%;animation:lvWobble 11s ease-in-out alternate infinite,lvSeven ease-in-out 70s infinite;"></div>
+        <div class="lava-blob" style="width:200px;height:200px;left:35%;bottom:-15%;animation:lvWobble 4s ease-in-out alternate infinite,lvOne ease-in-out 28s infinite;"></div>
+        <div class="lava-blob lava-top" style="border-radius:50%;width:100%;height:4%;top:-3%;left:0;"></div>
+        <div class="lava-blob lava-bot" style="border-radius:50%;width:100%;height:4%;bottom:-3%;left:0;"></div>
+      </div>
+    </div>`;
+
+  // Set blob colors
+  layer.querySelectorAll('.lava-blob').forEach(el => el.style.background = D.bgColor);
+
+  document.body.appendChild(layer);
+
+  // Inject keyframes once
+  if(!document.getElementById('lavaKeyframes')){
+    const st = document.createElement('style');
+    st.id = 'lavaKeyframes';
+    st.textContent = `
+      .lava-blob{border-radius:50%;position:absolute;}
+      @keyframes lvOne   {0%,100%{transform:translateY(0)}50%{transform:translateY(-700%)}}
+      @keyframes lvTwo   {0%,100%{transform:translateY(0)}50%{transform:translateY(-420%)}}
+      @keyframes lvThree {0%,100%{transform:translateY(0)}50%{transform:translateY(-305%)}}
+      @keyframes lvFour  {0%,100%{transform:translateY(0)}50%{transform:translateY(-605%)}}
+      @keyframes lvFive  {0%,100%{transform:translateY(0)}50%{transform:translateY(-700%)}}
+      @keyframes lvSix   {0%,100%{transform:translateY(0)}50%{transform:translateY(-700%)}}
+      @keyframes lvSeven {0%,100%{transform:translateY(0)}50%{transform:translateY(-300%)}}
+      @keyframes lvWobble{50%{border-radius:42% 58% 70% 30%/45% 45% 55% 55%}100%{border-radius:38% 52% 75% 36%/50% 40% 50% 60%}}
+    `;
+    document.head.appendChild(st);
+  }
 }
 
 /* ---- SCALES ---- */
