@@ -7371,6 +7371,16 @@ function tryParse(s){ try{ return JSON.parse(s); } catch(e){ return null; } }
 function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
 function persist(){ localStorage.setItem('salty_v2', JSON.stringify(D)); kvPushDebounced(); }
 
+// Use persistNow() for discrete high-value actions (creating a task, closing it,
+// adding/editing/deleting a work log) — pushes with a short 500ms debounce instead
+// of the normal 5s. Reduces the window where a browser-close can lose the change.
+function persistNow(){
+  localStorage.setItem('salty_v2', JSON.stringify(D));
+  if(!D.kvEnabled) return;
+  if(_kvPushTimer) clearTimeout(_kvPushTimer);
+  _kvPushTimer = setTimeout(kvPush, 500);
+}
+
 // Use persistConfig() instead of persist() when saving widget config/settings
 // (playlists, layout changes, preferences). Sets configDirtyAt so the KV pre-pull
 // knows not to overwrite this browser's pending config with an older remote snapshot.
@@ -7495,6 +7505,17 @@ function kvPushDebounced() {
 // prevents losing config changes made right before walking away from the desk.
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'hidden' && _kvPushTimer) {
+    clearTimeout(_kvPushTimer);
+    _kvPushTimer = null;
+    kvPush();
+  }
+});
+
+// pagehide is a more reliable signal than visibilitychange for actual tab/window
+// close (especially on mobile/Safari). Covers cases where visibilitychange doesn't
+// fire or the async kvPush() fetches were aborted mid-flight.
+window.addEventListener('pagehide', () => {
+  if(_kvPushTimer) {
     clearTimeout(_kvPushTimer);
     _kvPushTimer = null;
     kvPush();
@@ -22054,8 +22075,9 @@ function ttTotalHours(task){
   return (task.workLogs||[]).reduce((s,l)=>s+(l.hours||0),0);
 }
 function ttRoundToQuarter(n){
-  if(!n||n<=0) return 0.25;
-  return Math.ceil(n*4)/4;
+  const v=parseFloat(n);
+  if(isNaN(v)||v<=0) return 0;
+  return Math.ceil(v*4)/4;
 }
 function ttLastLogSummary(task){
   const logs=task.workLogs||[];
@@ -22161,7 +22183,7 @@ function ttOpenAddDialog(onAdded){
       name, description:dinp.value.trim(),
       status:'open', createdAt:new Date().toISOString(), closedAt:null, workLogs:[]
     });
-    persist(); closeOverlay('ttAddOverlay');
+    persistNow(); closeOverlay('ttAddOverlay');
     if(onAdded) onAdded();
   };
   openOverlay('ttAddOverlay');
@@ -22237,7 +22259,7 @@ function ttOpenExplorer(onChanged){
       if(activeTab==='closed'){
         const rb=el('button'); rb.textContent='Reopen'; rb.style.cssText='font-size:10px;padding:2px 10px;flex-shrink:0;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
         rb.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)'; rb.onmouseleave=e=>e.currentTarget.style.background='transparent';
-        rb.onclick=e=>{ e.stopPropagation(); task.status='open'; task.closedAt=null; persist(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
+        rb.onclick=e=>{ e.stopPropagation(); task.status='open'; task.closedAt=null; persistNow(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
         row.appendChild(rb);
       }
       row.onclick=()=>{ selTask=task; renderList(); renderDetail(); };
@@ -22300,7 +22322,7 @@ function ttOpenExplorer(onChanged){
       const cb=el('button'); cb.textContent='✓ Close Task'; cb.style.cssText='font-size:10px;padding:2px 10px;background:transparent;border:1px solid #50c878;color:#50c878;border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
       cb.onmouseenter=e=>e.currentTarget.style.background='rgba(80,200,120,0.12)';
       cb.onmouseleave=e=>e.currentTarget.style.background='transparent';
-      cb.onclick=()=>{ task.status='closed'; task.closedAt=new Date().toISOString(); persist(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
+      cb.onclick=()=>{ task.status='closed'; task.closedAt=new Date().toISOString(); persistNow(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
       trow.appendChild(cb);
     }
     detail.appendChild(trow);
@@ -22379,7 +22401,7 @@ function ttOpenExplorer(onChanged){
           task.workLogs=task.workLogs.filter(l=>l.id!==log.id);
           if(!Array.isArray(D.taskTrackerDeletedLogIds)) D.taskTrackerDeletedLogIds=[];
           if(!D.taskTrackerDeletedLogIds.includes(log.id)) D.taskTrackerDeletedLogIds.push(log.id);
-          persist(); renderList(); renderDetail(); if(onChanged) onChanged();
+          persistNow(); renderList(); renderDetail(); if(onChanged) onChanged();
         };
         logRow.appendChild(delBtn);
         logRowMap.set(log.id, logRow);
@@ -22414,12 +22436,17 @@ function ttOpenExplorer(onChanged){
     const hwrap=el('div');
     const hlbl=el('div'); hlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; hlbl.textContent='Hours';
     const hrow=el('div'); hrow.style.cssText='display:flex;align-items:center;gap:6px;';
-    hinp=el('input','cfg-input'); hinp.type='number'; hinp.min='0.25'; hinp.step='0.25'; hinp.placeholder='0.25';
+    hinp=el('input','cfg-input'); hinp.type='number'; hinp.min='0'; hinp.step='0.25';
     hinp.style.cssText='width:72px;';
     const hmins=el('span'); hmins.style.cssText='font-size:10px;color:var(--text-dim);white-space:nowrap;';
-    hinp.oninput=()=>{ const v=parseFloat(hinp.value); hmins.textContent=(!isNaN(v)&&v>0)?Math.round(v*60)+' min':''; };
+    const herr=el('div'); herr.style.cssText='font-size:10px;color:var(--del-color,#ff6666);margin-top:3px;display:none;'; herr.textContent='Hours is required';
+    hinp.oninput=()=>{
+      const v=parseFloat(hinp.value);
+      hmins.textContent=(!isNaN(v)&&v>=0)?Math.round(v*60)+' min':'';
+      if(hinp.value.trim()!==''){ hinp.style.borderColor=''; herr.style.display='none'; }
+    };
     hinp.onblur=()=>{ const v=parseFloat(hinp.value); if(!isNaN(v)&&v>0){ hinp.value=ttRoundToQuarter(v); hinp.oninput(); } };
-    hrow.append(hinp,hmins); hwrap.append(hlbl,hrow);
+    hrow.append(hinp,hmins); hwrap.append(hlbl,hrow,herr);
     /* Date */
     const dwrap=el('div');
     const dlbl=el('div'); dlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; dlbl.textContent='Date';
@@ -22475,8 +22502,15 @@ function ttOpenExplorer(onChanged){
     acCancel.onclick=()=>renderDetail();
     const acOk=el('button','mbtn mbtn-primary'); acOk.textContent='OK';
     acOk.onclick=()=>{
-      const hrs=ttRoundToQuarter(parseFloat(hinp.value)||0);
-      if(hrs<=0){ hinp.focus(); return; }
+      // Hours field must have an explicit value (0 is allowed, blank is not)
+      const rawHrs=hinp.value.trim();
+      if(rawHrs===''){
+        hinp.style.borderColor='var(--del-color,#ff6666)';
+        herr.style.display='block';
+        hinp.focus();
+        return;
+      }
+      const hrs=ttRoundToQuarter(parseFloat(rawHrs));
       const tickets={};
       tickTypes.forEach(([,abbr])=>{
         tickets[abbr]={ ticketNum:tickInps[abbr].ticketNum.value.trim()||'0', taskNum:tickInps[abbr].taskNum.value.trim()||'0' };
@@ -22500,7 +22534,7 @@ function ttOpenExplorer(onChanged){
           loggedAt:new Date().toISOString(), tickets
         });
       }
-      persist(); renderList(); renderDetail(); if(onChanged) onChanged();
+      persistNow(); renderList(); renderDetail(); if(onChanged) onChanged();
     };
     if(!taskClosed) acts.append(acCancel,acOk);
     detail.appendChild(acts);
