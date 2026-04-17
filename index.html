@@ -21812,10 +21812,10 @@ function bgBubbles(){
   }));
 
   const bubbles = [];
-  const MAX = 120, SPEED_MULT = 4.0;
+  const MAX = 300, SPEED_MULT = 4.0;
 
   function spawnBubble(startY){
-    const x=Math.random()*w, size=1.5+Math.random()*8;
+    const x=Math.random()*w, size=5+Math.random()*10;
     bubbles.push({
       x, baseX:x,
       y:startY!==undefined?startY:h+size,
@@ -21830,10 +21830,15 @@ function bgBubbles(){
     });
   }
 
-  for(let i=0;i<90;i++) spawnBubble(Math.random()*h);
+  for(let i=0;i<Math.floor(MAX*0.75);i++) spawnBubble(Math.random()*h);
 
-  const bgCol={r,g,b};
-  const lc=lighten(bgCol,110), hc=lighten(bgCol,185);
+  const IRID = [
+    [255,255,255],
+    [180,240,255],
+    [255,190,255],
+    [190,255,220],
+    [255,245,190],
+  ];
   let tick=0;
 
   function draw(){
@@ -21870,19 +21875,41 @@ function bgBubbles(){
         bub.deathScale+=0.08;
         if(bub.deathScale>1.8){ bubbles.splice(i,1); continue; }
       }
-      const scale=bub.dying?bub.deathScale:1;
-      const rad=bub.size*scale;
-      const alpha=bub.dying?bub.alpha*(1-(bub.deathScale-1)/0.8):bub.alpha;
+      const scale     = bub.dying ? bub.deathScale : 1;
+      const rad       = bub.size * scale;
+      const deathFade = bub.dying ? (1-(bub.deathScale-1)/0.8) : 1;
+      const irid      = IRID[Math.floor(bub.wobbleOffset*5/(Math.PI*2))%IRID.length];
+
+      // Ring — full opacity independent of bubble alpha
       c.save();
-      c.globalAlpha=Math.max(0,alpha);
+      c.globalAlpha = deathFade;
       c.beginPath(); c.arc(bub.x,bub.y,rad,0,Math.PI*2);
-      c.strokeStyle=`rgb(${lc.r},${lc.g},${lc.b})`; c.lineWidth=0.8; c.stroke();
-      const grad=c.createRadialGradient(bub.x-rad*0.3,bub.y-rad*0.3,rad*0.05,bub.x,bub.y,rad);
-      grad.addColorStop(0,  `rgba(${hc.r},${hc.g},${hc.b},0.5)`);
-      grad.addColorStop(0.4,`rgba(${lc.r},${lc.g},${lc.b},0.1)`);
-      grad.addColorStop(1,  `rgba(${lc.r},${lc.g},${lc.b},0.0)`);
+      c.strokeStyle = `rgba(${irid[0]},${irid[1]},${irid[2]},0.80)`;
+      c.lineWidth   = Math.max(1.2, rad*0.10);
+      c.stroke();
+      c.restore();
+
+      // Interior fill
+      c.save();
+      c.globalAlpha = Math.max(0, bub.alpha*0.6*deathFade);
+      const grad=c.createRadialGradient(bub.x-rad*0.35,bub.y-rad*0.35,rad*0.02,bub.x,bub.y,rad);
+      grad.addColorStop(0,  `rgba(255,255,255,0.30)`);
+      grad.addColorStop(0.5,`rgba(${irid[0]},${irid[1]},${irid[2]},0.08)`);
+      grad.addColorStop(1,  `rgba(${irid[0]},${irid[1]},${irid[2]},0.0)`);
       c.fillStyle=grad;
       c.beginPath(); c.arc(bub.x,bub.y,rad,0,Math.PI*2); c.fill();
+      c.restore();
+
+      // Specular highlight
+      c.save();
+      c.globalAlpha = deathFade;
+      const hx=bub.x-rad*0.32, hy=bub.y-rad*0.32, hr=rad*0.25;
+      const spec=c.createRadialGradient(hx,hy,0,hx,hy,hr);
+      spec.addColorStop(0,  `rgba(255,255,255,0.80)`);
+      spec.addColorStop(0.5,`rgba(255,255,255,0.30)`);
+      spec.addColorStop(1,  `rgba(255,255,255,0)`);
+      c.fillStyle=spec;
+      c.beginPath(); c.arc(hx,hy,hr,0,Math.PI*2); c.fill();
       c.restore();
     }
 
