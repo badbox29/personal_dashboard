@@ -21267,9 +21267,10 @@ function bgWarp(){
   const c = bgCtx, w = bgCtx.canvas.width, h = bgCtx.canvas.height;
   const {r,g,b} = hexRgb(D.bgColor);
   const cx=w/2, cy=h/2;
+  const maxDist = Math.sqrt(cx*cx + cy*cy) * 1.05;
   const stars = Array.from({length:160},()=>({
     angle: Math.random()*Math.PI*2,
-    dist:  Math.random()*Math.min(w,h)*0.48,
+    dist:  Math.random()*maxDist,
     speed: Math.random()*3+1.2
   }));
   function draw(){
@@ -21280,14 +21281,14 @@ function bgWarp(){
       const tail = Math.min(s.speed*4, 28);
       const ox = cx + Math.cos(s.angle)*(s.dist-tail);
       const oy = cy + Math.sin(s.angle)*(s.dist-tail);
-      const alpha = Math.min(1,(s.dist/(Math.min(w,h)*0.48))*0.9+0.1);
+      const alpha = Math.min(1,(s.dist/maxDist)*0.9+0.1);
       c.beginPath();
       c.moveTo(ox,oy); c.lineTo(nx,ny);
       c.strokeStyle=`rgba(${r},${g},${b},${alpha})`;
       c.lineWidth=1.2;
       c.stroke();
       s.dist += s.speed;
-      if(s.dist > Math.min(w,h)*0.52){ s.dist=2; s.angle=Math.random()*Math.PI*2; }
+      if(s.dist > maxDist){ s.dist=2; s.angle=Math.random()*Math.PI*2; }
     });
     bgAnimFrame=requestAnimationFrame(draw);
   }
