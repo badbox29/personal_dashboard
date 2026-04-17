@@ -8358,6 +8358,7 @@ function buildTodoWidget(sec){
   // Clear completed button (edit mode, only when there are completed items)
   const clearBtn = el('button','todo-clear-btn'); clearBtn.textContent='Clear completed';
   clearBtn.onclick = ()=>{
+    if(!confirm('Remove all completed tasks? This cannot be undone.')) return;
     cfg.todos = cfg.todos.filter(t=>!t.done);
     persist(); renderTodos();
   };
