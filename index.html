@@ -19569,7 +19569,7 @@ function buildTrayContent(){
   const enLbl = el('label');
   const enChk = el('input'); enChk.type='checkbox'; enChk.checked=!!D.tray.enabled;
   enChk.onchange = ()=>{ D.tray.enabled=enChk.checked; persist(); updateTrayBtn(); };
-  const enTxt = el('span'); enTxt.textContent='Visible to users';
+  const enTxt = el('span'); enTxt.textContent='Always show button';
   enLbl.append(enChk, enTxt);
   editBar.appendChild(enLbl);
   const colLbl = el('span'); colLbl.textContent='Cols:';
