@@ -505,6 +505,21 @@ body.edit-mode .tray-edit-bar { display: flex; }
 .tray-app-card:hover { border-color: var(--cyan); color: var(--cyan); }
 .tray-app-favicon { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.7; }
 .tray-app-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tray-app-edit {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 2px;
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: opacity 0.12s, color 0.12s;
+  line-height: 1;
+}
+body.edit-mode .tray-app-edit { display: block; }
+.tray-app-edit:hover { opacity: 1; color: var(--cyan); }
 .tray-app-del {
   display: none;
   background: none;
@@ -19592,7 +19607,8 @@ function buildTrayContent(){
   if(apps.length){
     apps.forEach(app=>{
       const card = el('a','tray-app-card');
-      card.href=app.url; card.target='_blank'; card.rel='noopener noreferrer'; card.title=app.url;
+      card.href=app.url; card.target='_blank'; card.rel='noopener noreferrer';
+      card.title = app.desc || app.url;
       card.addEventListener('click', ()=> trackVisit(app.name, app.url));
       try{
         const host = new URL(app.url).hostname;
@@ -19603,6 +19619,10 @@ function buildTrayContent(){
       }catch(e){}
       const nameEl = el('span','tray-app-name'); nameEl.textContent=app.name;
       card.appendChild(nameEl);
+      const editBtn = el('button','tray-app-edit');
+      editBtn.textContent='✎'; editBtn.title='Edit application';
+      editBtn.onclick=e=>{ e.preventDefault(); e.stopPropagation(); openAddAppDialog(app); };
+      card.appendChild(editBtn);
       const delBtn = el('button','tray-app-del');
       delBtn.textContent='✕'; delBtn.title='Remove application';
       delBtn.onclick=e=>{
@@ -19656,18 +19676,21 @@ function buildTrayContent(){
   }
 }
 
-function openAddAppDialog(){
+function openAddAppDialog(existing){
   let ov=document.getElementById('addAppOverlay');
   if(!ov){
     ov=el('div','overlay'); ov.id='addAppOverlay';
     const m=el('div','modal'); m.style.cssText='width:380px;';
-    const h3=el('h3'); h3.textContent='Add Application'; h3.style.cssText='margin:0 0 14px;font-size:13px;';
+    const h3=el('h3'); h3.id='appDlgTitle'; h3.style.cssText='margin:0 0 14px;font-size:13px;';
     const nlbl=el('div'); nlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; nlbl.textContent='Name';
     const ninp=el('input','cfg-input'); ninp.id='appDlgName'; ninp.placeholder='e.g. Proxmox'; ninp.maxLength=40;
     ninp.style.cssText='width:100%;box-sizing:border-box;margin-bottom:10px;';
     const ulbl=el('div'); ulbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; ulbl.textContent='URL';
     const uinp=el('input','cfg-input'); uinp.id='appDlgUrl'; uinp.placeholder='https://'; uinp.type='url';
-    uinp.style.cssText='width:100%;box-sizing:border-box;margin-bottom:14px;';
+    uinp.style.cssText='width:100%;box-sizing:border-box;margin-bottom:10px;';
+    const dlbl=el('div'); dlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; dlbl.textContent='Description (used as tooltip)';
+    const dinp=el('input','cfg-input'); dinp.id='appDlgDesc'; dinp.placeholder='Brief description…'; dinp.maxLength=120;
+    dinp.style.cssText='width:100%;box-sizing:border-box;margin-bottom:14px;';
     const acts=el('div','modal-actions');
     const ok=el('button','mbtn mbtn-primary'); ok.id='appDlgOk'; ok.textContent='Add';
     const cancel=el('button'); cancel.textContent='Cancel';
@@ -19676,22 +19699,41 @@ function openAddAppDialog(){
     cancel.onmouseleave=e=>e.currentTarget.style.background='transparent';
     cancel.onclick=()=>closeOverlay('addAppOverlay');
     acts.append(cancel,ok);
-    m.append(h3,nlbl,ninp,ulbl,uinp,acts);
+    m.append(h3,nlbl,ninp,ulbl,uinp,dlbl,dinp,acts);
     ov.appendChild(m); document.body.appendChild(ov);
   }
   const ninp=document.getElementById('appDlgName');
   const uinp=document.getElementById('appDlgUrl');
-  ninp.value=''; uinp.value='';
-  document.getElementById('appDlgOk').onclick=()=>{
+  const dinp=document.getElementById('appDlgDesc');
+  const title=document.getElementById('appDlgTitle');
+  const okBtn=document.getElementById('appDlgOk');
+  if(existing){
+    title.textContent='Edit Application';
+    okBtn.textContent='Save';
+    ninp.value=existing.name||'';
+    uinp.value=existing.url||'';
+    dinp.value=existing.desc||'';
+  } else {
+    title.textContent='Add Application';
+    okBtn.textContent='Add';
+    ninp.value=''; uinp.value=''; dinp.value='';
+  }
+  okBtn.onclick=()=>{
     const name=ninp.value.trim();
     let url=uinp.value.trim();
+    const desc=dinp.value.trim();
     if(!name||!url) return;
     if(!/^https?:\/\//i.test(url)) url='https://'+url;
     if(!Array.isArray(D.appLinks)) D.appLinks=[];
-    D.appLinks.push({
-      id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-      name, url
-    });
+    if(existing){
+      const idx=D.appLinks.findIndex(a=>a.id===existing.id);
+      if(idx>=0) D.appLinks[idx]={...D.appLinks[idx], name, url, desc};
+    } else {
+      D.appLinks.push({
+        id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+        name, url, desc
+      });
+    }
     persist();
     closeOverlay('addAppOverlay');
     buildTrayContent();
