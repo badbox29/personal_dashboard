@@ -7,6 +7,9 @@
 <title>Personal Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@300;400;600;700&family=Lora:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+<!-- MDI icons — loaded async so it never blocks render; cards degrade gracefully if it fails -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@latest/css/materialdesignicons.min.css"></noscript>
 <style>
 /* ============================================================
    CSS VARIABLES
@@ -504,6 +507,14 @@ body.edit-mode .tray-edit-bar { display: flex; }
 }
 .tray-app-card:hover { border-color: var(--cyan); color: var(--cyan); }
 .tray-app-favicon { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.7; }
+.tray-app-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+  opacity: 0.8;
+  width: 16px;
+  text-align: center;
+  line-height: 1;
+}
 .tray-app-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tray-app-edit {
   display: none;
@@ -19610,13 +19621,20 @@ function buildTrayContent(){
       card.href=app.url; card.target='_blank'; card.rel='noopener noreferrer';
       card.title = app.desc || app.url;
       card.addEventListener('click', ()=> trackVisit(app.name, app.url));
-      try{
-        const host = new URL(app.url).hostname;
-        const img = el('img','tray-app-favicon');
-        img.src='https://www.google.com/s2/favicons?domain='+host+'&sz=16';
-        img.onerror=()=>{ img.style.display='none'; };
-        card.appendChild(img);
-      }catch(e){}
+      if(app.icon){
+        // MDI icon — degrades invisibly if font didn't load
+        const ico = el('span','tray-app-icon mdi mdi-'+app.icon.replace(/^mdi-/,''));
+        card.appendChild(ico);
+      } else {
+        // Favicon fallback
+        try{
+          const host = new URL(app.url).hostname;
+          const img = el('img','tray-app-favicon');
+          img.src='https://www.google.com/s2/favicons?domain='+host+'&sz=16';
+          img.onerror=()=>{ img.style.display='none'; };
+          card.appendChild(img);
+        }catch(e){}
+      }
       const nameEl = el('span','tray-app-name'); nameEl.textContent=app.name;
       card.appendChild(nameEl);
       const editBtn = el('button','tray-app-edit');
@@ -19690,7 +19708,24 @@ function openAddAppDialog(existing){
     uinp.style.cssText='width:100%;box-sizing:border-box;margin-bottom:10px;';
     const dlbl=el('div'); dlbl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:3px;'; dlbl.textContent='Description (used as tooltip)';
     const dinp=el('input','cfg-input'); dinp.id='appDlgDesc'; dinp.placeholder='Brief description…'; dinp.maxLength=120;
-    dinp.style.cssText='width:100%;box-sizing:border-box;margin-bottom:14px;';
+    dinp.style.cssText='width:100%;box-sizing:border-box;margin-bottom:10px;';
+    // Icon field
+    const ilblRow=el('div'); ilblRow.style.cssText='display:flex;align-items:baseline;gap:6px;margin-bottom:3px;';
+    const ilbl=el('div'); ilbl.style.cssText='font-size:10px;color:var(--text-dim);'; ilbl.textContent='MDI Icon (optional)';
+    const ilink=el('a'); ilink.href='https://pictogrammers.com/library/mdi/'; ilink.target='_blank'; ilink.rel='noopener noreferrer';
+    ilink.textContent='browse icons ↗'; ilink.style.cssText='font-size:9px;color:var(--cyan);opacity:0.7;text-decoration:none;';
+    ilink.onmouseenter=()=>{ ilink.style.opacity='1'; }; ilink.onmouseleave=()=>{ ilink.style.opacity='0.7'; };
+    ilblRow.append(ilbl, ilink);
+    const irow=el('div'); irow.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:14px;';
+    const iinp=el('input','cfg-input'); iinp.id='appDlgIcon'; iinp.placeholder='e.g. server, home-assistant, docker';
+    iinp.style.cssText='flex:1;min-width:0;';
+    const iprev=el('span'); iprev.id='appDlgIconPrev'; iprev.style.cssText='font-size:20px;width:24px;text-align:center;flex-shrink:0;opacity:0.8;';
+    iinp.oninput=()=>{
+      const slug=(iinp.value||'').trim().replace(/^mdi-/,'');
+      iprev.className='mdi'+(slug?' mdi-'+slug:'');
+      iprev.title=slug?'mdi-'+slug:'';
+    };
+    irow.append(iinp, iprev);
     const acts=el('div','modal-actions');
     const ok=el('button','mbtn mbtn-primary'); ok.id='appDlgOk'; ok.textContent='Add';
     const cancel=el('button'); cancel.textContent='Cancel';
@@ -19699,39 +19734,49 @@ function openAddAppDialog(existing){
     cancel.onmouseleave=e=>e.currentTarget.style.background='transparent';
     cancel.onclick=()=>closeOverlay('addAppOverlay');
     acts.append(cancel,ok);
-    m.append(h3,nlbl,ninp,ulbl,uinp,dlbl,dinp,acts);
+    m.append(h3,nlbl,ninp,ulbl,uinp,dlbl,dinp,ilblRow,irow,acts);
     ov.appendChild(m); document.body.appendChild(ov);
   }
   const ninp=document.getElementById('appDlgName');
   const uinp=document.getElementById('appDlgUrl');
   const dinp=document.getElementById('appDlgDesc');
+  const iinp=document.getElementById('appDlgIcon');
+  const iprev=document.getElementById('appDlgIconPrev');
   const title=document.getElementById('appDlgTitle');
   const okBtn=document.getElementById('appDlgOk');
+  const syncPreview=()=>{
+    const slug=(iinp.value||'').trim().replace(/^mdi-/,'');
+    iprev.className='mdi'+(slug?' mdi-'+slug:'');
+  };
+  iinp.oninput=syncPreview;
   if(existing){
     title.textContent='Edit Application';
     okBtn.textContent='Save';
     ninp.value=existing.name||'';
     uinp.value=existing.url||'';
     dinp.value=existing.desc||'';
+    iinp.value=existing.icon||'';
   } else {
     title.textContent='Add Application';
     okBtn.textContent='Add';
-    ninp.value=''; uinp.value=''; dinp.value='';
+    ninp.value=''; uinp.value=''; dinp.value=''; iinp.value='';
   }
+  syncPreview();
   okBtn.onclick=()=>{
     const name=ninp.value.trim();
     let url=uinp.value.trim();
     const desc=dinp.value.trim();
+    const icon=(iinp.value||'').trim().replace(/^mdi-/,'');
     if(!name||!url) return;
     if(!/^https?:\/\//i.test(url)) url='https://'+url;
     if(!Array.isArray(D.appLinks)) D.appLinks=[];
     if(existing){
       const idx=D.appLinks.findIndex(a=>a.id===existing.id);
-      if(idx>=0) D.appLinks[idx]={...D.appLinks[idx], name, url, desc};
+      if(idx>=0) D.appLinks[idx]={...D.appLinks[idx], name, url, desc, icon};
     } else {
       D.appLinks.push({
         id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-        name, url, desc
+        name, url, desc, icon
       });
     }
     persist();
