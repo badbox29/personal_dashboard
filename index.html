@@ -2599,7 +2599,6 @@ body.edit-mode .add-service-wrap { display: block; }
   align-items: center;
 }
 .search-eng-wrap {
-  position: relative;
   flex-shrink: 0;
 }
 .search-eng-btn {
@@ -2619,14 +2618,12 @@ body.edit-mode .add-service-wrap { display: block; }
 .search-eng-btn.open  { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
 .search-eng-dropdown {
   display: none;
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
+  position: fixed;
   min-width: 220px;
   background: var(--bg2, #1a1a2e);
   border: 1px solid var(--border);
   border-radius: 6px;
-  z-index: 9999;
+  z-index: 99999;
   overflow: hidden;
   box-shadow: 0 6px 24px rgba(0,0,0,0.5);
 }
@@ -14506,7 +14503,12 @@ function buildSearchWidget(sec){
   engBtn.onclick = () => {
     const nowOpen = dropdown.classList.toggle('open');
     engBtn.classList.toggle('open', nowOpen);
-    if(nowOpen) renderDropdown();
+    if(nowOpen){
+      const r = engBtn.getBoundingClientRect();
+      dropdown.style.top  = (r.bottom + 4) + 'px';
+      dropdown.style.left = r.left + 'px';
+      renderDropdown();
+    }
   };
 
   // Close on outside click
