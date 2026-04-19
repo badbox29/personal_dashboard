@@ -2593,27 +2593,106 @@ body.edit-mode .add-service-wrap { display: block; }
    WIDGET — Search Engine Shortcuts
    ============================================================ */
 .search-widget {}
-.search-engine-tabs {
+.search-eng-row {
   display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
+  gap: 6px;
+  align-items: center;
 }
-.search-engine-tab {
+.search-eng-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.search-eng-btn {
   background: var(--inp-bg);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 3px 10px;
-  font-size: 11.5px;
+  color: var(--text-dim);
+  font-size: 12px;
   font-family: 'Outfit', sans-serif;
   font-weight: 600;
-  color: var(--text-dim);
+  padding: 5px 9px;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.15s;
+}
+.search-eng-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.search-eng-btn.open  { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
+.search-eng-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  background: var(--bg2, #1a1a2e);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  z-index: 9999;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.search-eng-dropdown.open { display: block; }
+.search-eng-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-family: 'Outfit', sans-serif;
+  transition: background 0.12s;
+}
+.search-eng-option:hover { background: rgba(255,255,255,0.06); }
+.search-eng-option.active .search-eng-name { color: var(--gold); }
+.search-eng-name { flex: 1; }
+.search-eng-bang {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: 'Courier New', monospace;
+  background: rgba(255,255,255,0.07);
+  padding: 1px 5px;
+  border-radius: 3px;
   white-space: nowrap;
 }
-.search-engine-tab:hover  { border-color: var(--cyan); color: var(--cyan); }
-.search-engine-tab.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.1); }
+.search-eng-del {
+  opacity: 0;
+  background: none;
+  border: none;
+  color: var(--red, #e05);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.search-eng-option:hover .search-eng-del { opacity: 1; }
+.search-eng-hint {
+  padding: 6px 12px 7px;
+  font-size: 10px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  font-family: 'Outfit', sans-serif;
+}
+/* Edit-mode: custom engine manager */
+.search-manage-section {
+  display: none;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+body.edit-mode .search-manage-section { display: block; }
+.search-manage-title {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.search-manage-row {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 5px;
+  align-items: center;
+}
 .search-widget-row {
   display: flex;
   gap: 6px;
@@ -7202,11 +7281,11 @@ const BIBLE_SEED_PLAN = {
 };
 
 const SEARCH_ENGINES = [
-  { id:'google',  label:'Google',     url:'https://www.google.com/search?q=' },
-  { id:'bing',    label:'Bing',       url:'https://www.bing.com/search?q=' },
-  { id:'ddg',     label:'DuckDuckGo', url:'https://duckduckgo.com/?q=' },
-  { id:'youtube', label:'YouTube',    url:'https://www.youtube.com/results?search_query=' },
-  { id:'reddit',  label:'Reddit',     url:'https://www.reddit.com/search/?q=' },
+  { id:'google',  label:'Google',     bang:'!g',   url:'https://www.google.com/search?q=%s' },
+  { id:'bing',    label:'Bing',       bang:'!b',   url:'https://www.bing.com/search?q=%s' },
+  { id:'ddg',     label:'DuckDuckGo', bang:'!ddg', url:'https://duckduckgo.com/?q=%s' },
+  { id:'youtube', label:'YouTube',    bang:'!yt',  url:'https://www.youtube.com/results?search_query=%s' },
+  { id:'reddit',  label:'Reddit',     bang:'!r',   url:'https://www.reddit.com/search/?q=%s' },
 ];
 
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
@@ -14357,50 +14436,171 @@ function openCveHistoryModal(){
 
 /* ---- SEARCH ENGINE SHORTCUTS ---- */
 function buildSearchWidget(sec){
-  const cfg = sec.widgetConfig || {};
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!Array.isArray(cfg.customEngines)) cfg.customEngines = [];
+
   let activeEngine = cfg.defaultEngine || 'google';
 
   const wrap = el('div','search-widget');
 
-  // Engine tabs
-  const tabs = el('div','search-engine-tabs');
-  SEARCH_ENGINES.forEach(eng => {
-    const btn = el('button','search-engine-tab' + (eng.id===activeEngine?' active':''));
-    btn.textContent = eng.label;
-    btn.onclick = ()=>{
-      activeEngine = eng.id;
-      tabs.querySelectorAll('.search-engine-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      inp.placeholder = 'Search ' + eng.label + '…';
-      inp.focus();
-    };
-    tabs.appendChild(btn);
-  });
-  wrap.appendChild(tabs);
+  // --- Helpers ---
+  const getAllEngines = () => [...SEARCH_ENGINES, ...cfg.customEngines];
+  const getActive    = () => getAllEngines().find(e=>e.id===activeEngine) || SEARCH_ENGINES[0];
+  const getBangMap   = () => {
+    const map = {};
+    getAllEngines().forEach(e=>{ if(e.bang) map[e.bang.replace(/^!/,'')] = e; });
+    return map;
+  };
 
-  // Input row
-  const row = el('div','search-widget-row');
+  // --- Engine button + dropdown ---
+  const engWrap = el('div','search-eng-wrap');
+
+  const engBtn = el('button','search-eng-btn');
+  const refreshEngBtn = () => { engBtn.textContent = getActive().label + ' ▾'; };
+  refreshEngBtn();
+
+  const dropdown = el('div','search-eng-dropdown');
+  const renderDropdown = () => {
+    dropdown.innerHTML = '';
+    getAllEngines().forEach(eng => {
+      const opt = el('div','search-eng-option' + (eng.id===activeEngine?' active':''));
+      const nameSpan = el('span','search-eng-name'); nameSpan.textContent = eng.label;
+      const bangSpan = el('span','search-eng-bang'); bangSpan.textContent = eng.bang || '';
+      opt.append(nameSpan, bangSpan);
+      // Delete button for custom engines only
+      const isBuiltIn = SEARCH_ENGINES.some(e=>e.id===eng.id);
+      if(!isBuiltIn){
+        const delBtn = el('button','search-eng-del');
+        delBtn.textContent = '×';
+        delBtn.title = 'Remove';
+        delBtn.onclick = ev => {
+          ev.stopPropagation();
+          cfg.customEngines = cfg.customEngines.filter(x=>x.id!==eng.id);
+          if(activeEngine===eng.id){ activeEngine='google'; cfg.defaultEngine='google'; }
+          persist();
+          refreshEngBtn();
+          renderDropdown();
+        };
+        opt.appendChild(delBtn);
+      }
+      opt.onclick = () => {
+        activeEngine = eng.id;
+        cfg.defaultEngine = eng.id;
+        persist();
+        refreshEngBtn();
+        inp.placeholder = 'Search ' + eng.label + '…';
+        dropdown.classList.remove('open');
+        engBtn.classList.remove('open');
+        inp.focus();
+        renderDropdown();
+      };
+      dropdown.appendChild(opt);
+    });
+    // Bang hint footer
+    const hint = el('div','search-eng-hint');
+    hint.textContent = 'Tip: type !g cats or !yt lofi to override';
+    dropdown.appendChild(hint);
+  };
+  renderDropdown();
+
+  engBtn.onclick = () => {
+    const nowOpen = dropdown.classList.toggle('open');
+    engBtn.classList.toggle('open', nowOpen);
+    if(nowOpen) renderDropdown();
+  };
+
+  // Close on outside click
+  const outsideClose = ev => {
+    if(!engWrap.contains(ev.target)){
+      dropdown.classList.remove('open');
+      engBtn.classList.remove('open');
+    }
+  };
+  document.addEventListener('click', outsideClose);
+  // Clean up listener if widget is removed
+  const obs = new MutationObserver(() => {
+    if(!document.contains(wrap)){ document.removeEventListener('click', outsideClose); obs.disconnect(); }
+  });
+  obs.observe(document.body, {childList:true, subtree:true});
+
+  engWrap.append(engBtn, dropdown);
+
+  // --- Search input ---
   const inp = el('input','search-widget-input');
   inp.type = 'text';
-  inp.placeholder = 'Search ' + (SEARCH_ENGINES.find(e=>e.id===activeEngine)?.label||'') + '…';
   inp.autocomplete = 'off';
+  inp.placeholder = 'Search ' + getActive().label + '…';
 
+  // --- Go button ---
   const goBtn = el('button','search-widget-go');
   goBtn.textContent = 'Go →';
 
-  const doSearch = ()=>{
-    const q = inp.value.trim();
+  const doSearch = () => {
+    let q = inp.value.trim();
     if(!q) return;
-    const eng = SEARCH_ENGINES.find(e=>e.id===activeEngine) || SEARCH_ENGINES[0];
-    window.open(eng.url + encodeURIComponent(q), '_blank');
+    let targetEng = getActive();
+    const bangMap = getBangMap();
+    // Detect !bang prefix: "!yt lofi music"
+    const pre = q.match(/^!(\w+)\s+(.+)$/);
+    // Detect !bang suffix: "lofi music !yt"
+    const suf = q.match(/^(.+)\s+!(\w+)$/);
+    if(pre && bangMap[pre[1]]){ targetEng = bangMap[pre[1]]; q = pre[2].trim(); }
+    else if(suf && bangMap[suf[2]]){ targetEng = bangMap[suf[2]]; q = suf[1].trim(); }
+
+    const url = targetEng.url.includes('%s')
+      ? targetEng.url.replace('%s', encodeURIComponent(q))
+      : targetEng.url + encodeURIComponent(q);
+    window.open(url, '_blank');
     inp.select();
   };
 
   inp.addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
   goBtn.onclick = doSearch;
 
-  row.append(inp, goBtn);
+  const row = el('div','search-eng-row');
+  row.append(engWrap, inp, goBtn);
   wrap.appendChild(row);
+
+  // --- Edit-mode: custom engine manager ---
+  const manageSection = el('div','search-manage-section');
+
+  const manageTitle = el('div','search-manage-title');
+  manageTitle.textContent = '＋ Custom Search Engines';
+  manageSection.appendChild(manageTitle);
+
+  // Row 1: Label + Bang
+  const addRow1 = el('div','search-manage-row');
+  const lblInp  = el('input','search-widget-input');
+  lblInp.placeholder = 'Label (e.g. Brave)';
+  lblInp.style.cssText = 'flex:1;font-size:11px;padding:3px 7px;';
+  const bangInp = el('input','search-widget-input');
+  bangInp.placeholder = 'Bang (!br)';
+  bangInp.style.cssText = 'width:80px;font-size:11px;padding:3px 7px;';
+  addRow1.append(lblInp, bangInp);
+
+  // Row 2: URL + Add button
+  const addRow2 = el('div','search-manage-row');
+  const urlInp = el('input','search-widget-input');
+  urlInp.placeholder = 'URL with %s  (e.g. https://search.brave.com/search?q=%s)';
+  urlInp.style.cssText = 'flex:1;font-size:11px;padding:3px 7px;';
+  const addBtn = el('button','search-widget-go');
+  addBtn.textContent = '＋ Add';
+  addBtn.style.cssText = 'font-size:11px;padding:3px 10px;';
+  addBtn.onclick = () => {
+    const lbl  = lblInp.value.trim();
+    const url  = urlInp.value.trim();
+    if(!lbl || !url) return;
+    let bang = bangInp.value.trim();
+    if(bang && !bang.startsWith('!')) bang = '!' + bang;
+    cfg.customEngines.push({ id:'custom_'+Date.now(), label:lbl, bang, url });
+    lblInp.value = ''; bangInp.value = ''; urlInp.value = '';
+    persist();
+    renderDropdown();
+  };
+  addRow2.append(urlInp, addBtn);
+
+  manageSection.append(addRow1, addRow2);
+  wrap.appendChild(manageSection);
 
   return wrap;
 }
