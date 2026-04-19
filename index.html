@@ -14501,31 +14501,41 @@ function buildSearchWidget(sec){
   renderDropdown();
 
   engBtn.onclick = () => {
-    const nowOpen = dropdown.classList.toggle('open');
-    engBtn.classList.toggle('open', nowOpen);
+    const nowOpen = !dropdown.classList.contains('open');
     if(nowOpen){
       const r = engBtn.getBoundingClientRect();
       dropdown.style.top  = (r.bottom + 4) + 'px';
       dropdown.style.left = r.left + 'px';
+      dropdown.classList.add('open');
+      engBtn.classList.add('open');
       renderDropdown();
+    } else {
+      dropdown.classList.remove('open');
+      engBtn.classList.remove('open');
     }
   };
 
   // Close on outside click
   const outsideClose = ev => {
-    if(!engWrap.contains(ev.target)){
+    if(!engBtn.contains(ev.target) && !dropdown.contains(ev.target)){
       dropdown.classList.remove('open');
       engBtn.classList.remove('open');
     }
   };
   document.addEventListener('click', outsideClose);
-  // Clean up listener if widget is removed
+  // Clean up listener and dropdown when widget is removed
   const obs = new MutationObserver(() => {
-    if(!document.contains(wrap)){ document.removeEventListener('click', outsideClose); obs.disconnect(); }
+    if(!document.contains(wrap)){
+      document.removeEventListener('click', outsideClose);
+      if(dropdown.parentNode) dropdown.parentNode.removeChild(dropdown);
+      obs.disconnect();
+    }
   });
   obs.observe(document.body, {childList:true, subtree:true});
 
-  engWrap.append(engBtn, dropdown);
+  // Append dropdown to body so it escapes any parent transform/overflow
+  document.body.appendChild(dropdown);
+  engWrap.appendChild(engBtn);
 
   // --- Search input ---
   const inp = el('input','search-widget-input');
