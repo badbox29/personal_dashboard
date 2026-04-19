@@ -2661,7 +2661,21 @@ body.edit-mode .add-service-wrap { display: block; }
   cursor: pointer;
   transition: opacity 0.15s;
 }
-.search-eng-option:hover .search-eng-del { opacity: 1; }
+.search-eng-edit {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--cyan);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 3px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+body.edit-mode .search-eng-edit { display: inline; }
+.search-eng-option:hover .search-eng-del,
+.search-eng-option:hover .search-eng-edit { opacity: 1; }
 .search-eng-hint {
   padding: 6px 12px 7px;
   font-size: 10px;
@@ -14459,14 +14473,31 @@ function buildSearchWidget(sec){
   const dropdown = el('div','search-eng-dropdown');
   const renderDropdown = () => {
     dropdown.innerHTML = '';
-    getAllEngines().forEach(eng => {
+    const sorted = [...getAllEngines()].sort((a,b)=>a.label.localeCompare(b.label));
+    sorted.forEach(eng => {
       const opt = el('div','search-eng-option' + (eng.id===activeEngine?' active':''));
       const nameSpan = el('span','search-eng-name'); nameSpan.textContent = eng.label;
       const bangSpan = el('span','search-eng-bang'); bangSpan.textContent = eng.bang || '';
       opt.append(nameSpan, bangSpan);
-      // Delete button for custom engines only
+      // Edit + Delete buttons for custom engines only
       const isBuiltIn = SEARCH_ENGINES.some(e=>e.id===eng.id);
       if(!isBuiltIn){
+        const editBtn = el('button','search-eng-edit');
+        editBtn.textContent = '✎';
+        editBtn.title = 'Edit';
+        editBtn.onclick = ev => {
+          ev.stopPropagation();
+          dropdown.classList.remove('open');
+          engBtn.classList.remove('open');
+          lblInp.value  = eng.label;
+          bangInp.value = eng.bang || '';
+          urlInp.value  = eng.url;
+          editingId = eng.id;
+          addBtn.textContent = '✔ Save';
+          cancelBtn.style.display = '';
+          manageTitle.textContent = '✎ Edit Engine';
+          lblInp.focus();
+        };
         const delBtn = el('button','search-eng-del');
         delBtn.textContent = '×';
         delBtn.title = 'Remove';
@@ -14478,7 +14509,7 @@ function buildSearchWidget(sec){
           refreshEngBtn();
           renderDropdown();
         };
-        opt.appendChild(delBtn);
+        opt.append(editBtn, delBtn);
       }
       opt.onclick = () => {
         activeEngine = eng.id;
@@ -14573,7 +14604,6 @@ function buildSearchWidget(sec){
   row.append(engWrap, inp, goBtn);
   wrap.appendChild(row);
 
-  // --- Edit-mode: custom engine manager ---
   const manageSection = el('div','search-manage-section');
 
   const manageTitle = el('div','search-manage-title');
@@ -14590,7 +14620,7 @@ function buildSearchWidget(sec){
   bangInp.style.cssText = 'width:80px;font-size:11px;padding:3px 7px;';
   addRow1.append(lblInp, bangInp);
 
-  // Row 2: URL + Add button
+  // Row 2: URL + action buttons
   const addRow2 = el('div','search-manage-row');
   const urlInp = el('input','search-widget-input');
   urlInp.placeholder = 'URL with %s  (e.g. https://search.brave.com/search?q=%s)';
@@ -14598,18 +14628,44 @@ function buildSearchWidget(sec){
   const addBtn = el('button','search-widget-go');
   addBtn.textContent = '＋ Add';
   addBtn.style.cssText = 'font-size:11px;padding:3px 10px;';
+
+  // Cancel button — only visible in edit mode
+  const cancelBtn = el('button','search-widget-go');
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'font-size:11px;padding:3px 10px;display:none;';
+
+  let editingId = null;
+
+  const resetForm = () => {
+    lblInp.value = ''; bangInp.value = ''; urlInp.value = '';
+    editingId = null;
+    addBtn.textContent = '＋ Add';
+    cancelBtn.style.display = 'none';
+    manageTitle.textContent = '＋ Custom Search Engines';
+  };
+
+  cancelBtn.onclick = resetForm;
+
   addBtn.onclick = () => {
-    const lbl  = lblInp.value.trim();
-    const url  = urlInp.value.trim();
+    const lbl = lblInp.value.trim();
+    const url = urlInp.value.trim();
     if(!lbl || !url) return;
     let bang = bangInp.value.trim();
     if(bang && !bang.startsWith('!')) bang = '!' + bang;
-    cfg.customEngines.push({ id:'custom_'+Date.now(), label:lbl, bang, url });
-    lblInp.value = ''; bangInp.value = ''; urlInp.value = '';
+    if(editingId){
+      // Update existing
+      const eng = cfg.customEngines.find(x=>x.id===editingId);
+      if(eng){ eng.label = lbl; eng.bang = bang; eng.url = url; }
+    } else {
+      // Add new
+      cfg.customEngines.push({ id:'custom_'+Date.now(), label:lbl, bang, url });
+    }
+    resetForm();
     persistConfig();
     renderDropdown();
   };
-  addRow2.append(urlInp, addBtn);
+
+  addRow2.append(urlInp, cancelBtn, addBtn);
 
   manageSection.append(addRow1, addRow2);
   wrap.appendChild(manageSection);
