@@ -2640,7 +2640,7 @@ body.edit-mode .add-service-wrap { display: block; }
 }
 .search-eng-option:hover { background: rgba(255,255,255,0.06); }
 .search-eng-option.active .search-eng-name { color: var(--gold); }
-.search-eng-name { flex: 1; }
+.search-eng-name { flex: none; }
 .search-eng-bang {
   font-size: 10px;
   color: var(--text-dim);
@@ -2674,6 +2674,7 @@ body.edit-mode .add-service-wrap { display: block; }
   transition: opacity 0.15s;
 }
 body.edit-mode .search-eng-edit { display: inline; }
+body:not(.edit-mode) .search-eng-del { display: none; }
 .search-eng-option:hover .search-eng-del,
 .search-eng-option:hover .search-eng-edit { opacity: 1; }
 .search-eng-hint {
@@ -14478,7 +14479,8 @@ function buildSearchWidget(sec){
       const opt = el('div','search-eng-option' + (eng.id===activeEngine?' active':''));
       const nameSpan = el('span','search-eng-name'); nameSpan.textContent = eng.label;
       const bangSpan = el('span','search-eng-bang'); bangSpan.textContent = eng.bang || '';
-      opt.append(nameSpan, bangSpan);
+      const spacer   = el('span',''); spacer.style.flex = '1';
+      opt.append(nameSpan, bangSpan, spacer);
       // Edit + Delete buttons for custom engines only
       const isBuiltIn = SEARCH_ENGINES.some(e=>e.id===eng.id);
       if(!isBuiltIn){
