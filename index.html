@@ -10043,7 +10043,7 @@ function buildOtxWidget(sec, tabId){
   const saveRow=el('div'); saveRow.style.cssText='display:flex;align-items:center;gap:6px;';
   const saveBtn=el('button','todo-add-btn'); saveBtn.textContent='Save';
   const saveStatus=el('span'); saveStatus.style.cssText='font-size:10px;color:var(--cyan);';
-  saveBtn.onclick=()=>{ cfg.otxKey=keyInp.value.trim(); cfg.otxWorker=workerInp.value.trim(); persist(); saveStatus.textContent='\u2713 Saved'; setTimeout(()=>saveStatus.textContent='',2000); refresh(); };
+  saveBtn.onclick=()=>{ cfg.otxKey=keyInp.value.trim(); cfg.otxWorker=workerInp.value.trim(); persistConfig(); saveStatus.textContent='\u2713 Saved'; setTimeout(()=>saveStatus.textContent='',2000); refresh(); };
   saveRow.append(saveBtn,saveStatus);
   const editNote=el('div'); editNote.style.cssText='font-size:10px;color:var(--text-dim);margin-top:5px;line-height:1.5;';
   editNote.innerHTML='Get your free OTX key at <a href="https://otx.alienvault.com" target="_blank" rel="noopener" style="color:var(--cyan);">otx.alienvault.com</a>';
@@ -12142,13 +12142,13 @@ function buildSportsWidget(sec){
     defBtn.classList.toggle('active', D.defaultSportsLeague===cfg.league);
   };
   defBtn.onclick=()=>{
-    D.defaultSportsLeague=cfg.league; persist(); updateDefBtn();
+    D.defaultSportsLeague=cfg.league; persistConfig(); updateDefBtn();
     saveStatus.textContent='\u2713 Default saved'; setTimeout(()=>saveStatus.textContent='',2000);
   };
   updateDefBtn();
 
   saveBtn.onclick=()=>{
-    cfg.sportsKey=keyInp.value.trim(); cfg.sportsWorker=workerInp.value.trim(); persist();
+    cfg.sportsKey=keyInp.value.trim(); cfg.sportsWorker=workerInp.value.trim(); persistConfig();
     buildViewTabs();
     saveStatus.textContent='\u2713 Saved'; setTimeout(()=>saveStatus.textContent='',2000);
   };
@@ -14215,7 +14215,7 @@ function buildCveWidget(sec, tabId){
   workerInp.type='text'; workerInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-top:4px;';
   workerInp.placeholder='Override global Worker URL for CVE only (optional)'; workerInp.value=cfg.nvdWorker||'';
   keySaveBtn.onclick=()=>{
-    cfg.nvdKey=keyInp.value.trim(); cfg.nvdWorker=workerInp.value.trim(); persist();
+    cfg.nvdKey=keyInp.value.trim(); cfg.nvdWorker=workerInp.value.trim(); persistConfig();
     keyStatus.textContent='\u2713 Saved'; setTimeout(()=>{ keyStatus.textContent=''; },2500);
   };
   keyInp.addEventListener('keydown',e=>{ if(e.key==='Enter') keySaveBtn.click(); });
@@ -15758,7 +15758,7 @@ function buildBibleWidget(sec){
   const wl=el('label','bible-setting-lbl'); wl.textContent='Worker URL';
   const wi=el('input','search-widget-input');
   wi.placeholder='Override global Worker URL…'; wi.value=cfg.workerUrl||''; wi.style.flex='1'; wi.style.fontSize='10px';
-  wi.onblur=()=>{ cfg.workerUrl=wi.value.trim(); persist(); };
+  wi.onblur=()=>{ cfg.workerUrl=wi.value.trim(); persistConfig(); };
   wr.append(wl,wi); settings.appendChild(wr);
 
   // Export notes
@@ -15959,7 +15959,7 @@ function buildWotdWidget(sec){
   ksBtn.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;';
   ksBtn.textContent='Save';
   ksBtn.onclick=()=>{
-    cfg.apiKey=ki.value.trim(); persist();
+    cfg.apiKey=ki.value.trim(); persistConfig();
     ksBtn.textContent='✓'; setTimeout(()=>{ ksBtn.textContent='Save'; },1500);
     loadWord();
   };
@@ -15970,7 +15970,7 @@ function buildWotdWidget(sec){
   const wl = el('label','wotd-setting-lbl'); wl.textContent='Worker URL';
   const wi = el('input','search-widget-input');
   wi.placeholder='Override global Worker URL…'; wi.value=cfg.workerUrl||''; wi.style.flex='1'; wi.style.fontSize='10px';
-  wi.onblur=()=>{ cfg.workerUrl=wi.value.trim(); persist(); };
+  wi.onblur=()=>{ cfg.workerUrl=wi.value.trim(); persistConfig(); };
   wr.append(wl, wi);
   settings.appendChild(wr);
 
@@ -16129,7 +16129,7 @@ function buildApodWidget(sec){
   ksBtn.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;';
   ksBtn.textContent='Save';
   ksBtn.onclick=()=>{
-    cfg.apiKey=ki.value.trim(); persist();
+    cfg.apiKey=ki.value.trim(); persistConfig();
     ksBtn.textContent='✓'; setTimeout(()=>{ ksBtn.textContent='Save'; },1500);
     fetchApod();
   };
@@ -16578,7 +16578,7 @@ function buildUnsplashWidget(sec){
   ksBtn.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;';
   ksBtn.textContent='Save';
   ksBtn.onclick=()=>{
-    cfg.apiKey=ki.value.trim(); persist();
+    cfg.apiKey=ki.value.trim(); persistConfig();
     ksBtn.textContent='✓'; setTimeout(()=>{ ksBtn.textContent='Save'; },1500);
     fetchFeaturedTopics(true);
     fetchPhoto();
@@ -19283,7 +19283,7 @@ function resetKvIdentity(){
 
 function saveWorkerUrl(){
   D.workerUrl = document.getElementById('workerUrlInp').value.trim();
-  persist();
+  persistConfig();
   const status = document.getElementById('workerUrlStatus');
   status.textContent = D.workerUrl ? '✓ Saved — applies to pollen, CVE, and RSS widgets.' : '✓ Cleared.';
   setTimeout(()=>{ status.textContent=''; }, 3000);
@@ -19400,7 +19400,7 @@ function savePollenSettings(){
   D.pollenEnabled = enabled && !!key;
   D.pollenService = service;
   D.pollenProxy   = document.getElementById('wPollenProxy').value.trim();
-  persist();
+  persistConfig();
 
   status.style.color = 'var(--cyan)';
   status.textContent = D.pollenEnabled
