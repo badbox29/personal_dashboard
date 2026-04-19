@@ -14474,7 +14474,7 @@ function buildSearchWidget(sec){
           ev.stopPropagation();
           cfg.customEngines = cfg.customEngines.filter(x=>x.id!==eng.id);
           if(activeEngine===eng.id){ activeEngine='google'; cfg.defaultEngine='google'; }
-          persist();
+          persistConfig();
           refreshEngBtn();
           renderDropdown();
         };
@@ -14483,7 +14483,7 @@ function buildSearchWidget(sec){
       opt.onclick = () => {
         activeEngine = eng.id;
         cfg.defaultEngine = eng.id;
-        persist();
+        persistConfig();
         refreshEngBtn();
         inp.placeholder = 'Search ' + eng.label + '…';
         dropdown.classList.remove('open');
@@ -14606,7 +14606,7 @@ function buildSearchWidget(sec){
     if(bang && !bang.startsWith('!')) bang = '!' + bang;
     cfg.customEngines.push({ id:'custom_'+Date.now(), label:lbl, bang, url });
     lblInp.value = ''; bangInp.value = ''; urlInp.value = '';
-    persist();
+    persistConfig();
     renderDropdown();
   };
   addRow2.append(urlInp, addBtn);
