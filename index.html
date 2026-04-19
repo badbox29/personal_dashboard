@@ -15747,7 +15747,7 @@ function buildBibleWidget(sec){
   ki.placeholder='Paste key for CSB / NLT / MSG…'; ki.value=cfg.apiKey; ki.style.flex='1';
   const ksBtn=el('button','search-widget-go'); ksBtn.style.cssText='font-size:10.5px;padding:3px 10px;flex-shrink:0;'; ksBtn.textContent='Save';
   ksBtn.onclick=()=>{
-    cfg.apiKey=ki.value.trim(); cfg.apiBibleIds={}; persist();
+    cfg.apiKey=ki.value.trim(); cfg.apiBibleIds={}; persistConfig();
     rebuildTransSel();
     ksBtn.textContent='✓'; setTimeout(()=>{ ksBtn.textContent='Save'; },1500);
   };
