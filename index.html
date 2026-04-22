@@ -4195,6 +4195,90 @@ body.edit-mode .energy-edit-section { display: flex; }
 .energy-insights-cycle-btn:hover { border-color:var(--cyan); color:var(--cyan); }
 .energy-insights-open-btn { display:block; width:100%; margin-top:6px; background:none; border:1px dashed var(--border); border-radius:4px; color:var(--text-dim); font-size:10.5px; font-family:'Share Tech Mono',monospace; padding:5px; cursor:pointer; text-align:center; transition:all 0.15s; box-sizing:border-box; }
 .energy-insights-open-btn:hover { border-color:var(--gold); color:var(--gold); }
+/* Cycle status row — pink dashed, mirrors loc-row */
+.energy-cycle-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+  padding: 5px 8px;
+  border: 1px dashed rgba(224,92,122,0.3);
+  border-radius: 4px;
+  background: rgba(224,92,122,0.04);
+}
+.energy-cycle-label {
+  font-size: 9px;
+  font-family: 'Share Tech Mono', monospace;
+  color: rgba(224,92,122,0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+.energy-cycle-phase {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  flex-shrink: 0;
+}
+.energy-cycle-day {
+  font-size: 10.5px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  flex: 1;
+}
+.energy-cycle-btn {
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 8px;
+  border: 1px solid rgba(224,92,122,0.4);
+  border-radius: 3px;
+  background: none;
+  color: rgba(224,92,122,0.75);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.energy-cycle-btn:hover { border-color: #e05c7a; color: #e05c7a; background: rgba(224,92,122,0.07); }
+/* Insights modal tab strip */
+.energy-modal-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  flex-shrink: 0;
+}
+.energy-modal-tab {
+  font-size: 11px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 3px 12px;
+  border: 1px solid var(--border);
+  border-radius: 3px 3px 0 0;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.energy-modal-tab:hover { color: var(--text); border-color: var(--cyan); }
+.energy-modal-tab.active { color: var(--cyan); border-color: var(--cyan); background: rgba(15,184,221,0.08); }
+/* Hormone chart toggle buttons */
+.hormone-toggle-btn {
+  font-size: 9.5px;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.hormone-toggle-btn.active { opacity: 1; }
+.hormone-toggle-btn:not(.active) { opacity: 0.38; }
 
 
    ============================================================ */
@@ -6769,6 +6853,7 @@ const DEFAULTS = {
   sportsTeamLists: {},
   defaultSportsLeague: '',
   energyEntries: [],
+  cycleStartDates: [],
   otxIndustries: [],
   otxAlarmHistory: [],
   poemDaily: null,
@@ -7566,6 +7651,7 @@ function generateSyncToken(){
   if(typeof D.sportsTeamLists !== 'object' || Array.isArray(D.sportsTeamLists)) D.sportsTeamLists = {};
   if(D.defaultSportsLeague === undefined) D.defaultSportsLeague = '';
   if(!Array.isArray(D.energyEntries)) D.energyEntries = [];
+  if(!Array.isArray(D.cycleStartDates)) D.cycleStartDates = [];
   if(!Array.isArray(D.otxIndustries))    D.otxIndustries    = [];
   if(!Array.isArray(D.otxAlarmHistory))  D.otxAlarmHistory  = [];
   if(!Array.isArray(D.otxDailyCounts))   D.otxDailyCounts   = [];
@@ -7712,6 +7798,7 @@ const KV_MERGE_KEYS = {
   taskTrackerTasks:        e => e.id,
   taskTrackerDeletedLogIds: e => e,
   // primitive arrays — dedup by value
+  cycleStartDates:    e => e,
   tapSeenClickGuids:  e => e,
   tapKnownVapEmails:  e => e,
   // poem favorites — dedup by id slug
@@ -11188,6 +11275,101 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
 }
 
 /* ---- ENERGY AND MOOD TRACKER ---- */
+/* ---- Cycle Tracking: constants, math, helpers ---- */
+const CYCLE_PHASE_COLORS = {
+  Menstrual:   '#e05c7a',
+  Follicular:  '#0fb8dd',
+  Ovulatory:   '#ddb04b',
+  EarlyLuteal: '#c890dd',
+  LateLuteal:  '#ffaa88'
+};
+const CYCLE_PHASE_DISPLAY = {
+  Menstrual:'Menstrual', Follicular:'Follicular', Ovulatory:'Ovulatory',
+  EarlyLuteal:'Early Luteal', LateLuteal:'Late Luteal'
+};
+const PHASE_NARRATIVE = {
+  Menstrual: {
+    summary: 'Rest and reflection tend to come naturally during this phase. Lower energy and a desire to slow down are common patterns \u2014 this can be a good time to prioritize recovery over output.',
+    energy:   'Often lower; the body may signal a need for rest',
+    mood:     'More inward-focused; emotional sensitivity or reflection is common',
+    cognition:'Slower pace may feel natural; good for evaluation, not initiation',
+    social:   'Reduced drive for high-demand social engagement is typical'
+  },
+  Follicular: {
+    summary: 'Energy and motivation often build through this phase. Many women find focus comes more easily and feel more open to new challenges or social connection.',
+    energy:   'Gradually increasing; rising estrogen is associated with improving stamina',
+    mood:     'Lighter, more optimistic tone is common',
+    cognition:'Learning and problem-solving may feel more fluid',
+    social:   'Growing openness to interaction and engagement'
+  },
+  Ovulatory: {
+    summary: 'This window is often associated with peak outward energy \u2014 confidence, sociability, and verbal fluency may all feel stronger. Some women also notice heightened interest in connection and intimacy.',
+    energy:   'High, outward-facing; good for demanding tasks or social commitments',
+    mood:     'Positive affect and confidence often peak here',
+    cognition:'Quick thinking and communication may feel sharpest',
+    social:   'Strongest social drive of the cycle for many women'
+  },
+  EarlyLuteal: {
+    summary: 'Energy often feels steadier and more grounded here \u2014 less outward drive, but good sustained focus. This phase can be well-suited to finishing things rather than starting them.',
+    energy:   'Calm and consistent; less peak-seeking than follicular',
+    mood:     'More grounded and inward; less influenced by external stimulation',
+    cognition:'Sustained attention and follow-through often feel natural',
+    social:   'Preference for familiar, lower-demand interaction is common'
+  },
+  LateLuteal: {
+    summary: 'As hormone levels decline toward their lowest point, lower energy and increased emotional sensitivity are common patterns. Reducing demands and protecting recovery time can help.',
+    energy:   'Decreasing; fatigue or heaviness may appear',
+    mood:     'Emotional sensitivity or irritability is a frequent pattern among women; not a flaw, a phase',
+    cognition:'Lower tolerance for stress or cognitive overload is typical',
+    social:   'Reduced patience for high-demand interactions; smaller and quieter feels better'
+  }
+};
+// Hormone math helpers
+function gaussian(x, mu, sigma, amplitude=1){ return amplitude*Math.exp(-0.5*Math.pow((x-mu)/sigma,2)); }
+function logistic(x, center, steepness=10){ return 1/(1+Math.exp(-steepness*(x-center))); }
+function clamp01(v){ return Math.max(0,Math.min(1,v)); }
+function estrogenCurve(x,ov){ const follicularRise=0.18+0.55*logistic(x,ov-0.16,18); const preOvPeak=gaussian(x,ov-0.015,0.055,0.42); const lutealBump=gaussian(x,ov+0.18,0.10,0.20); const preMenstrualDrop=0.22*logistic(x,0.92,30); return clamp01(follicularRise+preOvPeak+lutealBump-preMenstrualDrop); }
+function progesteroneCurve(x,ov){ const postOvRise=logistic(x,ov+0.03,22); const lutealFall=1-logistic(x,0.90,28); const midLutealShape=gaussian(x,ov+0.22,0.12,0.35); return clamp01(0.04+0.72*postOvRise*lutealFall+midLutealShape); }
+function lhCurve(x,ov){ return clamp01(0.06+gaussian(x,ov,0.018,0.94)); }
+function fshCurve(x,ov){ return clamp01(0.16+gaussian(x,0.08,0.07,0.30)+gaussian(x,ov-0.01,0.04,0.22)); }
+function buildCycleSeries(cycleLength,periodLength){
+  const ovulationDay=cycleLength-14, ov=(ovulationDay-1)/(cycleLength-1), points=[];
+  for(let day=1;day<=cycleLength;day++){
+    const x=(day-1)/(cycleLength-1);
+    const e=estrogenCurve(x,ov),p=progesteroneCurve(x,ov),l=lhCurve(x,ov),f=fshCurve(x,ov);
+    points.push({day,x,estrogen:e,progesterone:p,lh:l,fsh:f,estrogenPct:Math.round(e*100),progesteronePct:Math.round(p*100),lhPct:Math.round(l*100),fshPct:Math.round(f*100)});
+  }
+  return points;
+}
+function getPhaseKey(day,cycleLength,periodLength){
+  const ov=cycleLength-14;
+  if(day<=periodLength) return 'Menstrual';
+  if(day<ov-1) return 'Follicular';
+  if(day>=ov-1&&day<=ov+1) return 'Ovulatory';
+  if(day>cycleLength-5) return 'LateLuteal';
+  return 'EarlyLuteal';
+}
+function getPhase(day,cycleLength,periodLength){ return CYCLE_PHASE_DISPLAY[getPhaseKey(day,cycleLength,periodLength)]||'Unknown'; }
+function getCycleInfo(cfg){
+  if(!Array.isArray(D.cycleStartDates)||!D.cycleStartDates.length) return null;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const startStr=D.cycleStartDates[0];
+  const start=new Date(startStr+'T00:00:00');
+  const cycleLength=cfg.typicalCycleLength||28, periodLength=cfg.periodLength||5;
+  const day=Math.floor((today-start)/86400000)+1;
+  const phaseKey=getPhaseKey(day,cycleLength,periodLength);
+  const projectedNext=new Date(start); projectedNext.setDate(projectedNext.getDate()+cycleLength);
+  const daysUntilNext=Math.ceil((projectedNext-today)/86400000);
+  return {day,phaseKey,phase:CYCLE_PHASE_DISPLAY[phaseKey]||phaseKey,cycleLength,periodLength,startStr,projectedNext,daysUntilNext};
+}
+function cyclePhaseForEntry(entry,allStarts,cycleLength,periodLength){
+  const ed=new Date(entry.timestamp); ed.setHours(0,0,0,0);
+  for(const s of allStarts){
+    const st=new Date(s+'T00:00:00');
+    if(st<=ed){ const d=Math.floor((ed-st)/86400000)+1; if(d<=cycleLength+3) return getPhaseKey(d,cycleLength,periodLength); break; }
+  }
+  return null;
+}
 const DEFAULT_ENERGY   = ['Drained','Low','Normal','High','Wired'];
 const DEFAULT_FOCUS    = ['Scattered','Foggy','Steady','Locked In'];
 const DEFAULT_FRICTION = ['Resistant','Restless','Neutral','Engaged'];
@@ -11356,6 +11538,60 @@ function buildEnergyWidget(sec, tabId){
   }
   buildLocChips();
   wrap.appendChild(locRow);
+
+  // ── Cycle status row (shown only when cycleTrackingEnabled) ─────────────
+  const cycleRowEl=el('div','energy-cycle-row');
+  function buildCycleRow(){
+    cycleRowEl.innerHTML='';
+    if(!cfg.cycleTrackingEnabled){ cycleRowEl.style.display='none'; return; }
+    cycleRowEl.style.display='flex';
+    const info=getCycleInfo(cfg);
+    if(!info){
+      // No cycle logged yet
+      const prompt=el('span','energy-cycle-day'); prompt.textContent='\uD83C\uDF19 No cycle logged yet';
+      const startBtn=el('button','energy-cycle-btn'); startBtn.textContent='Start Tracking';
+      startBtn.onclick=()=>{
+        const dayInp=el('input'); dayInp.type='number'; dayInp.min=1; dayInp.max=60; dayInp.value='1'; dayInp.placeholder='Day #';
+        dayInp.style.cssText='width:52px;font-size:11px;padding:2px 5px;background:var(--inp-bg);border:1px solid rgba(224,92,122,0.4);border-radius:3px;color:var(--text);text-align:center;font-family:Share Tech Mono,monospace;';
+        const confirmBtn=el('button','energy-cycle-btn'); confirmBtn.textContent='\u2713 Confirm';
+        confirmBtn.onclick=()=>{
+          const d=Math.max(1,Math.min(60,parseInt(dayInp.value)||1));
+          const start=new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-(d-1));
+          const ds=start.toLocaleDateString('en-CA');
+          if(!D.cycleStartDates.includes(ds)) D.cycleStartDates.unshift(ds);
+          if(D.cycleStartDates.length>12) D.cycleStartDates=D.cycleStartDates.slice(0,12);
+          persist(); buildCycleRow();
+        };
+        const cancelBtn=el('button','energy-cycle-btn'); cancelBtn.textContent='Cancel'; cancelBtn.style.opacity='0.6';
+        cancelBtn.onclick=()=>buildCycleRow();
+        const lbl=el('span'); lbl.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);'; lbl.textContent='What day of your cycle are you on?';
+        cycleRowEl.innerHTML=''; cycleRowEl.append(lbl,dayInp,confirmBtn,cancelBtn);
+      };
+      cycleRowEl.append(prompt,startBtn);
+    } else {
+      const {day,phaseKey,phase,cycleLength,daysUntilNext}=info;
+      const color=CYCLE_PHASE_COLORS[phaseKey]||'#e05c7a';
+      const icon=el('span'); icon.textContent='\uD83C\uDF19 ';
+      const dayLbl=el('span','energy-cycle-day'); dayLbl.textContent='Day '+day;
+      const phaseBadge=el('span','energy-cycle-phase'); phaseBadge.textContent=phase; phaseBadge.style.color=color; phaseBadge.style.borderColor=color+'66'; phaseBadge.style.background=color+'11';
+      const dueHint=el('span'); dueHint.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);flex:1;';
+      dueHint.textContent=daysUntilNext>0?'\u00b7 ~'+daysUntilNext+'d until next':'\u00b7 next cycle expected';
+      const newCycleBtn=el('button','energy-cycle-btn'); newCycleBtn.textContent='New Cycle';
+      newCycleBtn.onclick=()=>{
+        const proceed=()=>{
+          const ds=new Date().toLocaleDateString('en-CA');
+          if(!D.cycleStartDates.includes(ds)) D.cycleStartDates.unshift(ds);
+          if(D.cycleStartDates.length>12) D.cycleStartDates=D.cycleStartDates.slice(0,12);
+          persist(); buildCycleRow();
+        };
+        if(day<20){ if(confirm('Start a new cycle on day '+day+'? This is earlier than usual.')) proceed(); }
+        else proceed();
+      };
+      cycleRowEl.append(icon,dayLbl,phaseBadge,dueHint,newCycleBtn);
+    }
+  }
+  buildCycleRow();
+  wrap.appendChild(cycleRowEl);
 
   // Note input
   const noteInp=el('input','energy-note-inp'); noteInp.placeholder='Optional note\u2026'; noteInp.maxLength=200;
@@ -11551,6 +11787,29 @@ function buildEnergyWidget(sec, tabId){
   const locationPanel=panels.location.panel;
   buildFreeformPanel(locationPanel,'locations',DEFAULT_LOCS,buildLocChips,8,'New location label\u2026',locs);
   editSection.appendChild(locationPanel);
+
+  // ── Cycle Tracking section ──
+  const cycleSepLbl=el('div','sports-edit-section-lbl'); cycleSepLbl.style.marginTop='10px'; cycleSepLbl.textContent='Menstrual Cycle Tracking';
+  editSection.appendChild(cycleSepLbl);
+  const cycleChkRow=el('div'); cycleChkRow.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;';
+  const cycleChk=el('input'); cycleChk.type='checkbox'; cycleChk.id='cycleTrackChk_'+sec.id; cycleChk.checked=!!cfg.cycleTrackingEnabled;
+  const cycleChkLbl=el('label'); cycleChkLbl.htmlFor=cycleChk.id; cycleChkLbl.style.cssText='font-size:11.5px;color:var(--text-dim);display:flex;align-items:center;gap:5px;cursor:pointer;'; cycleChkLbl.append(cycleChk,document.createTextNode('Enable cycle tracking'));
+  cycleChkRow.appendChild(cycleChkLbl);
+  editSection.appendChild(cycleChkRow);
+  const cycleConfigWrap=el('div'); cycleConfigWrap.style.cssText='display:'+(cfg.cycleTrackingEnabled?'flex':'none')+';flex-direction:column;gap:6px;padding:8px;background:rgba(224,92,122,0.05);border:1px solid rgba(224,92,122,0.15);border-radius:4px;';
+  function makeCycleNumRow(labelTxt, cfgKey, defVal, min, max, hint){
+    const r=el('div'); r.style.cssText='display:flex;align-items:center;gap:8px;';
+    const lbl=el('span'); lbl.style.cssText='font-size:11px;color:var(--text-dim);flex:1;font-family:Share Tech Mono,monospace;'; lbl.textContent=labelTxt;
+    const inp=el('input'); inp.type='number'; inp.min=min; inp.max=max; inp.value=cfg[cfgKey]||defVal;
+    inp.style.cssText='width:52px;font-size:11px;padding:3px 6px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:3px;color:var(--text);text-align:center;font-family:Share Tech Mono,monospace;';
+    inp.onchange=()=>{ const v=Math.max(min,Math.min(max,parseInt(inp.value)||defVal)); inp.value=v; cfg[cfgKey]=v; persist(); buildCycleRow(); };
+    const hintEl=el('span'); hintEl.style.cssText='font-size:9.5px;color:var(--text-dim);opacity:0.6;'; hintEl.textContent=hint;
+    r.append(lbl,inp,hintEl); return r;
+  }
+  cycleConfigWrap.appendChild(makeCycleNumRow('Typical cycle length',  'typicalCycleLength', 28, 21, 45, '21\u201345 days'));
+  cycleConfigWrap.appendChild(makeCycleNumRow('Average period length', 'periodLength',        5,  2, 10,  '2\u201310 days'));
+  editSection.appendChild(cycleConfigWrap);
+  cycleChk.onchange=()=>{ cfg.cycleTrackingEnabled=cycleChk.checked; cycleConfigWrap.style.display=cycleChk.checked?'flex':'none'; persist(); buildCycleRow(); };
 
   switchTab('energy');
   wrap.appendChild(editSection);
@@ -11766,15 +12025,32 @@ function openEnergyEditModal(entryIdx, sec){
 
 // Insights Viewer modal
 function openEnergyInsightsModal(){
+  const cfg=_energyWidgetSec?.widgetConfig||{};
+  const cycleEnabled=!!cfg.cycleTrackingEnabled;
   function EC(val){ return energyLabelColor('energy',val)||energyLabelColor('focus',val)||energyLabelColor('friction',val)||energyLabelColor('mood',val)||'var(--text-dim)'; }
   let ov=document.getElementById('energyInsightsOverlay'); if(ov) ov.remove();
   ov=el('div','overlay'); ov.id='energyInsightsOverlay';
   const modal=el('div','modal'); modal.style.cssText='width:680px;max-height:88vh;display:flex;flex-direction:column;';
-  const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-shrink:0;';
+  const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-shrink:0;';
   const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='\u26A1 Insights Viewer';
   const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.style.cssText='font-size:11px;padding:4px 10px;'; closeBtn.textContent='Close'; closeBtn.onclick=()=>ov.remove();
   mhdr.append(mtitle,closeBtn); modal.appendChild(mhdr);
-  const body=el('div'); body.style.cssText='flex:1;overflow-y:auto;'; modal.appendChild(body);
+  // Tab strip
+  const tabStrip=el('div','energy-modal-tabs');
+  const insTab=el('button','energy-modal-tab active'); insTab.textContent='Insights';
+  const cycTab=cycleEnabled?el('button','energy-modal-tab'):null;
+  if(cycTab){ cycTab.textContent='\uD83C\uDF19 Cycle'; tabStrip.append(insTab,cycTab); } else tabStrip.appendChild(insTab);
+  modal.appendChild(tabStrip);
+  // Two panes
+  const insPane=el('div'); insPane.style.cssText='flex:1;overflow-y:auto;';
+  const cycPane=el('div'); cycPane.style.cssText='flex:1;overflow-y:auto;display:none;';
+  modal.append(insPane,cycPane);
+  if(cycTab){
+    insTab.onclick=()=>{ insTab.classList.add('active'); cycTab.classList.remove('active'); insPane.style.display=''; cycPane.style.display='none'; };
+    cycTab.onclick=()=>{ cycTab.classList.add('active'); insTab.classList.remove('active'); cycPane.style.display=''; insPane.style.display='none'; buildCyclePane(cycPane,cfg); };
+  }
+  ov.appendChild(modal); ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); }); document.body.appendChild(ov); ov.classList.add('open');
+  const body=insPane; // alias so existing insights code unchanged
   ov.appendChild(modal); ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); }); document.body.appendChild(ov); ov.classList.add('open');
   const sevenDaysAgo=Date.now()-7*24*60*60*1000,threeDaysAgo=Date.now()-3*24*60*60*1000;
   const weekEntries=D.energyEntries.filter(e=>new Date(e.timestamp).getTime()>=sevenDaysAgo);
@@ -12118,7 +12394,150 @@ function buildEnergyChartDay(allEntries, dateStr, metric, mode, EC){
   return svg;
 }
 
-/* ---- SPORTS SCORES ---- */
+// ── Cycle Tab pane builder ────────────────────────────────────────────────
+function buildCyclePane(pane, cfg){
+  pane.innerHTML='';
+  const cycleLength=cfg.typicalCycleLength||28, periodLength=cfg.periodLength||5;
+  function sh(title,color){ const s=el('div'); s.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:'+(color||'var(--text-dim)')+';text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--border);'; s.textContent=title; pane.appendChild(s); }
+  const info=getCycleInfo(cfg);
+  if(!info){
+    const empty=el('div'); empty.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;padding:20px 0;text-align:center;'; empty.textContent='No cycle logged yet. Use the \u201cStart Tracking\u201d button on the widget to begin.'; pane.appendChild(empty); return;
+  }
+  const {day,phaseKey,phase,startStr,projectedNext,daysUntilNext}=info;
+  const color=CYCLE_PHASE_COLORS[phaseKey]||'#e05c7a';
+  const ovDay=cycleLength-14;
+
+  // ── 1. Current phase header ──
+  sh('Current Cycle Status');
+  const hdr=el('div'); hdr.style.cssText='display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px;';
+  function statTile(label,value,col){
+    const t=el('div'); t.style.cssText='flex:1;min-width:100px;padding:7px 10px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;';
+    const tl=el('div'); tl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'; tl.textContent=label;
+    const tv=el('div'); tv.style.cssText='font-size:13px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+(col||'var(--text)')+';'; tv.textContent=value;
+    t.append(tl,tv); return t;
+  }
+  const phaseBadgeTile=el('div'); phaseBadgeTile.style.cssText='flex:1;min-width:100px;padding:7px 10px;background:rgba(0,0,0,0.15);border:1px solid '+color+'44;border-radius:5px;';
+  const pbl=el('div'); pbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'; pbl.textContent='Phase';
+  const pbv=el('div'); pbv.style.cssText='font-size:13px;font-family:Share Tech Mono,monospace;font-weight:700;color:'+color+';'; pbv.textContent=phase;
+  phaseBadgeTile.append(pbl,pbv); hdr.appendChild(phaseBadgeTile);
+  hdr.appendChild(statTile('Cycle Day', 'Day '+day, 'var(--text)'));
+  hdr.appendChild(statTile('Next Cycle', daysUntilNext>0?'~'+daysUntilNext+'d away':'Due now','var(--text-dim)'));
+  hdr.appendChild(statTile('Est. Ovulation', 'Day '+ovDay, '#ddb04b'));
+  pane.appendChild(hdr);
+  // Phase progress bar
+  const progWrap=el('div'); progWrap.style.cssText='background:var(--border);border-radius:3px;height:4px;margin-bottom:4px;overflow:hidden;';
+  const progFill=el('div'); const pct=Math.min(100,Math.max(0,(day/cycleLength)*100)); progFill.style.cssText='height:100%;border-radius:3px;background:'+color+';width:'+pct+'%;transition:width 0.4s;';
+  progWrap.appendChild(progFill); pane.appendChild(progWrap);
+  const progLbl=el('div'); progLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-bottom:10px;'; progLbl.textContent='Day '+day+' of '+cycleLength+' \u00b7 Started '+new Date(startStr+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  pane.appendChild(progLbl);
+
+  // ── 2. Phase narrative ──
+  sh('Phase Insights \u2014 Estimated Tendencies');
+  const narr=PHASE_NARRATIVE[phaseKey];
+  if(narr){
+    const sum=el('div'); sum.style.cssText='font-size:11.5px;color:var(--text);line-height:1.6;padding:8px 10px;background:'+color+'0d;border-left:3px solid '+color+';border-radius:0 4px 4px 0;margin-bottom:8px;font-style:italic;'; sum.textContent=narr.summary; pane.appendChild(sum);
+    const grid=el('div'); grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;';
+    [['Energy',narr.energy],['Mood',narr.mood],['Cognition',narr.cognition],['Social',narr.social]].forEach(([lbl,txt])=>{
+      const c=el('div'); c.style.cssText='padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;';
+      const cl=el('div'); cl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;'; cl.textContent=lbl;
+      const ct=el('div'); ct.style.cssText='font-size:10.5px;color:var(--text);line-height:1.4;'; ct.textContent=txt;
+      c.append(cl,ct); grid.appendChild(c);
+    });
+    pane.appendChild(grid);
+  }
+
+  // ── 3. Personalized pattern note ──
+  if(D.cycleStartDates.length>=2&&D.energyEntries.length>=5){
+    const phasEntries=D.energyEntries.filter(e=>cyclePhaseForEntry(e,D.cycleStartDates,cycleLength,periodLength)===phaseKey);
+    if(phasEntries.length>=3){
+      sh('Your Pattern During This Phase');
+      const pNote=el('div'); pNote.style.cssText='font-size:11px;color:var(--text);padding:8px 10px;background:rgba(15,184,221,0.05);border-left:2px solid var(--cyan);border-radius:0 3px 3px 0;line-height:1.5;';
+      const topE=energyMostCommon(phasEntries,'energy'), topM=energyMostCommon(phasEntries,'mood'), topFr=energyMostCommon(phasEntries,'friction');
+      let lines=[];
+      if(topE) lines.push('Energy tends to read as \u201c'+topE+'\u201d');
+      if(topM) lines.push('most common mood is \u201c'+topM+'\u201d');
+      if(topFr) lines.push('friction tends toward \u201c'+topFr+'\u201d');
+      if(lines.length) pNote.textContent='Your past entries during '+phase+': '+lines.join(', ')+'. (Based on '+phasEntries.length+' logged entr'+(phasEntries.length===1?'y':'ies')+')';
+      else pNote.textContent='Not enough past entries in this phase yet for a pattern.';
+      pane.appendChild(pNote);
+    }
+  }
+
+  // ── 4. Hormone curve chart ──
+  sh('Estimated Hormone Trends');
+  const hormNote=el('div'); hormNote.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:8px;font-style:italic;'; hormNote.textContent='Relative estimated trends only \u2014 not measured values. Individual cycles vary.'; pane.appendChild(hormNote);
+  const series=buildCycleSeries(cycleLength,periodLength);
+  const HORM={estrogen:{label:'Estrogen',color:'#e05c7a'},progesterone:{label:'Progesterone',color:'#c890dd'},lh:{label:'LH',color:'#ddb04b'},fsh:{label:'FSH',color:'#0fb8dd'}};
+  const visible={estrogen:true,progesterone:true,lh:true,fsh:true};
+  const toggleRow=el('div'); toggleRow.style.cssText='display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;';
+  const chartWrap=el('div'); chartWrap.style.cssText='background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;padding:6px;';
+  function drawHormoneChart(){
+    chartWrap.innerHTML='';
+    const W=620,H=160,PAD={top:14,right:10,bottom:22,left:28},cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom,ns='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(ns,'svg'); svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('width','100%'); svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+    // Phase background bands
+    const phases=[{key:'Menstrual',from:1,to:periodLength},{key:'Follicular',from:periodLength+1,to:ovDay-2},{key:'Ovulatory',from:ovDay-1,to:ovDay+1},{key:'EarlyLuteal',from:ovDay+2,to:cycleLength-5},{key:'LateLuteal',from:cycleLength-4,to:cycleLength}];
+    phases.forEach(ph=>{
+      const x1=PAD.left+(ph.from-1)/cycleLength*cW, x2=PAD.left+(ph.to)/cycleLength*cW;
+      const r=document.createElementNS(ns,'rect'); r.setAttribute('x',x1); r.setAttribute('y',PAD.top); r.setAttribute('width',Math.max(0,x2-x1)); r.setAttribute('height',cH); r.setAttribute('fill',(CYCLE_PHASE_COLORS[ph.key]||'#888')+'18'); svg.appendChild(r);
+    });
+    // Grid lines
+    for(let i=0;i<=4;i++){ const y=PAD.top+cH*(1-i/4); const line=document.createElementNS(ns,'line'); line.setAttribute('x1',PAD.left); line.setAttribute('x2',W-PAD.right); line.setAttribute('y1',y); line.setAttribute('y2',y); line.setAttribute('stroke','rgba(255,255,255,0.05)'); line.setAttribute('stroke-width','1'); svg.appendChild(line); }
+    // Current day marker
+    if(day>=1&&day<=cycleLength){
+      const mx=PAD.left+((day-1)/Math.max(cycleLength-1,1))*cW;
+      const ml=document.createElementNS(ns,'line'); ml.setAttribute('x1',mx); ml.setAttribute('x2',mx); ml.setAttribute('y1',PAD.top); ml.setAttribute('y2',PAD.top+cH); ml.setAttribute('stroke',color); ml.setAttribute('stroke-width','1.5'); ml.setAttribute('stroke-dasharray','3,3'); ml.setAttribute('opacity','0.9'); svg.appendChild(ml);
+      const mt=document.createElementNS(ns,'text'); mt.setAttribute('x',Math.min(mx,W-PAD.right-12)); mt.setAttribute('y',PAD.top-2); mt.setAttribute('font-size','7'); mt.setAttribute('fill',color); mt.setAttribute('font-family','Share Tech Mono,monospace'); mt.textContent='Day '+day; svg.appendChild(mt);
+    }
+    // Hormone lines
+    Object.entries(HORM).forEach(([key,{color:hc}])=>{
+      if(!visible[key]) return;
+      const pts=series.map((p,i)=>{ const x=PAD.left+(i/(series.length-1))*cW, y=PAD.top+cH*(1-p[key]); return {x,y}; });
+      let d=''; pts.forEach((p,i)=>{ d+=(i===0?'M ':'L ')+p.x.toFixed(1)+' '+p.y.toFixed(1)+' '; });
+      const path=document.createElementNS(ns,'path'); path.setAttribute('d',d); path.setAttribute('stroke',hc); path.setAttribute('stroke-width','2'); path.setAttribute('fill','none'); path.setAttribute('stroke-linejoin','round'); svg.appendChild(path);
+    });
+    // X axis labels
+    [1,Math.floor(cycleLength/4),Math.floor(cycleLength/2),Math.floor(3*cycleLength/4),cycleLength].forEach(d=>{
+      const x=PAD.left+((d-1)/Math.max(cycleLength-1,1))*cW;
+      const t=document.createElementNS(ns,'text'); t.setAttribute('x',x); t.setAttribute('y',H-5); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','8'); t.setAttribute('fill','rgba(255,255,255,0.3)'); t.setAttribute('font-family','Share Tech Mono,monospace'); t.textContent=d; svg.appendChild(t);
+    });
+    chartWrap.appendChild(svg);
+  }
+  // Toggle buttons
+  Object.entries(HORM).forEach(([key,{label,color:hc}])=>{
+    const btn=el('button','hormone-toggle-btn active'); btn.textContent=label; btn.style.borderColor=hc; btn.style.color=hc;
+    btn.onclick=()=>{ visible[key]=!visible[key]; btn.classList.toggle('active',visible[key]); btn.style.opacity=visible[key]?'1':'0.38'; drawHormoneChart(); };
+    toggleRow.appendChild(btn);
+  });
+  pane.appendChild(toggleRow); pane.appendChild(chartWrap); drawHormoneChart();
+
+  // ── 5. Cycle history ──
+  sh('Cycle History');
+  if(D.cycleStartDates.length===0){ const empty=el('div'); empty.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;'; empty.textContent='No cycles logged yet.'; pane.appendChild(empty); return; }
+  const sorted=[...D.cycleStartDates].sort((a,b)=>b.localeCompare(a));
+  const histList=el('div'); histList.style.cssText='display:flex;flex-direction:column;gap:4px;';
+  sorted.forEach((startDate,i)=>{
+    const row=el('div'); row.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:Share Tech Mono,monospace;';
+    const dateEl=el('span'); dateEl.style.cssText='color:var(--text);flex:1;'; dateEl.textContent=new Date(startDate+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+    const lenEl=el('span'); lenEl.style.cssText='color:var(--text-dim);font-size:10px;';
+    if(i===0) lenEl.textContent='(current)';
+    else { const prev=sorted[i-1]; const len=Math.round((new Date(prev+'T00:00:00')-new Date(startDate+'T00:00:00'))/86400000); lenEl.textContent=len+' day cycle'; }
+    const delBtn=el('button'); delBtn.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11px;padding:2px 5px;'; delBtn.textContent='\u2715'; delBtn.title='Remove this entry';
+    delBtn.onclick=()=>{
+      if(confirm('Remove cycle start date '+startDate+'? This cannot be undone.')){ D.cycleStartDates=D.cycleStartDates.filter(s=>s!==startDate); persist(); buildCyclePane(pane,cfg); }
+    };
+    row.append(dateEl,lenEl,delBtn); histList.appendChild(row);
+  });
+  pane.appendChild(histList);
+  // Average
+  if(sorted.length>=2){
+    const lens=[]; for(let i=0;i<sorted.length-1;i++){ lens.push(Math.round((new Date(sorted[i]+'T00:00:00')-new Date(sorted[i+1]+'T00:00:00'))/86400000)); }
+    const recent=lens.slice(0,3); const avg=Math.round(recent.reduce((a,b)=>a+b,0)/recent.length);
+    const avgEl=el('div'); avgEl.style.cssText='font-size:10.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);';
+    avgEl.textContent='Average cycle length (last '+recent.length+'): '+avg+' days \u00b7 '+sorted.length+' cycles logged';
+    pane.appendChild(avgEl);
+  }
+}
 function buildSportsWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
   // Migrate old favTeam string → favTeams object
