@@ -3896,7 +3896,7 @@ body.edit-mode .cve-watch-key-row { display: flex; }
 .comp-bias-sel:focus { border-color: var(--cyan); }
 
 /* ============================================================
-   WIDGET — Energy Tracker
+   WIDGET — Energy and Mood Tracker
    ============================================================ */
 .energy-row {
   display: flex;
@@ -6505,7 +6505,7 @@ body.edit-mode .gh-add-row { display: flex; }
       <!-- Personal widgets -->
       <div class="widget-cat-panel" id="wcPanelPersonal">
         <button class="sec-type-card" id="swEnergy"    onclick="selectWidgetType('energy')">
-          ⚡ Energy Tracker<span>Log &amp; spot patterns</span>
+          ⚡ Energy and Mood Tracker<span>Log &amp; spot patterns</span>
         </button>
         <button class="sec-type-card" id="swDrinks"   onclick="selectWidgetType('drinks')">
           💧 Drink Tracker<span>Water, coffee &amp; more</span>
@@ -11187,11 +11187,12 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
   openOverlay('composeOverlay');
 }
 
-/* ---- ENERGY TRACKER ---- */
+/* ---- ENERGY AND MOOD TRACKER ---- */
 const DEFAULT_ENERGY   = ['Drained','Low','Normal','High','Wired'];
 const DEFAULT_FOCUS    = ['Scattered','Foggy','Steady','Locked In'];
 const DEFAULT_FRICTION = ['Resistant','Restless','Neutral','Engaged'];
 const DEFAULT_CONTEXT  = ['Coding','Meetings','Exercise','Relaxing','Other'];
+const DEFAULT_MOOD     = ['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy'];
 function getSlotColor(idx,total){
   const r4=['#ff8888','#ffaa88','#0fb8dd','#44cc88'];
   const r5=['#ff8888','#ffaa88','#0fb8dd','#44cc88','#ddb04b'];
@@ -11200,7 +11201,7 @@ function getSlotColor(idx,total){
 function energyValColor(field,val){
   if(!val) return 'var(--text-dim)';
   const cfg=_energyWidgetSec?.widgetConfig;
-  const map={energy:cfg?.energyLabels||DEFAULT_ENERGY,focus:cfg?.focusLabels||DEFAULT_FOCUS,friction:cfg?.frictionLabels||DEFAULT_FRICTION,context:cfg?.contextLabels||DEFAULT_CONTEXT};
+  const map={energy:cfg?.energyLabels||DEFAULT_ENERGY,focus:cfg?.focusLabels||DEFAULT_FOCUS,friction:cfg?.frictionLabels||DEFAULT_FRICTION,context:cfg?.contextLabels||DEFAULT_CONTEXT,mood:cfg?.moodLabels||DEFAULT_MOOD};
   const labels=map[field]; if(!labels) return 'var(--text-dim)';
   const idx=labels.indexOf(val); return idx===-1?'var(--text-dim)':getSlotColor(idx,labels.length);
 }
@@ -11210,6 +11211,7 @@ function buildEnergyWidget(sec, tabId){
   const DEFAULT_FOCUS    = ['Scattered','Foggy','Steady','Locked In'];
   const DEFAULT_FRICTION = ['Resistant','Restless','Neutral','Engaged'];
   const DEFAULT_CONTEXT  = ['Coding','Meetings','Exercise','Relaxing','Other'];
+  const DEFAULT_MOOD     = ['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy'];
   const DEFAULT_LOCS     = ['Home','Work','Traveling','Social'];
   const MAX_ENTRIES   = 500;
   const SNOOZE_MS     = 30 * 60 * 1000;
@@ -11243,11 +11245,12 @@ function buildEnergyWidget(sec, tabId){
   const eLabels  = ()=> (Array.isArray(cfg.energyLabels)  && cfg.energyLabels.length===5)  ? cfg.energyLabels   : DEFAULT_ENERGY;
   const fLabels  = ()=> (Array.isArray(cfg.focusLabels)   && cfg.focusLabels.length===4)   ? cfg.focusLabels    : DEFAULT_FOCUS;
   const frLabels = ()=> (Array.isArray(cfg.frictionLabels)&& cfg.frictionLabels.length===4) ? cfg.frictionLabels : DEFAULT_FRICTION;
+  const mLabels  = ()=> (Array.isArray(cfg.moodLabels)    && cfg.moodLabels.length===5)     ? cfg.moodLabels     : DEFAULT_MOOD;
   const ctxTags  = ()=> (Array.isArray(cfg.contextTags)   && cfg.contextTags.length)        ? cfg.contextTags    : DEFAULT_CONTEXT;
   const locs     = ()=> (Array.isArray(cfg.locations)     && cfg.locations.length)          ? cfg.locations      : DEFAULT_LOCS;
   _energyWidgetSec = sec;
 
-  let selEnergy=null, selFocus=null, selFriction=null, selContext=null, selLocation=null;
+  let selEnergy=null, selFocus=null, selFriction=null, selContext=null, selMood=null, selLocation=null;
 
   const wrap = el('div');
 
@@ -11268,6 +11271,7 @@ function buildEnergyWidget(sec, tabId){
     Focus:    'How clearly and easily you\'re able to concentrate on the task at hand.',
     Friction: 'Your sense of internal resistance toward work. Resistant = blocked or reluctant. Engaged = in flow and energized.',
     Context:  'What you\'re currently doing or what kind of activity this entry describes.',
+    Mood:     'How you\'re feeling emotionally right now. The list is ordered worst to best mood \u2014 analytics use that ordering.',
   };
 
   function makeChipRow(label, getOpts, getter, setter, fixedPal){
@@ -11321,11 +11325,13 @@ function buildEnergyWidget(sec, tabId){
   const focusRow    = makeChipRow('Focus',     ()=>fLabels(),   ()=>selFocus,    v=>{ selFocus=v; });
   const frictionRow = makeChipRow('Friction',  ()=>frLabels(),  ()=>selFriction, v=>{ selFriction=v; });
   const contextRow  = makeChipRow('Context',   ()=>ctxTags(),   ()=>selContext,  v=>{ selContext=v; }, {color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.1)'});
+  const moodRow     = makeChipRow('Mood',      ()=>mLabels(),   ()=>selMood,     v=>{ selMood=v; });
 
   wrap.appendChild(energyRow.row);
   wrap.appendChild(focusRow.row);
   wrap.appendChild(frictionRow.row);
   wrap.appendChild(contextRow.row);
+  wrap.appendChild(moodRow.row);
 
   // ── Location chip row (user-configurable, dashed style) ─────────────────
   const locRow=el('div','energy-loc-row');
@@ -11363,14 +11369,14 @@ function buildEnergyWidget(sec, tabId){
   lastLogEl.textContent=getLastLogged();
 
   const resetAll=()=>{
-    selEnergy=null; selFocus=null; selFriction=null; selContext=null; selLocation=null;
+    selEnergy=null; selFocus=null; selFriction=null; selContext=null; selMood=null; selLocation=null;
     wrap.querySelectorAll('.energy-chip').forEach(c=>{ c.style.borderColor=''; c.style.background=''; c.style.color=''; c.classList.remove('sel-active'); });
     locChips.forEach(c=>c.classList.remove('loc-active'));
     noteInp.value='';
   };
 
   logBtn.onclick=()=>{
-    const entry={ timestamp:new Date().toISOString(), energy:selEnergy, focus:selFocus, friction:selFriction, context:selContext, location:selLocation, note:noteInp.value.trim()||null };
+    const entry={ timestamp:new Date().toISOString(), energy:selEnergy, focus:selFocus, friction:selFriction, context:selContext, mood:selMood, location:selLocation, note:noteInp.value.trim()||null };
     D.energyEntries.unshift(entry);
     if(D.energyEntries.length>MAX_ENTRIES) D.energyEntries=D.energyEntries.slice(0,MAX_ENTRIES);
     cfg.snoozeUntil=0; persist(); resetAll(); lastLogEl.textContent=getLastLogged(); reminderBanner.style.display='none';
@@ -11407,6 +11413,7 @@ function buildEnergyWidget(sec, tabId){
     {id:'focus',    label:'Focus'},
     {id:'friction', label:'Friction'},
     {id:'context',  label:'Context'},
+    {id:'mood',     label:'Mood'},
     {id:'location', label:'Location'},
   ];
   const panels={};
@@ -11481,6 +11488,14 @@ function buildEnergyWidget(sec, tabId){
     ['Most resistant','More resistant','Less resistant','Least resistant'],
     frictionRow.buildChips);
   editSection.appendChild(frictionPanel);
+
+  // Mood panel
+  const moodPanel=panels.mood.panel;
+  moodPanel._cfgProp='moodLabels';
+  buildOrderedPanel(moodPanel, mLabels(), DEFAULT_MOOD,
+    ['Most negative','Negative','Neutral','Positive','Most positive'],
+    moodRow.buildChips);
+  editSection.appendChild(moodPanel);
 
   // ── Free-form panel builder (Context / Location) ──
   function buildFreeformPanel(panelEl, cfgKey, defaults, chipBuildFn, maxItems, placeholder, readFn){
@@ -11559,16 +11574,16 @@ function energyMostCommon(entries,field){ const counts={}; entries.forEach(e=>{ 
 function energyLabelColor(field,val){
   const cfg=_energyWidgetSec?.widgetConfig||{};
   const E_PAL=['#ff8888','#ffaa88','#0fb8dd','#44cc88','#ddb04b'];
-  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Restless','Neutral','Engaged']};
-  const arr=(field==='energy'?(Array.isArray(cfg.energyLabels)&&cfg.energyLabels.length===5?cfg.energyLabels:DEF.energy):field==='focus'?(Array.isArray(cfg.focusLabels)&&cfg.focusLabels.length===4?cfg.focusLabels:DEF.focus):field==='friction'?(Array.isArray(cfg.frictionLabels)&&cfg.frictionLabels.length===4?cfg.frictionLabels:DEF.friction):null);
+  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Restless','Neutral','Engaged'],mood:['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy']};
+  const arr=(field==='energy'?(Array.isArray(cfg.energyLabels)&&cfg.energyLabels.length===5?cfg.energyLabels:DEF.energy):field==='focus'?(Array.isArray(cfg.focusLabels)&&cfg.focusLabels.length===4?cfg.focusLabels:DEF.focus):field==='friction'?(Array.isArray(cfg.frictionLabels)&&cfg.frictionLabels.length===4?cfg.frictionLabels:DEF.friction):field==='mood'?(Array.isArray(cfg.moodLabels)&&cfg.moodLabels.length===5?cfg.moodLabels:DEF.mood):null);
   if(!arr) return null;
   const idx=arr.indexOf(val); if(idx===-1) return null;
   return E_PAL[Math.round((idx/Math.max(arr.length-1,1))*4)];
 }
 function energyFieldScore(field,val){
   const cfg=_energyWidgetSec?.widgetConfig||{};
-  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Restless','Neutral','Engaged']};
-  const arr=(field==='energy'?(Array.isArray(cfg.energyLabels)&&cfg.energyLabels.length===5?cfg.energyLabels:DEF.energy):field==='focus'?(Array.isArray(cfg.focusLabels)&&cfg.focusLabels.length===4?cfg.focusLabels:DEF.focus):field==='friction'?(Array.isArray(cfg.frictionLabels)&&cfg.frictionLabels.length===4?cfg.frictionLabels:DEF.friction):null);
+  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Restless','Neutral','Engaged'],mood:['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy']};
+  const arr=(field==='energy'?(Array.isArray(cfg.energyLabels)&&cfg.energyLabels.length===5?cfg.energyLabels:DEF.energy):field==='focus'?(Array.isArray(cfg.focusLabels)&&cfg.focusLabels.length===4?cfg.focusLabels:DEF.focus):field==='friction'?(Array.isArray(cfg.frictionLabels)&&cfg.frictionLabels.length===4?cfg.frictionLabels:DEF.friction):field==='mood'?(Array.isArray(cfg.moodLabels)&&cfg.moodLabels.length===5?cfg.moodLabels:DEF.mood):null);
   if(!arr) return null;
   const idx=arr.indexOf(val); return idx===-1?null:idx;
 }
@@ -11581,13 +11596,14 @@ function energyGenerateInsights(allEntries){
   const topFocus=energyMostCommon(entries,'focus'); if(topFocus){ const tc={}; entries.filter(e=>e.focus===topFocus).forEach(e=>{ const t=energyTimeOfDay(e.timestamp); tc[t]=(tc[t]||0)+1; }); const best=Object.entries(tc).sort((a,b)=>b[1]-a[1])[0]?.[0]; if(best) insights.push('You tend to be \u201c'+topFocus+'\u201d in the '+best.toLowerCase()+'.'); }
   const lowTc={}; entries.filter(e=>['Drained','Low'].includes(e.energy)).forEach(e=>{ const t=energyTimeOfDay(e.timestamp); lowTc[t]=(lowTc[t]||0)+1; }); const worstTime=Object.entries(lowTc).sort((a,b)=>b[1]-a[1])[0]?.[0]; if(worstTime) insights.push('Energy is lowest in the '+worstTime.toLowerCase()+'.');
   const topCtx=energyMostCommon(entries,'context'); if(topCtx) insights.push('Most entries are tagged \u201c'+topCtx+'\u201d.');
+  const topMood=energyMostCommon(entries,'mood'); if(topMood) insights.push('Most common mood is \u201c'+topMood+'\u201d.');
   if(entries.length>=15){
-    const ctxs=[...new Set(entries.map(e=>e.context).filter(Boolean))]; let bestECtx=null,bestES=-1,worstECtx=null,worstES=99,bestFCtx=null,bestFS=-1,bestFrCtx=null,bestFrS=-1;
-    ctxs.forEach(ctx=>{ const ce=entries.filter(e=>e.context===ctx); if(ce.length<3) return; const ae=energyAvgScore(ce,'energy'),af=energyAvgScore(ce,'focus'),afr=energyAvgScore(ce,'friction'); if(ae!==null){if(ae>bestES){bestES=ae;bestECtx=ctx;}if(ae<worstES){worstES=ae;worstECtx=ctx;}} if(af!==null&&af>bestFS){bestFS=af;bestFCtx=ctx;} if(afr!==null&&afr>bestFrS){bestFrS=afr;bestFrCtx=ctx;} });
-    if(bestECtx) insights.push('Energy is highest when: '+bestECtx+'.'); if(worstECtx&&worstECtx!==bestECtx) insights.push('Energy dips most during: '+worstECtx+'.'); if(bestFCtx) insights.push('Focus is highest when: '+bestFCtx+'.'); if(bestFrCtx) insights.push('Most engaged when: '+bestFrCtx+'.');
-    const locs=[...new Set(entries.map(e=>e.location).filter(Boolean))]; let bestLCtx=null,bestLS=-1,bestLFCtx=null,bestLFS=-1;
-    locs.forEach(loc=>{ const le=entries.filter(e=>e.location===loc); if(le.length<3) return; const ae=energyAvgScore(le,'energy'),af=energyAvgScore(le,'focus'); if(ae!==null&&ae>bestLS){bestLS=ae;bestLCtx=loc;} if(af!==null&&af>bestLFS){bestLFS=af;bestLFCtx=loc;} });
-    if(bestLCtx) insights.push('Energy peaks when '+bestLCtx.toLowerCase()+'.'); if(bestLFCtx&&bestLFCtx!==bestLCtx) insights.push('Focus is highest when '+bestLFCtx.toLowerCase()+'.');
+    const ctxs=[...new Set(entries.map(e=>e.context).filter(Boolean))]; let bestECtx=null,bestES=-1,worstECtx=null,worstES=99,bestFCtx=null,bestFS=-1,bestFrCtx=null,bestFrS=-1,bestMCtx=null,bestMS=-1,worstMCtx=null,worstMS=99;
+    ctxs.forEach(ctx=>{ const ce=entries.filter(e=>e.context===ctx); if(ce.length<3) return; const ae=energyAvgScore(ce,'energy'),af=energyAvgScore(ce,'focus'),afr=energyAvgScore(ce,'friction'),am=energyAvgScore(ce,'mood'); if(ae!==null){if(ae>bestES){bestES=ae;bestECtx=ctx;}if(ae<worstES){worstES=ae;worstECtx=ctx;}} if(af!==null&&af>bestFS){bestFS=af;bestFCtx=ctx;} if(afr!==null&&afr>bestFrS){bestFrS=afr;bestFrCtx=ctx;} if(am!==null){if(am>bestMS){bestMS=am;bestMCtx=ctx;}if(am<worstMS){worstMS=am;worstMCtx=ctx;}} });
+    if(bestECtx) insights.push('Energy is highest when: '+bestECtx+'.'); if(worstECtx&&worstECtx!==bestECtx) insights.push('Energy dips most during: '+worstECtx+'.'); if(bestFCtx) insights.push('Focus is highest when: '+bestFCtx+'.'); if(bestFrCtx) insights.push('Most engaged when: '+bestFrCtx+'.'); if(bestMCtx) insights.push('Mood is highest when: '+bestMCtx+'.'); if(worstMCtx&&worstMCtx!==bestMCtx) insights.push('Mood dips most during: '+worstMCtx+'.');
+    const locs=[...new Set(entries.map(e=>e.location).filter(Boolean))]; let bestLCtx=null,bestLS=-1,bestLFCtx=null,bestLFS=-1,bestLMCtx=null,bestLMS=-1;
+    locs.forEach(loc=>{ const le=entries.filter(e=>e.location===loc); if(le.length<3) return; const ae=energyAvgScore(le,'energy'),af=energyAvgScore(le,'focus'),am=energyAvgScore(le,'mood'); if(ae!==null&&ae>bestLS){bestLS=ae;bestLCtx=loc;} if(af!==null&&af>bestLFS){bestLFS=af;bestLFCtx=loc;} if(am!==null&&am>bestLMS){bestLMS=am;bestLMCtx=loc;} });
+    if(bestLCtx) insights.push('Energy peaks when '+bestLCtx.toLowerCase()+'.'); if(bestLFCtx&&bestLFCtx!==bestLCtx) insights.push('Focus is highest when '+bestLFCtx.toLowerCase()+'.'); if(bestLMCtx) insights.push('Mood is highest when '+bestLMCtx.toLowerCase()+'.');
   }
   if(entries.length>=21){
     const DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; const dowS={},dowC={};
@@ -11600,13 +11616,13 @@ function energyGenerateInsights(allEntries){
 
 // Energy history modal
 function openEnergyModal(){
-  function EC(val){ return energyLabelColor('energy',val)||energyLabelColor('focus',val)||energyLabelColor('friction',val)||'var(--text-dim)'; }
+  function EC(val){ return energyLabelColor('energy',val)||energyLabelColor('focus',val)||energyLabelColor('friction',val)||energyLabelColor('mood',val)||'var(--text-dim)'; }
   let overlay=document.getElementById('energyHistoryOverlay');
   if(!overlay){
     overlay=el('div','overlay'); overlay.id='energyHistoryOverlay';
     const modal=el('div','modal'); modal.style.cssText='width:540px;max-height:82vh;display:flex;flex-direction:column;';
     const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;';
-    const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='\u26A1 Energy Tracker';
+    const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='\u26A1 Energy and Mood Tracker';
     const clearBtn=el('button','mbtn'); clearBtn.style.cssText='font-size:11px;padding:4px 10px;'; clearBtn.textContent='Clear All';
     clearBtn.onclick=()=>{ if(confirm('Clear all energy entries?')){ D.energyEntries=[]; persist(); renderModal(); } };
     mhdr.append(mtitle,clearBtn);
@@ -11627,9 +11643,9 @@ function openEnergyModal(){
     const patternSec=section('Pattern Summary \u2014 Last 7 Days');
     if(weekEntries.length<3){ const note=el('div'); note.style.cssText='font-size:11.5px;color:var(--text-dim);font-style:italic;padding:4px 0;'; note.textContent='Log a few more entries to see patterns here.'; patternSec.appendChild(note); }
     else {
-      const topE=energyMostCommon(weekEntries,'energy'),topF=energyMostCommon(weekEntries,'focus'),topFr=energyMostCommon(weekEntries,'friction');
+      const topE=energyMostCommon(weekEntries,'energy'),topF=energyMostCommon(weekEntries,'focus'),topFr=energyMostCommon(weekEntries,'friction'),topM=energyMostCommon(weekEntries,'mood');
       const sg=el('div'); sg.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;';
-      [['Energy','energy',topE],['Focus','focus',topF],['Friction','friction',topFr]].forEach(([lbl,field,val])=>{
+      [['Energy','energy',topE],['Focus','focus',topF],['Friction','friction',topFr],['Mood','mood',topM]].forEach(([lbl,field,val])=>{
         if(!val) return;
         const tile=el('div'); tile.style.cssText='flex:1;min-width:100px;padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;';
         const tl=el('div'); tl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;'; tl.textContent='Most common '+lbl;
@@ -11660,14 +11676,14 @@ function openEnergyModal(){
         const gi=D.energyEntries.indexOf(e); const row=el('div','energy-history-entry');
         const timeRow=el('div'); timeRow.style.cssText='display:flex;align-items:center;gap:4px;';
         const timeEl=el('span'); timeEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);flex:1;';
-        timeEl.textContent=new Date(e.timestamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+(e.context?' \u00b7 '+e.context:'')+(e.location?' \u00b7 '+e.location:'');
+        timeEl.textContent=new Date(e.timestamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+(e.context?' \u00b7 '+e.context:'')+(e.mood?' \u00b7 '+e.mood:'')+(e.location?' \u00b7 '+e.location:'');
         const editBtn=el('button','ic-btn ic-edit'); editBtn.textContent='\u270e'; editBtn.title='Edit entry'; editBtn.style.cssText='font-size:10px;padding:1px 5px;';
         editBtn.onclick=()=>{ closeOverlay('energyHistoryOverlay'); openEnergyEditModal(gi, _energyWidgetSec); };
         const del=el('button'); del.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:2px;'; del.textContent='\u2715'; del.title='Delete entry';
         del.onclick=()=>{ D.energyEntries.splice(gi,1); persist(); renderModal(); };
         timeRow.append(timeEl,editBtn,del);
         const vals=el('div','energy-history-vals');
-        if(e.energy) vals.appendChild(badge(e.energy)); if(e.focus) vals.appendChild(badge(e.focus)); if(e.friction) vals.appendChild(badge(e.friction));
+        if(e.energy) vals.appendChild(badge(e.energy)); if(e.focus) vals.appendChild(badge(e.focus)); if(e.friction) vals.appendChild(badge(e.friction)); if(e.mood) vals.appendChild(badge(e.mood));
         row.append(timeRow,vals); if(e.note){ const n=el('div','energy-history-note'); n.textContent=e.note; row.appendChild(n); } list.appendChild(row);
       });
       todaySec.appendChild(list);
@@ -11687,6 +11703,7 @@ function openEnergyEditModal(entryIdx, sec){
   const fLabels=cfg.focusLabels||['Scattered','Foggy','Steady','Locked In'];
   const frLabels=cfg.frictionLabels||['Resistant','Restless','Neutral','Engaged'];
   const ctxLabels=cfg.contextTags||['Coding','Meetings','Exercise','Relaxing','Other'];
+  const mLabels=cfg.moodLabels||['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy'];
   const E_PAL=[{color:'#ff8888',border:'#cc4444',bg:'rgba(204,68,68,0.15)'},{color:'#ffaa88',border:'#cc7744',bg:'rgba(204,119,68,0.15)'},{color:'#0fb8dd',border:'#0fb8dd',bg:'rgba(15,184,221,0.12)'},{color:'#44cc88',border:'#44cc88',bg:'rgba(68,204,136,0.15)'},{color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.15)'}];
   function editPal(i,total){ return E_PAL[Math.round((i/Math.max(total-1,1))*4)]; }
   let ov=document.getElementById('energyEditOverlay'); if(ov) ov.remove();
@@ -11696,7 +11713,7 @@ function openEnergyEditModal(entryIdx, sec){
   const ts=el('div'); ts.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-bottom:12px;';
   ts.textContent=new Date(entry.timestamp).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); modal.appendChild(ts);
   function mrow(){ const r=el('div'); r.style.cssText='display:flex;gap:6px;margin-bottom:7px;'; return r; }
-  let eV=entry.energy, fV=entry.focus, frV=entry.friction, cV=entry.context, lV=entry.location;
+  let eV=entry.energy, fV=entry.focus, frV=entry.friction, cV=entry.context, mV=entry.mood, lV=entry.location;
   function editChipRow(label,opts,getter,setter,fixedPal){
     const row=el('div','energy-row'); const lbl=el('div','energy-row-label'); lbl.textContent=label;
     const chips=el('div','energy-chips');
@@ -11719,6 +11736,7 @@ function openEnergyEditModal(entryIdx, sec){
   modal.appendChild(editChipRow('Friction', frLabels,  ()=>frV, v=>{ frV=v; }));
   const GOLD_PAL={color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.1)'};
   modal.appendChild(editChipRow('Context',  ctxLabels, ()=>cV,  v=>{ cV=v; }, GOLD_PAL));
+  modal.appendChild(editChipRow('Mood',     mLabels,   ()=>mV,  v=>{ mV=v; }));
 
   // Location chips using configured list
   const editLocRow=el('div','energy-loc-row');
@@ -11741,14 +11759,14 @@ function openEnergyEditModal(entryIdx, sec){
   const actions=el('div','modal-actions');
   const cancelBtn=el('button','mbtn mbtn-cancel'); cancelBtn.textContent='Cancel'; cancelBtn.onclick=()=>{ ov.remove(); openEnergyModal(); };
   const saveBtn=el('button','mbtn mbtn-primary'); saveBtn.textContent='Save';
-  saveBtn.onclick=()=>{ entry.energy=eV; entry.focus=fV; entry.friction=frV; entry.context=cV; entry.location=lV; entry.note=noteInp.value.trim()||null; persist(); ov.remove(); openEnergyModal(); };
+  saveBtn.onclick=()=>{ entry.energy=eV; entry.focus=fV; entry.friction=frV; entry.context=cV; entry.mood=mV; entry.location=lV; entry.note=noteInp.value.trim()||null; persist(); ov.remove(); openEnergyModal(); };
   actions.append(cancelBtn,saveBtn); modal.appendChild(actions);
   ov.appendChild(modal); ov.addEventListener('click',e=>{ if(e.target===ov){ov.remove();openEnergyModal();} }); document.body.appendChild(ov); ov.classList.add('open');
 }
 
 // Insights Viewer modal
 function openEnergyInsightsModal(){
-  function EC(val){ return energyLabelColor('energy',val)||energyLabelColor('focus',val)||energyLabelColor('friction',val)||'var(--text-dim)'; }
+  function EC(val){ return energyLabelColor('energy',val)||energyLabelColor('focus',val)||energyLabelColor('friction',val)||energyLabelColor('mood',val)||'var(--text-dim)'; }
   let ov=document.getElementById('energyInsightsOverlay'); if(ov) ov.remove();
   ov=el('div','overlay'); ov.id='energyInsightsOverlay';
   const modal=el('div','modal'); modal.style.cssText='width:680px;max-height:88vh;display:flex;flex-direction:column;';
@@ -11767,7 +11785,7 @@ function openEnergyInsightsModal(){
   // 7-Day Trend
   sh('7-Day Trend');
   const tg=el('div'); tg.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
-  [['Energy','energy'],['Focus','focus'],['Friction','friction']].forEach(([lbl,field])=>{
+  [['Energy','energy'],['Focus','focus'],['Friction','friction'],['Mood','mood']].forEach(([lbl,field])=>{
     const val=energyMostCommon(weekEntries,field),arrow=energyTrendArrow(last3,prior4,field);
     const tile=el('div'); tile.style.cssText='flex:1;min-width:120px;padding:7px 10px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;';
     const tl=el('div'); tl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'; tl.textContent='Most common '+lbl;
@@ -11816,7 +11834,7 @@ function openEnergyInsightsModal(){
     ctrl.appendChild(navWrap);
 
     const mB={};
-    ['energy','focus','friction','all'].forEach(m=>{
+    ['energy','focus','friction','mood','all'].forEach(m=>{
       const b=el('button'); b.style.cssText=m===cM?activeStyle:inactiveStyle;
       b.textContent=m==='all'?'All':m.charAt(0).toUpperCase()+m.slice(1);
       b.onclick=()=>{ cM=m; Object.values(mB).forEach(x=>x.style.cssText=inactiveStyle); b.style.cssText=activeStyle; redraw(); };
@@ -11857,9 +11875,9 @@ function openEnergyInsightsModal(){
     const thS='font-size:9px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-dim);padding:5px 8px;text-align:left;background:var(--surface);border-bottom:1px solid var(--border);';
     const tdS='padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.04);background:var(--inp-bg);';
     const table=el('table'); table.style.cssText='width:100%;border-collapse:collapse;font-size:10.5px;font-family:Share Tech Mono,monospace;';
-    const thead=el('thead'),hr=el('tr'); ['Context','Energy','Focus','Friction'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
+    const thead=el('thead'),hr=el('tr'); ['Context','Energy','Focus','Friction','Mood'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
     const tbody=el('tbody');
-    ctxs.forEach(ctx=>{ const ce=weekEntries.filter(e=>e.context===ctx); if(ce.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=ctx; tr.appendChild(tdL); ['energy','focus','friction'].forEach(f=>{ const val=energyMostCommon(ce,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; const c=EC(val);td.style.color=val&&c?c:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
+    ctxs.forEach(ctx=>{ const ce=weekEntries.filter(e=>e.context===ctx); if(ce.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=ctx; tr.appendChild(tdL); ['energy','focus','friction','mood'].forEach(f=>{ const val=energyMostCommon(ce,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; const c=EC(val);td.style.color=val&&c?c:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
   }
   // Location correlations
   const locs=[...new Set(weekEntries.map(e=>e.location).filter(Boolean))];
@@ -11868,15 +11886,48 @@ function openEnergyInsightsModal(){
     const thS='font-size:9px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-dim);padding:5px 8px;text-align:left;background:var(--surface);border-bottom:1px solid var(--border);';
     const tdS='padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.04);background:var(--inp-bg);';
     const table=el('table'); table.style.cssText='width:100%;border-collapse:collapse;font-size:10.5px;font-family:Share Tech Mono,monospace;';
-    const thead=el('thead'),hr=el('tr'); ['Location','Energy','Focus','Friction'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
+    const thead=el('thead'),hr=el('tr'); ['Location','Energy','Focus','Friction','Mood'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
     const tbody=el('tbody');
-    locs.forEach(loc=>{ const le=weekEntries.filter(e=>e.location===loc); if(le.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=loc; tr.appendChild(tdL); ['energy','focus','friction'].forEach(f=>{ const val=energyMostCommon(le,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; const c=EC(val);td.style.color=val&&c?c:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
+    locs.forEach(loc=>{ const le=weekEntries.filter(e=>e.location===loc); if(le.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=loc; tr.appendChild(tdL); ['energy','focus','friction','mood'].forEach(f=>{ const val=energyMostCommon(le,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; const c=EC(val);td.style.color=val&&c?c:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
   }
   // Day-of-week
   if(D.energyEntries.length>=7){
     sh('Day-of-Week Patterns');
-    const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; const dw=el('div'); dw.style.cssText='display:flex;gap:4px;';
-    DOW.forEach((dayName,d)=>{ const de=D.energyEntries.filter(e=>new Date(e.timestamp).getDay()===d),avg=energyAvgScore(de,'energy'); const col=el('div'); col.style.cssText='flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;'; const outer=el('div'); outer.style.cssText='width:100%;height:44px;background:var(--border);border-radius:3px;position:relative;overflow:hidden;'; if(avg!==null&&de.length>=2){ const pct=(avg/4)*100,color=avg>=3?'#44cc88':avg>=2?'#0fb8dd':avg>=1?'#ffaa88':'#ff8888'; const inner=el('div'); inner.style.cssText='position:absolute;bottom:0;left:0;right:0;border-radius:3px 3px 0 0;height:'+pct+'%;background:'+color+';opacity:0.75;'; outer.appendChild(inner); } const lbl=el('div'); lbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);'; lbl.textContent=dayName; const avgLbl=el('div'); avgLbl.style.cssText='font-size:8.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);opacity:0.7;'; avgLbl.textContent=avg!==null?avg.toFixed(1):'\u2014'; col.append(outer,lbl,avgLbl); dw.appendChild(col); }); body.appendChild(dw);
+    const DOW_MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'};
+    const DOW_MS={energy:4,focus:3,friction:2,mood:4};
+    let dowMetric='energy';
+    const dowActiveStyle='font-size:10px;font-family:Share Tech Mono,monospace;padding:2px 9px;border:1px solid var(--gold);border-radius:3px;background:none;cursor:pointer;color:var(--gold);';
+    const dowInactiveStyle='font-size:10px;font-family:Share Tech Mono,monospace;padding:2px 9px;border:1px solid var(--border);border-radius:3px;background:none;cursor:pointer;color:var(--text-dim);';
+    const dowCtrl=el('div'); dowCtrl.style.cssText='display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;';
+    const dowBtns={};
+    ['energy','focus','friction','mood'].forEach(m=>{
+      const b=el('button'); b.style.cssText=m===dowMetric?dowActiveStyle:dowInactiveStyle;
+      b.textContent=m.charAt(0).toUpperCase()+m.slice(1);
+      b.onclick=()=>{ dowMetric=m; Object.values(dowBtns).forEach(x=>x.style.cssText=dowInactiveStyle); b.style.cssText=dowActiveStyle; drawDow(); };
+      dowBtns[m]=b; dowCtrl.appendChild(b);
+    });
+    body.appendChild(dowCtrl);
+    const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const dw=el('div'); dw.style.cssText='display:flex;gap:4px;';
+    body.appendChild(dw);
+    function drawDow(){
+      dw.innerHTML='';
+      const maxS=DOW_MS[dowMetric]||4, color=DOW_MC[dowMetric]||'#0fb8dd';
+      DOW.forEach((dayName,d)=>{
+        const de=D.energyEntries.filter(e=>new Date(e.timestamp).getDay()===d),avg=energyAvgScore(de,dowMetric);
+        const col=el('div'); col.style.cssText='flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;';
+        const outer=el('div'); outer.style.cssText='width:100%;height:44px;background:var(--border);border-radius:3px;position:relative;overflow:hidden;';
+        if(avg!==null&&de.length>=2){
+          const pct=(avg/maxS)*100;
+          const inner=el('div'); inner.style.cssText='position:absolute;bottom:0;left:0;right:0;border-radius:3px 3px 0 0;height:'+pct+'%;background:'+color+';opacity:0.75;';
+          outer.appendChild(inner);
+        }
+        const lbl=el('div'); lbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);'; lbl.textContent=dayName;
+        const avgLbl=el('div'); avgLbl.style.cssText='font-size:8.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);opacity:0.7;'; avgLbl.textContent=avg!==null?avg.toFixed(1):'\u2014';
+        col.append(outer,lbl,avgLbl); dw.appendChild(col);
+      });
+    }
+    drawDow();
     if(D.energyEntries.length<21){ const hint=el('div'); hint.style.cssText='font-size:10px;color:var(--text-dim);margin-top:6px;font-style:italic;'; hint.textContent='Log more entries across different days to see stronger patterns.'; body.appendChild(hint); }
   }
   // All insights
@@ -11890,7 +11941,7 @@ function buildEnergyChartWeek(allEntries, metric, mode, EC, onDayClick){
   const W=620,H=160,PAD={top:12,right:10,bottom:28,left:28},cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom,ns='http://www.w3.org/2000/svg';
   const days=[];
   for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const ds=d.toLocaleDateString('en-CA'); days.push({dateStr:ds,entries:allEntries.filter(e=>e.timestamp.slice(0,10)===ds),label:d.toLocaleDateString('en-US',{weekday:'short'})}); }
-  const METRICS=metric==='all'?['energy','focus','friction']:[metric],MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b'},MS={energy:4,focus:3,friction:2};
+  const METRICS=metric==='all'?['energy','focus','friction','mood']:[metric],MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'},MS={energy:4,focus:3,friction:2,mood:4};
   const svg=document.createElementNS(ns,'svg'); svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('width','100%'); svg.setAttribute('preserveAspectRatio','xMidYMid meet');
   // Grid
   for(let i=0;i<=4;i++){ const y=PAD.top+cH*(1-i/4); const line=document.createElementNS(ns,'line'); line.setAttribute('x1',PAD.left); line.setAttribute('x2',W-PAD.right); line.setAttribute('y1',y); line.setAttribute('y2',y); line.setAttribute('stroke','rgba(255,255,255,0.05)'); line.setAttribute('stroke-width','1'); svg.appendChild(line); }
@@ -11950,8 +12001,8 @@ function buildEnergyChartDay(allEntries, dateStr, metric, mode, EC){
   const ns='http://www.w3.org/2000/svg';
   const PAD={top:16,right:12,bottom:30,left:30};
   const H=170;
-  const MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b'},MS={energy:4,focus:3,friction:2};
-  const METRICS=metric==='all'?['energy','focus','friction']:[metric];
+  const MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'},MS={energy:4,focus:3,friction:2,mood:4};
+  const METRICS=metric==='all'?['energy','focus','friction','mood']:[metric];
 
   // Get entries for this day
   const dayEntries=allEntries.filter(e=>e.timestamp.slice(0,10)===dateStr);
