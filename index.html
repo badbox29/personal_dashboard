@@ -12493,7 +12493,19 @@ function buildCyclePane(pane, cfg){
     Object.entries(HORM).forEach(([key,{color:hc}])=>{
       if(!visible[key]) return;
       const pts=series.map((p,i)=>{ const x=PAD.left+(i/(series.length-1))*cW, y=PAD.top+cH*(1-p[key]); return {x,y}; });
-      let d=''; pts.forEach((p,i)=>{ d+=(i===0?'M ':'L ')+p.x.toFixed(1)+' '+p.y.toFixed(1)+' '; });
+      // Catmull-Rom → cubic bezier smooth curve through all data points
+      function smoothPath(pts){
+        if(pts.length<2) return '';
+        let d='M '+pts[0].x.toFixed(2)+' '+pts[0].y.toFixed(2);
+        for(let i=0;i<pts.length-1;i++){
+          const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
+          const cp1x=p1.x+(p2.x-p0.x)/6, cp1y=p1.y+(p2.y-p0.y)/6;
+          const cp2x=p2.x-(p3.x-p1.x)/6, cp2y=p2.y-(p3.y-p1.y)/6;
+          d+=' C '+cp1x.toFixed(2)+' '+cp1y.toFixed(2)+' '+cp2x.toFixed(2)+' '+cp2y.toFixed(2)+' '+p2.x.toFixed(2)+' '+p2.y.toFixed(2);
+        }
+        return d;
+      }
+      const d=smoothPath(pts);
       const path=document.createElementNS(ns,'path'); path.setAttribute('d',d); path.setAttribute('stroke',hc); path.setAttribute('stroke-width','2'); path.setAttribute('fill','none'); path.setAttribute('stroke-linejoin','round'); svg.appendChild(path);
     });
     // X axis labels
