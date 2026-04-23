@@ -73,7 +73,7 @@
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Sync-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Sync-Token, X-Salty-Key',
   'Access-Control-Max-Age':       '86400',
 };
 
@@ -84,6 +84,32 @@ const json = (data, status=200) => new Response(JSON.stringify(data), {
 
 // Simple non-cryptographic hash for cache key generation (keeps keys out of URLs)
 const hashStr = s => [...s].reduce((h,c) => (Math.imul(31,h) + c.charCodeAt(0)) | 0, 0);
+
+// ── Access control ───────────────────────────────────────────────────────────
+// Configure in Worker Settings → Variables and Secrets:
+//   SALTY_KEYS    — comma-separated list of valid secret tokens (store as encrypted secret)
+//   SALTY_ORIGINS — comma-separated list of allowed origins, e.g. https://you.github.io
+// Either check is skipped gracefully if its env var is not set.
+// Both checks must pass when both vars are configured.
+function checkAccess(request, env) {
+  // Origin / Referer check
+  const allowedOrigins = (env.SALTY_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (allowedOrigins.length > 0) {
+    const origin  = (request.headers.get('Origin')  || '').trim();
+    const referer = (request.headers.get('Referer') || '').trim();
+    const ok = allowedOrigins.some(o => origin === o || referer.startsWith(o));
+    if (!ok) return json({ error: 'Forbidden' }, 403);
+  }
+
+  // Shared secret check
+  const validKeys = (env.SALTY_KEYS || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (validKeys.length > 0) {
+    const key = (request.headers.get('X-Salty-Key') || '').trim();
+    if (!validKeys.includes(key)) return json({ error: 'Forbidden' }, 403);
+  }
+
+  return null; // access granted
+}
 
 // ── Pollen normalizers ───────────────────────────────────────────────────────
 
@@ -1185,6 +1211,10 @@ export default {
 
     if(request.method === 'OPTIONS')
       return new Response(null, { status: 204, headers: CORS_HEADERS });
+
+    // Access control — checks SALTY_ORIGINS and SALTY_KEYS env vars if set
+    const denied = checkAccess(request, env);
+    if(denied) return denied;
 
     const path = new URL(request.url).pathname.replace(/\/+$/, '');
 

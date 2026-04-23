@@ -6253,6 +6253,20 @@ body.edit-mode .gh-add-row { display: flex; }
       <button class="mbtn mbtn-primary" onclick="saveWorkerUrl()" style="flex-shrink:0;">Save</button>
     </div>
     <div id="workerUrlStatus" style="font-size:11px;color:var(--cyan);margin-top:6px;min-height:16px;"></div>
+    <div style="margin-top:12px;">
+      <label style="font-weight:600;">Worker Secret Key</label>
+      <p style="font-size:11px;color:var(--text-dim);margin:4px 0 8px;line-height:1.6;">
+        Required when your worker is configured with <code style="font-family:Share Tech Mono,monospace;font-size:10.5px;">SALTY_KEYS</code>.
+        Enter the same token you added to your worker's environment variables. Leave blank if your worker has no key configured.
+      </p>
+      <div style="display:flex;gap:7px;">
+        <input type="password" id="workerKeyInp" placeholder="Your worker secret key"
+               style="flex:1;font-family:Share Tech Mono,monospace;font-size:12px;"
+               onkeydown="if(event.key==='Enter') saveWorkerKey()">
+        <button class="mbtn mbtn-primary" onclick="saveWorkerKey()" style="flex-shrink:0;">Save</button>
+      </div>
+      <div id="workerKeyStatus" style="font-size:11px;color:var(--cyan);margin-top:6px;min-height:16px;"></div>
+    </div>
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
       <label style="font-weight:600;">Local Proxy URL</label>
       <p style="font-size:11px;color:var(--text-dim);margin:4px 0 8px;line-height:1.6;">
@@ -7741,6 +7755,7 @@ function generateSyncToken(){
   if(!D.recentVisited) D.recentVisited = [];
   if(D.proxyUrl === undefined) D.proxyUrl = '';
   if(D.workerUrl === undefined) D.workerUrl = '';
+  if(D.workerKey === undefined) D.workerKey = '';
   if(D.localProxyUrl === undefined){
     // Migrate: if old proxyUrl was set, carry it forward as the local proxy
     D.localProxyUrl = D.proxyUrl || '';
@@ -7879,6 +7894,7 @@ function persistConfig(){
 }
 // Returns the effective worker URL for a widget: widget override → global → null
 function getWorkerUrl(widgetOverride){ return (widgetOverride||'').trim() || (D.workerUrl||'').trim() || null; }
+function getWorkerAuthHeaders(){ const k=(D.workerKey||'').trim(); return k?{'X-Salty-Key':k}:{}; }
 
 /* ================================================================
    KV SYNC
@@ -7961,7 +7977,7 @@ async function kvPull() {
   try {
     const res = await fetch(workerUrl.replace(/\/+$/,'') + '/kv', {
       method: 'GET',
-      headers: { 'X-Sync-Token': D.kvToken }
+      headers: { 'X-Sync-Token': D.kvToken, ...getWorkerAuthHeaders() }
     });
     if(!res.ok) return;
     const { found, data } = await res.json();
@@ -8024,7 +8040,7 @@ async function kvPush() {
   // push a payload that discards data or config that another browser already pushed.
   try {
     const preRes = await fetch(workerUrl.replace(/\/+$/,'') + '/kv', {
-      method: 'GET', headers: { 'X-Sync-Token': D.kvToken }
+      method: 'GET', headers: { 'X-Sync-Token': D.kvToken, ...getWorkerAuthHeaders() }
     });
     if(preRes.ok) {
       const { found, data } = await preRes.json();
@@ -8051,7 +8067,7 @@ async function kvPush() {
   try {
     await fetch(workerUrl.replace(/\/+$/,'') + '/kv', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Sync-Token': D.kvToken },
+      headers: { 'Content-Type': 'application/json', 'X-Sync-Token': D.kvToken, ...getWorkerAuthHeaders() },
       body:    JSON.stringify(envelope)
     });
     D.kvLastSync    = now;
@@ -10464,7 +10480,7 @@ function buildOtxWidget(sec, tabId){
     pulseList.innerHTML='<div class="dns-status">Loading\u2026</div>';
     if(!workerUrl){ pulseList.innerHTML='<div class="dns-status" style="color:var(--del-color);">Worker URL required. Set it via the \u26A1 button.</div>'; return; }
     try {
-      const r=await fetch(workerUrl.replace(/\/+$/,'')+'/otx',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:cfg.otxKey,limit:cfg.maxPulses})});
+      const r=await fetch(workerUrl.replace(/\/+$/,'')+'/otx',{method:'POST',headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},body:JSON.stringify({apiKey:cfg.otxKey,limit:cfg.maxPulses})});
       const j=await r.json();
       if(j.error){ pulseList.innerHTML=`<div class="dns-status" style="color:var(--del-color);">${j.error}</div>`; return; }
       lastData=j; renderData(j);
@@ -12886,7 +12902,7 @@ function buildSportsWidget(sec){
       const body={ league:cfg.league, view:cfg.view, localDate };
       if(cfg.sportsKey) body.apiKey=cfg.sportsKey;
       const r=await fetch(workerUrl.replace(/\/+$/,'')+'/sports',{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),
+        method:'POST',headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},body:JSON.stringify(body),
       });
       const j=await r.json();
       if(j.error){ feed.innerHTML='<div class="dns-status" style="color:var(--del-color);">'+j.error+'</div>'; return; }
@@ -13672,7 +13688,7 @@ function buildRssWidget(sec){
         const endpoint   = workerBase.endsWith('/rss') ? workerBase : workerBase+'/rss';
         const res = await fetch(endpoint, {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getWorkerAuthHeaders() },
           body:    JSON.stringify({ url: feed.url }),
         });
 
@@ -14257,12 +14273,12 @@ function buildTapWidget(sec,tabId){
     spinner.style.display=''; rfBtn.disabled=true;
 
     const postInterval=(isoInterval,extra={})=>fetch(workerUrl+'/tap',{
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
       body:JSON.stringify({type:'siem',principal:cfg.tapPrincipal,secret:cfg.tapSecret,interval:isoInterval,...extra}),
     }).then(r=>r.json()).catch(e=>({error:e.message}));
 
     const postVap=(extra={})=>fetch(workerUrl+'/tap',{
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
       body:JSON.stringify({type:'vap',principal:cfg.tapPrincipal,secret:cfg.tapSecret,vapWindow:cfg.vapWindow,...extra}),
     }).then(r=>r.json()).catch(e=>({error:e.message}));
 
@@ -14669,7 +14685,7 @@ function buildCveWidget(sec, tabId){
       const doFetch=async url=>{
         const _w=getWorkerUrl(cfg.nvdWorker);
         if(_w&&cfg.nvdKey){
-          const r=await fetch(_w.replace(/\/+$/,'')+'/nvd',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:url,apiKey:cfg.nvdKey})});
+          const r=await fetch(_w.replace(/\/+$/,'')+'/nvd',{method:'POST',headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},body:JSON.stringify({endpoint:url,apiKey:cfg.nvdKey})});
           return r.json();
         }
         return fetch(url).then(r=>r.json());
@@ -15468,7 +15484,7 @@ async function bibleWorkerCall(cfg, path, params){
   if(!w) throw new Error('Worker URL not set in widget or global settings');
   if(!cfg.apiKey) throw new Error('API.Bible key not configured — add it in edit mode');
   const r = await fetch(w.replace(/\/+$/,'')+'/bible',{
-    method:'POST', headers:{'Content-Type':'application/json'},
+    method:'POST', headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
     body:JSON.stringify({apiKey:cfg.apiKey, path, params:params||{}}),
   });
   const j = await r.json();
@@ -16690,7 +16706,7 @@ function buildWotdWidget(sec){
         try {
           const w = resolvedWorker.replace(/\/+$/,'');
           const r = await fetch(w+'/wotd',{
-            method:'POST', headers:{'Content-Type':'application/json'},
+            method:'POST', headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
             body: JSON.stringify({apiKey: cfg.apiKey}),
           });
           const j = await r.json();
@@ -17327,7 +17343,7 @@ function buildUnsplashWidget(sec){
       const query=pool.length ? pool[Math.floor(Math.random()*pool.length)] : '';
       const r=await fetch(workerUrl.replace(/\/$/,'')+'/unsplash',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
         body:JSON.stringify({ apiKey:cfg.apiKey, mode:'photo', query, orientation:cfg.orientation||'landscape' }),
       });
       if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j?.error||'HTTP '+r.status); }
@@ -17491,7 +17507,7 @@ function buildUnsplashWidget(sec){
     try{
       const r=await fetch(workerUrl.replace(/\/$/,'')+'/unsplash',{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
         body:JSON.stringify({apiKey:cfg.apiKey,mode:'topics'}),
       });
       if(!r.ok) return;
@@ -19244,13 +19260,13 @@ function statusSchedule(tabId, colId, secId, svc){
 }
 
 /** Try a URL via a proxy server (local or worker). Returns result object or null to fall through. */
-async function statusViaProxy(proxyBase, url, timeoutMs){
+async function statusViaProxy(proxyBase, url, timeoutMs, extraHeaders={}){
   const ctrl = new AbortController();
   const tid  = setTimeout(()=> ctrl.abort(), timeoutMs);
   try {
     const r = await fetch(proxyBase.replace(/\/+$/, '') + '/status', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...extraHeaders },
       body:    JSON.stringify({ url }),
       signal:  ctrl.signal,
       cache:   'no-store',
@@ -19297,7 +19313,7 @@ async function statusCascade(url){
     if(r) return r;
   }
   if(workerUrl){
-    const r = await statusViaProxy(workerUrl, url, 10000);
+    const r = await statusViaProxy(workerUrl, url, 10000, getWorkerAuthHeaders());
     if(r) return r;
   }
   return statusViaDirect(url);
@@ -19635,7 +19651,7 @@ async function fetchWeather(loc){
         // Via normalizing worker — simplest path, recommended
         const r = await fetch(proxy, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getWorkerAuthHeaders() },
           body: JSON.stringify({
             service: D.pollenService || 'weatherapi',
             apiKey:  D.pollenKey,
@@ -19929,6 +19945,8 @@ document.addEventListener('click', e => {
 function openWorkerModal(){
   document.getElementById('workerUrlInp').value = D.workerUrl || '';
   document.getElementById('workerUrlStatus').textContent = '';
+  document.getElementById('workerKeyInp').value = D.workerKey || '';
+  document.getElementById('workerKeyStatus').textContent = '';
   document.getElementById('localProxyUrlInp').value = D.localProxyUrl || '';
   document.getElementById('localProxyUrlStatus').textContent = '';
   openOverlay('workerOverlay');
@@ -19937,6 +19955,8 @@ function openWorkerModal(){
 function openWorkerModal(){
   document.getElementById('workerUrlInp').value = D.workerUrl || '';
   document.getElementById('workerUrlStatus').textContent = '';
+  document.getElementById('workerKeyInp').value = D.workerKey || '';
+  document.getElementById('workerKeyStatus').textContent = '';
   document.getElementById('localProxyUrlInp').value = D.localProxyUrl || '';
   document.getElementById('localProxyUrlStatus').textContent = '';
   // KV sync fields
@@ -20065,6 +20085,14 @@ function saveWorkerUrl(){
   persistConfig();
   const status = document.getElementById('workerUrlStatus');
   status.textContent = D.workerUrl ? '✓ Saved — applies to pollen, CVE, and RSS widgets.' : '✓ Cleared.';
+  setTimeout(()=>{ status.textContent=''; }, 3000);
+}
+
+function saveWorkerKey(){
+  D.workerKey = document.getElementById('workerKeyInp').value.trim();
+  persistConfig();
+  const status = document.getElementById('workerKeyStatus');
+  status.textContent = D.workerKey ? '✓ Key saved.' : '✓ Cleared.';
   setTimeout(()=>{ status.textContent=''; }, 3000);
 }
 
@@ -23949,7 +23977,7 @@ function buildLastfmWidget(sec){
     try {
       const r = await fetch(workerUrl.replace(/\/+$/,'')+'/lastfm', {
         method:'POST',
-        headers:{'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
         body: JSON.stringify({ apiKey:cfg.apiKey, username:cfg.username, method, limit:cfg.recentLimit||8, ...extra })
       });
       const j = await r.json();
