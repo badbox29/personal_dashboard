@@ -7385,6 +7385,101 @@ const SEARCH_ENGINES = [
   { id:'reddit',  label:'Reddit',     bang:'!r',   url:'https://www.reddit.com/search/?q=%s' },
 ];
 
+/* ---- Cycle Tracking: constants, math, helpers ---- */
+var CYCLE_PHASE_COLORS = {
+  Menstrual:   '#e05c7a',
+  Follicular:  '#0fb8dd',
+  Ovulatory:   '#ddb04b',
+  EarlyLuteal: '#c890dd',
+  LateLuteal:  '#ffaa88'
+};
+var CYCLE_PHASE_DISPLAY = {
+  Menstrual:'Menstrual', Follicular:'Follicular', Ovulatory:'Ovulatory',
+  EarlyLuteal:'Early Luteal', LateLuteal:'Late Luteal'
+};
+var PHASE_NARRATIVE = {
+  Menstrual: {
+    summary: 'Rest and reflection tend to come naturally during this phase. Lower energy and a desire to slow down are common patterns \u2014 this can be a good time to prioritize recovery over output.',
+    energy:   'Often lower; the body may signal a need for rest',
+    mood:     'More inward-focused; emotional sensitivity or reflection is common',
+    cognition:'Slower pace may feel natural; good for evaluation, not initiation',
+    social:   'Reduced drive for high-demand social engagement is typical'
+  },
+  Follicular: {
+    summary: 'Energy and motivation often build through this phase. Many women find focus comes more easily and feel more open to new challenges or social connection.',
+    energy:   'Gradually increasing; rising estrogen is associated with improving stamina',
+    mood:     'Lighter, more optimistic tone is common',
+    cognition:'Learning and problem-solving may feel more fluid',
+    social:   'Growing openness to interaction and engagement'
+  },
+  Ovulatory: {
+    summary: 'This window is often associated with peak outward energy \u2014 confidence, sociability, and verbal fluency may all feel stronger. Some women also notice heightened interest in connection and intimacy.',
+    energy:   'High, outward-facing; good for demanding tasks or social commitments',
+    mood:     'Positive affect and confidence often peak here',
+    cognition:'Quick thinking and communication may feel sharpest',
+    social:   'Strongest social drive of the cycle for many women'
+  },
+  EarlyLuteal: {
+    summary: 'Energy often feels steadier and more grounded here \u2014 less outward drive, but good sustained focus. This phase can be well-suited to finishing things rather than starting them.',
+    energy:   'Calm and consistent; less peak-seeking than follicular',
+    mood:     'More grounded and inward; less influenced by external stimulation',
+    cognition:'Sustained attention and follow-through often feel natural',
+    social:   'Preference for familiar, lower-demand interaction is common'
+  },
+  LateLuteal: {
+    summary: 'As hormone levels decline toward their lowest point, lower energy and increased emotional sensitivity are common patterns. Reducing demands and protecting recovery time can help.',
+    energy:   'Decreasing; fatigue or heaviness may appear',
+    mood:     'Emotional sensitivity or irritability is a frequent pattern among women; not a flaw, a phase',
+    cognition:'Lower tolerance for stress or cognitive overload is typical',
+    social:   'Reduced patience for high-demand interactions; smaller and quieter feels better'
+  }
+};
+// Hormone math helpers
+function gaussian(x, mu, sigma, amplitude=1){ return amplitude*Math.exp(-0.5*Math.pow((x-mu)/sigma,2)); }
+function logistic(x, center, steepness=10){ return 1/(1+Math.exp(-steepness*(x-center))); }
+function clamp01(v){ return Math.max(0,Math.min(1,v)); }
+function estrogenCurve(x,ov){ const follicularRise=0.18+0.55*logistic(x,ov-0.16,18); const preOvPeak=gaussian(x,ov-0.015,0.055,0.42); const lutealBump=gaussian(x,ov+0.18,0.10,0.20); const preMenstrualDrop=0.22*logistic(x,0.92,30); return clamp01(follicularRise+preOvPeak+lutealBump-preMenstrualDrop); }
+function progesteroneCurve(x,ov){ const postOvRise=logistic(x,ov+0.03,22); const lutealFall=1-logistic(x,0.90,28); const midLutealShape=gaussian(x,ov+0.22,0.12,0.35); return clamp01(0.04+0.72*postOvRise*lutealFall+midLutealShape); }
+function lhCurve(x,ov){ return clamp01(0.06+gaussian(x,ov,0.018,0.94)); }
+function fshCurve(x,ov){ return clamp01(0.16+gaussian(x,0.08,0.07,0.30)+gaussian(x,ov-0.01,0.04,0.22)); }
+function buildCycleSeries(cycleLength,periodLength){
+  const ovulationDay=cycleLength-14, ov=(ovulationDay-1)/(cycleLength-1), points=[];
+  for(let day=1;day<=cycleLength;day++){
+    const x=(day-1)/(cycleLength-1);
+    const e=estrogenCurve(x,ov),p=progesteroneCurve(x,ov),l=lhCurve(x,ov),f=fshCurve(x,ov);
+    points.push({day,x,estrogen:e,progesterone:p,lh:l,fsh:f,estrogenPct:Math.round(e*100),progesteronePct:Math.round(p*100),lhPct:Math.round(l*100),fshPct:Math.round(f*100)});
+  }
+  return points;
+}
+function getPhaseKey(day,cycleLength,periodLength){
+  const ov=cycleLength-14;
+  if(day<=periodLength) return 'Menstrual';
+  if(day<ov-1) return 'Follicular';
+  if(day>=ov-1&&day<=ov+1) return 'Ovulatory';
+  if(day>cycleLength-5) return 'LateLuteal';
+  return 'EarlyLuteal';
+}
+function getPhase(day,cycleLength,periodLength){ return CYCLE_PHASE_DISPLAY[getPhaseKey(day,cycleLength,periodLength)]||'Unknown'; }
+function getCycleInfo(cfg){
+  if(!Array.isArray(D.cycleStartDates)||!D.cycleStartDates.length) return null;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const startStr=D.cycleStartDates[0];
+  const start=new Date(startStr+'T00:00:00');
+  const cycleLength=cfg.typicalCycleLength||28, periodLength=cfg.periodLength||5;
+  const day=Math.floor((today-start)/86400000)+1;
+  const phaseKey=getPhaseKey(day,cycleLength,periodLength);
+  const projectedNext=new Date(start); projectedNext.setDate(projectedNext.getDate()+cycleLength);
+  const daysUntilNext=Math.ceil((projectedNext-today)/86400000);
+  return {day,phaseKey,phase:CYCLE_PHASE_DISPLAY[phaseKey]||phaseKey,cycleLength,periodLength,startStr,projectedNext,daysUntilNext};
+}
+function cyclePhaseForEntry(entry,allStarts,cycleLength,periodLength){
+  const ed=new Date(entry.timestamp); ed.setHours(0,0,0,0);
+  for(const s of allStarts){
+    const st=new Date(s+'T00:00:00');
+    if(st<=ed){ const d=Math.floor((ed-st)/86400000)+1; if(d<=cycleLength+3) return getPhaseKey(d,cycleLength,periodLength); break; }
+  }
+  return null;
+}
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
                       'bible','wotd','apod','drinks',
                       'abs',
@@ -11275,101 +11370,7 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
 }
 
 /* ---- ENERGY AND MOOD TRACKER ---- */
-/* ---- Cycle Tracking: constants, math, helpers ---- */
-var CYCLE_PHASE_COLORS = {
-  Menstrual:   '#e05c7a',
-  Follicular:  '#0fb8dd',
-  Ovulatory:   '#ddb04b',
-  EarlyLuteal: '#c890dd',
-  LateLuteal:  '#ffaa88'
-};
-var CYCLE_PHASE_DISPLAY = {
-  Menstrual:'Menstrual', Follicular:'Follicular', Ovulatory:'Ovulatory',
-  EarlyLuteal:'Early Luteal', LateLuteal:'Late Luteal'
-};
-var PHASE_NARRATIVE = {
-  Menstrual: {
-    summary: 'Rest and reflection tend to come naturally during this phase. Lower energy and a desire to slow down are common patterns \u2014 this can be a good time to prioritize recovery over output.',
-    energy:   'Often lower; the body may signal a need for rest',
-    mood:     'More inward-focused; emotional sensitivity or reflection is common',
-    cognition:'Slower pace may feel natural; good for evaluation, not initiation',
-    social:   'Reduced drive for high-demand social engagement is typical'
-  },
-  Follicular: {
-    summary: 'Energy and motivation often build through this phase. Many women find focus comes more easily and feel more open to new challenges or social connection.',
-    energy:   'Gradually increasing; rising estrogen is associated with improving stamina',
-    mood:     'Lighter, more optimistic tone is common',
-    cognition:'Learning and problem-solving may feel more fluid',
-    social:   'Growing openness to interaction and engagement'
-  },
-  Ovulatory: {
-    summary: 'This window is often associated with peak outward energy \u2014 confidence, sociability, and verbal fluency may all feel stronger. Some women also notice heightened interest in connection and intimacy.',
-    energy:   'High, outward-facing; good for demanding tasks or social commitments',
-    mood:     'Positive affect and confidence often peak here',
-    cognition:'Quick thinking and communication may feel sharpest',
-    social:   'Strongest social drive of the cycle for many women'
-  },
-  EarlyLuteal: {
-    summary: 'Energy often feels steadier and more grounded here \u2014 less outward drive, but good sustained focus. This phase can be well-suited to finishing things rather than starting them.',
-    energy:   'Calm and consistent; less peak-seeking than follicular',
-    mood:     'More grounded and inward; less influenced by external stimulation',
-    cognition:'Sustained attention and follow-through often feel natural',
-    social:   'Preference for familiar, lower-demand interaction is common'
-  },
-  LateLuteal: {
-    summary: 'As hormone levels decline toward their lowest point, lower energy and increased emotional sensitivity are common patterns. Reducing demands and protecting recovery time can help.',
-    energy:   'Decreasing; fatigue or heaviness may appear',
-    mood:     'Emotional sensitivity or irritability is a frequent pattern among women; not a flaw, a phase',
-    cognition:'Lower tolerance for stress or cognitive overload is typical',
-    social:   'Reduced patience for high-demand interactions; smaller and quieter feels better'
-  }
-};
-// Hormone math helpers
-function gaussian(x, mu, sigma, amplitude=1){ return amplitude*Math.exp(-0.5*Math.pow((x-mu)/sigma,2)); }
-function logistic(x, center, steepness=10){ return 1/(1+Math.exp(-steepness*(x-center))); }
-function clamp01(v){ return Math.max(0,Math.min(1,v)); }
-function estrogenCurve(x,ov){ const follicularRise=0.18+0.55*logistic(x,ov-0.16,18); const preOvPeak=gaussian(x,ov-0.015,0.055,0.42); const lutealBump=gaussian(x,ov+0.18,0.10,0.20); const preMenstrualDrop=0.22*logistic(x,0.92,30); return clamp01(follicularRise+preOvPeak+lutealBump-preMenstrualDrop); }
-function progesteroneCurve(x,ov){ const postOvRise=logistic(x,ov+0.03,22); const lutealFall=1-logistic(x,0.90,28); const midLutealShape=gaussian(x,ov+0.22,0.12,0.35); return clamp01(0.04+0.72*postOvRise*lutealFall+midLutealShape); }
-function lhCurve(x,ov){ return clamp01(0.06+gaussian(x,ov,0.018,0.94)); }
-function fshCurve(x,ov){ return clamp01(0.16+gaussian(x,0.08,0.07,0.30)+gaussian(x,ov-0.01,0.04,0.22)); }
-function buildCycleSeries(cycleLength,periodLength){
-  const ovulationDay=cycleLength-14, ov=(ovulationDay-1)/(cycleLength-1), points=[];
-  for(let day=1;day<=cycleLength;day++){
-    const x=(day-1)/(cycleLength-1);
-    const e=estrogenCurve(x,ov),p=progesteroneCurve(x,ov),l=lhCurve(x,ov),f=fshCurve(x,ov);
-    points.push({day,x,estrogen:e,progesterone:p,lh:l,fsh:f,estrogenPct:Math.round(e*100),progesteronePct:Math.round(p*100),lhPct:Math.round(l*100),fshPct:Math.round(f*100)});
-  }
-  return points;
-}
-function getPhaseKey(day,cycleLength,periodLength){
-  const ov=cycleLength-14;
-  if(day<=periodLength) return 'Menstrual';
-  if(day<ov-1) return 'Follicular';
-  if(day>=ov-1&&day<=ov+1) return 'Ovulatory';
-  if(day>cycleLength-5) return 'LateLuteal';
-  return 'EarlyLuteal';
-}
-function getPhase(day,cycleLength,periodLength){ return CYCLE_PHASE_DISPLAY[getPhaseKey(day,cycleLength,periodLength)]||'Unknown'; }
-function getCycleInfo(cfg){
-  if(!Array.isArray(D.cycleStartDates)||!D.cycleStartDates.length) return null;
-  const today=new Date(); today.setHours(0,0,0,0);
-  const startStr=D.cycleStartDates[0];
-  const start=new Date(startStr+'T00:00:00');
-  const cycleLength=cfg.typicalCycleLength||28, periodLength=cfg.periodLength||5;
-  const day=Math.floor((today-start)/86400000)+1;
-  const phaseKey=getPhaseKey(day,cycleLength,periodLength);
-  const projectedNext=new Date(start); projectedNext.setDate(projectedNext.getDate()+cycleLength);
-  const daysUntilNext=Math.ceil((projectedNext-today)/86400000);
-  return {day,phaseKey,phase:CYCLE_PHASE_DISPLAY[phaseKey]||phaseKey,cycleLength,periodLength,startStr,projectedNext,daysUntilNext};
-}
-function cyclePhaseForEntry(entry,allStarts,cycleLength,periodLength){
-  const ed=new Date(entry.timestamp); ed.setHours(0,0,0,0);
-  for(const s of allStarts){
-    const st=new Date(s+'T00:00:00');
-    if(st<=ed){ const d=Math.floor((ed-st)/86400000)+1; if(d<=cycleLength+3) return getPhaseKey(d,cycleLength,periodLength); break; }
-  }
-  return null;
-}
+
 const DEFAULT_ENERGY   = ['Drained','Low','Normal','High','Wired'];
 const DEFAULT_FOCUS    = ['Scattered','Foggy','Steady','Locked In'];
 const DEFAULT_FRICTION = ['Resistant','Restless','Neutral','Engaged'];
