@@ -3913,6 +3913,10 @@ body.edit-mode .cve-watch-key-row { display: flex; }
   letter-spacing: 0.06em;
   min-width: 52px;
   flex-shrink: 0;
+  transition: color 0.2s;
+}
+.energy-row-label--error {
+  color: #ff4466 !important;
 }
 .energy-chips {
   display: flex;
@@ -11494,6 +11498,7 @@ function buildEnergyWidget(sec, tabId){
             setter(opt);
             chips.querySelectorAll('.energy-chip').forEach(c=>clearChipSel(c));
             applyChipSel(chip,pal);
+            lbl.classList.remove('energy-row-label--error');
           }
         };
         chips.appendChild(chip);
@@ -11501,7 +11506,7 @@ function buildEnergyWidget(sec, tabId){
     }
     buildChips();
     row.append(lblWrap,chips);
-    return { row, buildChips };
+    return { row, buildChips, lbl };
   }
 
   const energyRow   = makeChipRow('Energy',   ()=>eLabels(),   ()=>selEnergy,   v=>{ selEnergy=v; });
@@ -11622,7 +11627,19 @@ function buildEnergyWidget(sec, tabId){
   };
 
   logBtn.onclick=()=>{
-    const entry={ timestamp:new Date().toISOString(), energy:selEnergy, focus:selFocus, friction:selFriction, context:selContext, mood:selMood, location:selLocation, note:noteInp.value.trim()||null };
+    const noteVal=noteInp.value.trim();
+    const missing=[
+      [selEnergy,   energyRow.lbl],
+      [selFocus,    focusRow.lbl],
+      [selFriction, frictionRow.lbl],
+      [selContext,  contextRow.lbl],
+      [selMood,     moodRow.lbl],
+    ].filter(([val])=>!val);
+    if(missing.length){
+      missing.forEach(([,l])=>l.classList.add('energy-row-label--error'));
+      return;
+    }
+    const entry={ timestamp:new Date().toISOString(), energy:selEnergy, focus:selFocus, friction:selFriction, context:selContext, mood:selMood, location:selLocation, note:noteVal||null };
     D.energyEntries.unshift(entry);
     if(D.energyEntries.length>MAX_ENTRIES) D.energyEntries=D.energyEntries.slice(0,MAX_ENTRIES);
     cfg.snoozeUntil=0; persist(); resetAll(); lastLogEl.textContent=getLastLogged(); reminderBanner.style.display='none';
