@@ -36,7 +36,7 @@ Widgets are organized into seven categories matching the in-app selector tabs.
 | Widget | Notes |
 |---|---|
 | Drink Tracker | Daily intake log with category breakdown |
-| Energy and Mood Tracker | Daily energy/mood logging with insights panel; optional **menstrual cycle tracking** (toggle in edit mode) with phase-aware hormone insights across all 28 days |
+| Energy and Mood Tracker | Daily energy/mood logging with insights panel; optional **menstrual cycle tracking** (toggle in edit mode) with phase-aware hormone insights across all cycle days |
 | Last.fm | Recent scrobbles and now-playing via Audioscrobbler API |
 | Audiobookshelf | Now-listening and library status from a self-hosted Audiobookshelf instance |
  
