@@ -17,29 +17,75 @@ A self-hosted, single-file browser start page dashboard. No build tools, no npm,
 - **KV sync** — push/pull full dashboard state across browsers via Cloudflare KV
 
 ### Available Widgets
-
+ 
+Widgets are organized into seven categories matching the in-app selector tabs.
+ 
+#### 🗂️ General
 | Widget | Notes |
 |---|---|
 | Weather | Current conditions, AQI, 7-day forecast, pollen panel (Tree / Grass / Weed) |
 | World Clocks | Multiple timezones side by side |
+| Countdown | Configurable countdown timer to any date |
+| Reminders | Lightweight reminder list with KV sync |
+| Quick Note | Freeform scratch pad, KV-synced |
+| Search | Configurable search bar |
+| To-Do | Simple checklist widget |
+| Task Tracker | Full task log with deep KV sync and tombstone-based deletion propagation |
+ 
+#### 👤 Personal
+| Widget | Notes |
+|---|---|
+| Drink Tracker | Daily intake log with category breakdown |
+| Energy and Mood Tracker | Daily energy/mood logging with insights panel; optional **menstrual cycle tracking** (toggle in edit mode) with phase-aware hormone insights across all 28 days |
+| Last.fm | Recent scrobbles and now-playing via Audioscrobbler API |
+| Audiobookshelf | Now-listening and library status from a self-hosted Audiobookshelf instance |
+ 
+#### 📰 Info & Media
+| Widget | Notes |
+|---|---|
 | RSS Feed | Any RSS/Atom feed via worker proxy |
-| CVE Bulletin | NVD vulnerability watchlist, configurable severity filters |
-| BGP / ASN Lookup | Real-time BGP routing data |
-| GitHub Activity | Commit/PR feed for any public user or org |
-| Bible Browser | Full modal with multiple translations, highlights, notes, topic plans |
+| Sports Scores | Live, today, final, and upcoming games (TheSportsDB) |
+| Bible Browser | Full modal with multiple translations (CSB, NLT, MSG + more), highlights, notes, topical search |
 | Verse of the Day | Daily scripture with translation selector |
 | Word of the Day | Curated list + Free Dictionary API or Wordnik |
-| Poem of the Day | PoetryDB random poem widget |
+| Poem of the Day | PoetryDB random poem |
 | NASA APOD | Astronomy Picture of the Day |
-| Drink Tracker | Daily intake log with category breakdown |
-| Sports Scores | Live, today, final, and upcoming games (TheSportsDB) |
-| OTX Pulse Feed | AlienVault OTX threat intelligence |
-| Proofpoint TAP | Very Attacked Persons and click/block telemetry (work security) |
-| URL Monitor | HTTP endpoint health checks |
+| On This Day | Historical events for today's date |
+| Wikipedia Featured Article | Daily featured article from Wikipedia |
+| Met Museum Artwork of the Day | Random artwork from the Metropolitan Museum open collection |
+| Artist Spotlight | Rotating artist feature |
+| Unsplash Random Photo | Daily random photo from Unsplash |
+| Lo-fi Music Player | YouTube IFrame–based player with curated playlists, radio mixes, and albums; shuffle, volume control, and watchdog auto-recovery |
+ 
+#### 🔧 Tools
+| Widget | Notes |
+|---|---|
 | JSON Formatter | Validate and pretty-print JSON |
 | Base64 Encoder/Decoder | Encode or decode Base64 strings |
 | Hash Generator | MD5 / SHA hashes client-side |
 | JWT Decoder | Decode and inspect JWT payloads |
+| Unit Converter | Common unit conversions |
+| Subnet Calculator | CIDR subnet math |
+| DNS Lookup | Forward/reverse DNS queries via worker proxy |
+| Dice Roller | Configurable polyhedral dice roller |
+| Decision Helper | Weighted random decision picker |
+ 
+#### 🌐 Network & Security
+| Widget | Notes |
+|---|---|
+| CVE Bulletin | NVD vulnerability watchlist with configurable severity filters |
+| OTX Pulse Feed | AlienVault OTX threat intelligence |
+| BGP / ASN Lookup | Real-time BGP routing data |
+| Proofpoint TAP | Very Attacked Persons and click/block telemetry (work security) |
+| URL Monitor | HTTP endpoint health checks via worker proxy |
+ 
+#### 💻 Coding
+| Widget | Notes |
+|---|---|
+| GitHub Activity | Commit/PR feed for any public user or org |
+
+#### AND MORE TO COME ####
+| Submit ideas for widgets you'd like to see! |
 
 ---
 
