@@ -85,7 +85,7 @@ Widgets are organized into seven categories matching the in-app selector tabs.
 | GitHub Activity | Commit/PR feed for any public user or org |
 
 #### AND MORE TO COME ####
-| Submit ideas for widgets you'd like to see! |
+Submit ideas for widgets you'd like to see!
 
 ---
 
