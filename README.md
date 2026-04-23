@@ -12,7 +12,7 @@ A self-hosted, single-file browser start page dashboard. No build tools, no npm,
 - **Animated CSS backgrounds** with an HSL color wheel theme picker
 - **Bottom bar** — clock, weather tiles, lo-fi player, rotating quotes
 - **Search/filter bar** across all content
-- **Weather/Quotes bar** - can hide,scroll, or pin to bottom of the dashboard. Provides current conditions, AQI, 7-day forecast, and optional pollen panel (Tree / Grass / Weed) via API.
+- **Weather/Quotes bar** — can hide,scroll, or pin to bottom of the dashboard. Provides current conditions, AQI, 7-day forecast, and optional pollen panel (Tree / Grass / Weed) via API.
 - **Edit mode** — configure every widget in place
 - **Bookmark import**
 - **KV sync** — push/pull full dashboard state across browsers via Cloudflare KV
