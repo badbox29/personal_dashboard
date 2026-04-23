@@ -11574,9 +11574,8 @@ function buildEnergyWidget(sec, tabId){
       const color=CYCLE_PHASE_COLORS[phaseKey]||'#e05c7a';
       const icon=el('span'); icon.textContent='\uD83C\uDF19 ';
       const dayLbl=el('span','energy-cycle-day'); dayLbl.textContent='Day '+day;
-      const phaseBadge=el('span','energy-cycle-phase'); phaseBadge.textContent=phase; phaseBadge.style.color=color; phaseBadge.style.borderColor=color+'66'; phaseBadge.style.background=color+'11';
       const dueHint=el('span'); dueHint.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);flex:1;';
-      dueHint.textContent=daysUntilNext>0?'\u00b7 ~'+daysUntilNext+'d until next':'\u00b7 next cycle expected';
+      dueHint.textContent=daysUntilNext>0?'\u00b7 ~'+daysUntilNext+'d until projected next cycle':'\u00b7 next cycle projected now';
       const newCycleBtn=el('button','energy-cycle-btn'); newCycleBtn.textContent='New Cycle';
       newCycleBtn.onclick=()=>{
         const proceed=()=>{
@@ -11588,7 +11587,17 @@ function buildEnergyWidget(sec, tabId){
         if(day<20){ if(confirm('Start a new cycle on day '+day+'? This is earlier than usual.')) proceed(); }
         else proceed();
       };
-      cycleRowEl.append(icon,dayLbl,phaseBadge,dueHint,newCycleBtn);
+      const phaseBadge=el('span','energy-cycle-phase'); phaseBadge.textContent=phase; phaseBadge.style.color=color; phaseBadge.style.borderColor=color+'66'; phaseBadge.style.background=color+'11';
+      const phaseNarr=PHASE_NARRATIVE[phaseKey];
+      if(phaseNarr){
+        phaseBadge.style.cursor='help';
+        const tipWrap=el('div','energy-tip-wrap');
+        const tip=el('div','energy-tooltip'); tip.style.cssText='width:220px;white-space:normal;line-height:1.4;font-size:10px;'; tip.textContent=phaseNarr.summary;
+        tipWrap.append(phaseBadge,tip);
+        cycleRowEl.append(icon,dayLbl,tipWrap,dueHint,newCycleBtn);
+      } else {
+        cycleRowEl.append(icon,dayLbl,phaseBadge,dueHint,newCycleBtn);
+      }
     }
   }
   buildCycleRow();
