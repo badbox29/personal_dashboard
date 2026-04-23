@@ -11276,18 +11276,18 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
 
 /* ---- ENERGY AND MOOD TRACKER ---- */
 /* ---- Cycle Tracking: constants, math, helpers ---- */
-const CYCLE_PHASE_COLORS = {
+var CYCLE_PHASE_COLORS = {
   Menstrual:   '#e05c7a',
   Follicular:  '#0fb8dd',
   Ovulatory:   '#ddb04b',
   EarlyLuteal: '#c890dd',
   LateLuteal:  '#ffaa88'
 };
-const CYCLE_PHASE_DISPLAY = {
+var CYCLE_PHASE_DISPLAY = {
   Menstrual:'Menstrual', Follicular:'Follicular', Ovulatory:'Ovulatory',
   EarlyLuteal:'Early Luteal', LateLuteal:'Late Luteal'
 };
-const PHASE_NARRATIVE = {
+var PHASE_NARRATIVE = {
   Menstrual: {
     summary: 'Rest and reflection tend to come naturally during this phase. Lower energy and a desire to slow down are common patterns \u2014 this can be a good time to prioritize recovery over output.',
     energy:   'Often lower; the body may signal a need for rest',
