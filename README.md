@@ -174,21 +174,57 @@ Used by the **URL Monitor** widget to check internal services, hosts with self-s
 
 ### Worker Access Control (Optional but Recommended)
 
-The worker supports two independent security layers to prevent unauthorized use of your deployed worker. Both are configured via **Cloudflare Worker Settings → Variables and Secrets** — no changes to the worker source code are required.
+The worker supports two independent security layers to prevent unauthorized use of your deployed worker. Both are configured via **Cloudflare Worker Settings → Variables and Secrets** — no changes to the worker source code are required. Either check is skipped gracefully if its environment variable is not set, so both are fully opt-in. When both are configured, both must pass.
 
-**`SALTY_KEYS`** — A comma-separated list of secret tokens. Any request from the dashboard must include a matching token in the `X-Salty-Key` header. Requests without a valid token receive a `403 Forbidden` response. Store this as an **encrypted secret** in Cloudflare.
+#### SALTY_KEYS — Shared Secret Tokens
 
-**`SALTY_ORIGINS`** — A comma-separated list of allowed origins (e.g. `https://yourusername.github.io`). The worker checks the `Origin` and `Referer` headers on every request and rejects anything not on the list.
+Every request from the dashboard includes a secret token in the `X-Salty-Key` header. The worker validates the token against the `SALTY_KEYS` list and returns `403 Forbidden` if it is missing or doesn't match.
 
-Either check is skipped gracefully if its environment variable is not set, so both are fully opt-in. When both are configured, both must pass.
+`SALTY_KEYS` is a comma-separated list, which means you can issue a **unique token per user**. This is strongly recommended if you are sharing your worker with household members or friends — it lets you revoke access for one person by removing their token without affecting anyone else.
 
-**To enable:**
+**Example:**
+
+```
+SALTY_KEYS = mytoken-abc123,spouse-token-xyz789,friend-token-def456
+```
+
+Each person receives only their own token and enters it in the **Worker Secret Key** field in their dashboard's ⚡ Worker settings. They never need to see anyone else's token.
+
+**To generate a strong token**, use any password manager's random generator, or run this in your browser console:
+
+```javascript
+crypto.getRandomValues(new Uint8Array(24)).reduce((s,b)=>s+b.toString(16).padStart(2,'0'),'')
+```
+
+Store `SALTY_KEYS` as an **encrypted secret** in Cloudflare (not a plain text variable) so it is never visible in the dashboard UI.
+
+#### SALTY_ORIGINS — Allowed Origins
+
+The worker checks the `Origin` and `Referer` headers on every request and rejects anything not on the allowlist with a `403 Forbidden`. This prevents other websites or scripts from piggy-backing on your worker even if they somehow obtain a valid key.
+
+`SALTY_ORIGINS` is a comma-separated list of the base URLs from which your `index.html` is served. Include every location where you or your users access the dashboard.
+
+**Example:**
+
+```
+SALTY_ORIGINS = https://yourusername.github.io,https://yourdomain.com,http://192.168.1.50
+```
+
+A few things to keep in mind:
+
+- **`file://` URLs have no `Origin` header** and will always be blocked when `SALTY_ORIGINS` is set. If you open `index.html` directly from disk rather than serving it, either leave `SALTY_ORIGINS` unset or serve the file via a local web server.
+- **Include every device's serving URL.** If household members access the dashboard from a different host or port than you do, add those origins too.
+- **Trailing slashes matter.** Use `https://yourusername.github.io` not `https://yourusername.github.io/`.
+
+**To enable both controls:**
+
 1. In the Cloudflare dashboard, open your worker → **Settings → Variables and Secrets**.
-2. Add `SALTY_KEYS` with a strong random token of your choosing. Click **Encrypt** before saving.
-3. Optionally add `SALTY_ORIGINS` with the URL(s) you serve `index.html` from.
-4. In the dashboard, open **Edit Mode → ⚡ Worker** and paste your token into the **Worker Secret Key** field.
+2. Add `SALTY_KEYS` with your comma-separated tokens. Click **Encrypt** before saving.
+3. Add `SALTY_ORIGINS` with your comma-separated origin URLs as a plain text variable.
+4. Click **Deploy** to apply the new environment variables.
+5. In each user's dashboard, open **Edit Mode → ⚡ Worker** and paste their token into the **Worker Secret Key** field.
 
-> **Note:** Because `index.html` is a client-side file, the token is readable by anyone with DevTools access to your browser. This is abuse and scraping prevention, not user authentication — which is perfectly appropriate for a personal dashboard shared with household members.
+> **Note:** Because `index.html` is a client-side file, the token is readable by anyone with DevTools access to that browser. This is abuse and scraping prevention, not user authentication — which is perfectly appropriate for a personal dashboard shared with household members. Do not reuse these tokens as passwords for anything else.
 
 ### KV Sync
 
