@@ -11373,7 +11373,7 @@ function openComposeModal(comp, cfg, guidance, onUpdate){
 
 const DEFAULT_ENERGY   = ['Drained','Low','Normal','High','Wired'];
 const DEFAULT_FOCUS    = ['Scattered','Foggy','Steady','Locked In'];
-const DEFAULT_FRICTION = ['Resistant','Restless','Neutral','Engaged'];
+const DEFAULT_FRICTION = ['Resistant','Reluctant','Neutral','Driven'];
 const DEFAULT_CONTEXT  = ['Coding','Meetings','Exercise','Relaxing','Other'];
 const DEFAULT_MOOD     = ['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy'];
 function getSlotColor(idx,total){
@@ -11392,7 +11392,7 @@ var _energyWidgetSec = null; // stored so history/edit modals can access widget 
 function buildEnergyWidget(sec, tabId){
   const DEFAULT_ENERGY   = ['Drained','Low','Normal','High','Wired'];
   const DEFAULT_FOCUS    = ['Scattered','Foggy','Steady','Locked In'];
-  const DEFAULT_FRICTION = ['Resistant','Restless','Neutral','Engaged'];
+  const DEFAULT_FRICTION = ['Resistant','Reluctant','Neutral','Driven'];
   const DEFAULT_CONTEXT  = ['Coding','Meetings','Exercise','Relaxing','Other'];
   const DEFAULT_MOOD     = ['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy'];
   const DEFAULT_LOCS     = ['Home','Work','Traveling','Social'];
@@ -11452,7 +11452,7 @@ function buildEnergyWidget(sec, tabId){
   const TOOLTIPS = {
     Energy:   'Your overall physical and mental energy level right now.',
     Focus:    'How clearly and easily you\'re able to concentrate on the task at hand.',
-    Friction: 'Your sense of internal resistance toward work. Resistant = blocked or reluctant. Engaged = in flow and energized.',
+    Friction: 'Your level of motivation toward starting work. Resistant = actively avoiding it. Driven = ready to go and in flow.',
     Context:  'What you\'re currently doing or what kind of activity this entry describes.',
     Mood:     'How you\'re feeling emotionally right now. The list is ordered worst to best mood \u2014 analytics use that ordering.',
   };
@@ -11506,7 +11506,7 @@ function buildEnergyWidget(sec, tabId){
 
   const energyRow   = makeChipRow('Energy',   ()=>eLabels(),   ()=>selEnergy,   v=>{ selEnergy=v; });
   const focusRow    = makeChipRow('Focus',     ()=>fLabels(),   ()=>selFocus,    v=>{ selFocus=v; });
-  const frictionRow = makeChipRow('Friction',  ()=>frLabels(),  ()=>selFriction, v=>{ selFriction=v; });
+  const frictionRow = makeChipRow('Motivation',  ()=>frLabels(),  ()=>selFriction, v=>{ selFriction=v; });
   const contextRow  = makeChipRow('Context',   ()=>ctxTags(),   ()=>selContext,  v=>{ selContext=v; }, {color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.1)'});
   const moodRow     = makeChipRow('Mood',      ()=>mLabels(),   ()=>selMood,     v=>{ selMood=v; });
 
@@ -11657,7 +11657,7 @@ function buildEnergyWidget(sec, tabId){
   const tabDefs=[
     {id:'energy',   label:'Energy'},
     {id:'focus',    label:'Focus'},
-    {id:'friction', label:'Friction'},
+    {id:'friction', label:'Motivation'},
     {id:'context',  label:'Context'},
     {id:'mood',     label:'Mood'},
     {id:'location', label:'Location'},
@@ -11843,7 +11843,7 @@ function energyMostCommon(entries,field){ const counts={}; entries.forEach(e=>{ 
 function energyLabelColor(field,val){
   const cfg=_energyWidgetSec?.widgetConfig||{};
   const E_PAL=['#ff8888','#ffaa88','#0fb8dd','#44cc88','#ddb04b'];
-  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Restless','Neutral','Engaged'],mood:['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy']};
+  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Reluctant','Neutral','Driven'],mood:['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy']};
   const arr=(field==='energy'?(Array.isArray(cfg.energyLabels)&&cfg.energyLabels.length===5?cfg.energyLabels:DEF.energy):field==='focus'?(Array.isArray(cfg.focusLabels)&&cfg.focusLabels.length===4?cfg.focusLabels:DEF.focus):field==='friction'?(Array.isArray(cfg.frictionLabels)&&cfg.frictionLabels.length===4?cfg.frictionLabels:DEF.friction):field==='mood'?(Array.isArray(cfg.moodLabels)&&cfg.moodLabels.length===5?cfg.moodLabels:DEF.mood):null);
   if(!arr) return null;
   const idx=arr.indexOf(val); if(idx===-1) return null;
@@ -11851,7 +11851,7 @@ function energyLabelColor(field,val){
 }
 function energyFieldScore(field,val){
   const cfg=_energyWidgetSec?.widgetConfig||{};
-  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Restless','Neutral','Engaged'],mood:['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy']};
+  const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Reluctant','Neutral','Driven'],mood:['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy']};
   const arr=(field==='energy'?(Array.isArray(cfg.energyLabels)&&cfg.energyLabels.length===5?cfg.energyLabels:DEF.energy):field==='focus'?(Array.isArray(cfg.focusLabels)&&cfg.focusLabels.length===4?cfg.focusLabels:DEF.focus):field==='friction'?(Array.isArray(cfg.frictionLabels)&&cfg.frictionLabels.length===4?cfg.frictionLabels:DEF.friction):field==='mood'?(Array.isArray(cfg.moodLabels)&&cfg.moodLabels.length===5?cfg.moodLabels:DEF.mood):null);
   if(!arr) return null;
   const idx=arr.indexOf(val); return idx===-1?null:idx;
@@ -11914,7 +11914,7 @@ function openEnergyModal(){
     else {
       const topE=energyMostCommon(weekEntries,'energy'),topF=energyMostCommon(weekEntries,'focus'),topFr=energyMostCommon(weekEntries,'friction'),topM=energyMostCommon(weekEntries,'mood');
       const sg=el('div'); sg.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;';
-      [['Energy','energy',topE],['Focus','focus',topF],['Friction','friction',topFr],['Mood','mood',topM]].forEach(([lbl,field,val])=>{
+      [['Energy','energy',topE],['Focus','focus',topF],['Motivation','friction',topFr],['Mood','mood',topM]].forEach(([lbl,field,val])=>{
         if(!val) return;
         const tile=el('div'); tile.style.cssText='flex:1;min-width:100px;padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;';
         const tl=el('div'); tl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;'; tl.textContent='Most common '+lbl;
@@ -11970,7 +11970,7 @@ function openEnergyEditModal(entryIdx, sec){
   const cfg=sec?.widgetConfig||{};
   const eLabels=cfg.energyLabels||['Drained','Low','Normal','High','Wired'];
   const fLabels=cfg.focusLabels||['Scattered','Foggy','Steady','Locked In'];
-  const frLabels=cfg.frictionLabels||['Resistant','Restless','Neutral','Engaged'];
+  const frLabels=cfg.frictionLabels||['Resistant','Reluctant','Neutral','Driven'];
   const ctxLabels=cfg.contextTags||['Coding','Meetings','Exercise','Relaxing','Other'];
   const mLabels=cfg.moodLabels||['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy'];
   const E_PAL=[{color:'#ff8888',border:'#cc4444',bg:'rgba(204,68,68,0.15)'},{color:'#ffaa88',border:'#cc7744',bg:'rgba(204,119,68,0.15)'},{color:'#0fb8dd',border:'#0fb8dd',bg:'rgba(15,184,221,0.12)'},{color:'#44cc88',border:'#44cc88',bg:'rgba(68,204,136,0.15)'},{color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.15)'}];
@@ -12002,7 +12002,7 @@ function openEnergyEditModal(entryIdx, sec){
   }
   modal.appendChild(editChipRow('Energy',   eLabels,   ()=>eV,  v=>{ eV=v; }));
   modal.appendChild(editChipRow('Focus',    fLabels,   ()=>fV,  v=>{ fV=v; }));
-  modal.appendChild(editChipRow('Friction', frLabels,  ()=>frV, v=>{ frV=v; }));
+  modal.appendChild(editChipRow('Motivation', frLabels,  ()=>frV, v=>{ frV=v; }));
   const GOLD_PAL={color:'#ddb04b',border:'#ddb04b',bg:'rgba(221,176,75,0.1)'};
   modal.appendChild(editChipRow('Context',  ctxLabels, ()=>cV,  v=>{ cV=v; }, GOLD_PAL));
   modal.appendChild(editChipRow('Mood',     mLabels,   ()=>mV,  v=>{ mV=v; }));
@@ -12071,7 +12071,7 @@ function openEnergyInsightsModal(){
   // 7-Day Trend
   sh('7-Day Trend');
   const tg=el('div'); tg.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
-  [['Energy','energy'],['Focus','focus'],['Friction','friction'],['Mood','mood']].forEach(([lbl,field])=>{
+  [['Energy','energy'],['Focus','focus'],['Motivation','friction'],['Mood','mood']].forEach(([lbl,field])=>{
     const val=energyMostCommon(weekEntries,field),arrow=energyTrendArrow(last3,prior4,field);
     const tile=el('div'); tile.style.cssText='flex:1;min-width:120px;padding:7px 10px;background:var(--inp-bg);border:1px solid var(--border);border-radius:5px;';
     const tl=el('div'); tl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'; tl.textContent='Most common '+lbl;
@@ -12161,7 +12161,7 @@ function openEnergyInsightsModal(){
     const thS='font-size:9px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-dim);padding:5px 8px;text-align:left;background:var(--surface);border-bottom:1px solid var(--border);';
     const tdS='padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.04);background:var(--inp-bg);';
     const table=el('table'); table.style.cssText='width:100%;border-collapse:collapse;font-size:10.5px;font-family:Share Tech Mono,monospace;';
-    const thead=el('thead'),hr=el('tr'); ['Context','Energy','Focus','Friction','Mood'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
+    const thead=el('thead'),hr=el('tr'); ['Context','Energy','Focus','Motivation','Mood'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
     const tbody=el('tbody');
     ctxs.forEach(ctx=>{ const ce=weekEntries.filter(e=>e.context===ctx); if(ce.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=ctx; tr.appendChild(tdL); ['energy','focus','friction','mood'].forEach(f=>{ const val=energyMostCommon(ce,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; const c=EC(val);td.style.color=val&&c?c:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
   }
@@ -12172,7 +12172,7 @@ function openEnergyInsightsModal(){
     const thS='font-size:9px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-dim);padding:5px 8px;text-align:left;background:var(--surface);border-bottom:1px solid var(--border);';
     const tdS='padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.04);background:var(--inp-bg);';
     const table=el('table'); table.style.cssText='width:100%;border-collapse:collapse;font-size:10.5px;font-family:Share Tech Mono,monospace;';
-    const thead=el('thead'),hr=el('tr'); ['Location','Energy','Focus','Friction','Mood'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
+    const thead=el('thead'),hr=el('tr'); ['Location','Energy','Focus','Motivation','Mood'].forEach(h=>{ const th=el('th'); th.style.cssText=thS; th.textContent=h; hr.appendChild(th); }); thead.appendChild(hr); table.appendChild(thead);
     const tbody=el('tbody');
     locs.forEach(loc=>{ const le=weekEntries.filter(e=>e.location===loc); if(le.length<3) return; const tr=el('tr'); const tdL=el('td'); tdL.style.cssText=tdS+'color:var(--text);'; tdL.textContent=loc; tr.appendChild(tdL); ['energy','focus','friction','mood'].forEach(f=>{ const val=energyMostCommon(le,f); const td=el('td'); td.style.cssText=tdS+'text-align:center;'; td.textContent=val||'\u2014'; const c=EC(val);td.style.color=val&&c?c:'var(--text-dim)'; tr.appendChild(td); }); tbody.appendChild(tr); }); table.appendChild(tbody); body.appendChild(table);
   }
