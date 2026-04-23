@@ -172,6 +172,24 @@ The Worker URL used by all widgets that need a proxy. Individual widgets (Pollen
 
 Used by the **URL Monitor** widget to check internal services, hosts with self-signed certificates, and endpoints not reachable from the public internet. Run `local-proxy-server.js` on any always-on machine on your local network and paste its address here (e.g. `http://192.168.1.x:3333`). Leave blank if you don't need it.
 
+### Worker Access Control (Optional but Recommended)
+
+The worker supports two independent security layers to prevent unauthorized use of your deployed worker. Both are configured via **Cloudflare Worker Settings → Variables and Secrets** — no changes to the worker source code are required.
+
+**`SALTY_KEYS`** — A comma-separated list of secret tokens. Any request from the dashboard must include a matching token in the `X-Salty-Key` header. Requests without a valid token receive a `403 Forbidden` response. Store this as an **encrypted secret** in Cloudflare.
+
+**`SALTY_ORIGINS`** — A comma-separated list of allowed origins (e.g. `https://yourusername.github.io`). The worker checks the `Origin` and `Referer` headers on every request and rejects anything not on the list.
+
+Either check is skipped gracefully if its environment variable is not set, so both are fully opt-in. When both are configured, both must pass.
+
+**To enable:**
+1. In the Cloudflare dashboard, open your worker → **Settings → Variables and Secrets**.
+2. Add `SALTY_KEYS` with a strong random token of your choosing. Click **Encrypt** before saving.
+3. Optionally add `SALTY_ORIGINS` with the URL(s) you serve `index.html` from.
+4. In the dashboard, open **Edit Mode → ⚡ Worker** and paste your token into the **Worker Secret Key** field.
+
+> **Note:** Because `index.html` is a client-side file, the token is readable by anyone with DevTools access to your browser. This is abuse and scraping prevention, not user authentication — which is perfectly appropriate for a personal dashboard shared with household members.
+
 ### KV Sync
 
 Syncs your full dashboard state across multiple browsers using Cloudflare KV. Requires the Worker URL to be saved first. Setup follows four steps:
