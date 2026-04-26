@@ -11458,16 +11458,15 @@ function getSlotColor(idx,total){
 }
 function energyValColor(field,val){
   if(!val) return 'var(--text-dim)';
-  let cfg = _energyWidgetSec?.widgetConfig || null;
-  if(!cfg){
-    outer: for(const tab of (D.tabs||[])){
-      for(const col of (tab.columns||[])){
-        for(const sec of (col.sections||[])){
-          if(sec.type==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
-        }
+  let cfg = null;
+  outer: for(const tab of (D.tabs||[])){
+    for(const col of (tab.columns||[])){
+      for(const sec of (col.sections||[])){
+        if(sec.widgetType==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
       }
     }
   }
+  if(!cfg) cfg = _energyWidgetSec?.widgetConfig || {};
   cfg = cfg || {};
   const map={energy:cfg.energyLabels||DEFAULT_ENERGY,focus:cfg.focusLabels||DEFAULT_FOCUS,friction:cfg.frictionLabels||DEFAULT_FRICTION,context:cfg.contextTags||DEFAULT_CONTEXT,mood:cfg.moodLabels||DEFAULT_MOOD};
   const labels=map[field]; if(!labels) return 'var(--text-dim)';
@@ -11939,16 +11938,15 @@ function buildEnergyWidget(sec, tabId){
 // Shared energy analytics helpers
 function energyMostCommon(entries,field){ const counts={}; entries.forEach(e=>{ if(e[field]) counts[e[field]]=(counts[e[field]]||0)+1; }); return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0]?.[0]||null; }
 function energyLabelColor(field,val){
-  let cfg = _energyWidgetSec?.widgetConfig || null;
-  if(!cfg){
-    outer: for(const tab of (D.tabs||[])){
-      for(const col of (tab.columns||[])){
-        for(const sec of (col.sections||[])){
-          if(sec.type==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
-        }
+  let cfg = null;
+  outer: for(const tab of (D.tabs||[])){
+    for(const col of (tab.columns||[])){
+      for(const sec of (col.sections||[])){
+        if(sec.widgetType==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
       }
     }
   }
+  if(!cfg) cfg = _energyWidgetSec?.widgetConfig || {};
   cfg = cfg || {};
   const E_PAL=['#ff8888','#ffaa88','#0fb8dd','#44cc88','#ddb04b'];
   const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Reluctant','Neutral','Driven'],mood:['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy']};
@@ -11958,17 +11956,15 @@ function energyLabelColor(field,val){
   return E_PAL[Math.round((idx/Math.max(arr.length-1,1))*4)];
 }
 function energyFieldScore(field,val){
-  // Use _energyWidgetSec if available, otherwise search D.tabs for an energy widget's config
-  let cfg = _energyWidgetSec?.widgetConfig || null;
-  if(!cfg){
-    outer: for(const tab of (D.tabs||[])){
-      for(const col of (tab.columns||[])){
-        for(const sec of (col.sections||[])){
-          if(sec.type==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
-        }
+  let cfg = null;
+  outer: for(const tab of (D.tabs||[])){
+    for(const col of (tab.columns||[])){
+      for(const sec of (col.sections||[])){
+        if(sec.widgetType==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
       }
     }
   }
+  if(!cfg) cfg = _energyWidgetSec?.widgetConfig || {};
   cfg = cfg || {};
   const DEF={energy:['Drained','Low','Normal','High','Wired'],focus:['Scattered','Foggy','Steady','Locked In'],friction:['Resistant','Reluctant','Neutral','Driven'],mood:['Sad/Angry','Anxious/Stressed','Normal/Neutral','Content','Happy']};
   const arr=(field==='energy'?(Array.isArray(cfg.energyLabels)&&cfg.energyLabels.length===5?cfg.energyLabels:DEF.energy):field==='focus'?(Array.isArray(cfg.focusLabels)&&cfg.focusLabels.length===4?cfg.focusLabels:DEF.focus):field==='friction'?(Array.isArray(cfg.frictionLabels)&&cfg.frictionLabels.length===4?cfg.frictionLabels:DEF.friction):field==='mood'?(Array.isArray(cfg.moodLabels)&&cfg.moodLabels.length===5?cfg.moodLabels:DEF.mood):null);
@@ -12086,16 +12082,15 @@ function openEnergyModal(){
 // Entry edit modal
 function openEnergyEditModal(entryIdx, sec){
   const entry=D.energyEntries[entryIdx]; if(!entry) return;
-  let cfg = sec?.widgetConfig || null;
-  if(!cfg){
-    outer: for(const tab of (D.tabs||[])){
-      for(const col of (tab.columns||[])){
-        for(const s of (col.sections||[])){
-          if(s.type==='energy'){ cfg=s.widgetConfig||{}; break outer; }
-        }
+  let cfg = null;
+  outer: for(const tab of (D.tabs||[])){
+    for(const col of (tab.columns||[])){
+      for(const s of (col.sections||[])){
+        if(s.widgetType==='energy'){ cfg=s.widgetConfig||{}; break outer; }
       }
     }
   }
+  if(!cfg) cfg = sec?.widgetConfig || {};
   cfg = cfg || {};
   const eLabels=cfg.energyLabels||['Drained','Low','Normal','High','Wired'];
   const fLabels=cfg.focusLabels||['Scattered','Foggy','Steady','Locked In'];
