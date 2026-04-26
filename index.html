@@ -12440,7 +12440,7 @@ function buildEnergyChartWeek(allEntries, metric, mode, EC, onDayClick){
         pts.forEach((p,i)=>{
           if(!p) return;
           const c=document.createElementNS(ns,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','5'); c.setAttribute('fill',color); c.style.cursor='pointer';
-          c.addEventListener('click',()=>onDayClick(days[i].dateStr));
+          c.addEventListener('click',()=>{ tipEl.style.display='none'; onDayClick(days[i].dateStr); });
           c.addEventListener('mouseenter',evt=>{ clearTimeout(_tipHideTimer); showTip(tipEl,evt,days[i]); });
           c.addEventListener('mouseleave',()=>{ _tipHideTimer=setTimeout(()=>{ tipEl.style.display='none'; },120); });
           svg.appendChild(c);
