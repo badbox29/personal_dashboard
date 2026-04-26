@@ -11460,8 +11460,8 @@ function energyValColor(field,val){
   if(!val) return 'var(--text-dim)';
   let cfg = _energyWidgetSec?.widgetConfig || null;
   if(!cfg){
-    outer: for(const tab of Object.values(D.tabs||{})){
-      for(const col of Object.values(tab.cols||{})){
+    outer: for(const tab of (D.tabs||[])){
+      for(const col of (tab.columns||[])){
         for(const sec of (col.sections||[])){
           if(sec.type==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
         }
@@ -11941,8 +11941,8 @@ function energyMostCommon(entries,field){ const counts={}; entries.forEach(e=>{ 
 function energyLabelColor(field,val){
   let cfg = _energyWidgetSec?.widgetConfig || null;
   if(!cfg){
-    outer: for(const tab of Object.values(D.tabs||{})){
-      for(const col of Object.values(tab.cols||{})){
+    outer: for(const tab of (D.tabs||[])){
+      for(const col of (tab.columns||[])){
         for(const sec of (col.sections||[])){
           if(sec.type==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
         }
@@ -11961,8 +11961,8 @@ function energyFieldScore(field,val){
   // Use _energyWidgetSec if available, otherwise search D.tabs for an energy widget's config
   let cfg = _energyWidgetSec?.widgetConfig || null;
   if(!cfg){
-    outer: for(const tab of Object.values(D.tabs||{})){
-      for(const col of Object.values(tab.cols||{})){
+    outer: for(const tab of (D.tabs||[])){
+      for(const col of (tab.columns||[])){
         for(const sec of (col.sections||[])){
           if(sec.type==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
         }
@@ -12088,8 +12088,8 @@ function openEnergyEditModal(entryIdx, sec){
   const entry=D.energyEntries[entryIdx]; if(!entry) return;
   let cfg = sec?.widgetConfig || null;
   if(!cfg){
-    outer: for(const tab of Object.values(D.tabs||{})){
-      for(const col of Object.values(tab.cols||{})){
+    outer: for(const tab of (D.tabs||[])){
+      for(const col of (tab.columns||[])){
         for(const s of (col.sections||[])){
           if(s.type==='energy'){ cfg=s.widgetConfig||{}; break outer; }
         }
