@@ -8007,7 +8007,7 @@ async function kvPull() {
     if(!found || !data) return;
     const remoteTs = data.updatedAt || 0;
     const localTs  = D.kvLastSync  || 0;
-    if(remoteTs < localTs) return;
+    if(remoteTs <= localTs) return;  // nothing new — skip merge and re-render entirely
     kvMergeD(data.payload || {});
     // Apply remote config only if remote is newer than our last local config change.
     // This prevents a pull from overwriting a pending config change (e.g. a new playlist
