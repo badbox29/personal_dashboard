@@ -12391,12 +12391,66 @@ function buildEnergyChartWeek(allEntries, metric, mode, EC, onDayClick){
       });
     });
   } else {
+    // Shared tooltip element (body-level so it escapes SVG/modal overflow)
+    let tipEl = document.getElementById('energyChartTooltip');
+    if(!tipEl){ tipEl=document.createElement('div'); tipEl.id='energyChartTooltip'; document.body.appendChild(tipEl); }
+    tipEl.style.cssText='position:fixed;z-index:99999;pointer-events:none;background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:Outfit,sans-serif;font-size:11px;color:var(--text);box-shadow:0 6px 24px rgba(0,0,0,0.6);min-width:220px;max-width:500px;display:none;line-height:1.4;';
+    tipEl.style.display='none';
+
+    const _TML={energy:'Energy',focus:'Focus',friction:'Motivation',mood:'Mood'};
+    const _TMC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'};
+
+    function buildDayTip(dayData){
+      const sorted=[...dayData.entries].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
+      const dateStr=new Date(dayData.dateStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+      let h=`<div style="font-size:10px;font-family:Share Tech Mono,monospace;color:var(--gold);margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid rgba(255,255,255,0.08);">${dateStr} <span style="color:var(--text-dim);font-size:9px;">(${sorted.length} entr${sorted.length===1?'y':'ies'})</span></div>`;
+      sorted.forEach(e=>{
+        const time=new Date(e.timestamp).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+        h+=`<div style="margin-bottom:7px;">`;
+        h+=`<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">`;
+        h+=`<span style="font-family:Share Tech Mono,monospace;font-size:9px;color:var(--text-dim);min-width:54px;flex-shrink:0;">${time}</span>`;
+        ['energy','focus','friction','mood'].forEach(m=>{
+          const val=e[m]; if(!val) return;
+          const col=energyLabelColor(m,val)||'rgba(255,255,255,0.4)';
+          h+=`<span style="font-size:10px;color:${col};border:1px solid ${col};border-radius:3px;padding:1px 5px;white-space:nowrap;">${val}</span>`;
+        });
+        const meta=[e.context,e.location].filter(Boolean);
+        if(meta.length) h+=`<span style="font-size:9px;color:var(--text-dim);margin-left:2px;">\u{1f4cd} ${meta.join(' \xb7 ')}</span>`;
+        h+=`</div>`;
+        if(e.note) h+=`<div style="font-size:10px;color:var(--text-dim);font-style:italic;margin-top:2px;margin-left:58px;">\u201c${e.note}\u201d</div>`;
+        h+=`</div>`;
+      });
+      return h;
+    }
+
+    function showTip(tipEl, evt, dayData){
+      tipEl.innerHTML=buildDayTip(dayData);
+      tipEl.style.display='block';
+      const tw=tipEl.offsetWidth, th=tipEl.offsetHeight, mg=10;
+      let left=evt.clientX-tw/2, top=evt.clientY-th-14;
+      if(top<mg) top=evt.clientY+14;
+      if(left<mg) left=mg;
+      if(left+tw>window.innerWidth-mg) left=window.innerWidth-tw-mg;
+      tipEl.style.left=left+'px'; tipEl.style.top=top+'px';
+    }
+
+    let _tipHideTimer=null;
     METRICS.forEach(m=>{
       const color=MC[m]||'#aaa', maxS=MS[m]||4;
       const dayAvgs=days.map(d=>{ const sc=d.entries.map(e=>energyFieldScore(m,e[m])).filter(v=>v!==null); return sc.length?sc.reduce((a,b)=>a+b,0)/sc.length:null; });
       const pts=dayAvgs.map((avg,i)=>avg===null?null:{x:PAD.left+i*slotW+slotW*0.5,y:PAD.top+cH-(avg/maxS)*cH});
       let d=''; pts.forEach((p,i)=>{ if(!p) return; d+=(d===''||!pts[i-1])?'M '+p.x+' '+p.y:' L '+p.x+' '+p.y; });
-      if(d){ const path=document.createElementNS(ns,'path'); path.setAttribute('d',d); path.setAttribute('stroke',color); path.setAttribute('stroke-width','2'); path.setAttribute('fill','none'); path.setAttribute('stroke-linejoin','round'); if(METRICS.length>1) path.setAttribute('opacity','0.85'); svg.appendChild(path); pts.forEach((p,i)=>{ if(!p) return; const c=document.createElementNS(ns,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','4'); c.setAttribute('fill',color); c.style.cursor='pointer'; c.addEventListener('click',()=>onDayClick(days[i].dateStr)); svg.appendChild(c); }); }
+      if(d){
+        const path=document.createElementNS(ns,'path'); path.setAttribute('d',d); path.setAttribute('stroke',color); path.setAttribute('stroke-width','2'); path.setAttribute('fill','none'); path.setAttribute('stroke-linejoin','round'); if(METRICS.length>1) path.setAttribute('opacity','0.85'); svg.appendChild(path);
+        pts.forEach((p,i)=>{
+          if(!p) return;
+          const c=document.createElementNS(ns,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','5'); c.setAttribute('fill',color); c.style.cursor='pointer';
+          c.addEventListener('click',()=>onDayClick(days[i].dateStr));
+          c.addEventListener('mouseenter',evt=>{ clearTimeout(_tipHideTimer); showTip(tipEl,evt,days[i]); });
+          c.addEventListener('mouseleave',()=>{ _tipHideTimer=setTimeout(()=>{ tipEl.style.display='none'; },120); });
+          svg.appendChild(c);
+        });
+      }
     });
   }
   const _ML={energy:'Energy',focus:'Focus',friction:'Motivation',mood:'Mood'};
