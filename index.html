@@ -7771,6 +7771,8 @@ function generateSyncToken(){
   if(!Array.isArray(D.otxDailyCounts))   D.otxDailyCounts   = [];
   if(!Array.isArray(D.taskTrackerTasks))       D.taskTrackerTasks       = [];
   if(!Array.isArray(D.taskTrackerDeletedLogIds)) D.taskTrackerDeletedLogIds = [];
+  if(!Array.isArray(D.todoItems))              D.todoItems              = [];
+  if(!Array.isArray(D.todoDeletedIds))         D.todoDeletedIds         = [];
   if(typeof D.tray !== 'object' || Array.isArray(D.tray)) D.tray = {};
   if(D.tray.enabled === undefined) D.tray.enabled = false;
   if(!D.tray.cols) D.tray.cols = 1;
@@ -7852,6 +7854,7 @@ function generateSyncToken(){
   fetchAllWeather();
   // Pull KV state on load if sync is enabled
   if(D.kvEnabled) kvPull();
+  setInterval(() => { if(D.kvEnabled) kvPull(); }, 60000);
 
   // Auto-refresh weather tiles — default 30 min, configurable via D.weatherRefreshMins
   // Prevents tiles getting permanently stuck on "Loading…" after a failed initial fetch
@@ -7912,6 +7915,8 @@ const KV_MERGE_KEYS = {
   otxDailyCounts:     e => e.date,
   taskTrackerTasks:        e => e.id,
   taskTrackerDeletedLogIds: e => e,
+  todoItems:               e => e.id,
+  todoDeletedIds:          e => e,
   // primitive arrays — dedup by value
   cycleStartDates:    e => e,
   tapSeenClickGuids:  e => e,
@@ -7941,15 +7946,21 @@ function kvMergeD(remote) {
         const local = seen.get(k);
         const mergedLogs = new Map((local.workLogs||[]).map(l => [l.id, l]));
         (e.workLogs||[]).forEach(l => { if(!mergedLogs.has(l.id)) mergedLogs.set(l.id, l); });
-        // Keep whichever task metadata is newer (status, name, description, closedAt)
-        const localAt  = new Date(local.createdAt||0).getTime();
-        const remoteAt = new Date(e.createdAt||0).getTime();
+        // Keep whichever task metadata is newer — use modifiedAt, fall back to createdAt
+        const localAt  = new Date(local.modifiedAt  || local.createdAt  || 0).getTime();
+        const remoteAt = new Date(e.modifiedAt || e.createdAt || 0).getTime();
         const base = remoteAt > localAt ? {...e} : {...local};
         const deletedIds = new Set(D.taskTrackerDeletedLogIds||[]);
         base.workLogs = Array.from(mergedLogs.values())
           .filter(l => !deletedIds.has(l.id))
           .sort((a,b) => new Date(b.loggedAt||0) - new Date(a.loggedAt||0));
         seen.set(k, base);
+      } else if(key === 'todoItems') {
+        // Pick whichever version was modified more recently
+        const local = seen.get(k);
+        const localMod  = new Date(local.modifiedAt  || local.createdAt  || 0).getTime();
+        const remoteMod = new Date(e.modifiedAt || e.createdAt || 0).getTime();
+        if(remoteMod > localMod) seen.set(k, e);
       }
     });
     D[key] = Array.from(seen.values());
@@ -8816,7 +8827,29 @@ function buildRemindersWidget(sec){
 /* ---- TO-DO LIST ---- */
 function buildTodoWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
-  if(!cfg.todos) cfg.todos = [];
+  const secId = sec.id;
+
+  // --- Migration: promote any legacy cfg.todos items into D.todoItems ---
+  if(Array.isArray(cfg.todos) && cfg.todos.length > 0){
+    if(!Array.isArray(D.todoItems)) D.todoItems = [];
+    const existingTexts = new Set(D.todoItems.filter(t=>t.secId===secId).map(t=>t.text));
+    let migrated = false;
+    cfg.todos.forEach(t => {
+      if(!existingTexts.has(t.text)){
+        const now = new Date().toISOString();
+        D.todoItems.push({ id: 'td_'+Math.random().toString(36).slice(2,10), secId, text:t.text, done:!!t.done, createdAt:now, modifiedAt:now });
+        migrated = true;
+      }
+    });
+    if(migrated){ cfg.todos = []; persist(); }
+  }
+  if(!Array.isArray(D.todoItems))    D.todoItems    = [];
+  if(!Array.isArray(D.todoDeletedIds)) D.todoDeletedIds = [];
+
+  function getItems(){
+    const deleted = new Set(D.todoDeletedIds||[]);
+    return D.todoItems.filter(t => t.secId === secId && !deleted.has(t.id));
+  }
 
   const wrap = el('div','todo-widget');
   const list = el('div','todo-list');
@@ -8824,11 +8857,12 @@ function buildTodoWidget(sec){
 
   function renderTodos(){
     list.innerHTML = '';
-    cfg.todos.forEach((todo, idx) => {
+    getItems().forEach(todo => {
       const item = el('div','todo-item'+(todo.done?' done':''));
       const chk = el('input','todo-check'); chk.type='checkbox'; chk.checked=!!todo.done;
       chk.onchange = ()=>{
         todo.done = chk.checked;
+        todo.modifiedAt = new Date().toISOString();
         item.classList.toggle('done', todo.done);
         lbl.style.textDecoration = todo.done ? 'line-through' : '';
         persist();
@@ -8837,7 +8871,11 @@ function buildTodoWidget(sec){
       const lbl = el('div','todo-label'); lbl.textContent = todo.text;
       lbl.onclick = ()=>{ chk.checked=!chk.checked; chk.onchange(); };
       const del = el('button','todo-del'); del.textContent='✕'; del.title='Remove';
-      del.onclick = ()=>{ cfg.todos.splice(idx,1); persist(); renderTodos(); };
+      del.onclick = ()=>{
+        D.todoItems = D.todoItems.filter(t=>t.id!==todo.id);
+        if(!D.todoDeletedIds.includes(todo.id)) D.todoDeletedIds.push(todo.id);
+        persist(); renderTodos();
+      };
       item.append(chk, lbl, del);
       list.appendChild(item);
     });
@@ -8851,7 +8889,8 @@ function buildTodoWidget(sec){
   const doAdd = ()=>{
     const text = addInp.value.trim();
     if(!text) return;
-    cfg.todos.push({ text, done:false });
+    const now = new Date().toISOString();
+    D.todoItems.push({ id:'td_'+Math.random().toString(36).slice(2,10), secId, text, done:false, createdAt:now, modifiedAt:now });
     persist(); addInp.value=''; renderTodos();
     addInp.focus();
   };
@@ -8864,13 +8903,17 @@ function buildTodoWidget(sec){
   const clearBtn = el('button','todo-clear-btn'); clearBtn.textContent='Clear completed';
   clearBtn.onclick = ()=>{
     if(!confirm('Remove all completed tasks? This cannot be undone.')) return;
-    cfg.todos = cfg.todos.filter(t=>!t.done);
+    const done = getItems().filter(t=>t.done);
+    done.forEach(t=>{
+      D.todoItems = D.todoItems.filter(i=>i.id!==t.id);
+      if(!D.todoDeletedIds.includes(t.id)) D.todoDeletedIds.push(t.id);
+    });
     persist(); renderTodos();
   };
   wrap.appendChild(clearBtn);
 
   function updateClearBtn(){
-    clearBtn.classList.toggle('has-completed', cfg.todos.some(t=>t.done));
+    clearBtn.classList.toggle('has-completed', getItems().some(t=>t.done));
   }
 
   renderTodos();
@@ -23506,7 +23549,7 @@ function ttOpenAddDialog(onAdded){
     D.taskTrackerTasks.unshift({
       id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
       name, description:dinp.value.trim(),
-      status:'open', createdAt:new Date().toISOString(), closedAt:null, workLogs:[]
+      status:'open', createdAt:new Date().toISOString(), modifiedAt:new Date().toISOString(), closedAt:null, workLogs:[]
     });
     persistNow(); closeOverlay('ttAddOverlay');
     if(onAdded) onAdded();
@@ -23584,7 +23627,7 @@ function ttOpenExplorer(onChanged){
       if(activeTab==='closed'){
         const rb=el('button'); rb.textContent='Reopen'; rb.style.cssText='font-size:10px;padding:2px 10px;flex-shrink:0;background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
         rb.onmouseenter=e=>e.currentTarget.style.background='rgba(var(--cyan-rgb,100,200,220),0.12)'; rb.onmouseleave=e=>e.currentTarget.style.background='transparent';
-        rb.onclick=e=>{ e.stopPropagation(); task.status='open'; task.closedAt=null; persistNow(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
+        rb.onclick=e=>{ e.stopPropagation(); task.status='open'; task.closedAt=null; task.modifiedAt=new Date().toISOString(); persistNow(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
         row.appendChild(rb);
       }
       row.onclick=()=>{ selTask=task; renderList(); renderDetail(); };
@@ -23647,7 +23690,7 @@ function ttOpenExplorer(onChanged){
       const cb=el('button'); cb.textContent='✓ Close Task'; cb.style.cssText='font-size:10px;padding:2px 10px;background:transparent;border:1px solid #50c878;color:#50c878;border-radius:4px;cursor:pointer;font-family:Outfit,sans-serif;transition:background 0.15s;';
       cb.onmouseenter=e=>e.currentTarget.style.background='rgba(80,200,120,0.12)';
       cb.onmouseleave=e=>e.currentTarget.style.background='transparent';
-      cb.onclick=()=>{ task.status='closed'; task.closedAt=new Date().toISOString(); persistNow(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
+      cb.onclick=()=>{ task.status='closed'; task.closedAt=new Date().toISOString(); task.modifiedAt=new Date().toISOString(); persistNow(); selTask=null; renderList(); renderDetail(); if(onChanged) onChanged(); };
       trow.appendChild(cb);
     }
     detail.appendChild(trow);
@@ -23726,6 +23769,7 @@ function ttOpenExplorer(onChanged){
           task.workLogs=task.workLogs.filter(l=>l.id!==log.id);
           if(!Array.isArray(D.taskTrackerDeletedLogIds)) D.taskTrackerDeletedLogIds=[];
           if(!D.taskTrackerDeletedLogIds.includes(log.id)) D.taskTrackerDeletedLogIds.push(log.id);
+          task.modifiedAt = new Date().toISOString();
           persistNow(); renderList(); renderDetail(); if(onChanged) onChanged();
         };
         logRow.appendChild(delBtn);
@@ -23859,6 +23903,7 @@ function ttOpenExplorer(onChanged){
           loggedAt:new Date().toISOString(), tickets
         });
       }
+      task.modifiedAt = new Date().toISOString();
       persistNow(); renderList(); renderDetail(); if(onChanged) onChanged();
     };
     if(!taskClosed) acts.append(acCancel,acOk);
