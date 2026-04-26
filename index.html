@@ -7773,6 +7773,18 @@ function generateSyncToken(){
   if(!Array.isArray(D.taskTrackerDeletedLogIds)) D.taskTrackerDeletedLogIds = [];
   if(!Array.isArray(D.todoItems))              D.todoItems              = [];
   if(!Array.isArray(D.todoDeletedIds))         D.todoDeletedIds         = [];
+  // One-time migration: stamp modifiedAt on existing tasks that lack it.
+  // Closed tasks get closedAt as modifiedAt so they beat stale open copies on merge.
+  (function(){
+    let dirty = false;
+    D.taskTrackerTasks.forEach(t => {
+      if(!t.modifiedAt){
+        t.modifiedAt = t.closedAt || t.createdAt || new Date().toISOString();
+        dirty = true;
+      }
+    });
+    if(dirty) localStorage.setItem('salty_v2', JSON.stringify(D));
+  })();
   if(typeof D.tray !== 'object' || Array.isArray(D.tray)) D.tray = {};
   if(D.tray.enabled === undefined) D.tray.enabled = false;
   if(!D.tray.cols) D.tray.cols = 1;
