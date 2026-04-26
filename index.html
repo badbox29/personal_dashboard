@@ -11458,8 +11458,18 @@ function getSlotColor(idx,total){
 }
 function energyValColor(field,val){
   if(!val) return 'var(--text-dim)';
-  const cfg=_energyWidgetSec?.widgetConfig;
-  const map={energy:cfg?.energyLabels||DEFAULT_ENERGY,focus:cfg?.focusLabels||DEFAULT_FOCUS,friction:cfg?.frictionLabels||DEFAULT_FRICTION,context:cfg?.contextLabels||DEFAULT_CONTEXT,mood:cfg?.moodLabels||DEFAULT_MOOD};
+  let cfg = _energyWidgetSec?.widgetConfig || null;
+  if(!cfg){
+    outer: for(const tab of Object.values(D.tabs||{})){
+      for(const col of Object.values(tab.cols||{})){
+        for(const sec of (col.sections||[])){
+          if(sec.type==='energy'){ cfg=sec.widgetConfig||{}; break outer; }
+        }
+      }
+    }
+  }
+  cfg = cfg || {};
+  const map={energy:cfg.energyLabels||DEFAULT_ENERGY,focus:cfg.focusLabels||DEFAULT_FOCUS,friction:cfg.frictionLabels||DEFAULT_FRICTION,context:cfg.contextTags||DEFAULT_CONTEXT,mood:cfg.moodLabels||DEFAULT_MOOD};
   const labels=map[field]; if(!labels) return 'var(--text-dim)';
   const idx=labels.indexOf(val); return idx===-1?'var(--text-dim)':getSlotColor(idx,labels.length);
 }
@@ -12076,7 +12086,17 @@ function openEnergyModal(){
 // Entry edit modal
 function openEnergyEditModal(entryIdx, sec){
   const entry=D.energyEntries[entryIdx]; if(!entry) return;
-  const cfg=sec?.widgetConfig||{};
+  let cfg = sec?.widgetConfig || null;
+  if(!cfg){
+    outer: for(const tab of Object.values(D.tabs||{})){
+      for(const col of Object.values(tab.cols||{})){
+        for(const s of (col.sections||[])){
+          if(s.type==='energy'){ cfg=s.widgetConfig||{}; break outer; }
+        }
+      }
+    }
+  }
+  cfg = cfg || {};
   const eLabels=cfg.energyLabels||['Drained','Low','Normal','High','Wired'];
   const fLabels=cfg.focusLabels||['Scattered','Foggy','Steady','Locked In'];
   const frLabels=cfg.frictionLabels||['Resistant','Reluctant','Neutral','Driven'];
