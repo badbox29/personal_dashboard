@@ -12208,9 +12208,10 @@ function openEnergyInsightsModal(){
     ctrl.appendChild(navWrap);
 
     const mB={};
+    const mLabels={energy:'Energy',focus:'Focus',friction:'Motivation',mood:'Mood',all:'All'};
     ['energy','focus','friction','mood','all'].forEach(m=>{
       const b=el('button'); b.style.cssText=m===cM?activeStyle:inactiveStyle;
-      b.textContent=m==='all'?'All':m.charAt(0).toUpperCase()+m.slice(1);
+      b.textContent=mLabels[m];
       b.onclick=()=>{ cM=m; Object.values(mB).forEach(x=>x.style.cssText=inactiveStyle); b.style.cssText=activeStyle; redraw(); };
       mB[m]=b; ctrl.appendChild(b);
     });
@@ -12268,7 +12269,7 @@ function openEnergyInsightsModal(){
   if(D.energyEntries.length>=7){
     sh('Day-of-Week Patterns');
     const DOW_MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'};
-    const DOW_MS={energy:4,focus:3,friction:2,mood:4};
+    const DOW_MS={energy:4,focus:3,friction:3,mood:4};
     let dowMetric='energy';
     const dowActiveStyle='font-size:10px;font-family:Share Tech Mono,monospace;padding:2px 9px;border:1px solid var(--gold);border-radius:3px;background:none;cursor:pointer;color:var(--gold);';
     const dowInactiveStyle='font-size:10px;font-family:Share Tech Mono,monospace;padding:2px 9px;border:1px solid var(--border);border-radius:3px;background:none;cursor:pointer;color:var(--text-dim);';
@@ -12315,7 +12316,7 @@ function buildEnergyChartWeek(allEntries, metric, mode, EC, onDayClick){
   const W=620,H=160,PAD={top:12,right:10,bottom:28,left:28},cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom,ns='http://www.w3.org/2000/svg';
   const days=[];
   for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const ds=d.toLocaleDateString('en-CA'); days.push({dateStr:ds,entries:allEntries.filter(e=>e.timestamp.slice(0,10)===ds),label:d.toLocaleDateString('en-US',{weekday:'short'})}); }
-  const METRICS=metric==='all'?['energy','focus','friction','mood']:[metric],MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'},MS={energy:4,focus:3,friction:2,mood:4};
+  const METRICS=metric==='all'?['energy','focus','friction','mood']:[metric],MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'},MS={energy:4,focus:3,friction:3,mood:4};
   const svg=document.createElementNS(ns,'svg'); svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('width','100%'); svg.setAttribute('preserveAspectRatio','xMidYMid meet');
   // Grid
   for(let i=0;i<=4;i++){ const y=PAD.top+cH*(1-i/4); const line=document.createElementNS(ns,'line'); line.setAttribute('x1',PAD.left); line.setAttribute('x2',W-PAD.right); line.setAttribute('y1',y); line.setAttribute('y2',y); line.setAttribute('stroke','rgba(255,255,255,0.05)'); line.setAttribute('stroke-width','1'); svg.appendChild(line); }
@@ -12357,7 +12358,8 @@ function buildEnergyChartWeek(allEntries, metric, mode, EC, onDayClick){
       if(d){ const path=document.createElementNS(ns,'path'); path.setAttribute('d',d); path.setAttribute('stroke',color); path.setAttribute('stroke-width','2'); path.setAttribute('fill','none'); path.setAttribute('stroke-linejoin','round'); if(METRICS.length>1) path.setAttribute('opacity','0.85'); svg.appendChild(path); pts.forEach((p,i)=>{ if(!p) return; const c=document.createElementNS(ns,'circle'); c.setAttribute('cx',p.x); c.setAttribute('cy',p.y); c.setAttribute('r','4'); c.setAttribute('fill',color); c.style.cursor='pointer'; c.addEventListener('click',()=>onDayClick(days[i].dateStr)); svg.appendChild(c); }); }
     });
   }
-  if(METRICS.length>1){ let lx=PAD.left; METRICS.forEach(m=>{ const color=MC[m]; const lr=document.createElementNS(ns,'rect'); lr.setAttribute('x',lx); lr.setAttribute('y',3); lr.setAttribute('width',8); lr.setAttribute('height',4); lr.setAttribute('fill',color); lr.setAttribute('rx','1'); svg.appendChild(lr); const lt=document.createElementNS(ns,'text'); lt.setAttribute('x',lx+10); lt.setAttribute('y',8); lt.setAttribute('font-size','7'); lt.setAttribute('fill',color); lt.setAttribute('font-family','Share Tech Mono,monospace'); lt.textContent=m.charAt(0).toUpperCase()+m.slice(1); svg.appendChild(lt); lx+=60; }); }
+  const _ML={energy:'Energy',focus:'Focus',friction:'Motivation',mood:'Mood'};
+  if(METRICS.length>1){ let lx=PAD.left; METRICS.forEach(m=>{ const color=MC[m]; const lr=document.createElementNS(ns,'rect'); lr.setAttribute('x',lx); lr.setAttribute('y',3); lr.setAttribute('width',8); lr.setAttribute('height',4); lr.setAttribute('fill',color); lr.setAttribute('rx','1'); svg.appendChild(lr); const lt=document.createElementNS(ns,'text'); lt.setAttribute('x',lx+10); lt.setAttribute('y',8); lt.setAttribute('font-size','7'); lt.setAttribute('fill',color); lt.setAttribute('font-family','Share Tech Mono,monospace'); lt.textContent=_ML[m]||m.charAt(0).toUpperCase()+m.slice(1); svg.appendChild(lt); lx+=60; }); }
   // X labels + click hint
   days.forEach((d,i)=>{
     const x=PAD.left+i*slotW+slotW*0.5; const txt=document.createElementNS(ns,'text'); txt.setAttribute('x',x); txt.setAttribute('y',H-7); txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','9'); txt.setAttribute('font-family','Share Tech Mono,monospace');
@@ -12375,7 +12377,7 @@ function buildEnergyChartDay(allEntries, dateStr, metric, mode, EC){
   const ns='http://www.w3.org/2000/svg';
   const PAD={top:16,right:12,bottom:30,left:30};
   const H=170;
-  const MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'},MS={energy:4,focus:3,friction:2,mood:4};
+  const MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'},MS={energy:4,focus:3,friction:3,mood:4};
   const METRICS=metric==='all'?['energy','focus','friction','mood']:[metric];
 
   // Get entries for this day
@@ -12473,7 +12475,8 @@ function buildEnergyChartDay(allEntries, dateStr, metric, mode, EC){
   }
 
   // ── Multi-metric legend ───────────────────────────────────────────────────
-  if(METRICS.length>1){ let lx=PAD.left; METRICS.forEach(m=>{ const color=MC[m]; const lr=document.createElementNS(ns,'rect'); lr.setAttribute('x',lx); lr.setAttribute('y',3); lr.setAttribute('width',8); lr.setAttribute('height',4); lr.setAttribute('fill',color); lr.setAttribute('rx','1'); svg.appendChild(lr); const lt=document.createElementNS(ns,'text'); lt.setAttribute('x',lx+10); lt.setAttribute('y',8); lt.setAttribute('font-size','7'); lt.setAttribute('fill',color); lt.setAttribute('font-family','Share Tech Mono,monospace'); lt.textContent=m.charAt(0).toUpperCase()+m.slice(1); svg.appendChild(lt); lx+=60; }); }
+  const _ML2={energy:'Energy',focus:'Focus',friction:'Motivation',mood:'Mood'};
+  if(METRICS.length>1){ let lx=PAD.left; METRICS.forEach(m=>{ const color=MC[m]; const lr=document.createElementNS(ns,'rect'); lr.setAttribute('x',lx); lr.setAttribute('y',3); lr.setAttribute('width',8); lr.setAttribute('height',4); lr.setAttribute('fill',color); lr.setAttribute('rx','1'); svg.appendChild(lr); const lt=document.createElementNS(ns,'text'); lt.setAttribute('x',lx+10); lt.setAttribute('y',8); lt.setAttribute('font-size','7'); lt.setAttribute('fill',color); lt.setAttribute('font-family','Share Tech Mono,monospace'); lt.textContent=_ML2[m]||m.charAt(0).toUpperCase()+m.slice(1); svg.appendChild(lt); lx+=60; }); }
 
   // ── X-axis hour labels ────────────────────────────────────────────────────
   for(let h=minH;h<=maxH;h++){
@@ -12554,7 +12557,7 @@ function buildCyclePane(pane, cfg){
       let lines=[];
       if(topE) lines.push('Energy tends to read as \u201c'+topE+'\u201d');
       if(topM) lines.push('most common mood is \u201c'+topM+'\u201d');
-      if(topFr) lines.push('friction tends toward \u201c'+topFr+'\u201d');
+      if(topFr) lines.push('motivation tends toward \u201c'+topFr+'\u201d');
       if(lines.length) pNote.textContent='Your past entries during '+phase+': '+lines.join(', ')+'. (Based on '+phasEntries.length+' logged entr'+(phasEntries.length===1?'y':'ies')+')';
       else pNote.textContent='Not enough past entries in this phase yet for a pattern.';
       pane.appendChild(pNote);
