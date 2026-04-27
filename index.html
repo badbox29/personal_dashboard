@@ -7971,9 +7971,8 @@ function getWorkerAuthHeaders(){ const k=(D.workerKey||'').trim(); return k?{'X-
    obfuscated localStorage keys — never written to D or KV.
    Synchronous and deterministic: same clientId always produces
    the same key, so stored blobs survive page reloads reliably.
+   All declarations are function/var to avoid TDZ during boot IIFE.
    ================================================================ */
-const _CC_A = 'salty_ui_density';
-const _CC_B = 'salty_render_mode';
 
 function _ccKey(){
   const id = localStorage.getItem('salty_clientId') || 'default';
@@ -7994,13 +7993,13 @@ function _ccDecrypt(blob){
   } catch(e){ return ''; }
 }
 function _ccSave(a, b){
-  localStorage.setItem(_CC_A, _ccEncrypt(a));
-  localStorage.setItem(_CC_B, _ccEncrypt(b));
+  localStorage.setItem('salty_ui_density', _ccEncrypt(a));
+  localStorage.setItem('salty_render_mode', _ccEncrypt(b));
 }
 function _ccLoad(){
   return {
-    a: _ccDecrypt(localStorage.getItem(_CC_A) || ''),
-    b: _ccDecrypt(localStorage.getItem(_CC_B) || ''),
+    a: _ccDecrypt(localStorage.getItem('salty_ui_density') || ''),
+    b: _ccDecrypt(localStorage.getItem('salty_render_mode') || ''),
   };
 }
 
