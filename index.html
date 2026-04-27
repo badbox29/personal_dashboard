@@ -13084,7 +13084,7 @@ function buildEnergyChartWeek(allEntries, metric, mode, EC, onDayClick){
   // Shared tooltip (body-level, used by both bar and line modes)
   let tipEl = document.getElementById('energyChartTooltip');
   if(!tipEl){ tipEl=document.createElement('div'); tipEl.id='energyChartTooltip'; document.body.appendChild(tipEl); }
-  tipEl.style.cssText='position:fixed;z-index:99999;pointer-events:none;background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:Outfit,sans-serif;font-size:11px;color:var(--text);box-shadow:0 6px 24px rgba(0,0,0,0.6);min-width:220px;max-width:500px;display:none;line-height:1.4;';
+  tipEl.style.cssText='position:fixed;z-index:99999;pointer-events:none;background:var(--modal-bg);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-family:Outfit,sans-serif;font-size:11px;color:var(--text);box-shadow:0 6px 24px rgba(0,0,0,0.6);min-width:220px;max-width:500px;display:none;line-height:1.4;';
   tipEl.style.display='none';
 
   function buildDayTip(dayData){
