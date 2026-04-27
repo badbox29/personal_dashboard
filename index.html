@@ -5315,6 +5315,32 @@ body.edit-mode .gh-add-row { display: flex; }
 .otx-api-required-sub { font-size:11px; color:var(--text-dim); }
 
 /* ============================================================
+   WIDGET — E-ISAC Threat Intelligence
+   ============================================================ */
+.eisac-filter-row { display:flex; gap:5px; margin-bottom:7px; flex-wrap:wrap; align-items:center; }
+.eisac-filter-chip { font-size:9.5px; font-family:'Share Tech Mono',monospace; padding:2px 8px; border-radius:3px; background:var(--inp-bg); border:1px solid var(--border); color:var(--text-dim); cursor:pointer; transition:border-color 0.15s,color 0.15s; }
+.eisac-filter-chip.active { border-color:var(--gold); color:var(--gold); background:rgba(221,176,75,0.08); }
+.eisac-item { padding:7px 9px; background:var(--inp-bg); border:1px solid var(--border); border-radius:5px; cursor:pointer; transition:border-color 0.15s; margin-bottom:5px; }
+.eisac-item:hover { border-color:var(--cyan); }
+.eisac-item-hdr { display:flex; align-items:flex-start; gap:5px; margin-bottom:3px; }
+.eisac-item-name { font-size:11px; color:var(--text); line-height:1.35; flex:1; min-width:0; }
+.eisac-item-meta { font-size:9.5px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.eisac-item-desc { font-size:10.5px; color:var(--text-dim); line-height:1.45; margin-top:3px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.eisac-type-badge { font-size:8.5px; font-family:'Share Tech Mono',monospace; font-weight:700; padding:1px 5px; border-radius:3px; background:rgba(100,140,255,0.1); border:1px solid rgba(100,140,255,0.3); color:#8aacff; flex-shrink:0; white-space:nowrap; }
+.eisac-new-badge { font-size:8.5px; font-family:'Share Tech Mono',monospace; font-weight:700; padding:1px 5px; border-radius:3px; background:rgba(68,204,136,0.12); border:1px solid rgba(68,204,136,0.4); color:#44cc88; flex-shrink:0; }
+.eisac-label-chip { font-size:9px; font-family:'Share Tech Mono',monospace; padding:1px 5px; border-radius:3px; background:rgba(180,170,150,0.08); border:1px solid rgba(180,170,150,0.22); color:rgba(180,170,150,0.75); }
+.eisac-detail-field { margin-bottom:8px; }
+.eisac-detail-lbl { font-size:9px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; }
+.eisac-detail-val { font-size:11.5px; color:var(--text); line-height:1.55; }
+.eisac-pattern-box { font-size:10px; font-family:'Share Tech Mono',monospace; color:var(--cyan); background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:4px; padding:6px 8px; word-break:break-all; line-height:1.5; }
+.eisac-ref-link { font-size:11px; font-family:'Share Tech Mono',monospace; color:var(--cyan); text-decoration:none; display:inline-block; margin-top:3px; opacity:0.85; transition:opacity 0.15s; }
+.eisac-ref-link:hover { opacity:1; }
+.eisac-stat-grid { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.eisac-stat-tile { flex:1; min-width:70px; padding:5px 8px; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:4px; }
+.eisac-stat-lbl { font-size:9px; font-family:'Share Tech Mono',monospace; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:3px; }
+.eisac-stat-val { font-size:11px; font-family:'Share Tech Mono',monospace; color:var(--text); }
+
+/* ============================================================
    WIDGET — BGP / ASN Lookup
    ============================================================ */
 .bgp-mode-tabs {
@@ -6688,6 +6714,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swOtx"       onclick="selectWidgetType('otx')">
           🛰 Threat Intel<span>LevelBlue OTX feed — API required</span>
         </button>
+        <button class="sec-type-card" id="swEisac"     onclick="selectWidgetType('eisac')">
+          ⚡ E-ISAC Intel<span>NERC E-ISAC TAXII 2.1 feed — API required</span>
+        </button>
         <button class="sec-type-card" id="swTap"       onclick="selectWidgetType('tap')">
           🔐 Proofpoint TAP<span>Blocked threats, clicks &amp; VAPs — API required</span>
         </button>
@@ -6878,6 +6907,7 @@ const DEFAULTS = {
   cycleStartDates: [],
   otxIndustries: [],
   otxAlarmHistory: [],
+  eisacAlarmHistory: [],
   poemDaily: null,
   poemFavorites: [],
   pollenKey: '',
@@ -7505,7 +7535,7 @@ function cyclePhaseForEntry(entry,allStarts,cycleLength,periodLength){
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
                       'bible','wotd','apod','drinks',
                       'abs',
-                      'ports','myip','rfc','cve','bgp','dns','subnet','otx','tap',
+                      'ports','myip','rfc','cve','bgp','dns','subnet','otx','eisac','tap',
                       'github','regex','jsonformat','base64','hash','jwt',
                       'compose','met','artspot','unsplash','tasktracker','lastfm'];
 
@@ -7775,6 +7805,7 @@ var _kvBootComplete = false;
   if(!Array.isArray(D.cycleStartDates)) D.cycleStartDates = [];
   if(!Array.isArray(D.otxIndustries))    D.otxIndustries    = [];
   if(!Array.isArray(D.otxAlarmHistory))  D.otxAlarmHistory  = [];
+  if(!Array.isArray(D.eisacAlarmHistory)) D.eisacAlarmHistory = [];
   if(!Array.isArray(D.otxDailyCounts))   D.otxDailyCounts   = [];
   if(!Array.isArray(D.taskTrackerTasks))       D.taskTrackerTasks       = [];
   if(!Array.isArray(D.taskTrackerDeletedLogIds)) D.taskTrackerDeletedLogIds = [];
@@ -7935,6 +7966,60 @@ function getWorkerUrl(widgetOverride){ return (widgetOverride||'').trim() || (D.
 function getWorkerAuthHeaders(){ const k=(D.workerKey||'').trim(); return k?{'X-Salty-Key':k}:{}; }
 
 /* ================================================================
+   CREDENTIAL CRYPTO
+   AES-GCM encryption for sensitive widget credentials.
+   Key derived from salty_clientId via PBKDF2 — never leaves this browser.
+   Stored under obfuscated localStorage keys, never written to D or KV.
+   ================================================================ */
+const _CC_A = 'salty_ui_density';
+const _CC_B = 'salty_render_mode';
+const _CC_S = new TextEncoder().encode('salty_prefs_v1_layout');
+let   _ccKey = null; // cached derived key — derived once per page load
+
+async function _ccDerive(){
+  if(_ccKey) return _ccKey;
+  const id  = localStorage.getItem('salty_clientId') || 'default';
+  const raw = await crypto.subtle.importKey('raw', new TextEncoder().encode(id), 'PBKDF2', false, ['deriveKey']);
+  _ccKey = await crypto.subtle.deriveKey(
+    { name:'PBKDF2', salt:_CC_S, iterations:100000, hash:'SHA-256' },
+    raw,
+    { name:'AES-GCM', length:256 },
+    false, ['encrypt','decrypt']
+  );
+  return _ccKey;
+}
+async function _ccEncrypt(plain){
+  if(!plain) return '';
+  const key = await _ccDerive();
+  const iv  = crypto.getRandomValues(new Uint8Array(12));
+  const ct  = await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, new TextEncoder().encode(plain));
+  const buf = new Uint8Array(12 + ct.byteLength);
+  buf.set(iv, 0); buf.set(new Uint8Array(ct), 12);
+  return btoa(String.fromCharCode(...buf));
+}
+async function _ccDecrypt(blob){
+  if(!blob) return '';
+  try {
+    const bytes = Uint8Array.from(atob(blob), c=>c.charCodeAt(0));
+    const key   = await _ccDerive();
+    const dec   = await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)}, key, bytes.slice(12));
+    return new TextDecoder().decode(dec);
+  } catch(e){ return ''; }
+}
+async function _ccSave(a, b){
+  const [ea, eb] = await Promise.all([_ccEncrypt(a), _ccEncrypt(b)]);
+  localStorage.setItem(_CC_A, ea);
+  localStorage.setItem(_CC_B, eb);
+}
+async function _ccLoad(){
+  const [a, b] = await Promise.all([
+    _ccDecrypt(localStorage.getItem(_CC_A)||''),
+    _ccDecrypt(localStorage.getItem(_CC_B)||''),
+  ]);
+  return { a, b };
+}
+
+/* ================================================================
    KV SYNC
    ================================================================ */
 
@@ -7943,6 +8028,7 @@ const KV_MERGE_KEYS = {
   // dedup by .id
   otxAlarmHistory:    e => e.id,
   cveAlarmHistory:    e => e.id,
+  eisacAlarmHistory:  e => e.id,
   // dedup by .vendor
   cveVendorList:      e => e.vendor,
   // dedup by .timestamp
@@ -8626,6 +8712,7 @@ function buildWidgetBody(sec, tabId){
     case 'dns':       return buildDnsWidget(sec);
     case 'subnet':    return buildSubnetWidget(sec);
     case 'otx':       return buildOtxWidget(sec, tabId);
+    case 'eisac':     return buildEisacWidget(sec, tabId);
     case 'tap':       return buildTapWidget(sec, tabId);
     case 'github':    return buildGithubWidget(sec);
     case 'regex':     return buildRegexWidget(sec);
@@ -10776,6 +10863,462 @@ function buildOtxWidget(sec, tabId){
   renderIndChips();
   refresh();
   const timer=setInterval(refresh,(cfg.refreshMins||30)*60*1000);
+  const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(timer); obsEdit.disconnect(); obsClean.disconnect(); } });
+  obsClean.observe(document.body,{childList:true,subtree:true});
+  return wrap;
+}
+
+/* ---- E-ISAC THREAT INTELLIGENCE (TAXII 2.1) ---- */
+function buildEisacWidget(sec, tabId){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  // Credentials are stored encrypted in localStorage, never in D/cfg
+  // Clean up any that may have been accidentally persisted in a prior version
+  if(cfg.eisacUser !== undefined){ delete cfg.eisacUser; persistConfig(); }
+  if(cfg.eisacPass !== undefined){ delete cfg.eisacPass; persistConfig(); }
+  if(!cfg.eisacWorker)     cfg.eisacWorker     = '';
+  if(!cfg.collectionId)    cfg.collectionId    = '0ffc82d5-67b1-4d12-912b-58ce9ba6b57c';
+  if(!cfg.lookbackDays)    cfg.lookbackDays    = 30;
+  if(!cfg.refreshMins)     cfg.refreshMins     = 60;
+  if(cfg.alarmSound === undefined) cfg.alarmSound = false;
+  if(!cfg.typeFilter)      cfg.typeFilter      = []; // empty = show all types
+
+  let _user = '', _pass = ''; // decrypted credentials — never stored in D
+
+  const EISAC_HISTORY_MAX = 300;
+  let isFirstLoad = true;
+  let allObjects  = [];
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function relTime(iso){
+    if(!iso) return '';
+    const diff=Date.now()-new Date(iso).getTime(), h=Math.floor(diff/3600000);
+    if(h<1) return 'just now'; if(h<24) return h+'h ago'; return Math.floor(h/24)+'d ago';
+  }
+  function tlpClass(tlp){
+    const t=(tlp||'').toLowerCase();
+    if(t==='red') return 'otx-tlp-red'; if(t==='amber') return 'otx-tlp-amber';
+    if(t==='green') return 'otx-tlp-green'; return 'otx-tlp-white';
+  }
+  function tlpLabel(tlp){
+    const t=(tlp||'white').toUpperCase();
+    return t==='CLEAR'?'TLP:CLEAR':'TLP:'+t;
+  }
+  function isAlarmTlp(tlp){ const t=(tlp||'').toLowerCase(); return t==='red'||t==='amber'; }
+
+  const TYPE_ICONS = {
+    'indicator':       '🎯',
+    'report':          '📄',
+    'threat-actor':    '👤',
+    'malware':         '🦠',
+    'campaign':        '🏴',
+    'vulnerability':   '🛡',
+    'attack-pattern':  '⚔️',
+    'course-of-action':'🛠',
+    'observed-data':   '👁',
+    'tool':            '🔧',
+    'infrastructure':  '🏗',
+  };
+  function typeIcon(t){ return TYPE_ICONS[t]||'📌'; }
+  function typeLabel(t){ return (t||'unknown').replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()); }
+
+  const wrap = el('div');
+
+  // ── Alert panel (new TLP:RED / TLP:AMBER items) ─────────────────────────────
+  const alertPanel = el('div'); alertPanel.style.cssText='display:none;margin-bottom:8px;';
+  const alertHdr = el('div');
+  alertHdr.style.cssText='display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(255,68,68,0.1);border:1px solid #ff4444;border-radius:5px 5px 0 0;cursor:pointer;user-select:none;animation:cveAlertPulse 1.8s ease-in-out infinite alternate;';
+  const alertIcon=el('span'); alertIcon.textContent='⚡'; alertIcon.style.cssText='font-size:13px;flex-shrink:0;';
+  const alertTitle=el('span'); alertTitle.style.cssText='font-size:10.5px;font-family:Share Tech Mono,monospace;color:#ff8888;font-weight:700;letter-spacing:0.05em;flex:1;'; alertTitle.textContent='E-ISAC ALERT';
+  const alertChevron=el('span'); alertChevron.style.cssText='font-size:9px;color:#ff8888;transition:transform 0.2s;'; alertChevron.textContent='▼';
+  const alertDismiss=el('button','cve-alert-dismiss'); alertDismiss.textContent='Dismiss All';
+  alertDismiss.onclick=e=>{
+    e.stopPropagation();
+    const now=Date.now();
+    alertBody.querySelectorAll('[data-eisacid]').forEach(tile=>{
+      const id=tile.dataset.eisacid;
+      if(!D.eisacAlarmHistory.find(h=>h.id===id)){
+        D.eisacAlarmHistory.unshift({ id, name:tile.dataset.eisacname||'', tlp:tile.dataset.eisactlp||'', dismissedAt:now });
+      }
+    });
+    if(D.eisacAlarmHistory.length>EISAC_HISTORY_MAX) D.eisacAlarmHistory=D.eisacAlarmHistory.slice(0,EISAC_HISTORY_MAX);
+    persist();
+    alertPanel.style.display='none';
+    clearTabAlert(tabId);
+  };
+  alertHdr.append(alertIcon,alertTitle,alertChevron,alertDismiss);
+  const alertBody=el('div');
+  alertBody.style.cssText='display:flex;flex-direction:column;gap:4px;border:1px solid #ff4444;border-top:none;border-radius:0 0 5px 5px;max-height:200px;overflow-y:auto;padding:6px 8px;';
+  alertHdr.addEventListener('click',()=>{
+    const open=alertBody.style.display!=='none';
+    alertBody.style.display=open?'none':''; alertChevron.style.transform=open?'rotate(-90deg)':'';
+  });
+  alertPanel.append(alertHdr,alertBody);
+
+  // ── "Credentials Required" message ─────────────────────────────────────────
+  const noCredsEl=el('div','otx-api-required');
+  const ncTitle=el('div','otx-api-required-title'); ncTitle.textContent='⚠ Credentials Required';
+  const ncSub=el('div','otx-api-required-sub'); ncSub.textContent='Enter your E-ISAC TAXII credentials in edit mode to enable this widget.';
+  noCredsEl.append(ncTitle,ncSub);
+
+  // ── Filter chips (by STIX type) ─────────────────────────────────────────────
+  const filterRow=el('div','eisac-filter-row');
+  let knownTypes=[];
+  function buildFilterChips(){
+    filterRow.innerHTML='';
+    const types=[...new Set(allObjects.map(o=>o.type))].sort();
+    knownTypes=types;
+    if(!types.length) return;
+    const allChip=el('button','eisac-filter-chip'+(cfg.typeFilter.length===0?' active':''));
+    allChip.textContent='All';
+    allChip.onclick=()=>{ cfg.typeFilter=[]; persistConfig(); buildFilterChips(); renderList(); };
+    filterRow.appendChild(allChip);
+    types.forEach(t=>{
+      const chip=el('button','eisac-filter-chip'+(cfg.typeFilter.includes(t)?' active':''));
+      chip.textContent=typeIcon(t)+' '+typeLabel(t);
+      chip.onclick=()=>{
+        if(cfg.typeFilter.includes(t)) cfg.typeFilter=cfg.typeFilter.filter(x=>x!==t);
+        else cfg.typeFilter=[...cfg.typeFilter,t];
+        if(cfg.typeFilter.length===types.length) cfg.typeFilter=[];
+        persistConfig(); buildFilterChips(); renderList();
+      };
+      filterRow.appendChild(chip);
+    });
+  }
+
+  // ── Object list ─────────────────────────────────────────────────────────────
+  const listWrap=el('div');
+  const countEl=el('div'); countEl.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-bottom:6px;';
+
+  function renderList(){
+    listWrap.innerHTML='';
+    const dismissed=new Set(D.eisacAlarmHistory.map(h=>h.id));
+    const filtered=allObjects.filter(o=> cfg.typeFilter.length===0 || cfg.typeFilter.includes(o.type));
+    countEl.textContent=filtered.length+' object'+(filtered.length!==1?'s':'')+
+      (cfg.typeFilter.length?' (filtered)':'')+' · last '+cfg.lookbackDays+'d';
+    if(!filtered.length){
+      const empty=el('div'); empty.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;padding:8px 0;';
+      empty.textContent='No intelligence objects found for the selected window.';
+      listWrap.appendChild(empty); return;
+    }
+    filtered.forEach(obj=>{
+      const isNew=!dismissed.has(obj.id);
+      const item=el('div','eisac-item');
+      item.onclick=()=>openDetailModal(obj);
+
+      const hdr=el('div','eisac-item-hdr');
+      const tlpBadge=el('span','otx-tlp-chip '+tlpClass(obj.tlp)); tlpBadge.textContent=tlpLabel(obj.tlp);
+      const typeBadge=el('span','eisac-type-badge'); typeBadge.textContent=typeIcon(obj.type)+' '+typeLabel(obj.type);
+      const nameEl=el('div','eisac-item-name'); nameEl.textContent=obj.name;
+      hdr.append(tlpBadge,typeBadge);
+      if(isNew){ const nb=el('span','eisac-new-badge'); nb.textContent='NEW'; hdr.appendChild(nb); }
+      hdr.appendChild(nameEl);
+      item.appendChild(hdr);
+
+      const meta=el('div','eisac-item-meta');
+      meta.innerHTML='<span>'+relTime(obj.created)+'</span>';
+      if(obj.labels?.length){ const lbl=el('span'); lbl.textContent=obj.labels[0]; lbl.style.color='var(--gold)'; meta.appendChild(lbl); }
+      if(obj.type==='indicator'&&obj.pattern){ const pat=el('span'); pat.style.cssText='color:var(--cyan);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom;'; pat.textContent=obj.pattern; meta.appendChild(pat); }
+      if(obj.type==='report'&&obj.objectRefCount){ const rc=el('span'); rc.textContent=obj.objectRefCount+' refs'; meta.appendChild(rc); }
+      item.appendChild(meta);
+
+      if(obj.description){
+        const desc=el('div','eisac-item-desc'); desc.textContent=obj.description; item.appendChild(desc);
+      }
+      if(obj.labels?.length>0){
+        const chipRow=el('div'); chipRow.style.cssText='display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;';
+        obj.labels.forEach(l=>{ const c=el('span','eisac-label-chip'); c.textContent=l; chipRow.appendChild(c); });
+        item.appendChild(chipRow);
+      }
+      listWrap.appendChild(item);
+    });
+  }
+
+  // ── Detail modal ────────────────────────────────────────────────────────────
+  function openDetailModal(obj){
+    const ovId='eisacDetailOverlay_'+sec.id;
+    let ov=document.getElementById(ovId);
+    if(!ov){ ov=el('div','overlay-bg'); ov.id=ovId; document.body.appendChild(ov); }
+    ov.innerHTML='';
+    const box=el('div','overlay-box'); box.style.maxWidth='560px';
+    const closeBtn=el('button','overlay-close'); closeBtn.textContent='×'; closeBtn.onclick=()=>closeOverlay(ovId);
+    const title=el('div','overlay-title'); title.style.cssText='display:flex;align-items:center;gap:7px;flex-wrap:wrap;';
+    const tlpB=el('span','otx-tlp-chip '+tlpClass(obj.tlp)); tlpB.textContent=tlpLabel(obj.tlp);
+    const typeB=el('span','eisac-type-badge'); typeB.textContent=typeIcon(obj.type)+' '+typeLabel(obj.type);
+    const tname=el('span'); tname.textContent=obj.name;
+    title.append(tlpB,typeB,tname);
+    const body=el('div'); body.style.cssText='max-height:60vh;overflow-y:auto;padding-right:4px;';
+
+    function field(label,value){
+      if(!value&&value!==0) return;
+      const d=el('div','eisac-detail-field');
+      const l=el('div','eisac-detail-lbl'); l.textContent=label;
+      const v=el('div','eisac-detail-val'); v.textContent=String(value);
+      d.append(l,v); body.appendChild(d);
+    }
+
+    // Stat grid
+    const grid=el('div','eisac-stat-grid');
+    const addTile=(l,v)=>{ const t=el('div','eisac-stat-tile'); const tl=el('div','eisac-stat-lbl'); tl.textContent=l; const tv=el('div','eisac-stat-val'); tv.textContent=v||'—'; t.append(tl,tv); grid.appendChild(t); };
+    addTile('Created', obj.created?new Date(obj.created).toLocaleString():'—');
+    addTile('Modified', obj.modified?new Date(obj.modified).toLocaleString():'—');
+    if(obj.published) addTile('Published', new Date(obj.published).toLocaleString());
+    if(obj.objectRefCount) addTile('Object Refs', obj.objectRefCount);
+    if(obj.sophistication) addTile('Sophistication', obj.sophistication);
+    if(obj.resourceLevel) addTile('Resource Level', obj.resourceLevel);
+    if(obj.primaryMotivation) addTile('Motivation', obj.primaryMotivation);
+    body.appendChild(grid);
+
+    if(obj.description){
+      const d=el('div','eisac-detail-field');
+      const l=el('div','eisac-detail-lbl'); l.textContent='Description';
+      const v=el('div','eisac-detail-val'); v.style.lineHeight='1.6'; v.textContent=obj.description;
+      d.append(l,v); body.appendChild(d);
+    }
+    if(obj.pattern){
+      const d=el('div','eisac-detail-field');
+      const l=el('div','eisac-detail-lbl'); l.textContent='Pattern ('+( obj.patternType||'stix')+')';
+      const v=el('div','eisac-pattern-box'); v.textContent=obj.pattern;
+      d.append(l,v); body.appendChild(d);
+    }
+    if(obj.validFrom) field('Valid From', new Date(obj.validFrom).toLocaleString());
+    if(obj.roles?.length) field('Roles', obj.roles.join(', '));
+    if(obj.aliases?.length) field('Aliases', obj.aliases.join(', '));
+    if(obj.malwareTypes?.length) field('Malware Types', obj.malwareTypes.join(', '));
+    if(obj.labels?.length){
+      const d=el('div','eisac-detail-field');
+      const l=el('div','eisac-detail-lbl'); l.textContent='Labels';
+      const row=el('div'); row.style.cssText='display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;';
+      obj.labels.forEach(lb=>{ const c=el('span','eisac-label-chip'); c.textContent=lb; row.appendChild(c); });
+      d.append(l,row); body.appendChild(d);
+    }
+    if(obj.refs?.length){
+      const d=el('div','eisac-detail-field');
+      const l=el('div','eisac-detail-lbl'); l.textContent='External References';
+      d.appendChild(l);
+      obj.refs.forEach(r=>{
+        const line=el('div'); line.style.marginTop='3px';
+        if(r.url){ const a=el('a','eisac-ref-link'); a.href=r.url; a.target='_blank'; a.rel='noopener'; a.textContent=(r.name||r.url)+(r.eid?' ['+r.eid+']':''); line.appendChild(a); }
+        else { const s=el('span'); s.style.cssText='font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text-dim);'; s.textContent=(r.name||'')+(r.eid?' ['+r.eid+']':''); line.appendChild(s); }
+        d.appendChild(line);
+      });
+      body.appendChild(d);
+    }
+    // STIX ID
+    const idField=el('div','eisac-detail-field');
+    const idLbl=el('div','eisac-detail-lbl'); idLbl.textContent='STIX ID';
+    const idVal=el('div'); idVal.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);word-break:break-all;'; idVal.textContent=obj.id;
+    idField.append(idLbl,idVal); body.appendChild(idField);
+
+    box.append(closeBtn,title,body);
+    ov.appendChild(box);
+    openOverlay(ovId);
+  }
+
+  // ── Dismiss history modal ───────────────────────────────────────────────────
+  const histOverlayId='eisacHistoryOverlay_'+sec.id;
+  function openHistModal(){
+    let ov=document.getElementById(histOverlayId);
+    if(!ov){ ov=el('div','overlay-bg'); ov.id=histOverlayId; document.body.appendChild(ov); }
+    ov.innerHTML='';
+    const box=el('div','overlay-box'); box.style.maxWidth='520px';
+    const closeBtn=el('button','overlay-close'); closeBtn.textContent='×'; closeBtn.onclick=()=>closeOverlay(histOverlayId);
+    const title=el('div','overlay-title'); title.textContent='E-ISAC Dismiss History';
+    const body=el('div'); body.style.cssText='max-height:65vh;overflow-y:auto;';
+    const renderHist=()=>{
+      body.innerHTML='';
+      const clearBtn=el('button','cve-alert-dismiss'); clearBtn.style.cssText='margin-bottom:8px;font-size:10px;'; clearBtn.textContent='Clear All History';
+      clearBtn.onclick=()=>{ if(confirm('Clear E-ISAC dismiss history?')){ D.eisacAlarmHistory=[]; persist(); renderHist(); } };
+      body.appendChild(clearBtn);
+      if(!D.eisacAlarmHistory.length){
+        const e=el('div'); e.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;padding:8px 0;'; e.textContent='No dismissed items.'; body.appendChild(e); return;
+      }
+      D.eisacAlarmHistory.forEach((h,i)=>{
+        const row=el('div'); row.style.cssText='display:flex;flex-direction:column;gap:3px;padding:6px 8px;background:var(--inp-bg);border:1px solid var(--border);border-radius:4px;margin-bottom:5px;';
+        const top=el('div'); top.style.cssText='display:flex;align-items:center;gap:6px;';
+        const name=el('div'); name.style.cssText='font-size:11px;color:var(--text);flex:1;line-height:1.3;'; name.textContent=h.name||h.id;
+        const ts=el('span'); ts.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);flex-shrink:0;'; ts.textContent=h.dismissedAt?new Date(h.dismissedAt).toLocaleString():'';
+        const del=el('button'); del.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:2px 4px;'; del.textContent='×';
+        del.onclick=()=>{ D.eisacAlarmHistory.splice(i,1); persist(); renderHist(); };
+        top.append(name,ts,del);
+        const tlpB=el('span','otx-tlp-chip '+tlpClass(h.tlp||'white')); tlpB.textContent=tlpLabel(h.tlp||'white'); tlpB.style.alignSelf='flex-start';
+        row.append(top,tlpB); body.appendChild(row);
+      });
+    };
+    renderHist();
+    box.append(closeBtn,title,body); ov.appendChild(box); openOverlay(histOverlayId);
+  }
+
+  // ── Alarm sound ─────────────────────────────────────────────────────────────
+  function eisacAlarmSound(){
+    try{
+      const ctx=new (window.AudioContext||window.webkitAudioContext)();
+      [[880,0],[1100,0.18],[880,0.36],[1100,0.54]].forEach(([f,t])=>{
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.frequency.value=f; o.type='square';
+        g.gain.setValueAtTime(0.18,ctx.currentTime+t);
+        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+0.15);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+0.18);
+      });
+    } catch(e){}
+  }
+
+  // ── Refresh / fetch ─────────────────────────────────────────────────────────
+  async function refresh(){
+    const workerUrl=getWorkerUrl(cfg.eisacWorker);
+    if(!_user||!_pass||!workerUrl) return;
+    const addedAfter=new Date(Date.now()-cfg.lookbackDays*86400000).toISOString();
+    let data;
+    try{
+      const r=await fetch(workerUrl+'/eisac',{
+        method:'POST',
+        headers:{...getWorkerAuthHeaders(),'Content-Type':'application/json'},
+        body:JSON.stringify({ username:_user, password:_pass, collectionId:cfg.collectionId, addedAfter, limit:300 }),
+      });
+      data=await r.json();
+      if(!r.ok) throw new Error(data.error||'HTTP '+r.status);
+    } catch(e){
+      countEl.textContent='⚠ '+e.message; return;
+    }
+    allObjects=(data.objects||[]).sort((a,b)=>new Date(b.created)-new Date(a.created));
+    buildFilterChips();
+    renderList();
+    checkAlerts();
+  }
+
+  function checkAlerts(){
+    const dismissed=new Set(D.eisacAlarmHistory.map(h=>h.id));
+    const alarmItems=allObjects.filter(o=>isAlarmTlp(o.tlp)&&!dismissed.has(o.id));
+    alertBody.innerHTML='';
+    if(alarmItems.length){
+      alarmItems.forEach(o=>{
+        const tile=el('div'); tile.style.cssText='display:flex;align-items:center;gap:6px;padding:4px 6px;background:rgba(255,68,68,0.06);border-radius:3px;cursor:pointer;';
+        tile.dataset.eisacid=o.id; tile.dataset.eisacname=o.name; tile.dataset.eisactlp=o.tlp;
+        const tlpB=el('span','otx-tlp-chip '+tlpClass(o.tlp)); tlpB.textContent=tlpLabel(o.tlp);
+        const typeB=el('span','eisac-type-badge'); typeB.textContent=typeIcon(o.type)+' '+typeLabel(o.type);
+        const name=el('div'); name.style.cssText='font-size:11px;color:#ffcccc;flex:1;line-height:1.3;'; name.textContent=o.name;
+        const age=el('span'); age.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);flex-shrink:0;'; age.textContent=relTime(o.created);
+        const dismiss1=el('button'); dismiss1.style.cssText='background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:11px;padding:2px 4px;flex-shrink:0;'; dismiss1.textContent='×';
+        dismiss1.onclick=e=>{ e.stopPropagation(); dismissOne(o); };
+        tile.append(tlpB,typeB,name,age,dismiss1);
+        tile.addEventListener('click',()=>openDetailModal(o));
+        alertBody.appendChild(tile);
+      });
+      alertPanel.style.display='';
+      alertTitle.textContent='E-ISAC ALERT — '+alarmItems.length+' item'+(alarmItems.length!==1?'s':'');
+      setTabAlert(tabId,'critical');
+      if(cfg.alarmSound&&!isFirstLoad) eisacAlarmSound();
+    } else {
+      alertPanel.style.display='none';
+      clearTabAlert(tabId);
+    }
+    isFirstLoad=false;
+  }
+
+  function dismissOne(obj){
+    if(!D.eisacAlarmHistory.find(h=>h.id===obj.id)){
+      D.eisacAlarmHistory.unshift({ id:obj.id, name:obj.name, tlp:obj.tlp, dismissedAt:Date.now() });
+      if(D.eisacAlarmHistory.length>EISAC_HISTORY_MAX) D.eisacAlarmHistory=D.eisacAlarmHistory.slice(0,EISAC_HISTORY_MAX);
+      persist();
+    }
+    checkAlerts();
+  }
+
+  // ── Header row ──────────────────────────────────────────────────────────────
+  const hdrRow=el('div'); hdrRow.style.cssText='display:flex;align-items:center;gap:5px;margin-bottom:7px;';
+  const hdrTitle=el('div'); hdrTitle.style.cssText='font-size:10.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);font-weight:700;letter-spacing:0.07em;flex:1;'; hdrTitle.textContent='E-ISAC / TAXII 2.1';
+  const refreshBtn=icBtn('↻','Refresh'); refreshBtn.onclick=()=>refresh();
+  const alarmBtn=el('button','ic-btn'); alarmBtn.title='Toggle alarm sound';
+  const updateAlarmBtn=()=>{ alarmBtn.textContent=cfg.alarmSound?'🔔':'🔕'; alarmBtn.style.opacity=cfg.alarmSound?'1':'0.5'; };
+  updateAlarmBtn();
+  alarmBtn.onclick=()=>{ cfg.alarmSound=!cfg.alarmSound; persistConfig(); updateAlarmBtn(); };
+  const histBtn=el('button','ic-btn'); histBtn.textContent='📋'; histBtn.title='Dismiss history'; histBtn.onclick=()=>openHistModal();
+  const portalLink=el('a'); portalLink.href='https://www.eisac.com/s/'; portalLink.target='_blank'; portalLink.rel='noopener';
+  portalLink.style.cssText='font-size:10px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-decoration:none;padding:2px 6px;border:1px solid var(--border);border-radius:3px;flex-shrink:0;transition:color 0.15s,border-color 0.15s;';
+  portalLink.textContent='↗ Portal';
+  portalLink.addEventListener('mouseenter',()=>{ portalLink.style.color='var(--cyan)'; portalLink.style.borderColor='var(--cyan)'; });
+  portalLink.addEventListener('mouseleave',()=>{ portalLink.style.color='var(--text-dim)'; portalLink.style.borderColor='var(--border)'; });
+  hdrRow.append(hdrTitle,refreshBtn,alarmBtn,histBtn,portalLink);
+
+  // ── Edit mode settings ───────────────────────────────────────────────────────
+  const editSec=el('div'); editSec.style.cssText='margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:none;';
+
+  function makeSettingRow(label,inputEl){
+    const row=el('div','wotd-setting-row'); const lbl=el('label','wotd-setting-lbl'); lbl.textContent=label; row.append(lbl,inputEl); return row;
+  }
+  const inpUser=el('input','search-widget-input'); inpUser.type='text'; inpUser.placeholder='Loading…'; inpUser.value=''; inpUser.style.flex='1'; inpUser.style.fontSize='10px';
+  const inpPass=el('input','search-widget-input'); inpPass.type='password'; inpPass.placeholder='Loading…'; inpPass.value=''; inpPass.style.flex='1'; inpPass.style.fontSize='10px';
+  const inpColl=el('input','search-widget-input'); inpColl.type='text'; inpColl.placeholder='Collection UUID'; inpColl.value=cfg.collectionId; inpColl.style.flex='1'; inpColl.style.fontSize='10px';
+  inpColl.onblur=()=>{ cfg.collectionId=inpColl.value.trim(); persistConfig(); };
+  const inpWorker=el('input','search-widget-input'); inpWorker.type='text'; inpWorker.placeholder='Override global Worker URL…'; inpWorker.value=cfg.eisacWorker; inpWorker.style.flex='1'; inpWorker.style.fontSize='10px';
+  inpWorker.onblur=()=>{ cfg.eisacWorker=inpWorker.value.trim(); persistConfig(); };
+
+  // Lookback days selector
+  const lookbackRow=el('div','wotd-setting-row');
+  const lookbackLbl=el('label','wotd-setting-lbl'); lookbackLbl.textContent='Lookback Window';
+  const lookbackSel=el('select','search-widget-input'); lookbackSel.style.cssText='flex:1;max-width:120px;';
+  [7,14,30,60].forEach(d=>{ const o=el('option'); o.value=d; o.textContent=d+' days'; if(cfg.lookbackDays===d) o.selected=true; lookbackSel.appendChild(o); });
+  lookbackSel.onchange=()=>{ cfg.lookbackDays=parseInt(lookbackSel.value); persistConfig(); refresh(); };
+  lookbackRow.append(lookbackLbl,lookbackSel);
+
+  // Refresh interval selector
+  const refreshRow=el('div','wotd-setting-row');
+  const refreshLbl=el('label','wotd-setting-lbl'); refreshLbl.textContent='Auto-refresh';
+  const refreshSel=el('select','search-widget-input'); refreshSel.style.cssText='flex:1;max-width:120px;';
+  [15,30,60,120,240].forEach(m=>{ const o=el('option'); o.value=m; o.textContent=m+' min'; if(cfg.refreshMins===m) o.selected=true; refreshSel.appendChild(o); });
+  refreshSel.onchange=()=>{ cfg.refreshMins=parseInt(refreshSel.value); persistConfig(); };
+  refreshRow.append(refreshLbl,refreshSel);
+
+  const saveRow=el('div'); saveRow.style.cssText='display:flex;gap:6px;margin-top:6px;';
+  const saveBtn=el('button','search-widget-go'); saveBtn.textContent='Save & Refresh';
+  saveBtn.onclick=()=>{ persistConfig(); refresh(); saveBtn.textContent='✓ Saved'; setTimeout(()=>{ saveBtn.textContent='Save & Refresh'; },1800); };
+  saveRow.appendChild(saveBtn);
+
+  editSec.append(
+    makeSettingRow('Username', inpUser),
+    makeSettingRow('Password', inpPass),
+    makeSettingRow('Collection ID', inpColl),
+    makeSettingRow('Worker URL', inpWorker),
+    lookbackRow, refreshRow, saveRow
+  );
+
+  const applyEdit=()=>{ editSec.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obsEdit=new MutationObserver(applyEdit); obsEdit.observe(document.body,{attributes:true,attributeFilter:['class']}); applyEdit();
+
+  // ── Assemble ────────────────────────────────────────────────────────────────
+  wrap.append(hdrRow,alertPanel);
+  wrap.appendChild(noCredsEl);
+  wrap.append(filterRow,countEl,listWrap,editSec);
+
+  const toggleContent=()=>{
+    const hasCreds=!!(_user&&_pass);
+    noCredsEl.style.display=hasCreds?'none':'';
+    filterRow.style.display=hasCreds?'':'none';
+    countEl.style.display=hasCreds?'':'none';
+    listWrap.style.display=hasCreds?'':'none';
+  };
+  toggleContent();
+
+  // Save button: encrypt credentials directly to localStorage, never to D
+  saveBtn.onclick=async()=>{
+    _user=inpUser.value.trim(); _pass=inpPass.value.trim();
+    await _ccSave(_user,_pass);
+    persistConfig(); // saves collectionId, lookbackDays, etc. — NOT credentials
+    toggleContent();
+    refresh();
+    saveBtn.textContent='✓ Saved'; setTimeout(()=>{ saveBtn.textContent='Save & Refresh'; },1800);
+  };
+
+  // Async boot: decrypt credentials, populate inputs, then trigger first fetch
+  _ccLoad().then(({a,b})=>{
+    _user=a; _pass=b;
+    inpUser.value=a; inpUser.placeholder='TAXII username / client ID';
+    inpPass.placeholder='TAXII password / secret';
+    toggleContent();
+    if(_user&&_pass) refresh();
+  });
+
+  const timer=setInterval(()=>{ refresh(); },(cfg.refreshMins||60)*60*1000);
   const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(timer); obsEdit.disconnect(); obsClean.disconnect(); } });
   obsClean.observe(document.body,{childList:true,subtree:true});
   return wrap;

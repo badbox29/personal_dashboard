@@ -770,6 +770,151 @@ async function handleOtx(body, ctx) {
 }
 
 
+// ── E-ISAC / TAXII 2.1 handler (/eisac) ─────────────────────────────────────
+// Proxies TAXII 2.1 requests to Cyware CTIX (E-ISAC portal).
+// Accepts POST { username, password, collectionId, addedAfter, limit }
+// Returns normalized STIX 2.1 object array.
+
+async function handleEisac(body, ctx) {
+  const { username, password, collectionId, addedAfter, limit = 200 } = body;
+
+  if (!username || !password)
+    return json({ error: 'Required fields: username, password' }, 400);
+  if (!collectionId)
+    return json({ error: 'Required field: collectionId' }, 400);
+
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 200, 1), 500);
+
+  // Round addedAfter to nearest 6-hour boundary so cache stays warm across nearby calls
+  let cacheAfter = addedAfter || 'all';
+  if (addedAfter) {
+    const d = new Date(addedAfter);
+    d.setMinutes(0, 0, 0);
+    d.setHours(Math.floor(d.getHours() / 6) * 6);
+    cacheAfter = d.toISOString();
+  }
+
+  const cacheKey = `https://eisac-cache.internal/${hashStr(username + collectionId)}/${cacheAfter}/${safeLimit}`;
+  const cache = caches.default;
+  const cached = await cache.match(cacheKey);
+  if (cached) return json({ ...(await cached.json()), _cached: true });
+
+  const creds = btoa(`${username}:${password}`);
+  const url = new URL(`https://e-isac.cyware.com/ctixapi/ctix21/collections/${encodeURIComponent(collectionId)}/objects/`);
+  if (addedAfter) url.searchParams.set('added_after', addedAfter);
+  url.searchParams.set('limit', String(safeLimit));
+
+  let upstream;
+  try {
+    upstream = await fetch(url.toString(), {
+      headers: {
+        'Authorization': `Basic ${creds}`,
+        'Accept': 'application/taxii+json;version=2.1',
+      },
+    });
+  } catch(e) { return json({ error: `E-ISAC fetch failed: ${e.message}` }, 502); }
+
+  if (upstream.status === 401) return json({ error: 'E-ISAC: Invalid credentials (401 Unauthorized)' }, 401);
+  if (upstream.status === 403) return json({ error: 'E-ISAC: Access denied (403 Forbidden)' }, 403);
+  if (upstream.status === 404) return json({ error: 'E-ISAC: Collection not found (404)' }, 404);
+
+  let data;
+  try { data = await upstream.json(); }
+  catch(e) { return json({ error: 'E-ISAC returned non-JSON response' }, 502); }
+
+  if (!upstream.ok) {
+    const msg = data?.message || data?.description || data?.error || `HTTP ${upstream.status}`;
+    return json({ error: `E-ISAC API error: ${msg}` }, upstream.status);
+  }
+
+  const rawObjects = data.objects || [];
+
+  // Standard STIX 2.x TLP marking definition IDs (covers both TLP 1.0 and 2.0)
+  const TLP_IDS = {
+    'marking-definition--613f2e26-407d-48c7-9eca-b8e91ba519f5': 'white',   // TLP:WHITE
+    'marking-definition--34098fce-860f-479c-ad6c-bdf70b73e8ca': 'green',   // TLP:GREEN (1.0)
+    'marking-definition--f88d31f6-1208-47ec-8cb7-c658e0cf3ef6': 'amber',   // TLP:AMBER (1.0)
+    'marking-definition--5e57c739-391a-4eb3-b6be-7d15ca92d5ed': 'red',     // TLP:RED (1.0)
+    'marking-definition--94868c89-83c2-464b-929b-a1a8aa3c8487': 'clear',   // TLP:CLEAR (2.0)
+    'marking-definition--bab4a63c-aed9-4cf5-a766-dfca5abac2bb': 'green',   // TLP:GREEN (2.0)
+    'marking-definition--55d920b0-5207-45ab-ab64-cdc2a47fe77d': 'amber',   // TLP:AMBER (2.0)
+    'marking-definition--939a9414-2ddd-4d32-a254-ea7b3e7bd26f': 'amber',   // TLP:AMBER+STRICT (2.0)
+    'marking-definition--e828b379-4e03-4974-9ac4-e53a884c97c5': 'red',     // TLP:RED (2.0)
+  };
+
+  // Also build a lookup from any marking-definition objects in the bundle itself
+  const localMarkings = {};
+  rawObjects.filter(o => o.type === 'marking-definition').forEach(m => {
+    const tlp = (m.definition?.tlp || m.name || '').toLowerCase().replace('tlp:', '').trim();
+    if (tlp) localMarkings[m.id] = tlp;
+  });
+
+  function resolveTlp(obj) {
+    for (const ref of (obj.object_marking_refs || [])) {
+      if (TLP_IDS[ref]) return TLP_IDS[ref];
+      if (localMarkings[ref]) return localMarkings[ref];
+    }
+    // Fallback: some Cyware bundles include a direct tlp extension field
+    const direct = (obj.tlp || obj.x_tlp || obj.x_eiq_tlp || '').toLowerCase().replace('tlp:', '');
+    return direct || 'white';
+  }
+
+  // Exclude infrastructure/meta STIX types, normalize the rest
+  const SKIP_TYPES = new Set(['marking-definition', 'identity', 'relationship', 'sighting', 'bundle', 'extension-definition']);
+
+  const normalized = rawObjects
+    .filter(o => o.type && !SKIP_TYPES.has(o.type))
+    .map(o => ({
+      id:             o.id || '',
+      type:           o.type || 'unknown',
+      name:           o.name || o.title || `[${o.type || 'unknown'}]`,
+      description:    (o.description || o.abstract || '').slice(0, 600),
+      created:        o.created  || null,
+      modified:       o.modified || null,
+      published:      o.published || null,
+      tlp:            resolveTlp(o),
+      labels:         o.labels || [],
+      // indicator
+      pattern:        o.pattern   ? o.pattern.slice(0, 400) : null,
+      patternType:    o.pattern_type || null,
+      validFrom:      o.valid_from || null,
+      // report
+      objectRefCount: (o.object_refs || []).length,
+      // threat-actor / campaign
+      roles:              o.roles || [],
+      sophistication:     o.sophistication || null,
+      resourceLevel:      o.resource_level || null,
+      primaryMotivation:  o.primary_motivation || null,
+      // malware
+      malwareTypes:  o.malware_types || [],
+      isFamily:      o.is_family || false,
+      // common
+      aliases:       o.aliases || [],
+      refs: (o.external_references || []).slice(0, 5).map(r => ({
+        name: r.source_name || '',
+        url:  r.url || null,
+        eid:  r.external_id || null,
+      })),
+    }));
+
+  const result = {
+    total:   normalized.length,
+    objects: normalized,
+    more:    data.more || false,
+  };
+
+  const EISAC_CACHE_TTL = 30 * 60; // 30 minutes
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(result), {
+    headers: {
+      'Content-Type':  'application/json',
+      'Cache-Control': `public, max-age=${EISAC_CACHE_TTL}`,
+    },
+  })));
+
+  return json(result);
+}
+
+
 // ── Last.fm handler (/lastfm) ────────────────────────────────────────────────
 //
 // Proxies Last.fm API requests. Accepts { apiKey, username, method, ...params }
@@ -1238,6 +1383,7 @@ export default {
     if(path === '/tap')    return handleTap(body, ctx);
     if(path === '/sports') return handleSports(body, ctx);
     if(path === '/otx')    return handleOtx(body, ctx);
+    if(path === '/eisac')  return handleEisac(body, ctx);
     if(path === '/bible')  return handleBible(body, ctx);
     if(path === '/topics') return handleTopics(body, ctx);
     if(path === '/wotd')   return handleWotd(body, ctx);
@@ -1252,6 +1398,6 @@ export default {
     if(body.service) return handlePollen(body, ctx);
     if(body.url)     return handleRss(body, ctx);
 
-    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /tap, /sports, /otx, /bible, /topics, /wotd, /unsplash, /lastfm, /kv, or /status' }, 404);
+    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /tap, /sports, /otx, /eisac, /bible, /topics, /wotd, /unsplash, /lastfm, /kv, or /status' }, 404);
   }
 };
