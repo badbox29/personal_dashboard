@@ -11253,17 +11253,34 @@ function buildEisacWidget(sec, tabId){
   refreshSel.onchange=()=>{ cfg.refreshMins=parseInt(refreshSel.value); persistConfig(); };
   refreshRow.append(refreshLbl,refreshSel);
 
-  const saveRow=el('div'); saveRow.style.cssText='display:flex;gap:6px;margin-top:6px;';
+  const saveRow=el('div'); saveRow.style.cssText='display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;';
   const saveBtn=el('button','search-widget-go'); saveBtn.textContent='Save & Refresh';
   saveBtn.onclick=()=>{ persistConfig(); refresh(); saveBtn.textContent='✓ Saved'; setTimeout(()=>{ saveBtn.textContent='Save & Refresh'; },1800); };
-  saveRow.appendChild(saveBtn);
+  const testBtn=el('button','search-widget-go'); testBtn.textContent='🔍 Test Connection'; testBtn.style.cssText='background:rgba(0,180,200,0.15);border-color:var(--cyan);color:var(--cyan);';
+  const testOut=el('div'); testOut.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-top:5px;padding:5px 7px;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:3px;word-break:break-all;white-space:pre-wrap;display:none;';
+  testBtn.onclick=async()=>{
+    const workerUrl=getWorkerUrl(inpWorker.value.trim()||cfg.eisacWorker);
+    if(!workerUrl){ testOut.textContent='⚠ No worker URL set.'; testOut.style.display=''; return; }
+    testBtn.textContent='Testing…'; testBtn.disabled=true;
+    try{
+      const r=await fetch(workerUrl+'/eisac',{
+        method:'POST', headers:{...getWorkerAuthHeaders(),'Content-Type':'application/json'},
+        body:JSON.stringify({ action:'discover', username:inpUser.value.trim(), password:inpPass.value.trim() }),
+      });
+      const d=await r.json();
+      testOut.textContent='HTTP '+d.status+'\nContent-Type: '+d.contentType+'\n\n'+d.body;
+    } catch(e){ testOut.textContent='⚠ '+e.message; }
+    testOut.style.display='';
+    testBtn.textContent='🔍 Test Connection'; testBtn.disabled=false;
+  };
+  saveRow.append(saveBtn, testBtn);
 
   editSec.append(
     makeSettingRow('Username', inpUser),
     makeSettingRow('Password', inpPass),
     makeSettingRow('Collection ID', inpColl),
     makeSettingRow('Worker URL', inpWorker),
-    lookbackRow, refreshRow, saveRow
+    lookbackRow, refreshRow, saveRow, testOut
   );
 
   const applyEdit=()=>{ editSec.style.display=document.body.classList.contains('edit-mode')?'':'none'; };

@@ -794,6 +794,19 @@ async function handleEisac(body, ctx) {
     cacheAfter = d.toISOString();
   }
 
+  // Debug / discovery mode — tests auth and returns raw server response info
+  if (body.action === 'discover') {
+    const creds = btoa(`${username}:${password}`);
+    const discoveryUrl = 'https://e-isac.cyware.com/ctixapi/ctix21/taxii2/';
+    let res;
+    try { res = await fetch(discoveryUrl, { headers: { 'Authorization': `Basic ${creds}`, 'Accept': '*/*' } }); }
+    catch(e) { return json({ error: `Discovery fetch failed: ${e.message}` }); }
+    const ct = res.headers.get('content-type') || 'unknown';
+    let body2 = '';
+    try { body2 = (await res.text()).slice(0, 600); } catch(e) {}
+    return json({ status: res.status, contentType: ct, body: body2 });
+  }
+
   const cacheKey = `https://eisac-cache.internal/${hashStr(username + collectionId)}/${cacheAfter}/${safeLimit}`;
   const cache = caches.default;
   const cached = await cache.match(cacheKey);
@@ -809,7 +822,8 @@ async function handleEisac(body, ctx) {
     upstream = await fetch(url.toString(), {
       headers: {
         'Authorization': `Basic ${creds}`,
-        'Accept': 'application/json, application/taxii+json;version=2.1',
+        'Accept': '*/*',
+        'X-Requested-With': 'XMLHttpRequest',
       },
     });
   } catch(e) { return json({ error: `E-ISAC fetch failed: ${e.message}` }, 502); }
