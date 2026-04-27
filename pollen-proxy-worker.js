@@ -809,7 +809,7 @@ async function handleEisac(body, ctx) {
     upstream = await fetch(url.toString(), {
       headers: {
         'Authorization': `Basic ${creds}`,
-        'Accept': 'application/taxii+json;version=2.1',
+        'Accept': 'application/json, application/taxii+json;version=2.1',
       },
     });
   } catch(e) { return json({ error: `E-ISAC fetch failed: ${e.message}` }, 502); }
