@@ -7966,57 +7966,42 @@ function getWorkerUrl(widgetOverride){ return (widgetOverride||'').trim() || (D.
 function getWorkerAuthHeaders(){ const k=(D.workerKey||'').trim(); return k?{'X-Salty-Key':k}:{}; }
 
 /* ================================================================
-   CREDENTIAL CRYPTO
-   AES-GCM encryption for sensitive widget credentials.
-   Key derived from salty_clientId via PBKDF2 — never leaves this browser.
-   Stored under obfuscated localStorage keys, never written to D or KV.
+   CREDENTIAL OBFUSCATION
+   XOR cipher keyed to salty_clientId. Credentials stored under
+   obfuscated localStorage keys — never written to D or KV.
+   Synchronous and deterministic: same clientId always produces
+   the same key, so stored blobs survive page reloads reliably.
    ================================================================ */
 const _CC_A = 'salty_ui_density';
 const _CC_B = 'salty_render_mode';
-const _CC_S = new TextEncoder().encode('salty_prefs_v1_layout');
-let   _ccKey = null; // cached derived key — derived once per page load
 
-async function _ccDerive(){
-  if(_ccKey) return _ccKey;
-  const id  = localStorage.getItem('salty_clientId') || 'default';
-  const raw = await crypto.subtle.importKey('raw', new TextEncoder().encode(id), 'PBKDF2', false, ['deriveKey']);
-  _ccKey = await crypto.subtle.deriveKey(
-    { name:'PBKDF2', salt:_CC_S, iterations:100000, hash:'SHA-256' },
-    raw,
-    { name:'AES-GCM', length:256 },
-    false, ['encrypt','decrypt']
-  );
-  return _ccKey;
+function _ccKey(){
+  const id = localStorage.getItem('salty_clientId') || 'default';
+  return Array.from(id, c => c.charCodeAt(0));
 }
-async function _ccEncrypt(plain){
+function _ccEncrypt(plain){
   if(!plain) return '';
-  const key = await _ccDerive();
-  const iv  = crypto.getRandomValues(new Uint8Array(12));
-  const ct  = await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, new TextEncoder().encode(plain));
-  const buf = new Uint8Array(12 + ct.byteLength);
-  buf.set(iv, 0); buf.set(new Uint8Array(ct), 12);
-  return btoa(String.fromCharCode(...buf));
+  const key = _ccKey();
+  const bytes = Array.from(new TextEncoder().encode(plain));
+  return btoa(String.fromCharCode(...bytes.map((b,i) => b ^ key[i % key.length])));
 }
-async function _ccDecrypt(blob){
+function _ccDecrypt(blob){
   if(!blob) return '';
   try {
-    const bytes = Uint8Array.from(atob(blob), c=>c.charCodeAt(0));
-    const key   = await _ccDerive();
-    const dec   = await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)}, key, bytes.slice(12));
-    return new TextDecoder().decode(dec);
+    const key = _ccKey();
+    const bytes = Array.from(atob(blob), c => c.charCodeAt(0));
+    return new TextDecoder().decode(new Uint8Array(bytes.map((b,i) => b ^ key[i % key.length])));
   } catch(e){ return ''; }
 }
-async function _ccSave(a, b){
-  const [ea, eb] = await Promise.all([_ccEncrypt(a), _ccEncrypt(b)]);
-  localStorage.setItem(_CC_A, ea);
-  localStorage.setItem(_CC_B, eb);
+function _ccSave(a, b){
+  localStorage.setItem(_CC_A, _ccEncrypt(a));
+  localStorage.setItem(_CC_B, _ccEncrypt(b));
 }
-async function _ccLoad(){
-  const [a, b] = await Promise.all([
-    _ccDecrypt(localStorage.getItem(_CC_A)||''),
-    _ccDecrypt(localStorage.getItem(_CC_B)||''),
-  ]);
-  return { a, b };
+function _ccLoad(){
+  return {
+    a: _ccDecrypt(localStorage.getItem(_CC_A) || ''),
+    b: _ccDecrypt(localStorage.getItem(_CC_B) || ''),
+  };
 }
 
 /* ================================================================
@@ -11170,7 +11155,7 @@ function buildEisacWidget(sec, tabId){
     const addedAfter=new Date(Date.now()-cfg.lookbackDays*86400000).toISOString();
     let data;
     try{
-      const r=await fetch(workerUrl+'/eisac',{
+      const r=await fetch(workerUrl.replace(/\/+$/,'')+'/eisac',{
         method:'POST',
         headers:{...getWorkerAuthHeaders(),'Content-Type':'application/json'},
         body:JSON.stringify({ username:_user, password:_pass, collectionId:cfg.collectionId, addedAfter, limit:300 }),
@@ -11300,23 +11285,22 @@ function buildEisacWidget(sec, tabId){
   toggleContent();
 
   // Save button: encrypt credentials directly to localStorage, never to D
-  saveBtn.onclick=async()=>{
+  saveBtn.onclick=()=>{
     _user=inpUser.value.trim(); _pass=inpPass.value.trim();
-    await _ccSave(_user,_pass);
+    _ccSave(_user,_pass);
     persistConfig(); // saves collectionId, lookbackDays, etc. — NOT credentials
     toggleContent();
     refresh();
     saveBtn.textContent='✓ Saved'; setTimeout(()=>{ saveBtn.textContent='Save & Refresh'; },1800);
   };
 
-  // Async boot: decrypt credentials, populate inputs, then trigger first fetch
-  _ccLoad().then(({a,b})=>{
-    _user=a; _pass=b;
-    inpUser.value=a; inpUser.placeholder='TAXII username / client ID';
-    inpPass.placeholder='TAXII password / secret';
-    toggleContent();
-    if(_user&&_pass) refresh();
-  });
+  // Synchronous boot: credentials load instantly from localStorage
+  const {a,b} = _ccLoad();
+  _user=a; _pass=b;
+  inpUser.value=a; inpUser.placeholder='TAXII username / client ID';
+  inpPass.placeholder='TAXII password / secret';
+  toggleContent();
+  if(_user&&_pass) refresh();
 
   const timer=setInterval(()=>{ refresh(); },(cfg.refreshMins||60)*60*1000);
   const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(timer); obsEdit.disconnect(); obsClean.disconnect(); } });
