@@ -12731,7 +12731,7 @@ function openEnergyModal(){
   function renderModal(){
     const body=document.getElementById('energyModalBody'); body.innerHTML='';
     const now=new Date(),todayStr=now.toLocaleDateString('en-CA'),sevenDaysAgo=Date.now()-7*24*60*60*1000,threeDaysAgo=Date.now()-3*24*60*60*1000;
-    const todayEntries=D.energyEntries.filter(e=>e.timestamp.slice(0,10)===todayStr);
+    const todayEntries=D.energyEntries.filter(e=>new Date(e.timestamp).toLocaleDateString('en-CA')===todayStr);
     const weekEntries=D.energyEntries.filter(e=>new Date(e.timestamp).getTime()>=sevenDaysAgo);
     const last3=D.energyEntries.filter(e=>new Date(e.timestamp).getTime()>=threeDaysAgo);
     const prior4=D.energyEntries.filter(e=>{ const t=new Date(e.timestamp).getTime(); return t>=sevenDaysAgo&&t<threeDaysAgo; });
@@ -13063,7 +13063,7 @@ function openEnergyInsightsModal(){
 function buildEnergyChartWeek(allEntries, metric, mode, EC, onDayClick){
   const W=620,H=160,PAD={top:12,right:10,bottom:28,left:28},cW=W-PAD.left-PAD.right,cH=H-PAD.top-PAD.bottom,ns='http://www.w3.org/2000/svg';
   const days=[];
-  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const ds=d.toLocaleDateString('en-CA'); days.push({dateStr:ds,entries:allEntries.filter(e=>e.timestamp.slice(0,10)===ds),label:d.toLocaleDateString('en-US',{weekday:'short'})}); }
+  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const ds=d.toLocaleDateString('en-CA'); days.push({dateStr:ds,entries:allEntries.filter(e=>new Date(e.timestamp).toLocaleDateString('en-CA')===ds),label:d.toLocaleDateString('en-US',{weekday:'short'})}); }
   const METRICS=metric==='all'?['energy','focus','friction','mood']:[metric],MC={energy:'#0fb8dd',focus:'#44cc88',friction:'#ddb04b',mood:'#c890dd'},MS={energy:4,focus:3,friction:3,mood:4};
   const svg=document.createElementNS(ns,'svg'); svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('width','100%'); svg.setAttribute('preserveAspectRatio','xMidYMid meet');
   // Grid
@@ -13185,7 +13185,7 @@ function buildEnergyChartDay(allEntries, dateStr, metric, mode, EC){
   const METRICS=metric==='all'?['energy','focus','friction','mood']:[metric];
 
   // Get entries for this day
-  const dayEntries=allEntries.filter(e=>e.timestamp.slice(0,10)===dateStr);
+  const dayEntries=allEntries.filter(e=>new Date(e.timestamp).toLocaleDateString('en-CA')===dateStr);
   if(!dayEntries.length){
     const svg=document.createElementNS(ns,'svg'); svg.setAttribute('viewBox','0 0 620 '+H); svg.setAttribute('width','100%');
     const t=document.createElementNS(ns,'text'); t.setAttribute('x','310'); t.setAttribute('y','85'); t.setAttribute('text-anchor','middle'); t.setAttribute('fill','rgba(255,255,255,0.3)'); t.setAttribute('font-size','12'); t.setAttribute('font-family','Share Tech Mono,monospace'); t.textContent='No entries for this day'; svg.appendChild(t); return svg;
