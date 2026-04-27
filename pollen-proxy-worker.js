@@ -1252,6 +1252,6 @@ export default {
     if(body.service) return handlePollen(body, ctx);
     if(body.url)     return handleRss(body, ctx);
 
-    return json({ error: 'Unknown route. Use POST /pollen, /rss, /nvd, /tap, /sports, /otx, /bible, /topics, /wotd, /unsplash, /lastfm, /kv, or /status' }, 404);
+    return json({ error: 'Unknown route.' }, 404);
   }
 };
