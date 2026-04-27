@@ -7889,6 +7889,10 @@ function generateSyncToken(){
 function tryParse(s){ try{ return JSON.parse(s); } catch(e){ return null; } }
 function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
 function persist(){ localStorage.setItem('salty_v2', JSON.stringify(D)); kvPushDebounced(); }
+// persistLocal: writes to localStorage only — never triggers a KV push.
+// Use for API response caching (weather data, OTX counts, sports team lists, etc.)
+// so that periodic background fetches don't cause cross-browser ping-pong syncs.
+function persistLocal(){ localStorage.setItem('salty_v2', JSON.stringify(D)); }
 
 // Use persistNow() for discrete high-value actions (creating a task, closing it,
 // adding/editing/deleting a work log) — pushes with a short 500ms debounce instead
@@ -8023,18 +8027,12 @@ async function kvPull() {
     D.kvLastPull = remoteTs;
     localStorage.setItem('salty_v2', JSON.stringify(D));
     renderAll();
-    // Suppress KV pushes for 15s after a pull to prevent async widget fetches
-    // (which call persist() after their fetch completes) from bouncing a push
-    // back to KV and triggering the other browser to re-render unnecessarily.
-    _kvPullSuppressUntil = Date.now() + 15000;
   } catch(e) { console.warn('[KV] pull failed:', e); }
 }
 
 let _kvPushTimer = null;
-let _kvPullSuppressUntil = 0; // epoch ms — pushes from persist() are suppressed until this time
 function kvPushDebounced() {
   if(!D.kvEnabled) return;
-  if(Date.now() < _kvPullSuppressUntil) return; // suppress post-pull async widget persist() calls
   clearTimeout(_kvPushTimer);
   _kvPushTimer = setTimeout(kvPush, 5000);
 }
@@ -10472,7 +10470,7 @@ function buildOtxWidget(sec, tabId){
     if(existIdx>=0){ D.otxDailyCounts[existIdx].count=todayCount; }
     else { D.otxDailyCounts.unshift({date:todayStr,count:todayCount}); }
     D.otxDailyCounts=D.otxDailyCounts.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
-    persist();
+    persistLocal(); // API cache — no KV push
     elevBanner.style.display=isElevated(todayCount)?'':'none';
 
     // Top adversaries strip
@@ -10495,7 +10493,7 @@ function buildOtxWidget(sec, tabId){
     // Persist industries
     const indSet=new Set(D.otxIndustries);
     allPulses.forEach(p=>(p.industries||[]).forEach(ind=>indSet.add(ind)));
-    D.otxIndustries=[...indSet].sort(); persist(); updateIndDropdown();
+    D.otxIndustries=[...indSet].sort(); persistLocal(); updateIndDropdown(); // API cache — no KV push
 
     // ── Industry hit detection ─────────────────────────
     const dismissed=new Set(D.otxAlarmHistory.map(h=>h.id));
@@ -13070,7 +13068,7 @@ function buildSportsWidget(sec){
         const existing=new Set(D.sportsTeamLists[cfg.league]);
         j.games.forEach(g=>{ if(g.homeTeam) existing.add(g.homeTeam); if(g.awayTeam) existing.add(g.awayTeam); });
         D.sportsTeamLists[cfg.league]=[...existing].sort((a,b)=>a.localeCompare(b));
-        persist();
+        persistLocal(); // API cache — no KV push
         updateTeamDropdown();
       }
 
@@ -17679,7 +17677,7 @@ function buildUnsplashWidget(sec){
         active: existing.hasOwnProperty(t.slug) ? existing[t.slug] : true,
       }));
       cfg.featuredFetchedAt=Date.now();
-      persist();
+      persistLocal(); // API cache — no KV push
       renderFeaturedChips();
     } catch(e){}
   }
@@ -18526,7 +18524,7 @@ async function poemFetch(sec){
     const data = await res.json();
     const raw  = Array.isArray(data) ? data[0] : data;
     D.poemDaily = { date: new Date().toISOString().slice(0,10), title: raw.title, author: raw.author, lines: raw.lines };
-    persist();
+    persistLocal(); // API cache — no KV push
     // Re-render any poem widgets on the page
     document.querySelectorAll('[id^="poemLoadMsg_"]').forEach(el2=>{
       const secId = el2.id.replace('poemLoadMsg_','');
@@ -18629,7 +18627,7 @@ function poemRenderToday(textPane, notePane){
     isFav ? poemUnfavorite(id) : poemFavorite(poem);
     poemRenderModal();
   }, ()=>{
-    D.poemDaily=null; persist();
+    D.poemDaily=null; persistLocal(); // API cache reset — no KV push
     // Leave current poem visible — just spin the refresh button until new poem arrives
     const np = document.getElementById('poemNotesPanel');
     if(np){ np.innerHTML=''; np.classList.add('locked'); }
