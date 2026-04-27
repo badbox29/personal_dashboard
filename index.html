@@ -7896,6 +7896,7 @@ function persist(){ localStorage.setItem('salty_v2', JSON.stringify(D)); kvPushD
 function persistNow(){
   localStorage.setItem('salty_v2', JSON.stringify(D));
   if(!D.kvEnabled) return;
+  if(_kvIsPulling) return; // don't push in response to received data
   if(_kvPushTimer) clearTimeout(_kvPushTimer);
   _kvPushTimer = setTimeout(kvPush, 500);
 }
@@ -8022,13 +8023,16 @@ async function kvPull() {
     D.kvLastSync = remoteTs;
     D.kvLastPull = remoteTs;
     localStorage.setItem('salty_v2', JSON.stringify(D));
-    renderAll();
+    _kvIsPulling = true;
+    try { renderAll(); } finally { _kvIsPulling = false; }
   } catch(e) { console.warn('[KV] pull failed:', e); }
 }
 
 let _kvPushTimer = null;
+let _kvIsPulling = false; // true during a pull-triggered renderAll — suppresses push scheduling
 function kvPushDebounced() {
   if(!D.kvEnabled) return;
+  if(_kvIsPulling) return; // don't schedule a push in response to received data
   clearTimeout(_kvPushTimer);
   _kvPushTimer = setTimeout(kvPush, 5000);
 }
