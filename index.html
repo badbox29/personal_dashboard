@@ -7716,6 +7716,10 @@ function generateSyncToken(){
 /* ================================================================
    BOOT
    ================================================================ */
+// var (not let) so it's hoisted and accessible during the IIFE's synchronous
+// renderAll → persist() chain. Stays false until after boot completes, which
+// is what gates kvPushDebounced from scheduling spurious boot-time pushes.
+var _kvBootComplete = false;
 (function init(){
   try {
   const raw = localStorage.getItem('salty_v2');
@@ -7864,8 +7868,23 @@ function generateSyncToken(){
   applyWeatherPin();
   fetchQuote();
   fetchAllWeather();
-  // Pull KV state on load if sync is enabled
-  if(D.kvEnabled) kvPull();
+  // Pull KV state on load if sync is enabled. After the boot pull completes
+  // (resolves or rejects), mark boot complete and capture the fingerprint —
+  // from that point on, persist() calls only push if syncable state actually changes.
+  if(D.kvEnabled) {
+    kvPull().finally(() => {
+      _lastSyncedFingerprint = syncFingerprint();
+      _kvBootComplete = true;
+    });
+  } else {
+    // No KV sync: defer to a microtask so we run AFTER the IIFE returns and
+    // the const declarations (KV_PER_BROWSER_KEYS, KV_API_CACHE_KEYS,
+    // _lastSyncedFingerprint) have been initialized.
+    Promise.resolve().then(() => {
+      _lastSyncedFingerprint = syncFingerprint();
+      _kvBootComplete = true;
+    });
+  }
   setInterval(() => { if(D.kvEnabled) kvPull(); }, 60000);
 
   // Auto-refresh weather tiles — default 30 min, configurable via D.weatherRefreshMins
@@ -7889,10 +7908,6 @@ function generateSyncToken(){
 function tryParse(s){ try{ return JSON.parse(s); } catch(e){ return null; } }
 function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
 function persist(){ localStorage.setItem('salty_v2', JSON.stringify(D)); kvPushDebounced(); }
-// persistLocal: writes to localStorage only — never triggers a KV push.
-// Use for API response caching (weather data, OTX counts, sports team lists, etc.)
-// so that periodic background fetches don't cause cross-browser ping-pong syncs.
-function persistLocal(){ localStorage.setItem('salty_v2', JSON.stringify(D)); }
 
 // Use persistNow() for discrete high-value actions (creating a task, closing it,
 // adding/editing/deleting a work log) — pushes with a short 500ms debounce instead
@@ -7900,6 +7915,9 @@ function persistLocal(){ localStorage.setItem('salty_v2', JSON.stringify(D)); }
 function persistNow(){
   localStorage.setItem('salty_v2', JSON.stringify(D));
   if(!D.kvEnabled) return;
+  if(!_kvBootComplete) return; // suppress during boot
+  const fp = syncFingerprint();
+  if(fp === _lastSyncedFingerprint) return; // nothing meaningful changed
   if(_kvPushTimer) clearTimeout(_kvPushTimer);
   _kvPushTimer = setTimeout(kvPush, 500);
 }
@@ -7946,6 +7964,50 @@ const KV_MERGE_KEYS = {
 
 // Keys that are per-browser diagnostics — never overwrite from remote payload
 const KV_PER_BROWSER_KEYS = new Set(['kvLastSync','kvLastPush','kvLastPull','configDirtyAt']);
+
+// Top-level keys that hold API-fetched cache data. Each browser fetches these
+// independently from the same upstream APIs, so syncing them across browsers
+// just causes ping-pong pushes. Excluded from the syncFingerprint comparison
+// (they're still written to localStorage and still pushed when something else
+// triggers a push — they just don't BY THEMSELVES trigger one).
+const KV_API_CACHE_KEYS = new Set([
+  'otxDailyCounts',
+  'otxIndustries',
+  'sportsTeamLists',
+  'poemDaily',
+]);
+
+// Deterministic fingerprint of the user-meaningful, sync-worthy parts of D.
+// Excludes:
+//   - KV_PER_BROWSER_KEYS (diagnostics that differ per browser by design)
+//   - KV_API_CACHE_KEYS   (cached API responses each browser computes itself)
+//   - any underscore-prefixed property at any depth (loc._wx, loc._aq, loc._pollen,
+//     loc._fetchFailed, etc. — established convention for runtime/cache fields)
+// Used by kvPushDebounced/persistNow to skip pushes when nothing meaningful changed.
+function syncFingerprint(){
+  function clean(v){
+    if(Array.isArray(v)) return v.map(clean);
+    if(v && typeof v === 'object' && v.constructor === Object){
+      const out = {};
+      for(const k in v){
+        if(k.charCodeAt(0) === 95) continue; // underscore-prefixed = runtime/cache
+        out[k] = clean(v[k]);
+      }
+      return out;
+    }
+    return v;
+  }
+  const copy = {};
+  for(const k in D){
+    if(KV_PER_BROWSER_KEYS.has(k)) continue;
+    if(KV_API_CACHE_KEYS.has(k))   continue;
+    if(k.charCodeAt(0) === 95)     continue;
+    copy[k] = clean(D[k]);
+  }
+  return JSON.stringify(copy);
+}
+
+let _lastSyncedFingerprint = '';
 
 function kvMergeD(remote) {
   // Merge array keys additively
@@ -8027,12 +8089,18 @@ async function kvPull() {
     D.kvLastPull = remoteTs;
     localStorage.setItem('salty_v2', JSON.stringify(D));
     renderAll();
+    // Capture post-render snapshot so any cascading async persist() calls
+    // from widget rebuild (cache writes, etc.) won't trigger a spurious push.
+    _lastSyncedFingerprint = syncFingerprint();
   } catch(e) { console.warn('[KV] pull failed:', e); }
 }
 
 let _kvPushTimer = null;
 function kvPushDebounced() {
   if(!D.kvEnabled) return;
+  if(!_kvBootComplete) return; // suppress pushes during boot; first kvPull will set this true
+  const fp = syncFingerprint();
+  if(fp === _lastSyncedFingerprint) return; // nothing meaningful changed since last sync
   clearTimeout(_kvPushTimer);
   _kvPushTimer = setTimeout(kvPush, 5000);
 }
@@ -8101,6 +8169,7 @@ async function kvPush() {
     D.kvLastPush    = now;
     D.configDirtyAt = now;
     localStorage.setItem('salty_v2', JSON.stringify(D));
+    _lastSyncedFingerprint = syncFingerprint();
   } catch(e) { console.warn('[KV] push failed:', e); }
 }
 
@@ -10470,7 +10539,7 @@ function buildOtxWidget(sec, tabId){
     if(existIdx>=0){ D.otxDailyCounts[existIdx].count=todayCount; }
     else { D.otxDailyCounts.unshift({date:todayStr,count:todayCount}); }
     D.otxDailyCounts=D.otxDailyCounts.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
-    persistLocal(); // API cache — no KV push
+    persist();
     elevBanner.style.display=isElevated(todayCount)?'':'none';
 
     // Top adversaries strip
@@ -10493,7 +10562,7 @@ function buildOtxWidget(sec, tabId){
     // Persist industries
     const indSet=new Set(D.otxIndustries);
     allPulses.forEach(p=>(p.industries||[]).forEach(ind=>indSet.add(ind)));
-    D.otxIndustries=[...indSet].sort(); persistLocal(); updateIndDropdown(); // API cache — no KV push
+    D.otxIndustries=[...indSet].sort(); persist(); updateIndDropdown();
 
     // ── Industry hit detection ─────────────────────────
     const dismissed=new Set(D.otxAlarmHistory.map(h=>h.id));
@@ -13068,7 +13137,7 @@ function buildSportsWidget(sec){
         const existing=new Set(D.sportsTeamLists[cfg.league]);
         j.games.forEach(g=>{ if(g.homeTeam) existing.add(g.homeTeam); if(g.awayTeam) existing.add(g.awayTeam); });
         D.sportsTeamLists[cfg.league]=[...existing].sort((a,b)=>a.localeCompare(b));
-        persistLocal(); // API cache — no KV push
+        persist();
         updateTeamDropdown();
       }
 
@@ -17677,7 +17746,7 @@ function buildUnsplashWidget(sec){
         active: existing.hasOwnProperty(t.slug) ? existing[t.slug] : true,
       }));
       cfg.featuredFetchedAt=Date.now();
-      persistLocal(); // API cache — no KV push
+      persist();
       renderFeaturedChips();
     } catch(e){}
   }
@@ -18524,7 +18593,7 @@ async function poemFetch(sec){
     const data = await res.json();
     const raw  = Array.isArray(data) ? data[0] : data;
     D.poemDaily = { date: new Date().toISOString().slice(0,10), title: raw.title, author: raw.author, lines: raw.lines };
-    persistLocal(); // API cache — no KV push
+    persist();
     // Re-render any poem widgets on the page
     document.querySelectorAll('[id^="poemLoadMsg_"]').forEach(el2=>{
       const secId = el2.id.replace('poemLoadMsg_','');
@@ -18627,7 +18696,7 @@ function poemRenderToday(textPane, notePane){
     isFav ? poemUnfavorite(id) : poemFavorite(poem);
     poemRenderModal();
   }, ()=>{
-    D.poemDaily=null; persistLocal(); // API cache reset — no KV push
+    D.poemDaily=null; persist();
     // Leave current poem visible — just spin the refresh button until new poem arrives
     const np = document.getElementById('poemNotesPanel');
     if(np){ np.innerHTML=''; np.classList.add('locked'); }
