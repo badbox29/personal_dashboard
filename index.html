@@ -6715,7 +6715,7 @@ body.edit-mode .gh-add-row { display: flex; }
           🛰 Threat Intel<span>LevelBlue OTX feed — API required</span>
         </button>
         <button class="sec-type-card" id="swEisac"     onclick="selectWidgetType('eisac')">
-          ⚡ E-ISAC Intel<span>NERC E-ISAC TAXII 2.1 feed — API required</span>
+          ⚡ E-ISAC Intel<span>NERC E-ISAC TAXII 2.1 — local proxy required</span>
         </button>
         <button class="sec-type-card" id="swTap"       onclick="selectWidgetType('tap')">
           🔐 Proofpoint TAP<span>Blocked threats, clicks &amp; VAPs — API required</span>
@@ -10859,7 +10859,9 @@ function buildEisacWidget(sec, tabId){
   // Clean up any that may have been accidentally persisted in a prior version
   if(cfg.eisacUser !== undefined){ delete cfg.eisacUser; persistConfig(); }
   if(cfg.eisacPass !== undefined){ delete cfg.eisacPass; persistConfig(); }
-  if(!cfg.eisacWorker)     cfg.eisacWorker     = '';
+  // Migrate from old field name if present
+  if(cfg.eisacWorker !== undefined && !cfg.eisacProxy){ cfg.eisacProxy = cfg.eisacWorker; delete cfg.eisacWorker; persistConfig(); }
+  if(!cfg.eisacProxy)      cfg.eisacProxy      = 'http://localhost:3333';
   if(!cfg.collectionId)    cfg.collectionId    = '0ffc82d5-67b1-4d12-912b-58ce9ba6b57c';
   if(!cfg.lookbackDays)    cfg.lookbackDays    = 30;
   if(!cfg.refreshMins)     cfg.refreshMins     = 60;
@@ -10940,8 +10942,8 @@ function buildEisacWidget(sec, tabId){
 
   // ── "Credentials Required" message ─────────────────────────────────────────
   const noCredsEl=el('div','otx-api-required');
-  const ncTitle=el('div','otx-api-required-title'); ncTitle.textContent='⚠ Credentials Required';
-  const ncSub=el('div','otx-api-required-sub'); ncSub.textContent='Enter your E-ISAC TAXII credentials in edit mode to enable this widget.';
+  const ncTitle=el('div','otx-api-required-title'); ncTitle.textContent='⚠ Setup Required';
+  const ncSub=el('div','otx-api-required-sub'); ncSub.innerHTML='Enter your TAXII credentials in edit mode.<br>Requires <code>local-proxy-server.js</code> running on this machine — the Cloudflare Worker cannot reach E-ISAC.';
   noCredsEl.append(ncTitle,ncSub);
 
   // ── Filter chips (by STIX type) ─────────────────────────────────────────────
@@ -11149,14 +11151,14 @@ function buildEisacWidget(sec, tabId){
 
   // ── Refresh / fetch ─────────────────────────────────────────────────────────
   async function refresh(){
-    const workerUrl=getWorkerUrl(cfg.eisacWorker);
-    if(!_user||!_pass||!workerUrl) return;
+    const proxyUrl=(cfg.eisacProxy||'').replace(/\/+$/,'');
+    if(!_user||!_pass||!proxyUrl) return;
     const addedAfter=new Date(Date.now()-cfg.lookbackDays*86400000).toISOString();
     let data;
     try{
-      const r=await fetch(workerUrl.replace(/\/+$/,'')+'/eisac',{
+      const r=await fetch(proxyUrl+'/eisac',{
         method:'POST',
-        headers:{...getWorkerAuthHeaders(),'Content-Type':'application/json'},
+        headers:{'Content-Type':'application/json'},
         body:JSON.stringify({ username:_user, password:_pass, collectionId:cfg.collectionId, addedAfter, limit:300 }),
       });
       data=await r.json();
@@ -11234,8 +11236,8 @@ function buildEisacWidget(sec, tabId){
   const inpPass=el('input','search-widget-input'); inpPass.type='password'; inpPass.placeholder='Loading…'; inpPass.value=''; inpPass.style.flex='1'; inpPass.style.fontSize='10px';
   const inpColl=el('input','search-widget-input'); inpColl.type='text'; inpColl.placeholder='Collection UUID'; inpColl.value=cfg.collectionId; inpColl.style.flex='1'; inpColl.style.fontSize='10px';
   inpColl.onblur=()=>{ cfg.collectionId=inpColl.value.trim(); persistConfig(); };
-  const inpWorker=el('input','search-widget-input'); inpWorker.type='text'; inpWorker.placeholder='Override global Worker URL…'; inpWorker.value=cfg.eisacWorker; inpWorker.style.flex='1'; inpWorker.style.fontSize='10px';
-  inpWorker.onblur=()=>{ cfg.eisacWorker=inpWorker.value.trim(); persistConfig(); };
+  const inpWorker=el('input','search-widget-input'); inpWorker.type='text'; inpWorker.placeholder='http://localhost:3333'; inpWorker.value=cfg.eisacProxy; inpWorker.style.flex='1'; inpWorker.style.fontSize='10px';
+  inpWorker.onblur=()=>{ cfg.eisacProxy=inpWorker.value.trim(); persistConfig(); };
 
   // Lookback days selector
   const lookbackRow=el('div','wotd-setting-row');
@@ -11259,12 +11261,12 @@ function buildEisacWidget(sec, tabId){
   const testBtn=el('button','search-widget-go'); testBtn.textContent='🔍 Test Connection'; testBtn.style.cssText='background:rgba(0,180,200,0.15);border-color:var(--cyan);color:var(--cyan);';
   const testOut=el('div'); testOut.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-top:5px;padding:5px 7px;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:3px;word-break:break-all;white-space:pre-wrap;display:none;';
   testBtn.onclick=async()=>{
-    const workerUrl=(getWorkerUrl(inpWorker.value.trim()||cfg.eisacWorker)||'').replace(/\/+$/,'');
-    if(!workerUrl){ testOut.textContent='⚠ No worker URL set.'; testOut.style.display=''; return; }
+    const proxyUrl=(inpWorker.value.trim()||cfg.eisacProxy||'').replace(/\/+$/,'');
+    if(!proxyUrl){ testOut.textContent='⚠ No proxy URL set.'; testOut.style.display=''; return; }
     testBtn.textContent='Testing…'; testBtn.disabled=true;
     try{
-      const r=await fetch(workerUrl+'/eisac',{
-        method:'POST', headers:{...getWorkerAuthHeaders(),'Content-Type':'application/json'},
+      const r=await fetch(proxyUrl+'/eisac',{
+        method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({ action:'discover', username:_user||inpUser.value.trim(), password:_pass||inpPass.value.trim(), collectionId:inpColl.value.trim()||cfg.collectionId }),
       });
       const d=await r.json();
@@ -11279,7 +11281,7 @@ function buildEisacWidget(sec, tabId){
     makeSettingRow('Username', inpUser),
     makeSettingRow('Password', inpPass),
     makeSettingRow('Collection ID', inpColl),
-    makeSettingRow('Worker URL', inpWorker),
+    makeSettingRow('Local Proxy URL', inpWorker),
     lookbackRow, refreshRow, saveRow, testOut
   );
 
