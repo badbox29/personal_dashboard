@@ -7985,13 +7985,23 @@ const KV_API_CACHE_KEYS = new Set([
 // Excludes per-browser diagnostics, API caches, and any underscore-prefixed
 // property at any depth (loc._wx, loc._aq, loc._pollen, etc. — established
 // convention for runtime/cache fields).
+//
+// Also excludes specific nested field names that are known per-browser caches
+// or playback state but happen to be stored inside synced widgetConfig:
+//   - featuredFetchedAt (Unsplash widget — fetch timestamp, differs per browser)
+//   - absCurrentTime    (Audiobookshelf widget — playback position, changes during play)
+const KV_NESTED_CACHE_FIELDS = new Set([
+  'featuredFetchedAt',
+  'absCurrentTime',
+]);
 function syncFingerprint(){
   function clean(v){
     if(Array.isArray(v)) return v.map(clean);
     if(v && typeof v === 'object' && v.constructor === Object){
       const out = {};
       for(const k in v){
-        if(k.charCodeAt(0) === 95) continue; // underscore-prefixed
+        if(k.charCodeAt(0) === 95) continue;       // underscore-prefixed
+        if(KV_NESTED_CACHE_FIELDS.has(k)) continue; // known nested caches
         out[k] = clean(v[k]);
       }
       return out;
@@ -8020,7 +8030,11 @@ function syncFingerprintDiff(prevFp){
       if(Array.isArray(v)) return v.map(clean);
       if(v && typeof v === 'object' && v.constructor === Object){
         const out = {};
-        for(const k in v){ if(k.charCodeAt(0)===95) continue; out[k]=clean(v[k]); }
+        for(const k in v){
+          if(k.charCodeAt(0)===95) continue;
+          if(KV_NESTED_CACHE_FIELDS.has(k)) continue;
+          out[k]=clean(v[k]);
+        }
         return out;
       }
       return v;
