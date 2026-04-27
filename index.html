@@ -888,6 +888,7 @@ body.edit-mode .add-col-wrap { display: flex; align-items: flex-start; }
   outline: none;
   transition: border-color 0.15s;
 }
+select.modal-input { padding-right: 28px; }
 .modal-input:focus { border-color: var(--cyan); }
 .mbtn[disabled] { opacity: 0.4; cursor: not-allowed; }
 .mbtn {
@@ -1204,6 +1205,41 @@ body.edit-mode .weather-pin-wrap { display: flex; }
 .cdd-item:hover { background: rgba(13,184,221,0.1); color: var(--cyan); }
 .cdd-item.cdd-active { color: var(--gold); }
 .cdd-item.cdd-placeholder { color: var(--text-dim); opacity: 0.6; font-style: italic; }
+.cdd-group-header {
+  padding: 6px 10px 2px;
+  font-size: 9px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  opacity: 0.75;
+  cursor: default;
+  pointer-events: none;
+  border-top: 1px solid var(--border);
+  margin-top: 3px;
+}
+.cdd-group-header:first-child { border-top: none; margin-top: 0; }
+/* ── Globally themed native <select> elements (closed state) ───── */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--inp-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23ddb04b'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 8px 5px;
+  border: 1px solid var(--inp-border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 4px 28px 4px 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+select:focus { border-color: var(--gold); }
+select option, select optgroup { background: var(--modal-bg); color: var(--text); }
 
 
 .lofi-btn {
@@ -5538,7 +5574,7 @@ body.edit-mode .gh-add-row { display: flex; }
 .bible-modal-hdr{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
 .bible-modal-hdr h3{margin:0;font-size:14px;color:var(--text-head);flex:1;min-width:120px;}
 .bible-nav{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
-.bible-nav-sel{font-size:11.5px;padding:4px 7px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;cursor:pointer;}
+.bible-nav-sel{font-size:11.5px;padding:4px 26px 4px 7px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:4px;color:var(--text);outline:none;cursor:pointer;}
 .bible-nav-sel:focus{border-color:var(--gold);}
 .bible-modal-body{display:flex;flex:1;overflow:hidden;}
 /* Left: text */
@@ -17262,48 +17298,44 @@ function buildBibleWidget(sec){
   const icon=el('span'); icon.textContent='📖 ';
   const titleSp=el('span','bible-widget-title'); titleSp.textContent='Daily Verse';
 
-  // Translation as functional dropdown
-  const transSel=el('select','bible-trans-sel-widget');
-  transSel.title='Change translation';
-  function rebuildTransSel(){
-    transSel.innerHTML='';
-    const fg=document.createElement('optgroup'); fg.label='Free — bolls.life';
-    [
-      {c:'NKJV',l:'NKJV — New King James'},
-      {c:'KJV', l:'KJV — King James'},
-      {c:'GNV', l:'GNV — Geneva Bible'},
-      {c:'ASV', l:'ASV — American Standard'},
-      {c:'RSV', l:'RSV — Revised Standard'},
-      {c:'YLT', l:'YLT — Young\'s Literal'},
-      {c:'ESV', l:'ESV — English Standard'},
-      {c:'NASB',l:'NASB — New American Standard'},
-      {c:'NET', l:'NET — New English Translation'},
-      {c:'WEB', l:'WEB — World English Bible'},
-      {c:'NIV', l:'NIV — New International'},
-      {c:'NLT', l:'NLT — New Living Translation'},
-      {c:'CJB', l:'CJB — Complete Jewish Bible'},
-      {c:'TLV', l:'TLV — Tree of Life Version'},
-    ].forEach(({c,l})=>{
-      const o=document.createElement('option'); o.value=c; o.textContent=l;
-      if(c===cfg.defaultTrans) o.selected=true; fg.appendChild(o);
-    });
-    transSel.appendChild(fg);
+  // Translation as custom themed dropdown (replaces native <select>)
+  const FREE_TRANS = [
+    {val:'NKJV',label:'NKJV — New King James'},
+    {val:'KJV', label:'KJV — King James'},
+    {val:'GNV', label:'GNV — Geneva Bible'},
+    {val:'ASV', label:'ASV — American Standard'},
+    {val:'RSV', label:'RSV — Revised Standard'},
+    {val:'YLT', label:'YLT — Young\'s Literal'},
+    {val:'ESV', label:'ESV — English Standard'},
+    {val:'NASB',label:'NASB — New American Standard'},
+    {val:'NET', label:'NET — New English Translation'},
+    {val:'WEB', label:'WEB — World English Bible'},
+    {val:'NIV', label:'NIV — New International'},
+    {val:'NLT', label:'NLT — New Living Translation'},
+    {val:'CJB', label:'CJB — Complete Jewish Bible'},
+    {val:'TLV', label:'TLV — Tree of Life Version'},
+  ];
+  function buildTransOpts(){
+    const groups = [{group:'Free — bolls.life', items: FREE_TRANS}];
     if(cfg.apiKey){
-      const ag=document.createElement('optgroup'); ag.label='API.Bible';
-      [...new Set(['CSB','NLT','MSG',...Object.keys(cfg.apiBibleIds||{})])].forEach(t=>{
-        const o=document.createElement('option'); o.value=t; o.textContent=t;
-        if(t===cfg.defaultTrans) o.selected=true; ag.appendChild(o);
-      });
-      transSel.appendChild(ag);
+      const apiItems = [...new Set(['CSB','NLT','MSG',...Object.keys(cfg.apiBibleIds||{})])].map(t=>({val:t,label:t}));
+      groups.push({group:'API.Bible', items: apiItems});
     }
+    return groups;
   }
-  rebuildTransSel();
-  transSel.onchange=()=>{
-    cfg.defaultTrans=transSel.value; cfg.lastTrans=transSel.value;
-    persist(); loadVotd();
-  };
+  const transDD = makeCustomDropdown(
+    cfg.defaultTrans || 'NKJV',
+    buildTransOpts(),
+    val=>{ if(val){ cfg.defaultTrans=val; cfg.lastTrans=val; persist(); loadVotd(); } }
+  );
+  transDD.wrap.style.cssText='flex:0 0 auto;max-width:200px;min-width:120px;';
+  transDD.wrap.title='Change translation';
+  transDD.rebuild(buildTransOpts(), cfg.defaultTrans||'NKJV');
+  function rebuildTransSel(){
+    transDD.rebuild(buildTransOpts(), cfg.defaultTrans||'NKJV');
+  }
 
-  hdr.append(icon,titleSp,transSel);
+  hdr.append(icon,titleSp,transDD.wrap);
   wrap.appendChild(hdr);
 
   // Verse display
@@ -25250,15 +25282,39 @@ function makeCustomDropdown(placeholder, opts, onChange, colorFn){
   list.style.cssText += ';position:fixed;';
   document.body.appendChild(list);
 
-  const clearLi = el('li','cdd-item cdd-placeholder'); clearLi.textContent = placeholder;
-  clearLi.onclick = ()=>{ setValue(null); closeList(); };
-  list.appendChild(clearLi);
-  opts.forEach(opt=>{
-    const li = el('li','cdd-item'); li.textContent = opt; li.dataset.val = opt;
-    if(colorFn){ const c=colorFn(opt); if(c) li.style.color=c; }
-    li.onclick = ()=>{ setValue(opt); closeList(); };
-    list.appendChild(li);
-  });
+  // Build list items — opts can be flat strings OR grouped: {group, items:[{val,label}]}
+  function buildItems(optsArr, keepClear){
+    // Remove everything except the clear placeholder if keepClear
+    while(list.firstChild) list.removeChild(list.firstChild);
+    if(keepClear){
+      const clearLi = el('li','cdd-item cdd-placeholder'); clearLi.textContent = placeholder;
+      clearLi.onclick = ()=>{ setValue(null); closeList(); };
+      list.appendChild(clearLi);
+    }
+    optsArr.forEach(opt=>{
+      if(opt && typeof opt === 'object' && opt.group){
+        // Group header
+        const hdr = el('li','cdd-group-header'); hdr.textContent = opt.group;
+        list.appendChild(hdr);
+        (opt.items||[]).forEach(item=>{
+          const val   = typeof item === 'string' ? item : item.val;
+          const label = typeof item === 'string' ? item : (item.label||item.val);
+          const li = el('li','cdd-item'); li.textContent = label; li.dataset.val = val; li.dataset.label = label;
+          if(colorFn){ const c=colorFn(val); if(c) li.style.color=c; }
+          li.onclick = ()=>{ setValue(val, label); closeList(); };
+          list.appendChild(li);
+        });
+      } else {
+        const val   = typeof opt === 'object' ? opt.val   : opt;
+        const label = typeof opt === 'object' ? (opt.label||opt.val) : opt;
+        const li = el('li','cdd-item'); li.textContent = label; li.dataset.val = val; li.dataset.label = label;
+        if(colorFn){ const c=colorFn(val); if(c) li.style.color=c; }
+        li.onclick = ()=>{ setValue(val, label); closeList(); };
+        list.appendChild(li);
+      }
+    });
+  }
+  buildItems(opts, true);
 
   function openList(){
     // Close any other open cdd portals
@@ -25301,15 +25357,36 @@ function makeCustomDropdown(placeholder, opts, onChange, colorFn){
 
   wrap.appendChild(btn);
 
-  function setValue(val){
+  function setValue(val, labelOverride){
     currentVal = val;
-    if(val){ lbl.textContent=val; lbl.style.color=(colorFn?colorFn(val):null)||'var(--text)'; btn.classList.add('cdd-has-value'); }
-    else    { lbl.textContent=placeholder; lbl.style.color=''; btn.classList.remove('cdd-has-value'); }
+    if(val){
+      // Find label from list items if not provided
+      const label = labelOverride || (()=>{
+        const li = list.querySelector(`.cdd-item[data-val="${CSS.escape(val)}"]`);
+        return li ? li.dataset.label || li.textContent : val;
+      })();
+      lbl.textContent = label;
+      lbl.style.color = (colorFn?colorFn(val):null)||'var(--text)';
+      btn.classList.add('cdd-has-value');
+    } else {
+      lbl.textContent=placeholder; lbl.style.color=''; btn.classList.remove('cdd-has-value');
+    }
     list.querySelectorAll('.cdd-item[data-val]').forEach(li=>li.classList.toggle('cdd-active',li.dataset.val===val));
     if(onChange) onChange(val);
   }
   function getValue(){ return currentVal; }
-  return { wrap, setValue, getValue };
+  // Rebuild options without triggering onChange; preserves or updates current selection display
+  function rebuild(newOpts, selectedVal){
+    buildItems(newOpts, true);
+    // Restore active mark without firing onChange
+    const prev = selectedVal !== undefined ? selectedVal : currentVal;
+    if(prev){
+      list.querySelectorAll('.cdd-item[data-val]').forEach(li=>li.classList.toggle('cdd-active',li.dataset.val===prev));
+      const li = list.querySelector(`.cdd-item[data-val="${CSS.escape(prev)}"]`);
+      if(li){ lbl.textContent=li.dataset.label||li.textContent; lbl.style.color=(colorFn?colorFn(prev):null)||'var(--text)'; btn.classList.add('cdd-has-value'); currentVal=prev; }
+    }
+  }
+  return { wrap, setValue, getValue, rebuild };
 }
 
 /* ================================================================
