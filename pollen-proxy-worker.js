@@ -780,6 +780,33 @@ async function handleEisac(body, ctx) {
 
   if (!username || !password)
     return json({ error: 'Required fields: username, password' }, 400);
+
+  // Debug / discovery mode — move before collectionId check so it works without one
+  if (body.action === 'discover') {
+    const creds = btoa(`${username}:${password}`);
+    const hdrs = { 'Authorization': `Basic ${creds}`, 'Accept': '*/*' };
+    const safeCollId = collectionId || '0ffc82d5-67b1-4d12-912b-58ce9ba6b57c';
+    const probes = [
+      { label: 'TAXII 2.1 Discovery',   url: 'https://e-isac.cyware.com/ctixapi/ctix21/taxii2/' },
+      { label: 'TAXII 2.0 Discovery',   url: 'https://e-isac.cyware.com/ctixapi/ctix2/taxii/' },
+      { label: 'TAXII 2.1 Collections', url: 'https://e-isac.cyware.com/ctixapi/ctix21/collections/' },
+      { label: 'TAXII 2.1 Objects (no params)', url: `https://e-isac.cyware.com/ctixapi/ctix21/collections/${encodeURIComponent(safeCollId)}/objects/` },
+    ];
+    const results = [];
+    for (const p of probes) {
+      try {
+        const res = await fetch(p.url, { headers: hdrs });
+        const ct = res.headers.get('content-type') || 'unknown';
+        let snippet = '';
+        try { snippet = (await res.text()).slice(0, 300); } catch(e) {}
+        results.push(`[${p.label}]\nHTTP ${res.status} | ${ct}\n${snippet}`);
+      } catch(e) {
+        results.push(`[${p.label}]\nFetch error: ${e.message}`);
+      }
+    }
+    return json({ results: results.join('\n\n---\n\n') });
+  }
+
   if (!collectionId)
     return json({ error: 'Required field: collectionId' }, 400);
 

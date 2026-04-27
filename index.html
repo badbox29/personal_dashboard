@@ -11265,7 +11265,7 @@ function buildEisacWidget(sec, tabId){
     try{
       const r=await fetch(workerUrl+'/eisac',{
         method:'POST', headers:{...getWorkerAuthHeaders(),'Content-Type':'application/json'},
-        body:JSON.stringify({ action:'discover', username:inpUser.value.trim(), password:inpPass.value.trim() }),
+        body:JSON.stringify({ action:'discover', username:_user||inpUser.value.trim(), password:_pass||inpPass.value.trim(), collectionId:inpColl.value.trim()||cfg.collectionId }),
       });
       const d=await r.json();
       testOut.textContent= d.results || d.error || JSON.stringify(d,null,2);
