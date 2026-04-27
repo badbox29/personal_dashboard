@@ -12441,9 +12441,10 @@ function openEnergyInsightsModal(){
     const dowInactiveStyle='font-size:10px;font-family:Share Tech Mono,monospace;padding:2px 9px;border:1px solid var(--border);border-radius:3px;background:none;cursor:pointer;color:var(--text-dim);';
     const dowCtrl=el('div'); dowCtrl.style.cssText='display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;';
     const dowBtns={};
+    const _dowML={energy:'Energy',focus:'Focus',friction:'Motivation',mood:'Mood'};
     ['energy','focus','friction','mood'].forEach(m=>{
       const b=el('button'); b.style.cssText=m===dowMetric?dowActiveStyle:dowInactiveStyle;
-      b.textContent=m.charAt(0).toUpperCase()+m.slice(1);
+      b.textContent=_dowML[m];
       b.onclick=()=>{ dowMetric=m; Object.values(dowBtns).forEach(x=>x.style.cssText=dowInactiveStyle); b.style.cssText=dowActiveStyle; drawDow(); };
       dowBtns[m]=b; dowCtrl.appendChild(b);
     });
