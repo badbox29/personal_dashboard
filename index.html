@@ -7717,8 +7717,7 @@ function generateSyncToken(){
    BOOT
    ================================================================ */
 // var (not let) so it's hoisted and accessible during the IIFE's synchronous
-// renderAll → persist() chain. Stays false until after boot completes, which
-// is what gates kvPushDebounced from scheduling spurious boot-time pushes.
+// renderAll → persist() chain. Stays false until after boot completes.
 var _kvBootComplete = false;
 (function init(){
   try {
@@ -7868,6 +7867,7 @@ var _kvBootComplete = false;
   applyWeatherPin();
   fetchQuote();
   fetchAllWeather();
+  // Pull KV state on load if sync is enabled
   // Pull KV state on load if sync is enabled. After the boot pull completes
   // (resolves or rejects), mark boot complete and capture the fingerprint —
   // from that point on, persist() calls only push if syncable state actually changes.
@@ -7875,11 +7875,9 @@ var _kvBootComplete = false;
     kvPull().finally(() => {
       _lastSyncedFingerprint = syncFingerprint();
       _kvBootComplete = true;
+      console.log('[KV] boot complete, sync enabled, fingerprint captured');
     });
   } else {
-    // No KV sync: defer to a microtask so we run AFTER the IIFE returns and
-    // the const declarations (KV_PER_BROWSER_KEYS, KV_API_CACHE_KEYS,
-    // _lastSyncedFingerprint) have been initialized.
     Promise.resolve().then(() => {
       _lastSyncedFingerprint = syncFingerprint();
       _kvBootComplete = true;
@@ -7917,7 +7915,8 @@ function persistNow(){
   if(!D.kvEnabled) return;
   if(!_kvBootComplete) return; // suppress during boot
   const fp = syncFingerprint();
-  if(fp === _lastSyncedFingerprint) return; // nothing meaningful changed
+  if(fp === _lastSyncedFingerprint) return;
+  console.log('[KV] persistNow push — changed fields:', syncFingerprintDiff(_lastSyncedFingerprint));
   if(_kvPushTimer) clearTimeout(_kvPushTimer);
   _kvPushTimer = setTimeout(kvPush, 500);
 }
@@ -7967,9 +7966,7 @@ const KV_PER_BROWSER_KEYS = new Set(['kvLastSync','kvLastPush','kvLastPull','con
 
 // Top-level keys that hold API-fetched cache data. Each browser fetches these
 // independently from the same upstream APIs, so syncing them across browsers
-// just causes ping-pong pushes. Excluded from the syncFingerprint comparison
-// (they're still written to localStorage and still pushed when something else
-// triggers a push — they just don't BY THEMSELVES trigger one).
+// just causes ping-pong pushes. Excluded from the syncFingerprint comparison.
 const KV_API_CACHE_KEYS = new Set([
   'otxDailyCounts',
   'otxIndustries',
@@ -7977,20 +7974,17 @@ const KV_API_CACHE_KEYS = new Set([
   'poemDaily',
 ]);
 
-// Deterministic fingerprint of the user-meaningful, sync-worthy parts of D.
-// Excludes:
-//   - KV_PER_BROWSER_KEYS (diagnostics that differ per browser by design)
-//   - KV_API_CACHE_KEYS   (cached API responses each browser computes itself)
-//   - any underscore-prefixed property at any depth (loc._wx, loc._aq, loc._pollen,
-//     loc._fetchFailed, etc. — established convention for runtime/cache fields)
-// Used by kvPushDebounced/persistNow to skip pushes when nothing meaningful changed.
+// Deterministic fingerprint of user-meaningful, sync-worthy parts of D.
+// Excludes per-browser diagnostics, API caches, and any underscore-prefixed
+// property at any depth (loc._wx, loc._aq, loc._pollen, etc. — established
+// convention for runtime/cache fields).
 function syncFingerprint(){
   function clean(v){
     if(Array.isArray(v)) return v.map(clean);
     if(v && typeof v === 'object' && v.constructor === Object){
       const out = {};
       for(const k in v){
-        if(k.charCodeAt(0) === 95) continue; // underscore-prefixed = runtime/cache
+        if(k.charCodeAt(0) === 95) continue; // underscore-prefixed
         out[k] = clean(v[k]);
       }
       return out;
@@ -8005,6 +7999,47 @@ function syncFingerprint(){
     copy[k] = clean(D[k]);
   }
   return JSON.stringify(copy);
+}
+
+// DIAGNOSTIC: returns a readable summary of what differs between two fingerprints.
+// Used to log exactly which top-level keys triggered a push, so we can find any
+// remaining problem fields. Safe to leave on — only fires when a push happens.
+function syncFingerprintDiff(prevFp){
+  if(!prevFp) return '(no previous fingerprint)';
+  let prev;
+  try { prev = JSON.parse(prevFp); } catch(e){ return '(prev unparseable)'; }
+  function cleanFor(){
+    function clean(v){
+      if(Array.isArray(v)) return v.map(clean);
+      if(v && typeof v === 'object' && v.constructor === Object){
+        const out = {};
+        for(const k in v){ if(k.charCodeAt(0)===95) continue; out[k]=clean(v[k]); }
+        return out;
+      }
+      return v;
+    }
+    const copy = {};
+    for(const k in D){
+      if(KV_PER_BROWSER_KEYS.has(k)) continue;
+      if(KV_API_CACHE_KEYS.has(k))   continue;
+      if(k.charCodeAt(0)===95)       continue;
+      copy[k] = clean(D[k]);
+    }
+    return copy;
+  }
+  const cur = cleanFor();
+  const allKeys = new Set([...Object.keys(prev), ...Object.keys(cur)]);
+  const changed = [];
+  for(const k of allKeys){
+    const a = JSON.stringify(prev[k]);
+    const b = JSON.stringify(cur[k]);
+    if(a !== b){
+      const aLen = a ? a.length : 0;
+      const bLen = b ? b.length : 0;
+      changed.push(`${k} (${aLen}→${bLen} chars)`);
+    }
+  }
+  return changed.length ? changed.join(', ') : '(no top-level keys changed)';
 }
 
 let _lastSyncedFingerprint = '';
@@ -8089,8 +8124,6 @@ async function kvPull() {
     D.kvLastPull = remoteTs;
     localStorage.setItem('salty_v2', JSON.stringify(D));
     renderAll();
-    // Capture post-render snapshot so any cascading async persist() calls
-    // from widget rebuild (cache writes, etc.) won't trigger a spurious push.
     _lastSyncedFingerprint = syncFingerprint();
   } catch(e) { console.warn('[KV] pull failed:', e); }
 }
@@ -8098,9 +8131,10 @@ async function kvPull() {
 let _kvPushTimer = null;
 function kvPushDebounced() {
   if(!D.kvEnabled) return;
-  if(!_kvBootComplete) return; // suppress pushes during boot; first kvPull will set this true
+  if(!_kvBootComplete) return; // suppress pushes during boot
   const fp = syncFingerprint();
-  if(fp === _lastSyncedFingerprint) return; // nothing meaningful changed since last sync
+  if(fp === _lastSyncedFingerprint) return; // nothing meaningful changed
+  console.log('[KV] push scheduled — changed fields:', syncFingerprintDiff(_lastSyncedFingerprint));
   clearTimeout(_kvPushTimer);
   _kvPushTimer = setTimeout(kvPush, 5000);
 }
