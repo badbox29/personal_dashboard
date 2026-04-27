@@ -7972,6 +7972,13 @@ const KV_API_CACHE_KEYS = new Set([
   'otxIndustries',
   'sportsTeamLists',
   'poemDaily',
+  // TAP/CVE widget periodic fetch artifacts — each browser fetches independently.
+  // Excluded from the syncFingerprint so they don't trigger pushes by themselves.
+  // tapKnownVapEmails and cveVendorList are still in KV_MERGE_KEYS, so when a
+  // genuine push happens for other reasons they still merge across browsers.
+  'tapLastFetchTime',
+  'tapKnownVapEmails',
+  'cveVendorList',
 ]);
 
 // Deterministic fingerprint of user-meaningful, sync-worthy parts of D.
