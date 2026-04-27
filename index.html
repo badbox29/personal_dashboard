@@ -11297,7 +11297,7 @@ function buildEisacWidget(sec, tabId){
   const {a,b} = _ccLoad();
   _user=a; _pass=b;
   inpUser.value=a; inpUser.placeholder='TAXII username / client ID';
-  inpPass.placeholder='TAXII password / secret';
+  inpPass.value=b; inpPass.placeholder='TAXII password / secret';
   toggleContent();
   if(_user&&_pass) refresh();
 

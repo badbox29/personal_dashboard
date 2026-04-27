@@ -820,7 +820,10 @@ async function handleEisac(body, ctx) {
 
   let data;
   try { data = await upstream.json(); }
-  catch(e) { return json({ error: 'E-ISAC returned non-JSON response' }, 502); }
+  catch(e) {
+    const ct = upstream.headers.get('content-type') || 'unknown';
+    return json({ error: `E-ISAC: non-JSON response (HTTP ${upstream.status}, content-type: ${ct}) — check credentials and collection ID` }, 502);
+  }
 
   if (!upstream.ok) {
     const msg = data?.message || data?.description || data?.error || `HTTP ${upstream.status}`;
