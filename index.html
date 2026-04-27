@@ -7875,7 +7875,6 @@ var _kvBootComplete = false;
     kvPull().finally(() => {
       _lastSyncedFingerprint = syncFingerprint();
       _kvBootComplete = true;
-      console.log('[KV] boot complete, sync enabled, fingerprint captured');
     });
   } else {
     Promise.resolve().then(() => {
@@ -7916,7 +7915,6 @@ function persistNow(){
   if(!_kvBootComplete) return; // suppress during boot
   const fp = syncFingerprint();
   if(fp === _lastSyncedFingerprint) return;
-  console.log('[KV] persistNow push — changed fields:', syncFingerprintDiff(_lastSyncedFingerprint));
   if(_kvPushTimer) clearTimeout(_kvPushTimer);
   _kvPushTimer = setTimeout(kvPush, 500);
 }
@@ -8018,9 +8016,10 @@ function syncFingerprint(){
   return JSON.stringify(copy);
 }
 
-// DIAGNOSTIC: returns a readable summary of what differs between two fingerprints.
-// Used to log exactly which top-level keys triggered a push, so we can find any
-// remaining problem fields. Safe to leave on — only fires when a push happens.
+// DIAGNOSTIC HELPER: returns a readable summary of what differs between two
+// fingerprints. Currently unused — kept around for future debugging. To re-enable,
+// add back: console.log('[KV] push —', syncFingerprintDiff(_lastSyncedFingerprint));
+// inside kvPushDebounced or persistNow before the setTimeout.
 function syncFingerprintDiff(prevFp){
   if(!prevFp) return '(no previous fingerprint)';
   let prev;
@@ -8155,7 +8154,6 @@ function kvPushDebounced() {
   if(!_kvBootComplete) return; // suppress pushes during boot
   const fp = syncFingerprint();
   if(fp === _lastSyncedFingerprint) return; // nothing meaningful changed
-  console.log('[KV] push scheduled — changed fields:', syncFingerprintDiff(_lastSyncedFingerprint));
   clearTimeout(_kvPushTimer);
   _kvPushTimer = setTimeout(kvPush, 5000);
 }
