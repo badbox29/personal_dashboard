@@ -794,17 +794,29 @@ async function handleEisac(body, ctx) {
     cacheAfter = d.toISOString();
   }
 
-  // Debug / discovery mode — tests auth and returns raw server response info
+  // Debug / discovery mode — probes multiple endpoints to diagnose auth and URL issues
   if (body.action === 'discover') {
     const creds = btoa(`${username}:${password}`);
-    const discoveryUrl = 'https://e-isac.cyware.com/ctixapi/ctix21/taxii2/';
-    let res;
-    try { res = await fetch(discoveryUrl, { headers: { 'Authorization': `Basic ${creds}`, 'Accept': '*/*' } }); }
-    catch(e) { return json({ error: `Discovery fetch failed: ${e.message}` }); }
-    const ct = res.headers.get('content-type') || 'unknown';
-    let body2 = '';
-    try { body2 = (await res.text()).slice(0, 600); } catch(e) {}
-    return json({ status: res.status, contentType: ct, body: body2 });
+    const hdrs = { 'Authorization': `Basic ${creds}`, 'Accept': '*/*' };
+    const probes = [
+      { label: 'TAXII 2.1 Discovery',   url: 'https://e-isac.cyware.com/ctixapi/ctix21/taxii2/' },
+      { label: 'TAXII 2.0 Discovery',   url: 'https://e-isac.cyware.com/ctixapi/ctix2/taxii/' },
+      { label: 'TAXII 2.1 Collections', url: 'https://e-isac.cyware.com/ctixapi/ctix21/collections/' },
+      { label: 'TAXII 2.1 Objects (no params)', url: `https://e-isac.cyware.com/ctixapi/ctix21/collections/${encodeURIComponent(collectionId)}/objects/` },
+    ];
+    const results = [];
+    for (const p of probes) {
+      try {
+        const res = await fetch(p.url, { headers: hdrs });
+        const ct = res.headers.get('content-type') || 'unknown';
+        let snippet = '';
+        try { snippet = (await res.text()).slice(0, 300); } catch(e) {}
+        results.push(`[${p.label}]\nHTTP ${res.status} | ${ct}\n${snippet}`);
+      } catch(e) {
+        results.push(`[${p.label}]\nFetch error: ${e.message}`);
+      }
+    }
+    return json({ results: results.join('\n\n---\n\n') });
   }
 
   const cacheKey = `https://eisac-cache.internal/${hashStr(username + collectionId)}/${cacheAfter}/${safeLimit}`;

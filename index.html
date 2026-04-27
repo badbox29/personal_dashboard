@@ -11259,7 +11259,7 @@ function buildEisacWidget(sec, tabId){
   const testBtn=el('button','search-widget-go'); testBtn.textContent='🔍 Test Connection'; testBtn.style.cssText='background:rgba(0,180,200,0.15);border-color:var(--cyan);color:var(--cyan);';
   const testOut=el('div'); testOut.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);margin-top:5px;padding:5px 7px;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:3px;word-break:break-all;white-space:pre-wrap;display:none;';
   testBtn.onclick=async()=>{
-    const workerUrl=getWorkerUrl(inpWorker.value.trim()||cfg.eisacWorker);
+    const workerUrl=(getWorkerUrl(inpWorker.value.trim()||cfg.eisacWorker)||'').replace(/\/+$/,'');
     if(!workerUrl){ testOut.textContent='⚠ No worker URL set.'; testOut.style.display=''; return; }
     testBtn.textContent='Testing…'; testBtn.disabled=true;
     try{
@@ -11268,7 +11268,7 @@ function buildEisacWidget(sec, tabId){
         body:JSON.stringify({ action:'discover', username:inpUser.value.trim(), password:inpPass.value.trim() }),
       });
       const d=await r.json();
-      testOut.textContent='HTTP '+d.status+'\nContent-Type: '+d.contentType+'\n\n'+d.body;
+      testOut.textContent= d.results || d.error || JSON.stringify(d,null,2);
     } catch(e){ testOut.textContent='⚠ '+e.message; }
     testOut.style.display='';
     testBtn.textContent='🔍 Test Connection'; testBtn.disabled=false;
