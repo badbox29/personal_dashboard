@@ -97,7 +97,7 @@ https://badbox29.github.io/personal_dashboard/
 
 ### 1. Get the files
 
-Download `index.html` and `pollen-proxy-worker.js` from this repository. That's it — `index.html` is the entire app.
+Download `index.html`, `pollen-proxy-worker.js`, and either `'local-proxy-server.js` (if you want to run node.js local proxy) or `local-proxy-server.php` (if you want to run PHP local proxy) from this repository. That's it — `index.html` is the entire app.
 
 Open `index.html` in your browser directly, serve it from any static host, or set it as your browser's homepage/new tab page.
 
@@ -249,6 +249,43 @@ Toggle **Enable automatic KV sync**. When active:
 - Every change to your dashboard is pushed to KV within 5 seconds (debounced).
 - Your full state is pulled from KV on every page load.
 - Mergeable data (logs, history, seen/dismissed records) is combined additively across browsers rather than overwritten. Configuration and widget settings use a last-write-wins model.
+
+---
+
+### 4. Run a Local Proxy Server (EISAC widget)
+The E-ISAC TAXII 2.1 feed restricts access to whitelisted corporate customer IP addresses.
+Requests routed through the Cloudflare Worker will be blocked because Cloudflare's IPs are not on that whitelist.
+The local proxy files solve this by running on your work machine, so requests to E-ISAC originate from your corporate IP.
+The local proxy runs alongside the Cloudflare Worker — it does not replace it.
+
+#### 4a. Choose a version
+- **`local-proxy-server.js`** — Node.js. Run with `node local-proxy-server.js` and note the local port it binds to (e.g. `http://localhost:3000`).
+- **`local-proxy-server.php`** — PHP/XAMPP. Place it in your XAMPP `htdocs` directory and access it through your local Apache instance.
+
+#### 4b. Available routes
+Both versions expose the following three routes:
+
+**`GET /ping`**
+Health check. Confirms the local proxy is reachable.
+Returns `{ "ok": true, "via": "local" }`.
+
+**`POST /status`**
+Tests reachability of an arbitrary URL from the server side, bypassing browser CORS restrictions.
+Body: `{ "url": "https://..." }`
+Returns `{ "ok": true, "status": 200, "via": "local" }` on success, or `{ "ok": false, "status": null, "via": "local", "error": "..." }` on failure.
+
+**`POST /eisac`**
+Proxies authenticated requests to the E-ISAC TAXII 2.1 feed and returns a normalized STIX 2.1 object array.
+Requests originate from your local machine, ensuring they come from your whitelisted corporate IP.
+Body: `{ username, password, collectionId, addedAfter?, limit? }`
+For diagnostics, pass `{ username, password, action: "discover" }` instead.
+Returns `{ total, objects, more }`.
+
+#### 4c. Point the E-ISAC widget at your local proxy
+Configure the local proxy URL in the E-ISAC widget settings the same way you would a Worker URL.
+Your Global Worker URL (set in step 2c) remains pointed at your Cloudflare Worker for all other routes.
+
+**Note:** The local proxy must be running on a machine with a whitelisted corporate IP. It will not work from a home network or other non-whitelisted connection.
 
 ---
 
