@@ -1,0 +1,14 @@
+# salty_start local proxy — Apache rewrite rules
+# Place this file in the same folder as local-proxy-server.php
+#
+# Requires mod_rewrite to be enabled in XAMPP. See setup instructions
+# at the top of local-proxy-server.php if you haven't done this yet.
+
+Options -Indexes
+
+RewriteEngine On
+
+# Route /ping, /status, /eisac (and any sub-paths) to the PHP file.
+# Skip rewriting if the request is already pointing at the PHP file itself.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ local-proxy-server.php/$1 [QSA,L]
