@@ -2405,6 +2405,8 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
 .sec-type-card:hover  { border-color: var(--cyan); color: var(--cyan); }
 .sec-type-card.active { border-color: var(--gold); color: var(--gold); background: rgba(221,176,75,0.08); }
 .sec-type-card:disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
+.sec-type-card.sw-locked { opacity: 0.35; cursor: not-allowed; }
+.sec-type-card.sw-locked:hover { border-color: var(--border); color: var(--text-dim); }
 
 /* Widget category tabs (inside widget picker) */
 .widget-cat-tabs {
@@ -6319,6 +6321,7 @@ body.edit-mode .gh-add-row { display: flex; }
       <button class="mbtn mbtn-primary" onclick="saveWorkerUrl()" style="flex-shrink:0;">Save</button>
     </div>
     <div id="workerUrlStatus" style="font-size:11px;color:var(--cyan);margin-top:6px;min-height:16px;"></div>
+    <p style="font-size:10.5px;color:var(--text-dim);margin:5px 0 0;line-height:1.5;">🔒 Setting this URL unlocks the following widgets in the picker: RSS Feed, Sports Scores, Word of the Day, Last.fm, CVE Bulletin, Threat Intel (OTX), Proofpoint TAP, and Unsplash Photo.</p>
     <div style="margin-top:12px;">
       <label style="font-weight:600;">Worker Secret Key</label>
       <p style="font-size:11px;color:var(--text-dim);margin:4px 0 8px;line-height:1.6;">
@@ -6347,6 +6350,7 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="mbtn mbtn-primary" onclick="saveLocalProxyUrl()" style="flex-shrink:0;">Save</button>
       </div>
       <div id="localProxyUrlStatus" style="font-size:11px;color:var(--cyan);margin-top:6px;min-height:16px;"></div>
+      <p style="font-size:10.5px;color:var(--text-dim);margin:5px 0 0;line-height:1.5;">🔒 Setting this URL unlocks the E-ISAC Intel widget in the picker.</p>
     </div>
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
       <p style="font-size:11px;color:var(--text-dim);margin:0;line-height:1.7;">
@@ -19928,11 +19932,35 @@ function openAddSection(tabId, colId){
     const id = 'sw' + t.charAt(0).toUpperCase() + t.slice(1);
     document.getElementById(id)?.classList.remove('active');
   });
+  initWidgetPickerLocks();
   openOverlay('secTypeOverlay');
   setTimeout(()=>document.getElementById('stName').focus(),50);
 }
 
+function initWidgetPickerLocks(){
+  const hasWorker = !!(D.workerUrl  || '').trim();
+  const hasProxy  = !!(D.localProxyUrl || '').trim();
+  const workerTip = 'Requires Cloudflare Worker URL — set it in ⚡ Worker Settings';
+  const proxyTip  = 'Requires Local Proxy URL — set it in ⚡ Worker Settings';
+  const workerWidgets = ['rss','sports','wotd','lastfm','cve','otx','tap','unsplash'];
+  const proxyWidgets  = ['eisac'];
+  workerWidgets.forEach(t => {
+    const btn = document.getElementById('sw' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (!btn) return;
+    btn.classList.toggle('sw-locked', !hasWorker);
+    btn.title = hasWorker ? '' : workerTip;
+  });
+  proxyWidgets.forEach(t => {
+    const btn = document.getElementById('sw' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (!btn) return;
+    btn.classList.toggle('sw-locked', !hasProxy);
+    btn.title = hasProxy ? '' : proxyTip;
+  });
+}
+
 function selectWidgetType(type){
+  const btn = document.getElementById('sw' + type.charAt(0).toUpperCase() + type.slice(1));
+  if (btn && btn.classList.contains('sw-locked')) return;
   newWidgetType = type;
   WIDGET_TYPES.forEach(t => {
     const id = 'sw' + t.charAt(0).toUpperCase() + t.slice(1);
