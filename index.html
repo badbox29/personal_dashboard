@@ -16774,7 +16774,7 @@ function bmBuildTopicSearch(){
     try{
       const responses=await Promise.all(terms.map(topic=>
         fetch(w.replace(/\/+$/,'')+'/topics',{
-          method:'POST',headers:{'Content-Type':'application/json'},
+          method:'POST',headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
           body:JSON.stringify({topic}),
         }).then(r=>r.json()).catch(()=>({verses:[]}))
       ));
@@ -17140,7 +17140,7 @@ function votdRender(){
       // Fire all term searches in parallel
       const responses=await Promise.all(terms.map(topic=>
         fetch(w.replace(/\/+$/,'')+'/topics',{
-          method:'POST',headers:{'Content-Type':'application/json'},
+          method:'POST',headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
           body:JSON.stringify({topic}),
         }).then(r=>r.json()).catch(()=>({verses:[]}))
       ));
