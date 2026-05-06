@@ -14797,11 +14797,22 @@ function buildTapWidget(sec,tabId){
         card.appendChild(hintEl);
 
         const tip=el('div');
-        tip.style.cssText=`position:fixed;z-index:9999;background:var(--card-bg,#1a1a2e);border:1px solid ${color};border-radius:6px;padding:10px;min-width:260px;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,0.7);pointer-events:none;display:none;font-family:Share Tech Mono,monospace;font-size:9px;`;
+        tip.style.cssText=`position:fixed;z-index:9999;background:var(--card-bg,#1a1a2e);border:1px solid ${color};border-radius:6px;padding:10px;min-width:260px;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,0.7);display:none;font-family:Share Tech Mono,monospace;font-size:9px;`;
         document.body.appendChild(tip);
 
-        card.addEventListener('mouseenter',()=>{
+        let _tipHideTimer;
+        const _showTip=()=>{
+          clearTimeout(_tipHideTimer);
           card.style.borderColor=color;
+        };
+        const _hideTip=()=>{
+          _tipHideTimer=setTimeout(()=>{ tip.style.display='none'; card.style.borderColor=borderColor||'var(--border)'; },120);
+        };
+        tip.addEventListener('mouseenter',()=>clearTimeout(_tipHideTimer));
+        tip.addEventListener('mouseleave',_hideTip);
+
+        card.addEventListener('mouseenter',()=>{
+          _showTip();
           tip.innerHTML='';
           const th=el('div'); th.style.cssText=`font-size:10px;font-weight:700;color:${color};margin-bottom:7px;border-bottom:1px solid var(--border);padding-bottom:5px;`;
           th.textContent=label+' ('+val+' total)'; tip.appendChild(th);
@@ -14815,7 +14826,7 @@ function buildTapWidget(sec,tabId){
           if(left+330>window.innerWidth) left=window.innerWidth-335;
           tip.style.top=top+'px'; tip.style.left=Math.max(4,left)+'px';
         });
-        card.addEventListener('mouseleave',()=>{ card.style.borderColor=borderColor||'var(--border)'; tip.style.display='none'; });
+        card.addEventListener('mouseleave',_hideTip);
       }
       return card;
     };
