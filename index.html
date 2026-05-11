@@ -7868,6 +7868,7 @@ var _kvBootComplete = false;
   if(!D.tray.cols) D.tray.cols = 1;
   if(!Array.isArray(D.appLinks)) D.appLinks = [];
   if(!Array.isArray(D.favLinks)) D.favLinks = [];
+  if(!Array.isArray(D.favDeletedIds)) D.favDeletedIds = [];
   if(!Array.isArray(D.tapSeenClickGuids)) D.tapSeenClickGuids = [];
   if(!Array.isArray(D.tapKnownVapEmails)) D.tapKnownVapEmails = [];
   if(D.tapLastFetchTime === undefined)    D.tapLastFetchTime   = 0;
@@ -8071,6 +8072,8 @@ const KV_MERGE_KEYS = {
   // tray links — dedup by id
   appLinks:           e => e.id,
   favLinks:           e => e.id,
+  // tombstone for unfavorited links (prevents additive merge from resurrecting them)
+  favDeletedIds:      e => e,
 };
 
 // Keys that are per-browser diagnostics — never overwrite from remote payload
@@ -8208,9 +8211,20 @@ function kvMergeD(remote) {
         const localMod  = new Date(local.modifiedAt  || local.createdAt  || 0).getTime();
         const remoteMod = new Date(e.modifiedAt || e.createdAt || 0).getTime();
         if(remoteMod > localMod) seen.set(k, e);
+      } else if(key === 'appLinks') {
+        // Pick whichever version was modified more recently so edits propagate
+        const local = seen.get(k);
+        const localMod  = new Date(local.modifiedAt  || 0).getTime();
+        const remoteMod = new Date(e.modifiedAt || 0).getTime();
+        if(remoteMod > localMod) seen.set(k, e);
       }
     });
     D[key] = Array.from(seen.values());
+    // After merging favLinks, remove any that have been tombstoned on any browser
+    if(key === 'favLinks') {
+      const deleted = new Set(D.favDeletedIds || []);
+      if(deleted.size) D[key] = D[key].filter(f => !deleted.has(f.id));
+    }
     // Keep energyEntries sorted newest-first so [0] is always the most recent
     if(key === 'energyEntries') D[key].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
   });
@@ -21475,13 +21489,14 @@ function openAddAppDialog(existing){
     if(!name||!url) return;
     if(!/^https?:\/\//i.test(url)) url='https://'+url;
     if(!Array.isArray(D.appLinks)) D.appLinks=[];
+    const now = new Date().toISOString();
     if(existing){
       const idx=D.appLinks.findIndex(a=>a.id===existing.id);
-      if(idx>=0) D.appLinks[idx]={...D.appLinks[idx], name, url, desc, icon};
+      if(idx>=0) D.appLinks[idx]={...D.appLinks[idx], name, url, desc, icon, modifiedAt: now};
     } else {
       D.appLinks.push({
         id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
-        name, url, desc, icon
+        name, url, desc, icon, modifiedAt: now
       });
     }
     persist();
@@ -21498,9 +21513,14 @@ function isFavLink(itemId){
 
 function toggleFavLink(itemId, name, url){
   if(!Array.isArray(D.favLinks)) D.favLinks=[];
+  if(!Array.isArray(D.favDeletedIds)) D.favDeletedIds=[];
   if(isFavLink(itemId)){
     D.favLinks=D.favLinks.filter(f=>f.id!==itemId);
+    // Tombstone so the deletion propagates through additive KV merge
+    if(!D.favDeletedIds.includes(itemId)) D.favDeletedIds.push(itemId);
   } else {
+    // Un-tombstone if re-favoriting
+    D.favDeletedIds=D.favDeletedIds.filter(id=>id!==itemId);
     D.favLinks.push({ id:itemId, name, url });
   }
   persist();
