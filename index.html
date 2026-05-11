@@ -21492,7 +21492,12 @@ function openAddAppDialog(existing){
     const now = new Date().toISOString();
     if(existing){
       const idx=D.appLinks.findIndex(a=>a.id===existing.id);
-      if(idx>=0) D.appLinks[idx]={...D.appLinks[idx], name, url, desc, icon, modifiedAt: now};
+      if(idx>=0){
+        D.appLinks[idx]={...D.appLinks[idx], name, url, desc, icon, modifiedAt: now};
+        // Keep favLinks snapshot in sync with the edited entry
+        const fidx=( D.favLinks||[]).findIndex(f=>f.id===existing.id);
+        if(fidx>=0) D.favLinks[fidx]={...D.favLinks[fidx], name, url};
+      }
     } else {
       D.appLinks.push({
         id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
