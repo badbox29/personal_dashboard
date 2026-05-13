@@ -6785,7 +6785,7 @@ body.edit-mode .gh-add-row { display: flex; }
       <!-- Creative widgets -->
       <div class="widget-cat-panel" id="wcPanelCreative">
         <button class="sec-type-card" id="swCompose"   onclick="selectWidgetType('compose')">
-          🖼 Composition Gen<span>Abstract painting catalyst</span>
+          🎨 Composition Gen<span>Multi-mode creative prompt generator</span>
         </button>
         <button class="sec-type-card" id="swMet"       onclick="selectWidgetType('met')">
           🏛 Met Museum<span>Daily artwork from the collection</span>
@@ -7874,6 +7874,7 @@ var _kvBootComplete = false;
   if(D.tapLastFetchTime === undefined)    D.tapLastFetchTime   = 0;
   if(D.poemDaily === undefined)           D.poemDaily          = null;
   if(!Array.isArray(D.poemFavorites))     D.poemFavorites      = [];
+  if(!Array.isArray(D.composePromptHistory)) D.composePromptHistory = [];
   if(typeof D.drinkLogs !== 'object' || Array.isArray(D.drinkLogs)) D.drinkLogs = {};
   // Migrate legacy salty_drinks_* localStorage keys into D.drinkLogs
   Object.keys(localStorage).filter(k=>k.startsWith('salty_drinks_')).forEach(k=>{
@@ -8069,6 +8070,8 @@ const KV_MERGE_KEYS = {
   tapKnownVapEmails:  e => e,
   // poem favorites — dedup by id slug
   poemFavorites:      e => e.id,
+  // compose prompt history — dedup by timestamp
+  composePromptHistory: e => e.timestamp,
   // tray links — dedup by id
   appLinks:           e => e.id,
   favLinks:           e => e.id,
@@ -11704,16 +11707,62 @@ function buildBgpWidget(sec){
 /* ---- ABSTRACT COMPOSITION GENERATOR ---- */
 function buildComposeWidget(sec){
   const cfg = sec.widgetConfig || (sec.widgetConfig = {});
-  if(!cfg.saved)       cfg.saved       = [];
-  if(cfg.spark === undefined) cfg.spark = false;
-  // Read-through accessors — never write defaults into cfg at render time
-  const DEFAULT_SECTIONS = {palette:true,structure:true,texture:true,tension:true,concept:true};
-  const cfgSections   = ()=> cfg.sections   || DEFAULT_SECTIONS;
-  const cfgComplexity = ()=> cfg.complexity || 'balanced';
-  const cfgMood       = ()=> cfg.mood       || 'mixed';
-  const cfgStyleLean  = ()=> cfg.styleLean  || 'mixed';
+  if(!cfg.saved)                       cfg.saved         = [];
+  if(!Array.isArray(cfg.enabledModes)) cfg.enabledModes  = ['painting'];
+  if(!cfg.activeMode || !cfg.enabledModes.includes(cfg.activeMode))
+    cfg.activeMode = cfg.enabledModes[0] || 'painting';
+  if(cfg.spark === undefined)          cfg.spark         = false;
 
-  // ── Data pools ────────────────────────────────────────
+  const ALL_MODES = ['painting','writing','photography','music','poetry'];
+  const MODE_META = {
+    painting:    { label:'Painting',     icon:'🖼️' },
+    writing:     { label:'Writing',      icon:'✍️' },
+    photography: { label:'Photography',  icon:'📷' },
+    music:       { label:'Music',        icon:'🎵' },
+    poetry:      { label:'Poetry',       icon:'📜' },
+  };
+  const MODE_AXES = {
+    painting: [
+      { key:'palette',   label:'Palette',   cls:'palette' },
+      { key:'structure', label:'Structure', cls:'' },
+      { key:'texture',   label:'Texture',   cls:'' },
+      { key:'tension',   label:'Tension',   cls:'' },
+      { key:'concept',   label:'Concept',   cls:'concept' },
+    ],
+    writing: [
+      { key:'voice',    label:'Voice',    cls:'' },
+      { key:'setting',  label:'Setting',  cls:'' },
+      { key:'pov',      label:'POV',      cls:'' },
+      { key:'conflict', label:'Conflict', cls:'' },
+      { key:'tone',     label:'Tone',     cls:'' },
+      { key:'concept',  label:'Theme',    cls:'concept' },
+    ],
+    photography: [
+      { key:'subject',      label:'Subject',     cls:'' },
+      { key:'lighting',     label:'Lighting',    cls:'palette' },
+      { key:'composition',  label:'Composition', cls:'' },
+      { key:'mood',         label:'Mood',        cls:'' },
+      { key:'technique',    label:'Technique',   cls:'concept' },
+    ],
+    music: [
+      { key:'mode',            label:'Mode / Key',  cls:'palette' },
+      { key:'tempo',           label:'Tempo',       cls:'' },
+      { key:'instrumentation', label:'Instruments', cls:'' },
+      { key:'harmony',         label:'Harmony',     cls:'' },
+      { key:'arc',             label:'Dynamic Arc', cls:'' },
+      { key:'concept',         label:'Motif',       cls:'concept' },
+    ],
+    poetry: [
+      { key:'form',     label:'Form',     cls:'' },
+      { key:'speaker',  label:'Speaker',  cls:'' },
+      { key:'imagery',  label:'Imagery',  cls:'palette' },
+      { key:'register', label:'Register', cls:'' },
+      { key:'prosody',  label:'Prosody',  cls:'' },
+      { key:'concept',  label:'Seed',     cls:'concept' },
+    ],
+  };
+
+  // ── Painting pools ────────────────────────────────────
   const PALETTES = {
     warm: [
       'burnt sienna, raw umber, warm white accent',
@@ -11747,7 +11796,6 @@ function buildComposeWidget(sec){
       "alizarin crimson, ultramarine, raw umber, gold",
     ],
   };
-
   const STRUCTURES = {
     geometric: [
       'vertical split tension — two unequal fields in opposition',
@@ -11774,7 +11822,6 @@ function buildComposeWidget(sec){
       'asymmetric bilateral — mirrored intent, broken execution',
     ],
   };
-
   const TEXTURES = {
     minimal: [
       'smooth field with single palette knife scrape as accent',
@@ -11799,7 +11846,6 @@ function buildComposeWidget(sec){
       'gestural marks partially buried under subsequent translucent fields',
     ],
   };
-
   const TENSIONS = {
     calm: [
       'slow inward pull toward soft center',
@@ -11830,7 +11876,6 @@ function buildComposeWidget(sec){
       'rhythm of containment and release, very slow',
     ],
   };
-
   const CONCEPTS = [
     'contained instability', 'pressure beneath stillness',
     'fracture resolving into unity', 'light emerging through obstruction',
@@ -11845,8 +11890,6 @@ function buildComposeWidget(sec){
     'tension that has accepted itself', 'form as argument',
     'aftermath of tenderness', 'the boundary learning to move',
   ];
-
-  // Spark-only pools — unusual, pushed combinations
   const SPARK_PALETTES = [
     "fluorescent cadmium lemon, lamp black, trace of phthalo violet",
     "near-white with single deep indigo interruption",
@@ -11861,140 +11904,409 @@ function buildComposeWidget(sec){
     'edge-dominant — center deliberately emptied',
     'rotational asymmetry — the composition implies continuation',
   ];
-  const SPARK_CONCEPTS = [
+  const SPARK_CONCEPTS_P = [
     'the embarrassment of beauty', 'failure as compositional logic',
     'what the paint wanted to do', 'a mistake promoted to principle',
     'the wrong color in the right place', 'permission granted too late',
   ];
 
-  // ── Lock state ────────────────────────────────────────
-  const locks = { palette:false, structure:false, texture:false, tension:false, concept:false };
-  let current  = null;
+  // ── Writing pools ─────────────────────────────────────
+  const WRITING_POOLS = {
+    voice: [
+      'intimate confessional — close, direct, no distance between speaker and subject',
+      'lyric detachment — emotional but held at careful remove',
+      'documentary plainness — declarative, witnessing, minimal interpretation',
+      'oracular — address from above, prophetic, impersonal certainty',
+      'sardonic observer — wry distance, precision as defense',
+      'second-person accusation — direct address as exposure',
+      'unreliable intimacy — confesses while concealing',
+    ],
+    setting: [
+      'unnamed city, off-season, too early or too late',
+      'childhood home reimagined by adult memory',
+      'institutional space after hours — hospital, school, church',
+      'transit — plane, train, long drive, no fixed point',
+      'a specific place at the wrong time of year',
+      'domestic interior during an unnamed crisis',
+      'open landscape resisting interpretation',
+    ],
+    pov: [
+      'first person, present tense, no distance',
+      'close third — narrator adjacent to the character\'s thinking',
+      'second person direct — you did this, you felt this',
+      'first person plural — a we that may or may not hold together',
+      'free indirect discourse — character\'s voice bleeding into narration',
+      'epistolary — letter, message, record left behind',
+    ],
+    conflict: [
+      'internal — a belief the character can no longer hold',
+      'relational — two people who cannot reach each other',
+      'temporal — present self confronting a past decision',
+      'ecological — human will against indifferent natural process',
+      'societal — private feeling made impossible by public circumstance',
+      'metaphysical — the self confronting its own contingency',
+    ],
+    tone: [
+      'elegiac — mourning without sentimentality',
+      'tender — open, at risk of hurt, not protecting itself',
+      'unsettled — cannot find firm ground, refuses to pretend otherwise',
+      'clinical distance — precision as emotional regulation',
+      'restrained urgency — much at stake, very little said',
+      'quietly exuberant — joy that has earned its right to exist',
+    ],
+    concept: [
+      'what we keep after we stop believing it',
+      'the sentence that ended something',
+      'a door that no longer opens the same way',
+      'love as failure of vocabulary',
+      'the cost of staying',
+      'time as accumulation rather than passage',
+      'what the body remembers that the mind has filed away',
+      'a kindness that arrived too late',
+      'the particular weight of an ordinary day',
+      'what we rehearse but never say',
+      'the distance between two people who share everything',
+    ],
+    spark_concept: [
+      'the embarrassment of sincerity',
+      'a memory that belongs to no one',
+      'the sound a feeling makes before it has language',
+      'tenderness toward something that cannot receive it',
+    ],
+  };
 
-  // ── Generation logic ──────────────────────────────────
+  // ── Photography pools ─────────────────────────────────
+  const PHOTO_POOLS = {
+    subject: [
+      'lone figure, urban, anonymized by context',
+      'interior space in the absence of its usual occupant',
+      'landscape at the edge of weather',
+      'hands — labor, age, gesture, intention',
+      'infrastructure — bridges, overpasses, utility lines, signal towers',
+      'close-up domestic — objects in their ordinary positions',
+      'crowd without individuals — mass as texture',
+      'threshold spaces — doorways, windows, stairwells, corridors',
+    ],
+    lighting: [
+      'late afternoon oblique — long shadows, warm rake',
+      'diffuse overcast — shadowless, honest, nowhere to hide',
+      'hard industrial artificial — fluorescent, sodium, tungsten',
+      'blue hour — the light between dark and dark',
+      'single source interior — one lamp, everything else falling away',
+      'harsh overhead noon — flattening, unforgiving',
+      'against-the-light — silhouette, halo, detail sacrificed for shape',
+    ],
+    composition: [
+      'deep foreground-to-background axis, everything in line',
+      'radical negative space — subject small against vast field',
+      'frame within frame — window, doorway, arch as second edge',
+      'tight crop — no context, no escape',
+      'symmetry with a single deliberate disruption',
+      'layered planes — foreground, mid, background each distinct',
+      'subject at the very edge, almost leaving',
+    ],
+    mood: [
+      'quiet desolation — present but not performed',
+      'suspended anticipation — something is about to happen',
+      'tender observation — the camera as act of care',
+      'tense ambiguity — uncertain what we are looking at',
+      'wistful remove — beauty acknowledged from a distance',
+      'documentary stillness — no interpretation offered',
+    ],
+    technique: [
+      'long exposure — time collapsed into a single surface',
+      'very shallow depth of field — one plane sharp, all else released',
+      'high contrast monochrome — structure over tone',
+      'visible grain — film or digital noise as presence',
+      'motion blur — subject moving, world still, or the reverse',
+      'compressed telephoto — distance collapsed, planes stacked',
+      'wide angle close — distortion as emphasis',
+    ],
+  };
+
+  // ── Music pools ───────────────────────────────────────
+  const MUSIC_POOLS = {
+    mode: [
+      'Dorian — minor with raised sixth, folk-inflected melancholy',
+      'Lydian — raised fourth, hovering, unresolved brightness',
+      'Phrygian — flattened second, ancient, tense, Spanish-inflected',
+      'pentatonic — open, uncluttered, no leading-tone pressure',
+      'whole tone — floating, directionless, impressionistic',
+      'chromatic — every semitone available, maximum harmonic pressure',
+      'Mixolydian — major with flat seventh, blues-adjacent warmth',
+    ],
+    tempo: [
+      'very slow, breath as pulse — time expanded, no urgency',
+      'medium walking — steady, unhurried, each beat settled',
+      'driving eighth-note pulse — forward pressure, no rest',
+      'free time — no fixed meter, shaped by phrase not clock',
+      'syncopated — accent displaced, ground implied but unstated',
+      'waltz feel — three, one strong beat and two that lean',
+      'rubato — tempo as expressive tool, stretched and compressed',
+    ],
+    instrumentation: [
+      'solo piano, nothing else',
+      'string quartet — intimate, self-contained',
+      'sparse electronics and voice',
+      'brass and low percussion — weight and ceremony',
+      'acoustic guitar, close-miked — room and body audible',
+      'chamber ensemble, winds-forward',
+      'bass and drums only — harmonic implication through rhythm',
+    ],
+    harmony: [
+      'diatonic warmth — stays inside the key, resolution always available',
+      'quartal — chords built in fourths, open, ambiguous, modern',
+      'jazz extensions — ninths, elevenths, thirteenths, color over function',
+      'drone-based — one pitch sustained, everything moves above it',
+      'cluster chords — semitonal density, dissonance as texture',
+      'static harmony — no chord movement, melody carries all motion',
+      'modal interchange — borrowing from parallel modes, unexpected color',
+    ],
+    arc: [
+      'sustained pianissimo throughout — tension through restraint',
+      'slow inevitable build from near-silence to full presence',
+      'sudden violent contrast — quiet broken, silence returned',
+      'long plateau then rapid collapse',
+      'volatile — no settled dynamic level, unpredictable',
+      'decrescendo throughout — begins full, ends in near-silence',
+    ],
+    concept: [
+      'a rhythm that implies a missing melody',
+      'two voices that never resolve their interval',
+      'the same phrase repeated until it changes meaning',
+      'silence as structural element — the rests are the work',
+      'a melodic fragment that refuses to develop',
+      'harmony that implies a tonal center it never reaches',
+      'the texture of accumulation without climax',
+    ],
+    spark_concept: [
+      'a melody that arrives after it has already ended',
+      'the wrong instrument in the right place',
+      'rhythm as the memory of a sound that stopped',
+    ],
+  };
+
+  // ── Poetry pools ──────────────────────────────────────
+  const POETRY_POOLS = {
+    form: [
+      'free verse — line breaks as breath, no formal constraint',
+      'prose poem — paragraph form, lyric density',
+      'sonnet — fourteen lines, volta required',
+      'villanelle — two refrains, obsessive return',
+      'ghazal — self-contained couplets, connected by refrain',
+      'elegy — formal address to loss',
+      'ode — sustained praise of a single subject',
+      'haiku sequence — compressed image, juxtaposition as meaning',
+      'list poem — accumulation as argument',
+    ],
+    speaker: [
+      'first person, no distance, present tense confession',
+      'second person address — speaking directly to a you',
+      'third person witness — observing without intervening',
+      'first person plural — a we whose boundaries are uncertain',
+      'no fixed speaker — language without a stable source',
+      'apostrophe — address to an absent, dead, or abstract subject',
+    ],
+    imagery: [
+      'domestic and interior — kitchen, bed, the ordinary object',
+      'ecological and natural — weather, animals, landscape, season',
+      'industrial and urban — infrastructure, noise, concrete, light pollution',
+      'somatic and bodily — the body as landscape, sensation as image',
+      'celestial and cosmic — stars, time scales, geological deep time',
+      'archival and historical — documents, photographs, records, ruins',
+    ],
+    register: [
+      'grief — not performed, structural',
+      'longing — for what is gone or never was',
+      'wonder — the world surprising itself',
+      'dread — not panic, slow accumulation',
+      'tenderness — at risk, not self-protective',
+      'ambivalence — two true things in direct conflict',
+      'quiet rage — controlled, all the more dangerous for it',
+    ],
+    prosody: [
+      'heavy consonant clusters — percussive, resistant',
+      'liquid open vowels — flowing, little friction',
+      'irregular breath lengths — stanza breaks as gasps',
+      'end-stopped lines — each line a complete unit, no overflow',
+      'heavy enjambment — meaning completed across line breaks',
+      'internal rhyme and assonance — sound woven through, not at end',
+      'minimal punctuation — pace controlled by white space',
+    ],
+    concept: [
+      'the object that outlived the relationship',
+      'a recurring dream that has started to feel like memory',
+      'the conversation that should have happened differently',
+      'a body in the process of changing',
+      'what the child understood that the adult has since forgotten',
+      'a landscape that refuses to be symbolic',
+      'the years when nothing seemed to happen but everything did',
+      'a word that no longer means what it used to',
+      'what remains after you stop waiting',
+    ],
+    spark_concept: [
+      'the sound a word makes after it has lost its meaning',
+      'a stanza that knows it is a stanza',
+      'elegy for the version of yourself that almost happened',
+    ],
+  };
+
+  // ── Lock state ────────────────────────────────────────
+  let locks = {};
+  let current = null;
+  let activeMode = cfg.activeMode;
+
+  function getAxes(){ return MODE_AXES[activeMode] || MODE_AXES.painting; }
+
+  function resetLocks(){
+    locks = {};
+    getAxes().forEach(a=>{ locks[a.key]=false; });
+  }
+  resetLocks();
+
+  // ── Helpers ───────────────────────────────────────────
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
-  function getPool(pools, key){
+  function pickForMode(mode, axisKey){
     const spark = cfg.spark;
-    if(key==='palette'){
-      const tone = cfgMood()==='calm'?'cool': cfgMood()==='tense'?'dramatic': cfgMood()==='chaotic'?'dramatic':
-                   cfgMood()==='meditative'?'neutral':'warm';
-      const combined = spark
-        ? [...(pools.warm||[]),...(pools.cool||[]),...(pools.neutral||[]),...(pools.dramatic||[]),...SPARK_PALETTES]
-        : [...(pools[tone]||[]),...(pools.warm||[]),...(pools.cool||[])];
-      return combined;
+    if(mode === 'painting'){
+      if(axisKey==='palette'){
+        const mood = cfg.mood||'mixed';
+        const tone = mood==='calm'?'cool': mood==='tense'?'dramatic': mood==='chaotic'?'dramatic': mood==='meditative'?'neutral':'warm';
+        return pick(spark ? [...PALETTES.warm,...PALETTES.cool,...PALETTES.neutral,...PALETTES.dramatic,...SPARK_PALETTES]
+                          : [...(PALETTES[tone]||[]),...PALETTES.warm,...PALETTES.cool]);
+      }
+      if(axisKey==='structure'){
+        const style = cfg.styleLean||'mixed';
+        return pick(spark ? [...STRUCTURES.geometric,...STRUCTURES.organic,...STRUCTURES.mixed,...SPARK_STRUCTURES]
+                          : style==='mixed' ? [...STRUCTURES.geometric,...STRUCTURES.organic,...STRUCTURES.mixed]
+                                            : [...(STRUCTURES[style]||[]),...STRUCTURES.mixed]);
+      }
+      if(axisKey==='texture'){
+        const cx = cfg.complexity||'balanced';
+        return pick(spark ? [...TEXTURES.minimal,...TEXTURES.balanced,...TEXTURES.complex]
+                          : [...(TEXTURES[cx]||[]),...TEXTURES.balanced]);
+      }
+      if(axisKey==='tension'){
+        const mood = cfg.mood||'mixed';
+        return pick(spark ? [...TENSIONS.calm,...TENSIONS.tense,...TENSIONS.chaotic,...TENSIONS.meditative]
+                          : [...(TENSIONS[mood]||TENSIONS.tense),...TENSIONS.meditative]);
+      }
+      if(axisKey==='concept'){
+        return pick(spark ? [...CONCEPTS,...SPARK_CONCEPTS_P] : CONCEPTS);
+      }
     }
-    if(key==='structure'){
-      const style = cfgStyleLean();
-      const combined = spark
-        ? [...(pools.geometric||[]),...(pools.organic||[]),...(pools.mixed||[]),...SPARK_STRUCTURES]
-        : style==='mixed'?[...(pools.geometric||[]),...(pools.organic||[]),...(pools.mixed||[])]
-          :(pools[style]||[]).concat(pools.mixed||[]);
-      return combined;
+    if(mode === 'writing'){
+      const pool = WRITING_POOLS[axisKey] || [];
+      if(axisKey==='concept' && spark) return pick([...pool,...(WRITING_POOLS.spark_concept||[])]);
+      return pick(pool);
     }
-    if(key==='texture'){
-      const cx = cfgComplexity();
-      const combined = spark
-        ? [...(pools.minimal||[]),...(pools.balanced||[]),...(pools.complex||[])]
-        : (pools[cx]||[]).concat(pools.balanced||[]);
-      return combined;
+    if(mode === 'photography'){
+      return pick(PHOTO_POOLS[axisKey] || []);
     }
-    if(key==='tension'){
-      const combined = spark
-        ? [...(pools.calm||[]),...(pools.tense||[]),...(pools.chaotic||[]),...(pools.meditative||[])]
-        : (pools[cfgMood()]||pools.tense||[]).concat(pools.meditative||[]);
-      return combined;
+    if(mode === 'music'){
+      const pool = MUSIC_POOLS[axisKey] || [];
+      if(axisKey==='concept' && spark) return pick([...pool,...(MUSIC_POOLS.spark_concept||[])]);
+      return pick(pool);
     }
-    if(key==='concept'){
-      return spark ? [...pools,...SPARK_CONCEPTS] : pools;
+    if(mode === 'poetry'){
+      const pool = POETRY_POOLS[axisKey] || [];
+      if(axisKey==='concept' && spark) return pick([...pool,...(POETRY_POOLS.spark_concept||[])]);
+      return pick(pool);
     }
-    return [];
-  }
-
-  function generate(refine=false){
-    const prev = current;
-    current = current ? {...current} : {};
-    const sections = ['palette','structure','texture','tension','concept'];
-    if(refine && prev){
-      // Refine: change 1-2 unlocked sections
-      const unlocked = sections.filter(s=>!locks[s] && cfgSections()[s]);
-      const toChange = unlocked.sort(()=>Math.random()-0.5).slice(0, Math.min(2,unlocked.length));
-      toChange.forEach(s=> current[s] = pickSection(s));
-    } else {
-      sections.forEach(s=>{
-        if(!locks[s] || !prev) current[s] = pickSection(s);
-      });
-    }
-    return current;
-  }
-
-  function pickSection(s){
-    if(s==='palette')   return pick(getPool(PALETTES,  'palette'));
-    if(s==='structure') return pick(getPool(STRUCTURES,'structure'));
-    if(s==='texture')   return pick(getPool(TEXTURES,  'texture'));
-    if(s==='tension')   return pick(getPool(TENSIONS,  'tension'));
-    if(s==='concept')   return pick(getPool(CONCEPTS,  'concept'));
     return '';
   }
 
-  // Derive canvas guidance from current result
+  function generate(refine=false){
+    const axes = getAxes();
+    const prev = current;
+    current = current ? {...current} : {};
+    if(refine && prev){
+      const unlocked = axes.filter(a=>!locks[a.key]);
+      const toChange = unlocked.sort(()=>Math.random()-0.5).slice(0,Math.min(2,unlocked.length));
+      toChange.forEach(a=>{ current[a.key]=pickForMode(activeMode,a.key); });
+    } else {
+      axes.forEach(a=>{ if(!locks[a.key]||!prev) current[a.key]=pickForMode(activeMode,a.key); });
+    }
+    // Log to prompt history
+    if(!D.composePromptHistory) D.composePromptHistory=[];
+    D.composePromptHistory.unshift({
+      timestamp: new Date().toISOString(),
+      discipline: activeMode,
+      spark: !!cfg.spark,
+      axes: {...current},
+    });
+    if(D.composePromptHistory.length>200) D.composePromptHistory=D.composePromptHistory.slice(0,200);
+    persist();
+    return current;
+  }
+
+  // Painting canvas guidance
   function deriveGuidance(comp){
-    if(!comp) return null;
-    const s = (comp.structure||'').toLowerCase();
-    let orientation = 'Portrait';
+    if(!comp || activeMode!=='painting') return null;
+    const s=(comp.structure||'').toLowerCase();
+    let orientation='Portrait';
     if(s.includes('horizontal')||s.includes('sweep')||s.includes('horizon')||s.includes('strata')) orientation='Landscape';
     else if(s.includes('central')||s.includes('radial')||s.includes('floating')) orientation='Square';
-
-    let density = 'Balanced';
+    let density='Balanced';
     if(s.includes('sparse')||s.includes('single')||s.includes('empty')||s.includes('void')) density='Sparse';
     else if(s.includes('dense')||s.includes('clustered')||s.includes('heavy')||s.includes('mass')) density='Dense';
-
-    const t = (comp.texture||'').toLowerCase();
-    let layering = 'Underpainting → mid-layer passage → surface accent';
+    const t=(comp.texture||'').toLowerCase();
+    let layering='Underpainting → mid-layer passage → surface accent';
     if(t.includes('glaz')) layering='Lean block-in → glaze → glaze → accent mark';
     else if(t.includes('impasto')) layering='Thin ground → build impasto mass → scrape → highlight';
     else if(t.includes('dry brush')) layering='Base field → dry brush texture → selective refinement';
     else if(t.includes('tape')||t.includes('hard edge')) layering='Tape → fill → peel → gestural layer on top';
     else if(t.includes('knife')) layering='Loose underpainting → knife layer → optional glaze';
-
     return { orientation, density, layering };
   }
 
   // ── Widget DOM ────────────────────────────────────────
   const wrap = el('div');
 
+  // Mode switcher (only shown when multiple modes enabled)
+  const modeSwitcher = el('div'); modeSwitcher.style.cssText='display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap;';
+  function renderModeSwitcher(){
+    modeSwitcher.innerHTML='';
+    if(cfg.enabledModes.length<=1){ modeSwitcher.style.display='none'; return; }
+    modeSwitcher.style.display='flex';
+    cfg.enabledModes.forEach(m=>{
+      const btn=el('button','clock-style-btn');
+      btn.style.cssText='font-size:10px;padding:2px 8px;';
+      btn.textContent=MODE_META[m].icon+' '+MODE_META[m].label;
+      if(m===activeMode) btn.style.cssText+='color:var(--accent);border-color:var(--accent);';
+      btn.onclick=()=>{
+        activeMode=m; cfg.activeMode=m; persist();
+        current=null; resetLocks();
+        renderModeSwitcher(); renderResult();
+      };
+      modeSwitcher.appendChild(btn);
+    });
+  }
+  wrap.appendChild(modeSwitcher);
+  renderModeSwitcher();
+
   // Actions row
-  const actRow = el('div','comp-actions');
-  const genBtn = el('button','search-widget-go'); genBtn.textContent='Generate';
-  const refBtn = el('button','clock-style-btn'); refBtn.style.cssText='font-size:11px;padding:3px 10px;'; refBtn.textContent='Refine';
-  const sparkBtn = el('button','comp-spark-btn'); sparkBtn.textContent='\u26A1 Spark';
-  sparkBtn.classList.toggle('active', !!cfg.spark);
-  sparkBtn.onclick=()=>{ cfg.spark=!cfg.spark; sparkBtn.classList.toggle('active',cfg.spark); persist(); };
-  actRow.append(genBtn, refBtn, sparkBtn);
+  const actRow=el('div','comp-actions');
+  const genBtn=el('button','search-widget-go'); genBtn.textContent='Generate';
+  const refBtn=el('button','clock-style-btn'); refBtn.style.cssText='font-size:11px;padding:3px 10px;'; refBtn.textContent='Refine';
+  const studioBtn=el('button','comp-spark-btn'); studioBtn.textContent='Studio \u2197';
+  studioBtn.onclick=()=>openComposeStudio(sec, cfg, ()=>{ activeMode=cfg.activeMode; resetLocks(); renderModeSwitcher(); renderResult(); });
+  actRow.append(genBtn,refBtn,studioBtn);
   wrap.appendChild(actRow);
 
   // Result area
-  const resultArea = el('div');
+  const resultArea=el('div');
   wrap.appendChild(resultArea);
-
-  const SECTION_DEFS = [
-    { key:'palette',   label:'Palette',   cls:'palette'  },
-    { key:'structure', label:'Structure', cls:''         },
-    { key:'texture',   label:'Texture',   cls:''         },
-    { key:'tension',   label:'Tension',   cls:''         },
-    { key:'concept',   label:'Concept',   cls:'concept'  },
-  ];
 
   function renderResult(){
     resultArea.innerHTML='';
     if(!current){
-      const empty=el('div','comp-empty');
-      empty.textContent='Hit Generate to create a composition.';
+      const empty=el('div','comp-empty'); empty.textContent='Hit Generate to create a composition.';
       resultArea.appendChild(empty); return;
     }
     const card=el('div','comp-result');
-    SECTION_DEFS.forEach(({key,label,cls})=>{
-      if(!cfgSections()[key]) return;
+    getAxes().forEach(({key,label,cls})=>{
       const row=el('div','comp-section');
       const lbl=el('span','comp-section-lbl'); lbl.textContent=label;
       const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=current[key]||'—';
@@ -12008,47 +12320,50 @@ function buildComposeWidget(sec){
         lockBtn.textContent=locks[key]?'\uD83D\uDD12':'\uD83D\uDD13';
         lockBtn.title=locks[key]?'Locked — click to unlock':'Click to lock';
       };
-      row.append(lbl,val,lockBtn);
-      card.appendChild(row);
+      row.append(lbl,val,lockBtn); card.appendChild(row);
     });
     resultArea.appendChild(card);
   }
 
   genBtn.onclick=()=>{ generate(false); renderResult(); };
-  refBtn.onclick=()=>{
-    if(!current){ generate(false); renderResult(); return; }
-    generate(true); renderResult();
-  };
-
-  // View full + save button
-  const footRow=el('div'); footRow.style.cssText='display:flex;gap:5px;margin-top:4px;';
-  const viewBtn=el('button','monitor-check-btn'); viewBtn.textContent='Full view \u2192'; viewBtn.style.cssText='font-size:10px;padding:2px 9px;';
-  viewBtn.onclick=()=>openComposeModal(current, cfg, deriveGuidance(current), ()=>renderResult());
-  footRow.appendChild(viewBtn);
-  wrap.appendChild(footRow);
+  refBtn.onclick=()=>{ if(!current){ generate(false); } else { generate(true); } renderResult(); };
 
   // Edit mode settings
   const editSec=el('div'); editSec.style.cssText='display:none;padding-top:8px;border-top:1px solid var(--border);margin-top:8px;';
-  const editLbl=el('div','sports-edit-section-lbl'); editLbl.textContent='Generation Settings';
+  const editLbl=el('div','sports-edit-section-lbl'); editLbl.textContent='Composition Settings';
 
-  // Section toggles
-  const togRow=el('div','comp-edit-row');
-  togRow.style.flexWrap='wrap'; togRow.style.gap='6px';
-  SECTION_DEFS.forEach(({key,label})=>{
+  // Mode checkboxes
+  const modeRow=el('div'); modeRow.style.cssText='margin-bottom:8px;';
+  const modeLbl=el('div'); modeLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'; modeLbl.textContent='Enabled Disciplines';
+  modeRow.appendChild(modeLbl);
+  const modeCheckRow=el('div'); modeCheckRow.style.cssText='display:flex;flex-wrap:wrap;gap:6px;';
+  ALL_MODES.forEach(m=>{
     const tog=el('label'); tog.style.cssText='display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;';
-    const chk=el('input'); chk.type='checkbox'; chk.checked=!!cfgSections()[key];
-    chk.onchange=()=>{ if(!cfg.sections) cfg.sections={...DEFAULT_SECTIONS}; cfg.sections[key]=chk.checked; persist(); };
-    tog.append(chk, document.createTextNode(label));
-    togRow.appendChild(tog);
+    const chk=el('input'); chk.type='checkbox'; chk.checked=cfg.enabledModes.includes(m);
+    chk.onchange=()=>{
+      if(chk.checked){ if(!cfg.enabledModes.includes(m)) cfg.enabledModes.push(m); }
+      else {
+        if(cfg.enabledModes.length<=1){ chk.checked=true; return; }
+        cfg.enabledModes=cfg.enabledModes.filter(x=>x!==m);
+        if(!cfg.enabledModes.includes(cfg.activeMode)){ cfg.activeMode=cfg.enabledModes[0]; activeMode=cfg.activeMode; }
+      }
+      persist(); renderModeSwitcher();
+    };
+    tog.append(chk, document.createTextNode(MODE_META[m].icon+' '+MODE_META[m].label));
+    modeCheckRow.appendChild(tog);
   });
+  modeRow.appendChild(modeCheckRow);
 
-  // Bias dropdowns
+  // Painting-specific bias dropdowns (only shown when painting is active)
+  const paintingBias=el('div'); paintingBias.style.cssText='margin-top:8px;';
+  const paintingBiasLbl=el('div'); paintingBiasLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'; paintingBiasLbl.textContent='Painting Generation Bias';
+  paintingBias.appendChild(paintingBiasLbl);
   const biasRow=el('div','comp-edit-row');
   const makeBias=(lbl,key,opts)=>{
     const wrap2=el('div'); wrap2.style.cssText='display:flex;flex-direction:column;gap:3px;flex:1;min-width:80px;';
     const l=el('div'); l.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;'; l.textContent=lbl;
     const s=el('select','comp-bias-sel');
-    const readKey = key==='complexity'?cfgComplexity():key==='mood'?cfgMood():cfgStyleLean();
+    const readKey=key==='complexity'?(cfg.complexity||'balanced'):key==='mood'?(cfg.mood||'mixed'):(cfg.styleLean||'mixed');
     opts.forEach(([v,t])=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; if(readKey===v) o.selected=true; s.appendChild(o); });
     s.onchange=()=>{ cfg[key]=s.value; persist(); };
     wrap2.append(l,s); return wrap2;
@@ -12058,11 +12373,16 @@ function buildComposeWidget(sec){
     makeBias('Mood','mood',[['calm','Calm'],['tense','Tense'],['chaotic','Chaotic'],['meditative','Meditative'],['mixed','Mixed']]),
     makeBias('Style','styleLean',[['geometric','Geometric'],['organic','Organic'],['mixed','Mixed']]),
   );
+  paintingBias.appendChild(biasRow);
 
-  editSec.append(editLbl, togRow, biasRow);
+  editSec.append(editLbl, modeRow, paintingBias);
   wrap.appendChild(editSec);
 
-  const applyEdit=()=>{ editSec.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const applyEdit=()=>{
+    const inEdit=document.body.classList.contains('edit-mode');
+    editSec.style.display=inEdit?'':'none';
+    paintingBias.style.display=(inEdit && cfg.enabledModes.includes('painting'))?'':'none';
+  };
   const obs=new MutationObserver(applyEdit);
   obs.observe(document.body,{attributes:true,attributeFilter:['class']});
   applyEdit();
@@ -12074,104 +12394,323 @@ function buildComposeWidget(sec){
   return wrap;
 }
 
-function openComposeModal(comp, cfg, guidance, onUpdate){
-  let overlay=document.getElementById('composeOverlay');
-  if(!overlay){
-    overlay=el('div','overlay'); overlay.id='composeOverlay';
-    const modal=el('div','modal'); modal.style.cssText='width:560px;max-height:84vh;display:flex;flex-direction:column;';
-    const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:14px;';
-    const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='\uD83D\uDDBC\uFE0F Abstract Composition';
-    mhdr.appendChild(mtitle);
-    const body=el('div'); body.id='composeModalBody'; body.style.cssText='flex:1;overflow-y:auto;';
-    const actions=el('div','modal-actions');
-    const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close'; closeBtn.onclick=()=>closeOverlay('composeOverlay');
-    actions.appendChild(closeBtn);
-    modal.append(mhdr,body,actions);
-    overlay.appendChild(modal); document.body.appendChild(overlay);
+function openComposeStudio(sec, cfg, onClose){
+  const ALL_MODE_LABELS = { painting:'Painting', writing:'Writing', photography:'Photography', music:'Music', poetry:'Poetry' };
+  const ALL_MODE_ICONS  = { painting:'🖼️', writing:'✍️', photography:'📷', music:'🎵', poetry:'📜' };
+  const MODE_AXES_S = {
+    painting: [
+      { key:'palette',   label:'Palette',   cls:'palette' },
+      { key:'structure', label:'Structure', cls:'' },
+      { key:'texture',   label:'Texture',   cls:'' },
+      { key:'tension',   label:'Tension',   cls:'' },
+      { key:'concept',   label:'Concept',   cls:'concept' },
+    ],
+    writing: [
+      { key:'voice',    label:'Voice',    cls:'' },
+      { key:'setting',  label:'Setting',  cls:'' },
+      { key:'pov',      label:'POV',      cls:'' },
+      { key:'conflict', label:'Conflict', cls:'' },
+      { key:'tone',     label:'Tone',     cls:'' },
+      { key:'concept',  label:'Theme',    cls:'concept' },
+    ],
+    photography: [
+      { key:'subject',     label:'Subject',     cls:'' },
+      { key:'lighting',    label:'Lighting',    cls:'palette' },
+      { key:'composition', label:'Composition', cls:'' },
+      { key:'mood',        label:'Mood',        cls:'' },
+      { key:'technique',   label:'Technique',   cls:'concept' },
+    ],
+    music: [
+      { key:'mode',            label:'Mode / Key',  cls:'palette' },
+      { key:'tempo',           label:'Tempo',       cls:'' },
+      { key:'instrumentation', label:'Instruments', cls:'' },
+      { key:'harmony',         label:'Harmony',     cls:'' },
+      { key:'arc',             label:'Dynamic Arc', cls:'' },
+      { key:'concept',         label:'Motif',       cls:'concept' },
+    ],
+    poetry: [
+      { key:'form',     label:'Form',     cls:'' },
+      { key:'speaker',  label:'Speaker',  cls:'' },
+      { key:'imagery',  label:'Imagery',  cls:'palette' },
+      { key:'register', label:'Register', cls:'' },
+      { key:'prosody',  label:'Prosody',  cls:'' },
+      { key:'concept',  label:'Seed',     cls:'concept' },
+    ],
+  };
+
+  // Studio state
+  let studioMode = cfg.activeMode || cfg.enabledModes[0] || 'painting';
+  let studioComp = null;
+  let studioLocks = {};
+  let activeTab = 'generator';
+
+  function getStudioAxes(){ return MODE_AXES_S[studioMode]||MODE_AXES_S.painting; }
+  function resetStudioLocks(){ studioLocks={}; getStudioAxes().forEach(a=>{ studioLocks[a.key]=false; }); }
+  resetStudioLocks();
+
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  // Painting pools (needed for studio generation)
+  const SP={
+    PALETTES:{ warm:['burnt sienna, raw umber, warm white accent','yellow ochre, venetian red, off-white','cadmium orange, deep violet shadow, titanium white','raw sienna, indian red, pale gold highlight','terra rosa, yellow ochre, ivory black','naples yellow, transparent oxide red, warm gray'],cool:["payne's gray, cobalt blue, pale gold accent",'muted ultramarine, warm ochre, off-white','phthalo blue, titanium white, rust accent','cerulean, deep umber, zinc white','prussian blue, neutral gray, cream highlight',"indigo, cobalt teal, payne's gray, silver-white"],neutral:['charcoal, raw umber, pale lemon highlight','neutral gray, ivory black, zinc white','lamp black, naples yellow, oxide red','bone white, warm gray, carbon black','raw umber, titanium white, soft black'],dramatic:["cadmium red, payne's gray, silver-white","deep crimson, prussian blue, fractured gold",'viridian, burnt orange, titanium white','oxide red, phthalo green, ivory accent','cobalt violet, yellow ochre, lamp black',"alizarin crimson, ultramarine, raw umber, gold"] },
+    STRUCTURES:{ geometric:['vertical split tension — two unequal fields in opposition','grid fracture — regular geometry interrupted by diagonal breaks','hard horizon with geometric intrusion from below','centered rectangular mass, compressed edges','stacked horizontal bands with disrupted middle layer','radial division — four quadrants with active center'],organic:['central mass dissolving at edges into open field','diagonal sweep from lower-left, trailing into upper-right void','floating organic forms, loosely clustered, asymmetric','horizon line implied but never stated — atmospheric','dense core with radiating fragmentation outward','layered organic strata, bottom-heavy, sky-open'],mixed:['geometric skeleton interrupted by organic passage','top-heavy compression releasing downward into open space','interlocking angular and curved zones in uneasy balance','scattered nodes connected by implied directional energy','edge-to-center migration — forms collapsing inward','asymmetric bilateral — mirrored intent, broken execution'] },
+    TEXTURES:{ minimal:['smooth field with single palette knife scrape as accent','thin glaze layer, translucent mid-tones over dry underpainting','broad flat application, subtle tonal shift at edges','single dry-brush pass to reveal texture beneath'],balanced:['palette knife ridges in foreground, dry-brush blend in mid-layer','impasto accents at focal point, glazed transitions elsewhere','broken-edge stippling at perimeter, smooth interior passages','layered underpainting bleed-through with selective scraping','tape-defined hard edges contrasting with gestural interior','thick impasto builds in center, feathered brush at borders'],complex:['multiple glaze layers interrupted by palette knife excavation','impasto ridges mid-layer, sanded back and re-glazed on top','alternating thick and thin passages — tension through contrast','underpainting as active participant: intentional bleed zones','encaustic-style buildup: layer, scrape, layer, sear','gestural marks partially buried under subsequent translucent fields'] },
+    TENSIONS:{ calm:['slow inward pull toward soft center','left-to-right gentle drift, unhurried','settled weight at bottom, lightening upward','static composition with micro-disturbances at edges','breathable open field, tension held in reserve'],tense:['collision of opposing forces mid-canvas','compressed diagonal — energy blocked, seeking exit','two fields in unresolved confrontation','focal point under pressure from surrounding mass','sharp directional force interrupted abruptly'],chaotic:['simultaneous competing directions — no resolution','centrifugal force pushing forms toward edges','fracture pattern radiating from off-center impact','directional momentum shifting mid-path','entropy held loosely in compositional structure'],meditative:['outward expansion from breathing center','deep stillness with faint tremor','forms in slow suspension — neither arriving nor departing','time compressed into single accumulative surface','rhythm of containment and release, very slow'] },
+    CONCEPTS:['contained instability','pressure beneath stillness','fracture resolving into unity','light emerging through obstruction','weight dreaming of flight','the moment before collapse','edges that remember what they divided','accumulated silences','structure at the limit of its own patience','held breath','what remains after subtraction','slow violence of order','something insisting on existing','grief with good posture','the thickness of in-between','a system forgetting itself','resistance becoming texture','proximity without contact','latent momentum','the color of a decision unmade','tension that has accepted itself','form as argument','aftermath of tenderness','the boundary learning to move'],
+    SPARK_P:["fluorescent cadmium lemon, lamp black, trace of phthalo violet","near-white with single deep indigo interruption","all earth tones except one violent pure hue","two near-identical grays, one precise red accent","desaturated field with full-saturation focal point only"],
+    SPARK_S:['single mark — the rest is intentional nothing','two compositional systems overlaid, neither dominant','the canvas treated as if it already contains a hidden image','edge-dominant — center deliberately emptied','rotational asymmetry — the composition implies continuation'],
+    SPARK_C:['the embarrassment of beauty','failure as compositional logic','what the paint wanted to do','a mistake promoted to principle','the wrong color in the right place','permission granted too late'],
+  };
+  const WP={ voice:['intimate confessional — close, direct, no distance between speaker and subject','lyric detachment — emotional but held at careful remove','documentary plainness — declarative, witnessing, minimal interpretation','oracular — address from above, prophetic, impersonal certainty','sardonic observer — wry distance, precision as defense','second-person accusation — direct address as exposure','unreliable intimacy — confesses while concealing'],setting:['unnamed city, off-season, too early or too late','childhood home reimagined by adult memory','institutional space after hours — hospital, school, church','transit — plane, train, long drive, no fixed point','a specific place at the wrong time of year','domestic interior during an unnamed crisis','open landscape resisting interpretation'],pov:["first person, present tense, no distance","close third — narrator adjacent to the character's thinking","second person direct — you did this, you felt this","first person plural — a we that may or may not hold together","free indirect discourse — character's voice bleeding into narration","epistolary — letter, message, record left behind"],conflict:['internal — a belief the character can no longer hold','relational — two people who cannot reach each other','temporal — present self confronting a past decision','ecological — human will against indifferent natural process','societal — private feeling made impossible by public circumstance','metaphysical — the self confronting its own contingency'],tone:['elegiac — mourning without sentimentality','tender — open, at risk of hurt, not protecting itself','unsettled — cannot find firm ground, refuses to pretend otherwise','clinical distance — precision as emotional regulation','restrained urgency — much at stake, very little said','quietly exuberant — joy that has earned its right to exist'],concept:['what we keep after we stop believing it','the sentence that ended something','a door that no longer opens the same way','love as failure of vocabulary','the cost of staying','time as accumulation rather than passage','what the body remembers that the mind has filed away','a kindness that arrived too late','the particular weight of an ordinary day','what we rehearse but never say','the distance between two people who share everything'],spark_c:['the embarrassment of sincerity','a memory that belongs to no one','the sound a feeling makes before it has language','tenderness toward something that cannot receive it'] };
+  const PP={ subject:['lone figure, urban, anonymized by context','interior space in the absence of its usual occupant','landscape at the edge of weather','hands — labor, age, gesture, intention','infrastructure — bridges, overpasses, utility lines, signal towers','close-up domestic — objects in their ordinary positions','crowd without individuals — mass as texture','threshold spaces — doorways, windows, stairwells, corridors'],lighting:['late afternoon oblique — long shadows, warm rake','diffuse overcast — shadowless, honest, nowhere to hide','hard industrial artificial — fluorescent, sodium, tungsten','blue hour — the light between dark and dark','single source interior — one lamp, everything else falling away','harsh overhead noon — flattening, unforgiving','against-the-light — silhouette, halo, detail sacrificed for shape'],composition:['deep foreground-to-background axis, everything in line','radical negative space — subject small against vast field','frame within frame — window, doorway, arch as second edge','tight crop — no context, no escape','symmetry with a single deliberate disruption','layered planes — foreground, mid, background each distinct','subject at the very edge, almost leaving'],mood:['quiet desolation — present but not performed','suspended anticipation — something is about to happen','tender observation — the camera as act of care','tense ambiguity — uncertain what we are looking at','wistful remove — beauty acknowledged from a distance','documentary stillness — no interpretation offered'],technique:['long exposure — time collapsed into a single surface','very shallow depth of field — one plane sharp, all else released','high contrast monochrome — structure over tone','visible grain — film or digital noise as presence','motion blur — subject moving, world still, or the reverse','compressed telephoto — distance collapsed, planes stacked','wide angle close — distortion as emphasis'] };
+  const MP={ mode:['Dorian — minor with raised sixth, folk-inflected melancholy','Lydian — raised fourth, hovering, unresolved brightness','Phrygian — flattened second, ancient, tense, Spanish-inflected','pentatonic — open, uncluttered, no leading-tone pressure','whole tone — floating, directionless, impressionistic','chromatic — every semitone available, maximum harmonic pressure','Mixolydian — major with flat seventh, blues-adjacent warmth'],tempo:['very slow, breath as pulse — time expanded, no urgency','medium walking — steady, unhurried, each beat settled','driving eighth-note pulse — forward pressure, no rest','free time — no fixed meter, shaped by phrase not clock','syncopated — accent displaced, ground implied but unstated','waltz feel — three, one strong beat and two that lean','rubato — tempo as expressive tool, stretched and compressed'],instrumentation:['solo piano, nothing else','string quartet — intimate, self-contained','sparse electronics and voice','brass and low percussion — weight and ceremony','acoustic guitar, close-miked — room and body audible','chamber ensemble, winds-forward','bass and drums only — harmonic implication through rhythm'],harmony:['diatonic warmth — stays inside the key, resolution always available','quartal — chords built in fourths, open, ambiguous, modern','jazz extensions — ninths, elevenths, thirteenths, color over function','drone-based — one pitch sustained, everything moves above it','cluster chords — semitonal density, dissonance as texture','static harmony — no chord movement, melody carries all motion','modal interchange — borrowing from parallel modes, unexpected color'],arc:['sustained pianissimo throughout — tension through restraint','slow inevitable build from near-silence to full presence','sudden violent contrast — quiet broken, silence returned','long plateau then rapid collapse','volatile — no settled dynamic level, unpredictable','decrescendo throughout — begins full, ends in near-silence'],concept:['a rhythm that implies a missing melody','two voices that never resolve their interval','the same phrase repeated until it changes meaning','silence as structural element — the rests are the work','a melodic fragment that refuses to develop','harmony that implies a tonal center it never reaches','the texture of accumulation without climax'],spark_c:['a melody that arrives after it has already ended','the wrong instrument in the right place','rhythm as the memory of a sound that stopped'] };
+  const POET={ form:['free verse — line breaks as breath, no formal constraint','prose poem — paragraph form, lyric density','sonnet — fourteen lines, volta required','villanelle — two refrains, obsessive return','ghazal — self-contained couplets, connected by refrain','elegy — formal address to loss','ode — sustained praise of a single subject','haiku sequence — compressed image, juxtaposition as meaning','list poem — accumulation as argument'],speaker:['first person, no distance, present tense confession','second person address — speaking directly to a you','third person witness — observing without intervening','first person plural — a we whose boundaries are uncertain','no fixed speaker — language without a stable source','apostrophe — address to an absent, dead, or abstract subject'],imagery:['domestic and interior — kitchen, bed, the ordinary object','ecological and natural — weather, animals, landscape, season','industrial and urban — infrastructure, noise, concrete, light pollution','somatic and bodily — the body as landscape, sensation as image','celestial and cosmic — stars, time scales, geological deep time','archival and historical — documents, photographs, records, ruins'],register:['grief — not performed, structural','longing — for what is gone or never was','wonder — the world surprising itself','dread — not panic, slow accumulation','tenderness — at risk, not self-protective','ambivalence — two true things in direct conflict','quiet rage — controlled, all the more dangerous for it'],prosody:['heavy consonant clusters — percussive, resistant','liquid open vowels — flowing, little friction','irregular breath lengths — stanza breaks as gasps','end-stopped lines — each line a complete unit, no overflow','heavy enjambment — meaning completed across line breaks','internal rhyme and assonance — sound woven through, not at end','minimal punctuation — pace controlled by white space'],concept:['the object that outlived the relationship','a recurring dream that has started to feel like memory','the conversation that should have happened differently','a body in the process of changing','what the child understood that the adult has since forgotten','a landscape that refuses to be symbolic','the years when nothing seemed to happen but everything did','a word that no longer means what it used to','what remains after you stop waiting'],spark_c:['the sound a word makes after it has lost its meaning','a stanza that knows it is a stanza','elegy for the version of yourself that almost happened'] };
+
+  function studioPickForMode(mode, axisKey){
+    const spark = cfg.spark;
+    if(mode==='painting'){
+      if(axisKey==='palette'){ const mood=cfg.mood||'mixed'; const tone=mood==='calm'?'cool':mood==='tense'?'dramatic':mood==='chaotic'?'dramatic':mood==='meditative'?'neutral':'warm'; return pick(spark?[...SP.PALETTES.warm,...SP.PALETTES.cool,...SP.PALETTES.neutral,...SP.PALETTES.dramatic,...SP.SPARK_P]:[...(SP.PALETTES[tone]||[]),...SP.PALETTES.warm,...SP.PALETTES.cool]); }
+      if(axisKey==='structure'){ const style=cfg.styleLean||'mixed'; return pick(spark?[...SP.STRUCTURES.geometric,...SP.STRUCTURES.organic,...SP.STRUCTURES.mixed,...SP.SPARK_S]:style==='mixed'?[...SP.STRUCTURES.geometric,...SP.STRUCTURES.organic,...SP.STRUCTURES.mixed]:[...(SP.STRUCTURES[style]||[]),...SP.STRUCTURES.mixed]); }
+      if(axisKey==='texture'){ const cx=cfg.complexity||'balanced'; return pick(spark?[...SP.TEXTURES.minimal,...SP.TEXTURES.balanced,...SP.TEXTURES.complex]:[...(SP.TEXTURES[cx]||[]),...SP.TEXTURES.balanced]); }
+      if(axisKey==='tension'){ const mood=cfg.mood||'mixed'; return pick(spark?[...SP.TENSIONS.calm,...SP.TENSIONS.tense,...SP.TENSIONS.chaotic,...SP.TENSIONS.meditative]:[...(SP.TENSIONS[mood]||SP.TENSIONS.tense),...SP.TENSIONS.meditative]); }
+      if(axisKey==='concept'){ return pick(spark?[...SP.CONCEPTS,...SP.SPARK_C]:SP.CONCEPTS); }
+    }
+    if(mode==='writing'){ const pool=WP[axisKey]||[]; return pick((axisKey==='concept'&&spark)?[...pool,...(WP.spark_c||[])]:pool); }
+    if(mode==='photography'){ return pick(PP[axisKey]||[]); }
+    if(mode==='music'){ const pool=MP[axisKey]||[]; return pick((axisKey==='concept'&&spark)?[...pool,...(MP.spark_c||[])]:pool); }
+    if(mode==='poetry'){ const pool=POET[axisKey]||[]; return pick((axisKey==='concept'&&spark)?[...pool,...(POET.spark_c||[])]:pool); }
+    return '';
   }
 
-  function render(){
-    const body=document.getElementById('composeModalBody'); body.innerHTML='';
+  function studioGenerate(refine=false){
+    const axes=getStudioAxes();
+    const prev=studioComp;
+    studioComp=studioComp?{...studioComp}:{};
+    if(refine&&prev){
+      const unlocked=axes.filter(a=>!studioLocks[a.key]);
+      const toChange=unlocked.sort(()=>Math.random()-0.5).slice(0,Math.min(2,unlocked.length));
+      toChange.forEach(a=>{ studioComp[a.key]=studioPickForMode(studioMode,a.key); });
+    } else {
+      axes.forEach(a=>{ if(!studioLocks[a.key]||!prev) studioComp[a.key]=studioPickForMode(studioMode,a.key); });
+    }
+    if(!D.composePromptHistory) D.composePromptHistory=[];
+    D.composePromptHistory.unshift({ timestamp:new Date().toISOString(), discipline:studioMode, spark:!!cfg.spark, axes:{...studioComp} });
+    if(D.composePromptHistory.length>200) D.composePromptHistory=D.composePromptHistory.slice(0,200);
+    persist();
+    return studioComp;
+  }
 
-    if(!comp){ const e=el('div'); e.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;'; e.textContent='Generate a composition first.'; body.appendChild(e); openOverlay('composeOverlay'); return; }
+  function deriveGuidanceS(comp){
+    if(!comp||studioMode!=='painting') return null;
+    const s=(comp.structure||'').toLowerCase();
+    let orientation='Portrait';
+    if(s.includes('horizontal')||s.includes('sweep')||s.includes('horizon')||s.includes('strata')) orientation='Landscape';
+    else if(s.includes('central')||s.includes('radial')||s.includes('floating')) orientation='Square';
+    let density='Balanced';
+    if(s.includes('sparse')||s.includes('single')||s.includes('empty')||s.includes('void')) density='Sparse';
+    else if(s.includes('dense')||s.includes('clustered')||s.includes('heavy')||s.includes('mass')) density='Dense';
+    const t=(comp.texture||'').toLowerCase();
+    let layering='Underpainting → mid-layer passage → surface accent';
+    if(t.includes('glaz')) layering='Lean block-in → glaze → glaze → accent mark';
+    else if(t.includes('impasto')) layering='Thin ground → build impasto mass → scrape → highlight';
+    else if(t.includes('dry brush')) layering='Base field → dry brush texture → selective refinement';
+    else if(t.includes('tape')||t.includes('hard edge')) layering='Tape → fill → peel → gestural layer on top';
+    else if(t.includes('knife')) layering='Loose underpainting → knife layer → optional glaze';
+    return { orientation, density, layering };
+  }
 
-    // ── Full breakdown ────────────────────────────────
-    const breakSec=el('div','comp-modal-section');
-    const breakTitle=el('div','comp-modal-section-title'); breakTitle.textContent='Full Composition';
-    breakSec.appendChild(breakTitle);
-    const card=el('div','comp-result');
-    [
-      {key:'palette',  label:'Palette',   cls:'palette'},
-      {key:'structure',label:'Structure', cls:''},
-      {key:'texture',  label:'Texture',   cls:''},
-      {key:'tension',  label:'Tension',   cls:''},
-      {key:'concept',  label:'Concept',   cls:'concept'},
-    ].forEach(({key,label,cls})=>{
-      if(!((cfg.sections||{palette:true,structure:true,texture:true,tension:true,concept:true})[key])) return;
-      const row=el('div','comp-section');
-      const lbl=el('span','comp-section-lbl'); lbl.textContent=label;
-      const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=comp[key]||'—';
-      row.append(lbl,val); card.appendChild(row);
+  // ── Build modal ───────────────────────────────────────
+  let overlay=document.getElementById('composeStudioOverlay');
+  if(overlay) overlay.remove();
+  overlay=el('div','overlay'); overlay.id='composeStudioOverlay';
+  const modal=el('div','modal'); modal.style.cssText='width:620px;max-height:88vh;display:flex;flex-direction:column;';
+
+  // Header
+  const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+  const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='\uD83C\uDFA8 Creative Studio';
+  const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close';
+  closeBtn.onclick=()=>{ closeOverlay('composeStudioOverlay'); cfg.activeMode=studioMode; if(onClose) onClose(); };
+  mhdr.append(mtitle, closeBtn);
+
+  // Tab bar
+  const tabBar=el('div'); tabBar.style.cssText='display:flex;gap:2px;margin-bottom:12px;border-bottom:1px solid var(--border);';
+  const tabs=[{id:'generator',label:'Generator'},{id:'history',label:'Prompt History'}];
+  function makeTabBtn(id,label){
+    const btn=el('button','clock-style-btn');
+    btn.style.cssText='font-size:11px;padding:4px 12px;border-radius:4px 4px 0 0;margin-bottom:-1px;';
+    btn.textContent=label; btn.dataset.tab=id;
+    btn.onclick=()=>{ activeTab=id; renderTab(); };
+    return btn;
+  }
+  const tabBtns={};
+  tabs.forEach(t=>{ const b=makeTabBtn(t.id,t.label); tabBtns[t.id]=b; tabBar.appendChild(b); });
+
+  const tabBody=el('div'); tabBody.style.cssText='flex:1;overflow-y:auto;';
+
+  modal.append(mhdr,tabBar,tabBody);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  function renderTab(){
+    // Update tab button styles
+    Object.entries(tabBtns).forEach(([id,btn])=>{
+      btn.style.color=id===activeTab?'var(--accent)':'';
+      btn.style.borderColor=id===activeTab?'var(--accent)':'';
     });
-    breakSec.appendChild(card);
-    body.appendChild(breakSec);
+    tabBody.innerHTML='';
+    if(activeTab==='generator') renderGeneratorTab();
+    if(activeTab==='history')   renderHistoryTab();
+  }
 
-    // ── Canvas guidance ───────────────────────────────
-    if(guidance){
-      const guideSec=el('div','comp-modal-section');
-      const guideTitle=el('div','comp-modal-section-title'); guideTitle.textContent='Canvas Guidance';
-      guideSec.appendChild(guideTitle);
-      const grid=el('div','comp-guidance-grid');
-      [{l:'Orientation',v:guidance.orientation},{l:'Focal Density',v:guidance.density}].forEach(({l,v})=>{
-        const tile=el('div','comp-guidance-tile');
-        const tl=el('div','comp-guidance-tile-lbl'); tl.textContent=l;
-        const tv=el('div','comp-guidance-tile-val'); tv.textContent=v;
-        tile.append(tl,tv); grid.appendChild(tile);
+  function renderGeneratorTab(){
+    const wrap=el('div');
+
+    // Studio mode switcher (if multiple modes)
+    if(cfg.enabledModes.length>1){
+      const ms=el('div'); ms.style.cssText='display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;';
+      cfg.enabledModes.forEach(m=>{
+        const btn=el('button','clock-style-btn');
+        btn.style.cssText='font-size:10px;padding:2px 8px;';
+        btn.textContent=ALL_MODE_ICONS[m]+' '+ALL_MODE_LABELS[m];
+        if(m===studioMode) btn.style.cssText+='color:var(--accent);border-color:var(--accent);';
+        btn.onclick=()=>{ studioMode=m; cfg.activeMode=m; studioComp=null; resetStudioLocks(); persist(); renderGeneratorTab(); };
+        ms.appendChild(btn);
       });
-      guideSec.appendChild(grid);
-      const layerLbl=el('div'); layerLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;'; layerLbl.textContent='Suggested Layering Order';
-      const layerVal=el('div','comp-layering'); layerVal.textContent=guidance.layering;
-      guideSec.append(layerLbl,layerVal);
-      body.appendChild(guideSec);
+      wrap.appendChild(ms);
     }
 
-    // ── Save section ─────────────────────────────────
-    const saveSec=el('div','comp-modal-section');
-    const saveTitle=el('div','comp-modal-section-title'); saveTitle.textContent='Save This Composition';
-    saveSec.appendChild(saveTitle);
+    // Spark toggle
+    const sparkRow=el('div'); sparkRow.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:10px;';
+    const sparkToggle=el('button','comp-spark-btn'); sparkToggle.style.cssText='font-size:11px;';
+    sparkToggle.textContent='\u26A1 Spark Mode'; sparkToggle.classList.toggle('active',!!cfg.spark);
+    sparkToggle.onclick=()=>{ cfg.spark=!cfg.spark; sparkToggle.classList.toggle('active',cfg.spark); persist(); };
+    const sparkDesc=el('span'); sparkDesc.style.cssText='font-size:10px;color:var(--text-dim);font-style:italic;';
+    sparkDesc.textContent='Pulls from wilder, more unexpected combinations';
+    sparkRow.append(sparkToggle,sparkDesc);
+    wrap.appendChild(sparkRow);
+
+    // Buttons
+    const btnRow=el('div','comp-actions'); btnRow.style.cssText='margin-bottom:10px;';
+    const genBtn2=el('button','search-widget-go'); genBtn2.textContent='Generate';
+    const refBtn2=el('button','clock-style-btn'); refBtn2.style.cssText='font-size:11px;padding:3px 10px;'; refBtn2.textContent='Refine';
+    btnRow.append(genBtn2,refBtn2);
+    wrap.appendChild(btnRow);
+
+    // Prompt display
+    const compDisplay=el('div','comp-modal-section');
+    wrap.appendChild(compDisplay);
+
+    function renderStudioComp(){
+      compDisplay.innerHTML='';
+      if(!studioComp){
+        const e=el('div'); e.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;'; e.textContent='Generate a prompt above.';
+        compDisplay.appendChild(e); return;
+      }
+      const card=el('div','comp-result');
+      getStudioAxes().forEach(({key,label,cls})=>{
+        const row=el('div','comp-section');
+        const lbl=el('span','comp-section-lbl'); lbl.textContent=label;
+        const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=studioComp[key]||'—';
+        const lockBtn=el('button','comp-lock-btn'+(studioLocks[key]?' locked':''));
+        lockBtn.textContent=studioLocks[key]?'\uD83D\uDD12':'\uD83D\uDD13';
+        lockBtn.title=studioLocks[key]?'Locked — click to unlock':'Click to lock';
+        lockBtn.onclick=e=>{ e.stopPropagation(); studioLocks[key]=!studioLocks[key]; lockBtn.classList.toggle('locked',studioLocks[key]); lockBtn.textContent=studioLocks[key]?'\uD83D\uDD12':'\uD83D\uDD13'; lockBtn.title=studioLocks[key]?'Locked — click to unlock':'Click to lock'; };
+        row.append(lbl,val,lockBtn); card.appendChild(row);
+      });
+      compDisplay.appendChild(card);
+
+      // Canvas guidance — painting only
+      const guidance=deriveGuidanceS(studioComp);
+      if(guidance){
+        const gs=el('div','comp-modal-section'); gs.style.cssText='margin-top:10px;';
+        const gt=el('div','comp-modal-section-title'); gt.textContent='Canvas Guidance'; gs.appendChild(gt);
+        const grid=el('div','comp-guidance-grid');
+        [{l:'Orientation',v:guidance.orientation},{l:'Focal Density',v:guidance.density}].forEach(({l,v})=>{
+          const tile=el('div','comp-guidance-tile');
+          const tl=el('div','comp-guidance-tile-lbl'); tl.textContent=l;
+          const tv=el('div','comp-guidance-tile-val'); tv.textContent=v;
+          tile.append(tl,tv); grid.appendChild(tile);
+        });
+        gs.appendChild(grid);
+        const ll=el('div'); ll.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin:6px 0 3px;'; ll.textContent='Suggested Layering Order';
+        const lv=el('div','comp-layering'); lv.textContent=guidance.layering;
+        gs.append(ll,lv); compDisplay.appendChild(gs);
+      }
+    }
+    renderStudioComp();
+    genBtn2.onclick=()=>{ studioGenerate(false); renderStudioComp(); };
+    refBtn2.onclick=()=>{ if(!studioComp) studioGenerate(false); else studioGenerate(true); renderStudioComp(); };
+
+    // Save section
+    const saveSec=el('div','comp-modal-section'); saveSec.style.cssText='margin-top:12px;';
+    const saveTitle=el('div','comp-modal-section-title'); saveTitle.textContent='Save This Composition'; saveSec.appendChild(saveTitle);
     const saveRow=el('div'); saveRow.style.cssText='display:flex;gap:5px;margin-bottom:10px;';
     const nameInp=el('input','todo-add-inp'); nameInp.placeholder='Name this composition\u2026'; nameInp.style.flex='1';
     const saveBtn=el('button','todo-add-btn'); saveBtn.textContent='Save';
     saveBtn.onclick=()=>{
       const name=nameInp.value.trim(); if(!name) return;
       cfg.saved=cfg.saved.filter(s=>s.name!==name);
-      cfg.saved.unshift({name, comp:{...comp}, savedAt:new Date().toISOString()});
-      persist(); nameInp.value=''; render();
+      cfg.saved.unshift({name,comp:{...studioComp},discipline:studioMode,savedAt:new Date().toISOString()});
+      persist(); nameInp.value=''; renderSavedList();
     };
     nameInp.addEventListener('keydown',e=>{ if(e.key==='Enter') saveBtn.click(); });
-    saveRow.append(nameInp,saveBtn);
-    saveSec.appendChild(saveRow);
-
-    if(cfg.saved.length){
-      const savedTitle=el('div'); savedTitle.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;'; savedTitle.textContent='Saved Compositions';
-      saveSec.appendChild(savedTitle);
+    saveRow.append(nameInp,saveBtn); saveSec.appendChild(saveRow);
+    const savedListEl=el('div'); saveSec.appendChild(savedListEl);
+    function renderSavedList(){
+      savedListEl.innerHTML='';
+      if(!cfg.saved.length) return;
+      const st=el('div'); st.style.cssText='font-size:9.5px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;'; st.textContent='Saved Compositions'; savedListEl.appendChild(st);
       cfg.saved.forEach((s,i)=>{
         const row=el('div','comp-saved-row');
         const name=el('span'); name.textContent=s.name;
-        const date=el('span'); date.style.cssText='font-size:9.5px;color:var(--text-dim);flex-shrink:0;'; date.textContent=new Date(s.savedAt).toLocaleDateString();
+        const meta=el('span'); meta.style.cssText='font-size:9.5px;color:var(--text-dim);flex-shrink:0;'; meta.textContent=(s.discipline?s.discipline+' · ':'')+new Date(s.savedAt).toLocaleDateString();
         const loadBtn=el('button','monitor-check-btn'); loadBtn.textContent='Load'; loadBtn.style.cssText='font-size:9.5px;padding:1px 7px;';
-        loadBtn.onclick=e=>{ e.stopPropagation(); Object.assign(comp,s.comp); if(onUpdate) onUpdate(); render(); };
-        const del=icBtn('\u2715','Delete',()=>{ cfg.saved.splice(i,1); persist(); render(); });
-        del.classList.add('ic-del');
-        row.append(name,date,loadBtn,del); saveSec.appendChild(row);
+        loadBtn.onclick=e=>{ e.stopPropagation(); studioComp={...s.comp}; studioMode=s.discipline||studioMode; cfg.activeMode=studioMode; resetStudioLocks(); persist(); renderGeneratorTab(); };
+        const del=icBtn('\u2715','Delete',()=>{ cfg.saved.splice(i,1); persist(); renderSavedList(); }); del.classList.add('ic-del');
+        row.append(name,meta,loadBtn,del); savedListEl.appendChild(row);
       });
     }
-    body.appendChild(saveSec);
+    renderSavedList();
+    wrap.appendChild(saveSec);
+    tabBody.appendChild(wrap);
   }
 
-  render();
-  openOverlay('composeOverlay');
+  function renderHistoryTab(){
+    const wrap=el('div');
+    const history=(D.composePromptHistory||[]);
+    if(!history.length){
+      const e=el('div'); e.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;padding:12px 0;'; e.textContent='No prompts generated yet.';
+      wrap.appendChild(e); tabBody.appendChild(wrap); return;
+    }
+    history.forEach(entry=>{
+      const card=el('div','comp-modal-section'); card.style.cssText='margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);';
+      const hdr=el('div'); hdr.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:6px;';
+      const icon=el('span'); icon.textContent=ALL_MODE_ICONS[entry.discipline]||'🎨';
+      const disc=el('span'); disc.style.cssText='font-size:11px;color:var(--accent);font-family:Share Tech Mono,monospace;'; disc.textContent=ALL_MODE_LABELS[entry.discipline]||entry.discipline;
+      const ts=el('span'); ts.style.cssText='font-size:10px;color:var(--text-dim);margin-left:auto;'; ts.textContent=new Date(entry.timestamp).toLocaleString();
+      if(entry.spark){ const sp=el('span'); sp.style.cssText='font-size:9px;color:var(--accent);font-family:Share Tech Mono,monospace;'; sp.textContent='⚡ spark'; hdr.append(icon,disc,sp,ts); } else { hdr.append(icon,disc,ts); }
+      card.appendChild(hdr);
+      const axes=MODE_AXES_S[entry.discipline]||[];
+      axes.forEach(({key,label,cls})=>{
+        if(!entry.axes[key]) return;
+        const row=el('div','comp-section'); row.style.cssText='padding:1px 0;';
+        const lbl=el('span','comp-section-lbl'); lbl.textContent=label;
+        const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=entry.axes[key];
+        row.append(lbl,val); card.appendChild(row);
+      });
+      // Journal This button (placeholder for Phase 2)
+      const jRow=el('div'); jRow.style.cssText='margin-top:6px;';
+      const jBtn=el('button','clock-style-btn'); jBtn.style.cssText='font-size:10px;padding:2px 8px;opacity:0.5;cursor:not-allowed;'; jBtn.textContent='📓 Journal This'; jBtn.title='Journaling coming in a future update'; jBtn.disabled=true;
+      jRow.appendChild(jBtn); card.appendChild(jRow);
+      wrap.appendChild(card);
+    });
+    tabBody.appendChild(wrap);
+  }
+
+  renderTab();
+  openOverlay('composeStudioOverlay');
 }
+
 
 /* ---- ENERGY AND MOOD TRACKER ---- */
 
