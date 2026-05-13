@@ -4,7 +4,7 @@ A self-hosted, single-file browser start page dashboard. No build tools, no npm,
 
 ## First Things First
 
-# Demo
+#### Demo
 
 https://badbox29.github.io/personal_dashboard/
 
