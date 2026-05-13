@@ -39,6 +39,11 @@ Widgets are organized into seven categories matching the in-app selector tabs.
 | Energy and Mood Tracker | Daily energy/mood logging with insights panel; optional **menstrual cycle tracking** (toggle in edit mode) with phase-aware hormone insights across all cycle days |
 | Last.fm | Recent scrobbles and now-playing via Audioscrobbler API |
 | Audiobookshelf | Now-listening and library status from a self-hosted Audiobookshelf instance |
+
+#### 🎨 Creative
+| Widget | Notes |
+|---|---|
+| Composition Generator | Multi-mode creative prompt generator across five disciplines: **Painting**, **Writing**, **Photography**, **Music**, and **Poetry**. Each discipline has its own generative axes. Lock individual axes to keep them, Refine to re-roll the rest. Spark mode pulls from wilder combinations. Configure each instance to a single discipline or enable multiple for an in-widget dropdown. Prompt history logged automatically and shared across all instances. **Studio modal** provides a full generate/refine/lock loop, Spark mode toggle, painting canvas guidance, saved compositions, and prompt history. *Phase 2 coming:* behavioral insight system tracking locked vs. refined-away axes; visual tendency indicators surfacing your artistic wheelhouse and resistances; per-insight action buttons (Lean Into This, Disturb This Instinct, etc.) applying temporary generation bias; cross-discipline pattern recognition via meta-qualities (density, restraint, asymmetry, cadence); creative drift tracking; journal modal for documenting work with piece title, medium, dates, image URL, and notes anchored to the originating prompt. |
  
 #### 📰 Info & Media
 | Widget | Notes |
