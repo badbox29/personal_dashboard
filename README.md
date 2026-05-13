@@ -2,6 +2,12 @@
 
 A self-hosted, single-file browser start page dashboard. No build tools, no npm, no external dependencies beyond the APIs you choose to use. Everything lives in one HTML file and persists via `localStorage`, with optional cross-browser sync through a Cloudflare Worker and KV storage.  Base settings/config backup is achieved through .json export file that can be imported to multiple browsers.
 
+## First Things First
+
+# Demo
+
+https://badbox29.github.io/personal_dashboard/
+
 ---
 
 ## Features
@@ -93,10 +99,6 @@ Widgets are organized into seven categories matching the in-app selector tabs.
 Submit ideas for widgets you'd like to see!
 
 ---
-
-## Demo
-
-https://badbox29.github.io/personal_dashboard/
 
 ## Setup
 
