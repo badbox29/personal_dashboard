@@ -7875,6 +7875,8 @@ var _kvBootComplete = false;
   if(D.poemDaily === undefined)           D.poemDaily          = null;
   if(!Array.isArray(D.poemFavorites))     D.poemFavorites      = [];
   if(!Array.isArray(D.composePromptHistory)) D.composePromptHistory = [];
+  if(!Array.isArray(D.composeBehaviorLog))   D.composeBehaviorLog   = [];
+  if(!Array.isArray(D.composeJournal))        D.composeJournal        = [];
   if(typeof D.drinkLogs !== 'object' || Array.isArray(D.drinkLogs)) D.drinkLogs = {};
   // Migrate legacy salty_drinks_* localStorage keys into D.drinkLogs
   Object.keys(localStorage).filter(k=>k.startsWith('salty_drinks_')).forEach(k=>{
@@ -8072,6 +8074,10 @@ const KV_MERGE_KEYS = {
   poemFavorites:      e => e.id,
   // compose prompt history — dedup by timestamp
   composePromptHistory: e => e.timestamp,
+  // compose behavioral log — dedup by timestamp
+  composeBehaviorLog: e => e.timestamp,
+  // compose journal — dedup by id
+  composeJournal: e => e.id,
   // tray links — dedup by id
   appLinks:           e => e.id,
   favLinks:           e => e.id,
@@ -12237,6 +12243,16 @@ function buildComposeWidget(sec){
       axes: {...current},
     });
     if(D.composePromptHistory.length>200) D.composePromptHistory=D.composePromptHistory.slice(0,200);
+    // Behavioral log
+    if(!D.composeBehaviorLog) D.composeBehaviorLog=[];
+    D.composeBehaviorLog.unshift({
+      timestamp: new Date().toISOString(),
+      discipline: activeMode,
+      isRefine: refine,
+      lockedAxes: axes.filter(a=>locks[a.key]).map(a=>a.key),
+      lockedValues: Object.fromEntries(axes.filter(a=>locks[a.key]).map(a=>[a.key,current[a.key]||''])),
+    });
+    if(D.composeBehaviorLog.length>500) D.composeBehaviorLog=D.composeBehaviorLog.slice(0,500);
     persist();
     return current;
   }
@@ -12443,6 +12459,7 @@ function openComposeStudio(sec, cfg, onClose){
   let studioComp = null;
   let studioLocks = {};
   let activeTab = 'generator';
+  let activeBias = null;
 
   function getStudioAxes(){ return MODE_AXES_S[studioMode]||MODE_AXES_S.painting; }
   function resetStudioLocks(){ studioLocks={}; getStudioAxes().forEach(a=>{ studioLocks[a.key]=false; }); }
@@ -12450,7 +12467,7 @@ function openComposeStudio(sec, cfg, onClose){
 
   function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
-  // Painting pools (needed for studio generation)
+  // Data pools (painting compact + disciplines)
   const SP={
     PALETTES:{ warm:['burnt sienna, raw umber, warm white accent','yellow ochre, venetian red, off-white','cadmium orange, deep violet shadow, titanium white','raw sienna, indian red, pale gold highlight','terra rosa, yellow ochre, ivory black','naples yellow, transparent oxide red, warm gray'],cool:["payne's gray, cobalt blue, pale gold accent",'muted ultramarine, warm ochre, off-white','phthalo blue, titanium white, rust accent','cerulean, deep umber, zinc white','prussian blue, neutral gray, cream highlight',"indigo, cobalt teal, payne's gray, silver-white"],neutral:['charcoal, raw umber, pale lemon highlight','neutral gray, ivory black, zinc white','lamp black, naples yellow, oxide red','bone white, warm gray, carbon black','raw umber, titanium white, soft black'],dramatic:["cadmium red, payne's gray, silver-white","deep crimson, prussian blue, fractured gold",'viridian, burnt orange, titanium white','oxide red, phthalo green, ivory accent','cobalt violet, yellow ochre, lamp black',"alizarin crimson, ultramarine, raw umber, gold"] },
     STRUCTURES:{ geometric:['vertical split tension — two unequal fields in opposition','grid fracture — regular geometry interrupted by diagonal breaks','hard horizon with geometric intrusion from below','centered rectangular mass, compressed edges','stacked horizontal bands with disrupted middle layer','radial division — four quadrants with active center'],organic:['central mass dissolving at edges into open field','diagonal sweep from lower-left, trailing into upper-right void','floating organic forms, loosely clustered, asymmetric','horizon line implied but never stated — atmospheric','dense core with radiating fragmentation outward','layered organic strata, bottom-heavy, sky-open'],mixed:['geometric skeleton interrupted by organic passage','top-heavy compression releasing downward into open space','interlocking angular and curved zones in uneasy balance','scattered nodes connected by implied directional energy','edge-to-center migration — forms collapsing inward','asymmetric bilateral — mirrored intent, broken execution'] },
@@ -12466,20 +12483,89 @@ function openComposeStudio(sec, cfg, onClose){
   const MP={ mode:['Dorian — minor with raised sixth, folk-inflected melancholy','Lydian — raised fourth, hovering, unresolved brightness','Phrygian — flattened second, ancient, tense, Spanish-inflected','pentatonic — open, uncluttered, no leading-tone pressure','whole tone — floating, directionless, impressionistic','chromatic — every semitone available, maximum harmonic pressure','Mixolydian — major with flat seventh, blues-adjacent warmth'],tempo:['very slow, breath as pulse — time expanded, no urgency','medium walking — steady, unhurried, each beat settled','driving eighth-note pulse — forward pressure, no rest','free time — no fixed meter, shaped by phrase not clock','syncopated — accent displaced, ground implied but unstated','waltz feel — three, one strong beat and two that lean','rubato — tempo as expressive tool, stretched and compressed'],instrumentation:['solo piano, nothing else','string quartet — intimate, self-contained','sparse electronics and voice','brass and low percussion — weight and ceremony','acoustic guitar, close-miked — room and body audible','chamber ensemble, winds-forward','bass and drums only — harmonic implication through rhythm'],harmony:['diatonic warmth — stays inside the key, resolution always available','quartal — chords built in fourths, open, ambiguous, modern','jazz extensions — ninths, elevenths, thirteenths, color over function','drone-based — one pitch sustained, everything moves above it','cluster chords — semitonal density, dissonance as texture','static harmony — no chord movement, melody carries all motion','modal interchange — borrowing from parallel modes, unexpected color'],arc:['sustained pianissimo throughout — tension through restraint','slow inevitable build from near-silence to full presence','sudden violent contrast — quiet broken, silence returned','long plateau then rapid collapse','volatile — no settled dynamic level, unpredictable','decrescendo throughout — begins full, ends in near-silence'],concept:['a rhythm that implies a missing melody','two voices that never resolve their interval','the same phrase repeated until it changes meaning','silence as structural element — the rests are the work','a melodic fragment that refuses to develop','harmony that implies a tonal center it never reaches','the texture of accumulation without climax'],spark_c:['a melody that arrives after it has already ended','the wrong instrument in the right place','rhythm as the memory of a sound that stopped'] };
   const POET={ form:['free verse — line breaks as breath, no formal constraint','prose poem — paragraph form, lyric density','sonnet — fourteen lines, volta required','villanelle — two refrains, obsessive return','ghazal — self-contained couplets, connected by refrain','elegy — formal address to loss','ode — sustained praise of a single subject','haiku sequence — compressed image, juxtaposition as meaning','list poem — accumulation as argument'],speaker:['first person, no distance, present tense confession','second person address — speaking directly to a you','third person witness — observing without intervening','first person plural — a we whose boundaries are uncertain','no fixed speaker — language without a stable source','apostrophe — address to an absent, dead, or abstract subject'],imagery:['domestic and interior — kitchen, bed, the ordinary object','ecological and natural — weather, animals, landscape, season','industrial and urban — infrastructure, noise, concrete, light pollution','somatic and bodily — the body as landscape, sensation as image','celestial and cosmic — stars, time scales, geological deep time','archival and historical — documents, photographs, records, ruins'],register:['grief — not performed, structural','longing — for what is gone or never was','wonder — the world surprising itself','dread — not panic, slow accumulation','tenderness — at risk, not self-protective','ambivalence — two true things in direct conflict','quiet rage — controlled, all the more dangerous for it'],prosody:['heavy consonant clusters — percussive, resistant','liquid open vowels — flowing, little friction','irregular breath lengths — stanza breaks as gasps','end-stopped lines — each line a complete unit, no overflow','heavy enjambment — meaning completed across line breaks','internal rhyme and assonance — sound woven through, not at end','minimal punctuation — pace controlled by white space'],concept:['the object that outlived the relationship','a recurring dream that has started to feel like memory','the conversation that should have happened differently','a body in the process of changing','what the child understood that the adult has since forgotten','a landscape that refuses to be symbolic','the years when nothing seemed to happen but everything did','a word that no longer means what it used to','what remains after you stop waiting'],spark_c:['the sound a word makes after it has lost its meaning','a stanza that knows it is a stanza','elegy for the version of yourself that almost happened'] };
 
+  // ── Insights helpers ──────────────────────────────────
+  function computeAxisStats(discipline){
+    const log=(D.composeBehaviorLog||[]).filter(e=>e.discipline===discipline);
+    if(log.length<3) return null;
+    const axes=MODE_AXES_S[discipline]||[];
+    const stats={};
+    axes.forEach(({key,label})=>{
+      const total=log.length;
+      const locked=log.filter(e=>e.lockedAxes&&e.lockedAxes.includes(key)).length;
+      const lockRate=total>0?locked/total:0;
+      const valCounts={};
+      log.forEach(e=>{
+        if(e.lockedAxes&&e.lockedAxes.includes(key)&&e.lockedValues&&e.lockedValues[key]){
+          const v=e.lockedValues[key]; valCounts[v]=(valCounts[v]||0)+1;
+        }
+      });
+      const topLocked=Object.entries(valCounts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([v,c])=>({value:v,count:c}));
+      stats[key]={label,lockRate,total,locked,topLocked};
+    });
+    return {axes,stats,total:log.length};
+  }
+
+  function getProseObservations(discipline,statsData){
+    if(!statsData) return [];
+    const obs=[];
+    statsData.axes.forEach(({key,label})=>{
+      const s=statsData.stats[key]; if(!s) return;
+      if(s.lockRate>=0.65&&s.locked>=4)
+        obs.push(`You've protected ${label.toLowerCase()} in ${s.locked} of your last ${s.total} sessions.`);
+      else if(s.lockRate<=0.1&&s.total>=8)
+        obs.push(`You rarely hold ${label.toLowerCase()} fixed — you tend to keep it in motion.`);
+      if(s.topLocked.length&&s.topLocked[0].count>=3){
+        const short=s.topLocked[0].value.split('—')[0].trim().split(',')[0].trim();
+        obs.push(`"${short.length>45?short.slice(0,45)+'\u2026':short}" has appeared ${s.topLocked[0].count} times in your protected choices.`);
+      }
+    });
+    return obs.slice(0,2);
+  }
+
+  function getCrossInsights(){
+    const disciplines=(cfg.enabledModes||['painting']).filter(d=>(D.composeBehaviorLog||[]).filter(e=>e.discipline===d).length>=3);
+    if(disciplines.length<2) return [];
+    const out=[];
+    ['concept'].forEach(axisKey=>{
+      const high=disciplines.filter(d=>{
+        const log=(D.composeBehaviorLog||[]).filter(e=>e.discipline===d);
+        const lk=log.filter(e=>e.lockedAxes&&e.lockedAxes.includes(axisKey)).length;
+        return log.length>0&&(lk/log.length)>=0.5;
+      });
+      if(high.length>=2)
+        out.push(`You consistently protect thematic direction across ${high.map(d=>ALL_MODE_LABELS[d]).join(' and ')}.`);
+    });
+    return out.slice(0,2);
+  }
+
+  // ── Generation (pool-first, bias-aware) ───────────────
   function studioPickForMode(mode, axisKey){
-    const spark = cfg.spark;
+    const spark=cfg.spark;
+    let pool=[];
     if(mode==='painting'){
-      if(axisKey==='palette'){ const mood=cfg.mood||'mixed'; const tone=mood==='calm'?'cool':mood==='tense'?'dramatic':mood==='chaotic'?'dramatic':mood==='meditative'?'neutral':'warm'; return pick(spark?[...SP.PALETTES.warm,...SP.PALETTES.cool,...SP.PALETTES.neutral,...SP.PALETTES.dramatic,...SP.SPARK_P]:[...(SP.PALETTES[tone]||[]),...SP.PALETTES.warm,...SP.PALETTES.cool]); }
-      if(axisKey==='structure'){ const style=cfg.styleLean||'mixed'; return pick(spark?[...SP.STRUCTURES.geometric,...SP.STRUCTURES.organic,...SP.STRUCTURES.mixed,...SP.SPARK_S]:style==='mixed'?[...SP.STRUCTURES.geometric,...SP.STRUCTURES.organic,...SP.STRUCTURES.mixed]:[...(SP.STRUCTURES[style]||[]),...SP.STRUCTURES.mixed]); }
-      if(axisKey==='texture'){ const cx=cfg.complexity||'balanced'; return pick(spark?[...SP.TEXTURES.minimal,...SP.TEXTURES.balanced,...SP.TEXTURES.complex]:[...(SP.TEXTURES[cx]||[]),...SP.TEXTURES.balanced]); }
-      if(axisKey==='tension'){ const mood=cfg.mood||'mixed'; return pick(spark?[...SP.TENSIONS.calm,...SP.TENSIONS.tense,...SP.TENSIONS.chaotic,...SP.TENSIONS.meditative]:[...(SP.TENSIONS[mood]||SP.TENSIONS.tense),...SP.TENSIONS.meditative]); }
-      if(axisKey==='concept'){ return pick(spark?[...SP.CONCEPTS,...SP.SPARK_C]:SP.CONCEPTS); }
+      if(axisKey==='palette'){ const mood=cfg.mood||'mixed'; const tone=mood==='calm'?'cool':mood==='tense'?'dramatic':mood==='chaotic'?'dramatic':mood==='meditative'?'neutral':'warm'; pool=spark?[...SP.PALETTES.warm,...SP.PALETTES.cool,...SP.PALETTES.neutral,...SP.PALETTES.dramatic,...SP.SPARK_P]:[...(SP.PALETTES[tone]||[]),...SP.PALETTES.warm,...SP.PALETTES.cool]; }
+      else if(axisKey==='structure'){ const style=cfg.styleLean||'mixed'; pool=spark?[...SP.STRUCTURES.geometric,...SP.STRUCTURES.organic,...SP.STRUCTURES.mixed,...SP.SPARK_S]:style==='mixed'?[...SP.STRUCTURES.geometric,...SP.STRUCTURES.organic,...SP.STRUCTURES.mixed]:[...(SP.STRUCTURES[style]||[]),...SP.STRUCTURES.mixed]; }
+      else if(axisKey==='texture'){ const cx=cfg.complexity||'balanced'; pool=spark?[...SP.TEXTURES.minimal,...SP.TEXTURES.balanced,...SP.TEXTURES.complex]:[...(SP.TEXTURES[cx]||[]),...SP.TEXTURES.balanced]; }
+      else if(axisKey==='tension'){ const mood=cfg.mood||'mixed'; pool=spark?[...SP.TENSIONS.calm,...SP.TENSIONS.tense,...SP.TENSIONS.chaotic,...SP.TENSIONS.meditative]:[...(SP.TENSIONS[mood]||SP.TENSIONS.tense),...SP.TENSIONS.meditative]; }
+      else if(axisKey==='concept'){ pool=spark?[...SP.CONCEPTS,...SP.SPARK_C]:[...SP.CONCEPTS]; }
+    } else if(mode==='writing'){ pool=[...(WP[axisKey]||[])]; if(axisKey==='concept'&&spark) pool=[...pool,...(WP.spark_c||[])]; }
+    else if(mode==='photography'){ pool=[...(PP[axisKey]||[])]; }
+    else if(mode==='music'){ pool=[...(MP[axisKey]||[])]; if(axisKey==='concept'&&spark) pool=[...pool,...(MP.spark_c||[])]; }
+    else if(mode==='poetry'){ pool=[...(POET[axisKey]||[])]; if(axisKey==='concept'&&spark) pool=[...pool,...(POET.spark_c||[])]; }
+    if(!pool.length) return '';
+    // Apply active bias
+    if(activeBias&&activeBias.discipline===mode&&activeBias.axis===axisKey){
+      const lv=(activeBias.lockedValues||[]).filter(v=>pool.includes(v));
+      const notLocked=pool.filter(v=>!lv.includes(v));
+      switch(activeBias.type){
+        case 'lean_into':   return pick(lv.length?[...pool,...lv,...lv]:pool);
+        case 'lean_away':   return pick(notLocked.length?notLocked:pool);
+        case 'push_further':return pick(lv.length?lv:pool);
+        case 'disturb':     return pick(notLocked.length?notLocked:pool);
+        case 'explore_opposite': return pick(notLocked.length?notLocked:pool);
+      }
     }
-    if(mode==='writing'){ const pool=WP[axisKey]||[]; return pick((axisKey==='concept'&&spark)?[...pool,...(WP.spark_c||[])]:pool); }
-    if(mode==='photography'){ return pick(PP[axisKey]||[]); }
-    if(mode==='music'){ const pool=MP[axisKey]||[]; return pick((axisKey==='concept'&&spark)?[...pool,...(MP.spark_c||[])]:pool); }
-    if(mode==='poetry'){ const pool=POET[axisKey]||[]; return pick((axisKey==='concept'&&spark)?[...pool,...(POET.spark_c||[])]:pool); }
-    return '';
+    return pick(pool);
   }
 
   function studioGenerate(refine=false){
@@ -12493,9 +12579,20 @@ function openComposeStudio(sec, cfg, onClose){
     } else {
       axes.forEach(a=>{ if(!studioLocks[a.key]||!prev) studioComp[a.key]=studioPickForMode(studioMode,a.key); });
     }
+    // Prompt history
     if(!D.composePromptHistory) D.composePromptHistory=[];
     D.composePromptHistory.unshift({ timestamp:new Date().toISOString(), discipline:studioMode, spark:!!cfg.spark, axes:{...studioComp} });
     if(D.composePromptHistory.length>200) D.composePromptHistory=D.composePromptHistory.slice(0,200);
+    // Behavioral log
+    if(!D.composeBehaviorLog) D.composeBehaviorLog=[];
+    D.composeBehaviorLog.unshift({
+      timestamp: new Date().toISOString()+'_s',
+      discipline: studioMode,
+      isRefine: refine,
+      lockedAxes: axes.filter(a=>studioLocks[a.key]).map(a=>a.key),
+      lockedValues: Object.fromEntries(axes.filter(a=>studioLocks[a.key]).map(a=>[a.key,studioComp[a.key]||''])),
+    });
+    if(D.composeBehaviorLog.length>500) D.composeBehaviorLog=D.composeBehaviorLog.slice(0,500);
     persist();
     return studioComp;
   }
@@ -12523,54 +12620,68 @@ function openComposeStudio(sec, cfg, onClose){
   let overlay=document.getElementById('composeStudioOverlay');
   if(overlay) overlay.remove();
   overlay=el('div','overlay'); overlay.id='composeStudioOverlay';
-  const modal=el('div','modal'); modal.style.cssText='width:620px;max-height:88vh;display:flex;flex-direction:column;';
+  const modal=el('div','modal'); modal.style.cssText='width:640px;max-height:90vh;display:flex;flex-direction:column;';
 
-  // Header
-  const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:12px;';
+  const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:10px;';
   const mtitle=el('h3'); mtitle.style.cssText='margin:0;flex:1;'; mtitle.textContent='\uD83C\uDFA8 Creative Studio';
   const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close';
   closeBtn.onclick=()=>{ closeOverlay('composeStudioOverlay'); cfg.activeMode=studioMode; if(onClose) onClose(); };
-  mhdr.append(mtitle, closeBtn);
+  mhdr.append(mtitle,closeBtn);
 
-  // Tab bar
-  const tabBar=el('div'); tabBar.style.cssText='display:flex;gap:2px;margin-bottom:12px;border-bottom:1px solid var(--border);';
-  const tabs=[{id:'generator',label:'Generator'},{id:'history',label:'Prompt History'}];
-  function makeTabBtn(id,label){
-    const btn=el('button','clock-style-btn');
-    btn.style.cssText='font-size:11px;padding:4px 12px;border-radius:4px 4px 0 0;margin-bottom:-1px;';
-    btn.textContent=label; btn.dataset.tab=id;
-    btn.onclick=()=>{ activeTab=id; renderTab(); };
-    return btn;
-  }
+  const tabBar=el('div'); tabBar.style.cssText='display:flex;gap:2px;margin-bottom:10px;border-bottom:1px solid var(--border);';
+  const tabs=[{id:'generator',label:'Generator'},{id:'insights',label:'Insights'},{id:'history',label:'Prompt History'},{id:'journal',label:'Journal'}];
   const tabBtns={};
-  tabs.forEach(t=>{ const b=makeTabBtn(t.id,t.label); tabBtns[t.id]=b; tabBar.appendChild(b); });
+  tabs.forEach(t=>{
+    const btn=el('button','clock-style-btn');
+    btn.style.cssText='font-size:11px;padding:4px 11px;border-radius:4px 4px 0 0;margin-bottom:-1px;';
+    btn.textContent=t.label; btn.dataset.tab=t.id;
+    btn.onclick=()=>{ activeTab=t.id; renderTab(); };
+    tabBtns[t.id]=btn; tabBar.appendChild(btn);
+  });
 
   const tabBody=el('div'); tabBody.style.cssText='flex:1;overflow-y:auto;';
-
   modal.append(mhdr,tabBar,tabBody);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
   function renderTab(){
-    // Update tab button styles
     Object.entries(tabBtns).forEach(([id,btn])=>{
       btn.style.color=id===activeTab?'var(--accent)':'';
       btn.style.borderColor=id===activeTab?'var(--accent)':'';
     });
     tabBody.innerHTML='';
     if(activeTab==='generator') renderGeneratorTab();
+    if(activeTab==='insights')  renderInsightsTab();
     if(activeTab==='history')   renderHistoryTab();
+    if(activeTab==='journal')   renderJournalTab();
   }
 
+  // ── Tab 1: Generator ──────────────────────────────────
   function renderGeneratorTab(){
     const wrap=el('div');
 
-    // Studio mode switcher (if multiple modes)
+    // Bias indicator
+    const biasEl=el('div'); biasEl.style.cssText='display:none;background:rgba(0,255,255,0.07);border:1px solid var(--accent);border-radius:4px;padding:5px 10px;margin-bottom:8px;font-size:10px;font-family:Share Tech Mono,monospace;align-items:center;gap:8px;';
+    wrap.appendChild(biasEl);
+
+    function updateBiasIndicator(){
+      if(!activeBias){ biasEl.style.display='none'; return; }
+      biasEl.style.display='flex';
+      const labels={lean_into:'Leaning into',lean_away:'Leaning away from',push_further:'Pushing further on',disturb:'Disturbing instinct for',explore_opposite:'Exploring opposite of'};
+      const axisLabel=(MODE_AXES_S[activeBias.discipline]||[]).find(a=>a.key===activeBias.axis)?.label||activeBias.axis;
+      biasEl.innerHTML='';
+      const txt=el('span'); txt.style.flex='1'; txt.textContent='\u26A1 '+( labels[activeBias.type]||activeBias.type)+': '+(ALL_MODE_LABELS[activeBias.discipline]||activeBias.discipline)+' \u203A '+axisLabel;
+      const clr=el('button','comp-lock-btn'); clr.style.cssText='font-size:9px;padding:1px 6px;'; clr.textContent='\u2715 Clear';
+      clr.onclick=()=>{ activeBias=null; updateBiasIndicator(); };
+      biasEl.append(txt,clr);
+    }
+    updateBiasIndicator();
+
+    // Mode switcher
     if(cfg.enabledModes.length>1){
       const ms=el('div'); ms.style.cssText='display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;';
       cfg.enabledModes.forEach(m=>{
-        const btn=el('button','clock-style-btn');
-        btn.style.cssText='font-size:10px;padding:2px 8px;';
+        const btn=el('button','clock-style-btn'); btn.style.cssText='font-size:10px;padding:2px 8px;';
         btn.textContent=ALL_MODE_ICONS[m]+' '+ALL_MODE_LABELS[m];
         if(m===studioMode) btn.style.cssText+='color:var(--accent);border-color:var(--accent);';
         btn.onclick=()=>{ studioMode=m; cfg.activeMode=m; studioComp=null; resetStudioLocks(); persist(); renderGeneratorTab(); };
@@ -12586,19 +12697,15 @@ function openComposeStudio(sec, cfg, onClose){
     sparkToggle.onclick=()=>{ cfg.spark=!cfg.spark; sparkToggle.classList.toggle('active',cfg.spark); persist(); };
     const sparkDesc=el('span'); sparkDesc.style.cssText='font-size:10px;color:var(--text-dim);font-style:italic;';
     sparkDesc.textContent='Pulls from wilder, more unexpected combinations';
-    sparkRow.append(sparkToggle,sparkDesc);
-    wrap.appendChild(sparkRow);
+    sparkRow.append(sparkToggle,sparkDesc); wrap.appendChild(sparkRow);
 
     // Buttons
     const btnRow=el('div','comp-actions'); btnRow.style.cssText='margin-bottom:10px;';
     const genBtn2=el('button','search-widget-go'); genBtn2.textContent='Generate';
     const refBtn2=el('button','clock-style-btn'); refBtn2.style.cssText='font-size:11px;padding:3px 10px;'; refBtn2.textContent='Refine';
-    btnRow.append(genBtn2,refBtn2);
-    wrap.appendChild(btnRow);
+    btnRow.append(genBtn2,refBtn2); wrap.appendChild(btnRow);
 
-    // Prompt display
-    const compDisplay=el('div','comp-modal-section');
-    wrap.appendChild(compDisplay);
+    const compDisplay=el('div','comp-modal-section'); wrap.appendChild(compDisplay);
 
     function renderStudioComp(){
       compDisplay.innerHTML='';
@@ -12610,7 +12717,7 @@ function openComposeStudio(sec, cfg, onClose){
       getStudioAxes().forEach(({key,label,cls})=>{
         const row=el('div','comp-section');
         const lbl=el('span','comp-section-lbl'); lbl.textContent=label;
-        const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=studioComp[key]||'—';
+        const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=studioComp[key]||'\u2014';
         const lockBtn=el('button','comp-lock-btn'+(studioLocks[key]?' locked':''));
         lockBtn.textContent=studioLocks[key]?'\uD83D\uDD12':'\uD83D\uDD13';
         lockBtn.title=studioLocks[key]?'Locked — click to unlock':'Click to lock';
@@ -12618,8 +12725,6 @@ function openComposeStudio(sec, cfg, onClose){
         row.append(lbl,val,lockBtn); card.appendChild(row);
       });
       compDisplay.appendChild(card);
-
-      // Canvas guidance — painting only
       const guidance=deriveGuidanceS(studioComp);
       if(guidance){
         const gs=el('div','comp-modal-section'); gs.style.cssText='margin-top:10px;';
@@ -12663,7 +12768,7 @@ function openComposeStudio(sec, cfg, onClose){
       cfg.saved.forEach((s,i)=>{
         const row=el('div','comp-saved-row');
         const name=el('span'); name.textContent=s.name;
-        const meta=el('span'); meta.style.cssText='font-size:9.5px;color:var(--text-dim);flex-shrink:0;'; meta.textContent=(s.discipline?s.discipline+' · ':'')+new Date(s.savedAt).toLocaleDateString();
+        const meta=el('span'); meta.style.cssText='font-size:9.5px;color:var(--text-dim);flex-shrink:0;'; meta.textContent=(s.discipline?s.discipline+' \u00B7 ':'')+new Date(s.savedAt).toLocaleDateString();
         const loadBtn=el('button','monitor-check-btn'); loadBtn.textContent='Load'; loadBtn.style.cssText='font-size:9.5px;padding:1px 7px;';
         loadBtn.onclick=e=>{ e.stopPropagation(); studioComp={...s.comp}; studioMode=s.discipline||studioMode; cfg.activeMode=studioMode; resetStudioLocks(); persist(); renderGeneratorTab(); };
         const del=icBtn('\u2715','Delete',()=>{ cfg.saved.splice(i,1); persist(); renderSavedList(); }); del.classList.add('ic-del');
@@ -12675,6 +12780,124 @@ function openComposeStudio(sec, cfg, onClose){
     tabBody.appendChild(wrap);
   }
 
+  // ── Tab 2: Insights ───────────────────────────────────
+  function renderInsightsTab(){
+    const wrap=el('div');
+    const disciplinesWithData=(cfg.enabledModes||['painting']).filter(d=>(D.composeBehaviorLog||[]).filter(e=>e.discipline===d).length>=3);
+
+    if(!disciplinesWithData.length){
+      const msg=el('div'); msg.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;padding:16px 0;line-height:1.6;';
+      msg.textContent='Generate at least 3 prompts to begin seeing insights. Insights grow richer over time as the system learns what you tend to protect and what you keep in motion.';
+      wrap.appendChild(msg); tabBody.appendChild(wrap); return;
+    }
+
+    let insightDiscipline=disciplinesWithData.includes(studioMode)?studioMode:disciplinesWithData[0];
+
+    // Discipline picker
+    if(disciplinesWithData.length>1){
+      const dp=el('div'); dp.style.cssText='display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;';
+      disciplinesWithData.forEach(d=>{
+        const btn=el('button','clock-style-btn'); btn.style.cssText='font-size:10px;padding:2px 8px;';
+        btn.textContent=ALL_MODE_ICONS[d]+' '+ALL_MODE_LABELS[d];
+        if(d===insightDiscipline) btn.style.cssText+='color:var(--accent);border-color:var(--accent);';
+        btn.onclick=()=>{ insightDiscipline=d; renderInsightsContent(); dp.querySelectorAll('button').forEach(b=>{ b.style.color=''; b.style.borderColor=''; }); btn.style.color='var(--accent)'; btn.style.borderColor='var(--accent)'; };
+        dp.appendChild(btn);
+      });
+      wrap.appendChild(dp);
+    }
+
+    const contentArea=el('div'); wrap.appendChild(contentArea);
+
+    function renderInsightsContent(){
+      contentArea.innerHTML='';
+      const statsData=computeAxisStats(insightDiscipline);
+      if(!statsData){
+        const m=el('div'); m.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;'; m.textContent='Not enough data for this discipline yet.';
+        contentArea.appendChild(m); return;
+      }
+
+      // Prose observations
+      const prose=getProseObservations(insightDiscipline,statsData);
+      if(prose.length){
+        const proseWrap=el('div'); proseWrap.style.cssText='margin-bottom:14px;';
+        prose.forEach(p=>{
+          const obs=el('div'); obs.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;padding:6px 10px;border-left:2px solid var(--accent);margin-bottom:6px;line-height:1.5;';
+          obs.textContent=p; proseWrap.appendChild(obs);
+        });
+        contentArea.appendChild(proseWrap);
+      }
+
+      // Axis tendency indicators
+      const axTitle=el('div','comp-modal-section-title'); axTitle.textContent='Axis Tendencies — '+ALL_MODE_LABELS[insightDiscipline];
+      contentArea.appendChild(axTitle);
+
+      const axWrap=el('div'); axWrap.style.cssText='margin-bottom:16px;';
+      statsData.axes.forEach(({key})=>{
+        const s=statsData.stats[key]; if(!s) return;
+        const row=el('div'); row.style.cssText='margin-bottom:14px;';
+
+        // Label + rate
+        const hdr=el('div'); hdr.style.cssText='display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;';
+        const lbl=el('span'); lbl.style.cssText='font-size:11px;font-family:Share Tech Mono,monospace;color:var(--text);'; lbl.textContent=s.label;
+        const rate=el('span'); rate.style.cssText='font-size:10px;color:var(--text-dim);'; rate.textContent=Math.round(s.lockRate*100)+'% protected \u00B7 '+s.total+' sessions';
+        hdr.append(lbl,rate);
+
+        // Bar
+        const barWrap=el('div'); barWrap.style.cssText='height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-bottom:5px;overflow:hidden;';
+        const bar=el('div'); bar.style.cssText='height:100%;width:'+Math.round(s.lockRate*100)+'%;background:var(--accent);border-radius:2px;';
+        barWrap.appendChild(bar);
+
+        // Most protected value
+        if(s.topLocked.length){
+          const short=s.topLocked[0].value.split('\u2014')[0].trim().split(',')[0].trim();
+          const valEl=el('div'); valEl.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:5px;font-style:italic;';
+          valEl.textContent='most protected: \u201C'+(short.length>55?short.slice(0,55)+'\u2026':short)+'\u201D';
+          row.append(hdr,barWrap,valEl);
+        } else {
+          row.append(hdr,barWrap);
+        }
+
+        // Action buttons
+        const btnRow=el('div'); btnRow.style.cssText='display:flex;gap:4px;flex-wrap:wrap;';
+        const lockedVals=s.topLocked.map(t=>t.value);
+        [
+          {type:'lean_into',label:'Lean Into This'},
+          {type:'lean_away',label:'Lean Away'},
+          {type:'disturb',label:'Disturb This'},
+          {type:'push_further',label:'Push Further'},
+          {type:'explore_opposite',label:'Explore Opposite'},
+        ].forEach(({type,label:al})=>{
+          const btn=el('button','clock-style-btn'); btn.style.cssText='font-size:9px;padding:2px 6px;';
+          btn.textContent=al;
+          btn.onclick=()=>{
+            activeBias={discipline:insightDiscipline,axis:key,type,lockedValues:lockedVals};
+            activeTab='generator'; renderTab();
+          };
+          btnRow.appendChild(btn);
+        });
+        row.appendChild(btnRow);
+        axWrap.appendChild(row);
+      });
+      contentArea.appendChild(axWrap);
+
+      // Cross-discipline
+      const cross=getCrossInsights();
+      if(cross.length){
+        const cTitle=el('div','comp-modal-section-title'); cTitle.textContent='Cross-Discipline Patterns'; contentArea.appendChild(cTitle);
+        const cWrap=el('div'); cWrap.style.cssText='margin-bottom:12px;';
+        cross.forEach(o=>{
+          const obs=el('div'); obs.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;padding:6px 10px;border-left:2px solid var(--accent);margin-bottom:6px;line-height:1.5;';
+          obs.textContent=o; cWrap.appendChild(obs);
+        });
+        contentArea.appendChild(cWrap);
+      }
+    }
+
+    renderInsightsContent();
+    tabBody.appendChild(wrap);
+  }
+
+  // ── Tab 3: Prompt History ─────────────────────────────
   function renderHistoryTab(){
     const wrap=el('div');
     const history=(D.composePromptHistory||[]);
@@ -12685,10 +12908,10 @@ function openComposeStudio(sec, cfg, onClose){
     history.forEach(entry=>{
       const card=el('div','comp-modal-section'); card.style.cssText='margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);';
       const hdr=el('div'); hdr.style.cssText='display:flex;align-items:center;gap:6px;margin-bottom:6px;';
-      const icon=el('span'); icon.textContent=ALL_MODE_ICONS[entry.discipline]||'🎨';
+      const icon=el('span'); icon.textContent=ALL_MODE_ICONS[entry.discipline]||'\uD83C\uDFA8';
       const disc=el('span'); disc.style.cssText='font-size:11px;color:var(--accent);font-family:Share Tech Mono,monospace;'; disc.textContent=ALL_MODE_LABELS[entry.discipline]||entry.discipline;
       const ts=el('span'); ts.style.cssText='font-size:10px;color:var(--text-dim);margin-left:auto;'; ts.textContent=new Date(entry.timestamp).toLocaleString();
-      if(entry.spark){ const sp=el('span'); sp.style.cssText='font-size:9px;color:var(--accent);font-family:Share Tech Mono,monospace;'; sp.textContent='⚡ spark'; hdr.append(icon,disc,sp,ts); } else { hdr.append(icon,disc,ts); }
+      if(entry.spark){ const sp=el('span'); sp.style.cssText='font-size:9px;color:var(--accent);font-family:Share Tech Mono,monospace;'; sp.textContent='\u26A1 spark'; hdr.append(icon,disc,sp,ts); } else { hdr.append(icon,disc,ts); }
       card.appendChild(hdr);
       const axes=MODE_AXES_S[entry.discipline]||[];
       axes.forEach(({key,label,cls})=>{
@@ -12698,17 +12921,212 @@ function openComposeStudio(sec, cfg, onClose){
         const val=el('span','comp-section-val'+(cls?' '+cls:'')); val.textContent=entry.axes[key];
         row.append(lbl,val); card.appendChild(row);
       });
-      // Journal This button (placeholder for Phase 2)
+      // Journal This button
       const jRow=el('div'); jRow.style.cssText='margin-top:6px;';
-      const jBtn=el('button','clock-style-btn'); jBtn.style.cssText='font-size:10px;padding:2px 8px;opacity:0.5;cursor:not-allowed;'; jBtn.textContent='📓 Journal This'; jBtn.title='Journaling coming in a future update'; jBtn.disabled=true;
+      const existingJ=(D.composeJournal||[]).find(j=>j.promptTimestamp===entry.timestamp);
+      const jBtn=el('button','clock-style-btn'); jBtn.style.cssText='font-size:10px;padding:2px 8px;';
+      jBtn.textContent=existingJ?'\uD83D\uDCD3 View Journal Entry':'\uD83D\uDCD3 Journal This';
+      jBtn.onclick=()=>openComposeJournalModal(entry,existingJ,cfg.enabledModes||['painting'],()=>{ activeTab='journal'; renderTab(); });
       jRow.appendChild(jBtn); card.appendChild(jRow);
       wrap.appendChild(card);
     });
     tabBody.appendChild(wrap);
   }
 
+  // ── Tab 4: Journal ────────────────────────────────────
+  function renderJournalTab(){
+    const wrap=el('div');
+    const newRow=el('div'); newRow.style.cssText='margin-bottom:12px;';
+    const newBtn=el('button','search-widget-go'); newBtn.style.cssText='font-size:11px;padding:4px 14px;'; newBtn.textContent='+ New Journal Entry';
+    newBtn.onclick=()=>openComposeJournalModal(null,null,cfg.enabledModes||['painting'],()=>{ activeTab='journal'; renderTab(); });
+    newRow.appendChild(newBtn); wrap.appendChild(newRow);
+    const journal=(D.composeJournal||[]);
+    if(!journal.length){
+      const e=el('div'); e.style.cssText='font-size:12px;color:var(--text-dim);font-style:italic;padding:8px 0;line-height:1.6;'; e.textContent='No journal entries yet. Use \u201CJournal This\u201D in Prompt History to document a piece, or start a new entry above.';
+      wrap.appendChild(e); tabBody.appendChild(wrap); return;
+    }
+    journal.forEach(entry=>{
+      const card=el('div','comp-modal-section'); card.style.cssText='margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;gap:10px;';
+      if(entry.imageUrl){
+        const img=el('img'); img.src=entry.imageUrl; img.style.cssText='width:64px;height:64px;object-fit:cover;border-radius:4px;flex-shrink:0;border:1px solid var(--border);';
+        img.onerror=()=>img.style.display='none'; card.appendChild(img);
+      }
+      const info=el('div'); info.style.flex='1';
+      if(entry.promptSnapshot){
+        const disc=el('div'); disc.style.cssText='font-size:10px;color:var(--accent);font-family:Share Tech Mono,monospace;margin-bottom:2px;';
+        disc.textContent=(ALL_MODE_ICONS[entry.promptSnapshot.discipline]||'')+' '+(ALL_MODE_LABELS[entry.promptSnapshot.discipline]||'');
+        info.appendChild(disc);
+      }
+      const title=el('div'); title.style.cssText='font-size:13px;font-weight:bold;color:var(--text);margin-bottom:2px;'; title.textContent=entry.title||'Untitled';
+      const meta=el('div'); meta.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:4px;';
+      const parts=[];
+      if(entry.medium) parts.push(entry.medium);
+      if(entry.dateStarted) parts.push('Started '+entry.dateStarted);
+      if(entry.abandoned) parts.push('Abandoned');
+      else if(entry.dateCompleted) parts.push('Completed '+entry.dateCompleted);
+      meta.textContent=parts.join(' \u00B7 ');
+      info.append(title,meta);
+      if(entry.notes){
+        const notes=el('div'); notes.style.cssText='font-size:11px;color:var(--text-dim);font-style:italic;margin-bottom:6px;white-space:pre-wrap;line-height:1.4;';
+        notes.textContent=entry.notes.length>120?entry.notes.slice(0,120)+'\u2026':entry.notes;
+        info.appendChild(notes);
+      }
+      const editBtn=el('button','clock-style-btn'); editBtn.style.cssText='font-size:10px;padding:2px 8px;'; editBtn.textContent='Edit';
+      editBtn.onclick=()=>{
+        const promptEntry=entry.promptTimestamp?(D.composePromptHistory||[]).find(p=>p.timestamp===entry.promptTimestamp):null;
+        openComposeJournalModal(promptEntry,entry,cfg.enabledModes||['painting'],()=>{ activeTab='journal'; renderTab(); });
+      };
+      info.appendChild(editBtn);
+      card.appendChild(info); wrap.appendChild(card);
+    });
+    tabBody.appendChild(wrap);
+  }
+
   renderTab();
   openOverlay('composeStudioOverlay');
+}
+
+function openComposeJournalModal(promptEntry, existingJournal, enabledModes, onSave){
+  const MEDIUM_OPTIONS={
+    painting:['Oil Painting','Acrylic Painting','Watercolor','Gouache','Pastel','Mixed Media','Drawing','Printmaking'],
+    writing:['Short Story','Flash Fiction','Essay','Personal Essay','Novel Chapter','Vignette','Script'],
+    photography:['Single Print','Photo Series','Digital Edit','Film Photograph'],
+    music:['Composition','Improvisation','Recording','Arrangement','Sketch'],
+    poetry:['Poem','Sequence','Collection Entry','Prose Poem'],
+  };
+  const DISC_LABELS={painting:'Painting',writing:'Writing',photography:'Photography',music:'Music',poetry:'Poetry'};
+  const DISC_ICONS={painting:'\uD83D\uDDBC\uFE0F',writing:'\u270D\uFE0F',photography:'\uD83D\uDCF7',music:'\uD83C\uDFB5',poetry:'\uD83D\uDCDC'};
+
+  let jOverlay=document.getElementById('composeJournalOverlay');
+  if(jOverlay) jOverlay.remove();
+  jOverlay=el('div','overlay'); jOverlay.id='composeJournalOverlay'; jOverlay.style.zIndex='8100';
+
+  const jModal=el('div','modal'); jModal.style.cssText='width:520px;max-height:88vh;display:flex;flex-direction:column;';
+
+  const jHdr=el('div'); jHdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:14px;';
+  const jTitle=el('h3'); jTitle.style.cssText='margin:0;flex:1;'; jTitle.textContent=existingJournal?'\uD83D\uDCD3 Edit Journal Entry':'\uD83D\uDCD3 New Journal Entry';
+  const jClose=el('button','mbtn mbtn-cancel'); jClose.textContent='Close'; jClose.onclick=()=>closeOverlay('composeJournalOverlay');
+  jHdr.append(jTitle,jClose);
+
+  const jBody=el('div'); jBody.style.cssText='flex:1;overflow-y:auto;';
+
+  // Prompt snapshot
+  if(promptEntry){
+    const snap=el('div'); snap.style.cssText='background:rgba(0,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:12px;';
+    const snapLbl=el('div'); snapLbl.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:5px;'; snapLbl.textContent='From Prompt';
+    const snapDisc=el('div'); snapDisc.style.cssText='font-size:11px;color:var(--accent);font-family:Share Tech Mono,monospace;margin-bottom:3px;';
+    snapDisc.textContent=(DISC_ICONS[promptEntry.discipline]||'')+' '+(DISC_LABELS[promptEntry.discipline]||promptEntry.discipline);
+    const snapTs=el('div'); snapTs.style.cssText='font-size:10px;color:var(--text-dim);margin-bottom:4px;'; snapTs.textContent=new Date(promptEntry.timestamp).toLocaleString();
+    snap.append(snapLbl,snapDisc,snapTs);
+    Object.entries(promptEntry.axes||{}).slice(0,2).forEach(([k,v])=>{
+      const r=el('div'); r.style.cssText='font-size:10px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+      r.textContent=k+': '+v; snap.appendChild(r);
+    });
+    jBody.appendChild(snap);
+  }
+
+  function field(lText,inp){
+    const w=el('div'); w.style.cssText='margin-bottom:10px;';
+    const l=el('div'); l.style.cssText='font-size:9px;font-family:Share Tech Mono,monospace;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'; l.textContent=lText;
+    w.append(l,inp); return w;
+  }
+
+  // Title
+  const titleInp=el('input','todo-add-inp'); titleInp.placeholder='Piece title\u2026'; titleInp.style.cssText='width:100%;box-sizing:border-box;';
+  if(existingJournal) titleInp.value=existingJournal.title||'';
+  jBody.appendChild(field('Title',titleInp));
+
+  // Medium
+  const medSel=el('select','comp-bias-sel'); medSel.style.cssText='width:100%;';
+  const defOpt=document.createElement('option'); defOpt.value=''; defOpt.textContent='\u2014 Select medium \u2014'; medSel.appendChild(defOpt);
+  (enabledModes||['painting']).forEach(d=>{
+    if(!MEDIUM_OPTIONS[d]) return;
+    const grp=document.createElement('optgroup'); grp.label=DISC_LABELS[d]||d;
+    MEDIUM_OPTIONS[d].forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; grp.appendChild(o); });
+    medSel.appendChild(grp);
+  });
+  if(existingJournal&&existingJournal.medium) medSel.value=existingJournal.medium;
+  jBody.appendChild(field('Type of Work',medSel));
+
+  // Date started
+  const dsInp=el('input','todo-add-inp'); dsInp.type='date'; dsInp.style.cssText='width:100%;box-sizing:border-box;';
+  if(existingJournal&&existingJournal.dateStarted) dsInp.value=existingJournal.dateStarted;
+  jBody.appendChild(field('Date Started',dsInp));
+
+  // Abandoned
+  const abandRow=el('div'); abandRow.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:10px;';
+  const abandChk=el('input'); abandChk.type='checkbox'; abandChk.id='cjl-abandoned';
+  if(existingJournal&&existingJournal.abandoned) abandChk.checked=true;
+  const abandLbl=el('label'); abandLbl.htmlFor='cjl-abandoned'; abandLbl.style.cssText='font-size:11px;color:var(--text-dim);cursor:pointer;'; abandLbl.textContent='Abandoned';
+  abandRow.append(abandChk,abandLbl); jBody.appendChild(abandRow);
+
+  // Date completed
+  const dcInp=el('input','todo-add-inp'); dcInp.type='date'; dcInp.style.cssText='width:100%;box-sizing:border-box;';
+  if(existingJournal&&existingJournal.dateCompleted) dcInp.value=existingJournal.dateCompleted;
+  const dcWrap=field('Date Completed',dcInp); jBody.appendChild(dcWrap);
+  function syncAbandon(){ dcInp.disabled=abandChk.checked; dcWrap.style.opacity=abandChk.checked?'0.4':'1'; }
+  abandChk.onchange=syncAbandon; syncAbandon();
+
+  // Image URL + preview
+  const imgInp=el('input','todo-add-inp'); imgInp.placeholder='https://\u2026 image URL'; imgInp.style.cssText='width:100%;box-sizing:border-box;';
+  if(existingJournal&&existingJournal.imageUrl) imgInp.value=existingJournal.imageUrl;
+  jBody.appendChild(field('Image URL',imgInp));
+  const imgPrev=el('img'); imgPrev.style.cssText='width:100%;max-height:130px;object-fit:cover;border-radius:4px;border:1px solid var(--border);margin-bottom:10px;display:none;';
+  imgPrev.onerror=()=>{ imgPrev.style.display='none'; };
+  if(existingJournal&&existingJournal.imageUrl){ imgPrev.src=existingJournal.imageUrl; imgPrev.style.display='block'; }
+  imgInp.oninput=()=>{ const u=imgInp.value.trim(); if(u){ imgPrev.src=u; imgPrev.style.display='block'; } else imgPrev.style.display='none'; };
+  jBody.appendChild(imgPrev);
+
+  // Notes
+  const notesTA=el('textarea'); notesTA.rows=5; notesTA.placeholder='Notes, reflections, observations\u2026';
+  notesTA.style.cssText='width:100%;box-sizing:border-box;background:var(--input-bg,rgba(0,0,0,0.3));color:var(--text);border:1px solid var(--border);border-radius:4px;padding:6px 8px;font-size:11px;font-family:Share Tech Mono,monospace;resize:vertical;';
+  if(existingJournal&&existingJournal.notes) notesTA.value=existingJournal.notes;
+  jBody.appendChild(field('Notes',notesTA));
+
+  // Actions
+  const jActions=el('div','modal-actions');
+  const saveJBtn=el('button','mbtn mbtn-save'); saveJBtn.textContent=existingJournal?'Update':'Save Entry';
+  saveJBtn.onclick=()=>{
+    const title=titleInp.value.trim();
+    if(!title){ titleInp.style.borderColor='#ff4444'; titleInp.focus(); return; }
+    if(!D.composeJournal) D.composeJournal=[];
+    const entry={
+      id: existingJournal?existingJournal.id:'journal_'+Date.now(),
+      createdAt: existingJournal?existingJournal.createdAt:new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      promptTimestamp: promptEntry?promptEntry.timestamp:(existingJournal?existingJournal.promptTimestamp:null),
+      promptSnapshot: promptEntry?{discipline:promptEntry.discipline,axes:promptEntry.axes,spark:promptEntry.spark}:(existingJournal?existingJournal.promptSnapshot:null),
+      title,
+      medium: medSel.value,
+      dateStarted: dsInp.value,
+      abandoned: abandChk.checked,
+      dateCompleted: abandChk.checked?'':dcInp.value,
+      imageUrl: imgInp.value.trim(),
+      notes: notesTA.value.trim(),
+    };
+    D.composeJournal=D.composeJournal.filter(j=>j.id!==entry.id);
+    D.composeJournal.unshift(entry);
+    persist(); closeOverlay('composeJournalOverlay');
+    if(onSave) onSave();
+  };
+
+  const cancelJBtn=el('button','mbtn mbtn-cancel'); cancelJBtn.textContent='Cancel'; cancelJBtn.onclick=()=>closeOverlay('composeJournalOverlay');
+
+  if(existingJournal){
+    const delJBtn=el('button','mbtn'); delJBtn.style.cssText='color:#ff4444;border-color:#ff4444;margin-right:auto;'; delJBtn.textContent='Delete Entry';
+    delJBtn.onclick=()=>{
+      D.composeJournal=(D.composeJournal||[]).filter(j=>j.id!==existingJournal.id);
+      persist(); closeOverlay('composeJournalOverlay'); if(onSave) onSave();
+    };
+    jActions.append(delJBtn,cancelJBtn,saveJBtn);
+  } else {
+    jActions.append(cancelJBtn,saveJBtn);
+  }
+
+  jModal.append(jHdr,jBody,jActions);
+  jOverlay.appendChild(jModal);
+  document.body.appendChild(jOverlay);
+  openOverlay('composeJournalOverlay');
 }
 
 
