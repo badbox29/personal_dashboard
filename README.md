@@ -7,7 +7,7 @@ https://badbox29.github.io/personal_dashboard/
 
 ---
 
-## First Things First
+#### Screenshot
 ![Screenshot](personal_dashboard_screenshot.png)
 
 ---
