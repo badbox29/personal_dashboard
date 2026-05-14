@@ -12957,7 +12957,9 @@ function openComposeStudio(sec, cfg, onClose){
     journal.forEach(entry=>{
       const card=el('div','comp-modal-section'); card.style.cssText='margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;gap:10px;';
       if(entry.imageUrl){
-        const img=el('img'); img.src=entry.imageUrl; img.style.cssText='width:64px;height:64px;object-fit:cover;border-radius:4px;flex-shrink:0;border:1px solid var(--border);';
+        const img=el('img'); img.src=entry.imageUrl; img.style.cssText='width:64px;height:64px;object-fit:cover;border-radius:4px;flex-shrink:0;border:1px solid var(--border);cursor:pointer;';
+        img.title='Open image in new tab';
+        img.onclick=()=>window.open(entry.imageUrl,'_blank');
         img.onerror=()=>img.style.display='none'; card.appendChild(img);
       }
       const info=el('div'); info.style.flex='1';
@@ -13081,8 +13083,10 @@ function openComposeJournalModal(promptEntry, existingJournal, enabledModes, onS
   const imgInp=el('input','todo-add-inp'); imgInp.placeholder='https://\u2026 image URL'; imgInp.style.cssText='width:100%;box-sizing:border-box;';
   if(existingJournal&&existingJournal.imageUrl) imgInp.value=existingJournal.imageUrl;
   jBody.appendChild(field('Image URL',imgInp));
-  const imgPrev=el('img'); imgPrev.style.cssText='width:100%;max-height:130px;object-fit:cover;border-radius:4px;border:1px solid var(--border);margin-bottom:10px;display:none;';
+  const imgPrev=el('img'); imgPrev.style.cssText='width:100%;max-height:130px;object-fit:cover;border-radius:4px;border:1px solid var(--border);margin-bottom:10px;display:none;cursor:pointer;';
+  imgPrev.title='Open image in new tab';
   imgPrev.onerror=()=>{ imgPrev.style.display='none'; };
+  imgPrev.onclick=()=>{ const u=imgInp.value.trim(); if(u) window.open(u,'_blank'); };
   if(existingJournal&&existingJournal.imageUrl){ imgPrev.src=existingJournal.imageUrl; imgPrev.style.display='block'; }
   imgInp.oninput=()=>{ const u=imgInp.value.trim(); if(u){ imgPrev.src=u; imgPrev.style.display='block'; } else imgPrev.style.display='none'; };
   jBody.appendChild(imgPrev);
