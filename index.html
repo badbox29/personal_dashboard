@@ -8226,6 +8226,12 @@ function kvMergeD(remote) {
         const localMod  = new Date(local.modifiedAt  || 0).getTime();
         const remoteMod = new Date(e.modifiedAt || 0).getTime();
         if(remoteMod > localMod) seen.set(k, e);
+      } else if(key === 'composeJournal') {
+        // Pick whichever version was updated more recently so edits (title, image URL, notes etc.) propagate across devices
+        const local = seen.get(k);
+        const localMod  = new Date(local.updatedAt  || local.createdAt  || 0).getTime();
+        const remoteMod = new Date(e.updatedAt || e.createdAt || 0).getTime();
+        if(remoteMod > localMod) seen.set(k, e);
       }
     });
     D[key] = Array.from(seen.values());
