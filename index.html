@@ -12548,13 +12548,34 @@ function openComposeStudio(sec, cfg, onClose){
     if(!pool.length) return '';
     if(activeBias&&activeBias.discipline===mode&&activeBias.axis===axisKey){
       const lv=(activeBias.lockedValues||[]).filter(v=>pool.includes(v));
-      const notLocked=pool.filter(v=>!lv.includes(v));
       switch(activeBias.type){
-        case 'lean_into':   return pick(lv.length?[...pool,...lv,...lv]:pool);
-        case 'lean_away':   return pick(notLocked.length?notLocked:pool);
-        case 'push_further':return pick(lv.length?lv:pool);
-        case 'disturb':     return pick(notLocked.length?notLocked:pool);
-        case 'explore_opposite':return pick(notLocked.length?notLocked:pool);
+        case 'lean_into':
+          // Weight toward historically protected values — 3x chance of landing near comfort zone
+          return pick(lv.length?[...pool,...lv,...lv]:pool);
+        case 'lean_away': {
+          // Exclude only the single most-protected value — mild nudge, rest of pool stays open
+          const topOne=lv.slice(0,1);
+          const filtered=pool.filter(v=>!topOne.includes(v));
+          return pick(filtered.length?filtered:pool);
+        }
+        case 'push_further':
+          // Restrict to only top locked values — deepest comfort zone reinforcement
+          return pick(lv.length?lv:pool);
+        case 'explore_opposite': {
+          // Pick from values never generated before on this axis — genuinely uncharted territory
+          const everGen=new Set((D.composePromptHistory||[]).filter(e=>e.discipline===mode&&e.axes&&e.axes[axisKey]).map(e=>e.axes[axisKey]));
+          const untouched=pool.filter(v=>!everGen.has(v));
+          const fallback=pool.filter(v=>!lv.includes(v));
+          return pick(untouched.length?untouched:fallback.length?fallback:pool);
+        }
+        case 'disturb': {
+          // Pick from values generated but never locked — things actively moved past, not just unfamiliar
+          const everLocked=new Set((D.composeBehaviorLog||[]).filter(e=>e.discipline===mode&&e.lockedAxes&&e.lockedAxes.includes(axisKey)&&e.lockedValues&&e.lockedValues[axisKey]).map(e=>e.lockedValues[axisKey]));
+          const everGen=new Set((D.composePromptHistory||[]).filter(e=>e.discipline===mode&&e.axes&&e.axes[axisKey]).map(e=>e.axes[axisKey]));
+          const rejected=pool.filter(v=>everGen.has(v)&&!everLocked.has(v));
+          const fallback=pool.filter(v=>!lv.includes(v));
+          return pick(rejected.length?rejected:fallback.length?fallback:pool);
+        }
       }
     }
     return pick(pool);
