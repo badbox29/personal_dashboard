@@ -324,6 +324,79 @@ body.edit-mode .add-tab-btn { display: inline-block; }
 }
 
 /* ============================================================
+   MOBILE SEARCH TOGGLE + SLIDE-DOWN ROW
+   ============================================================ */
+#mobileSearchToggle {
+  display: none; /* shown only inside @media mobile block */
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--search);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  padding: 3px 6px;
+  cursor: pointer;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+#mobileSearchToggle:hover { opacity: 1; }
+.mob-srch-chev {
+  display: inline-block;
+  transition: transform 0.22s ease;
+  font-style: normal;
+  font-size: 10px;
+  opacity: 0.7;
+}
+#mobileSearchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  max-height: 0;
+  padding: 0 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  background: var(--bg);
+  transition: max-height 0.22s ease, padding 0.22s ease;
+  position: relative;
+  z-index: 3;
+}
+#mobileSearchRow.open {
+  max-height: 50px;
+  padding: 8px 12px 10px;
+}
+.mob-search-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--search);
+  color: var(--search);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  padding: 2px 4px;
+  outline: none;
+  caret-color: var(--search);
+}
+.mob-search-input::placeholder { color: var(--search); opacity: 0.35; }
+.mob-search-clear {
+  background: none;
+  border: none;
+  color: var(--search);
+  opacity: 0;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.mob-search-clear.visible { opacity: 0.6; pointer-events: auto; }
+.mob-search-clear.visible:hover { opacity: 1; }
+
+/* ============================================================
    RECENTLY VISITED
    ============================================================ */
 .recent-divider {
@@ -2130,10 +2203,11 @@ li.drop-into  { background: rgba(13,184,221,0.12); border-radius: 3px; outline: 
   #mobileMoreBtn { display: inline-flex !important; }
   .mobile-overflow-menu.open { display: flex; }
 
-  /* --- Search bar --- */
-  .search-bar { padding: 10px 12px 8px; }
-  .search-input { width: 180px; }
-  .search-input:focus { width: 220px; }
+  /* --- Search bar (mobile: icon toggle only, recents hidden) --- */
+  .search-bar { padding: 6px 12px; }
+  .search-label, .search-input, .search-clear,
+  .recent-divider, .recent-label, .recent-clear-btn, .recent-chips { display: none !important; }
+  #mobileSearchToggle { display: flex; }
 
   /* --- Columns --- */
   .columns-grid {
@@ -6245,7 +6319,21 @@ body.edit-mode .gh-add-row { display: flex; }
   <span class="recent-label" id="recentLabelEl" style="display:none;">Recent:</span>
   <button class="recent-clear-btn" id="recentClearBtn" onclick="clearRecent()" title="Clear history" style="display:none;">✕</button>
   <div class="recent-chips" id="recentChips"></div>
+  <!-- Mobile search toggle (hidden on desktop via CSS) -->
+  <button id="mobileSearchToggle" onclick="toggleMobileSearch()" title="Search">⌕ <span class="mob-srch-chev">▾</span></button>
   <button class="tray-open-btn" id="trayOpenBtn" onclick="toggleTray()" title="Quick access tray" style="display:none;">☰ Quick Apps</button>
+</div>
+
+<!-- ===== MOBILE SEARCH ROW (slide-down, mobile only) ===== -->
+<div id="mobileSearchRow">
+  <input type="text" id="mobileSearchInp" class="mob-search-input" placeholder="type to filter…"
+         autocomplete="off" spellcheck="false"
+         oninput="doSearch(this.value); document.getElementById('mobileSearchClear').classList.toggle('visible', this.value.length > 0);"
+         onkeydown="if(event.key==='Enter'){ doSearch(this.value); closeMobileSearch(); }"
+         onblur="setTimeout(closeMobileSearch, 180);">
+  <button class="mob-search-clear" id="mobileSearchClear"
+          onmousedown="event.preventDefault();"
+          onclick="clearMobileSearch()" title="Clear search">✕</button>
 </div>
 
 <!-- ===== TAB CONTENTS ===== -->
@@ -22579,6 +22667,43 @@ function clearSearch(){
   inp.value = '';
   doSearch('');
   inp.focus();
+}
+
+function toggleMobileSearch(){
+  const row  = document.getElementById('mobileSearchRow');
+  const chev = document.querySelector('.mob-srch-chev');
+  const inp  = document.getElementById('mobileSearchInp');
+  const isOpen = row.classList.toggle('open');
+  if(chev) chev.style.transform = isOpen ? 'rotate(180deg)' : '';
+  if(isOpen){
+    setTimeout(()=>{ if(inp) inp.focus(); }, 230);
+  } else {
+    if(inp) inp.value = '';
+    doSearch('');
+    const clr = document.getElementById('mobileSearchClear');
+    if(clr) clr.classList.remove('visible');
+  }
+}
+
+function closeMobileSearch(){
+  const row = document.getElementById('mobileSearchRow');
+  if(!row || !row.classList.contains('open')) return;
+  const chev = document.querySelector('.mob-srch-chev');
+  const inp  = document.getElementById('mobileSearchInp');
+  row.classList.remove('open');
+  if(chev) chev.style.transform = '';
+  if(inp) inp.value = '';
+  doSearch('');
+  const clr = document.getElementById('mobileSearchClear');
+  if(clr) clr.classList.remove('visible');
+}
+
+function clearMobileSearch(){
+  const inp = document.getElementById('mobileSearchInp');
+  if(inp){ inp.value = ''; inp.focus(); }
+  doSearch('');
+  const clr = document.getElementById('mobileSearchClear');
+  if(clr) clr.classList.remove('visible');
 }
 
 function escHtml(str){
