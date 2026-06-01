@@ -22465,7 +22465,7 @@ function buildTrayContent(){
   const addRow = el('div','tray-add-app-row');
   const addBtn = el('button','dashed-btn'); addBtn.textContent='＋ Add Application';
   addBtn.style.cssText='width:100%;font-size:11px;padding:4px;';
-  addBtn.onclick=openAddAppDialog;
+  addBtn.onclick=()=>openAddAppDialog();
   addRow.appendChild(addBtn);
   tray.appendChild(addRow);
 
