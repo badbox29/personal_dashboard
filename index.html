@@ -22581,7 +22581,7 @@ function openAddAppDialog(existing){
         name, url, desc, icon, modifiedAt: now
       });
     }
-    persist();
+    persistConfig();
     closeOverlay('addAppOverlay');
     buildTrayContent();
   };
