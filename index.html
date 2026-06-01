@@ -22496,6 +22496,7 @@ function buildTrayContent(){
 }
 
 function openAddAppDialog(existing){
+  D.configDirtyAt = Date.now();
   let ov=document.getElementById('addAppOverlay');
   if(!ov){
     ov=el('div','overlay'); ov.id='addAppOverlay';
