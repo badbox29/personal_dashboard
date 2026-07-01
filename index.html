@@ -4574,6 +4574,64 @@ body.edit-mode .energy-edit-section { display: flex; }
 .sports-card.fav-match .sports-team-name.fav-team { color: var(--gold); font-weight: 700; }
 
 /* ============================================================
+   WIDGET — Aximote (car data)
+   ============================================================ */
+.axm-toolbar { display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+.axm-ts { font-size:10px; color:var(--text-dim); font-family:Share Tech Mono,monospace; margin-top:6px; }
+.axm-garage { display:flex; flex-direction:column; gap:8px; }
+.axm-card {
+  border:1px solid var(--border); border-radius:7px; padding:9px 11px;
+  background:var(--inp-bg); transition:border-color .15s;
+}
+.axm-card:hover { border-color:var(--cyan); }
+.axm-card-top { display:flex; align-items:flex-start; gap:8px; }
+.axm-veh-name { flex:1; min-width:0; }
+.axm-veh-title { font-size:13px; font-weight:600; color:var(--text); line-height:1.2; }
+.axm-veh-sub { font-size:10px; color:var(--text-dim); font-family:Share Tech Mono,monospace; margin-top:1px; }
+.axm-pill {
+  font-size:9.5px; font-family:Share Tech Mono,monospace; letter-spacing:.04em;
+  padding:2px 7px; border-radius:10px; white-space:nowrap; flex-shrink:0;
+}
+.axm-pill.driving { color:#ff9a44; background:rgba(255,136,68,0.12); border:1px solid rgba(255,136,68,0.4); }
+.axm-pill.parked  { color:var(--cyan); background:rgba(80,180,220,0.10); border:1px solid rgba(80,180,220,0.35); }
+.axm-pill.off     { color:var(--text-dim); background:rgba(150,150,150,0.10); border:1px solid var(--border); }
+.axm-gauge-row { display:flex; gap:10px; margin-top:9px; flex-wrap:wrap; }
+.axm-gauge { flex:1; min-width:120px; }
+.axm-gauge-lbl { display:flex; justify-content:space-between; font-size:10px; color:var(--text-dim); font-family:Share Tech Mono,monospace; margin-bottom:3px; }
+.axm-gauge-lbl b { color:var(--text); font-weight:600; }
+.axm-bar { height:6px; border-radius:4px; background:rgba(150,150,150,0.18); overflow:hidden; }
+.axm-bar > span { display:block; height:100%; border-radius:4px; transition:width .4s; }
+.axm-bar.fuel  > span { background:linear-gradient(90deg,#d8a24b,#e8c877); }
+.axm-bar.batt  > span { background:linear-gradient(90deg,#44cc88,#7fe0aa); }
+.axm-bar.low   > span { background:linear-gradient(90deg,#cc4444,#e07a7a); }
+.axm-meta-row { display:flex; gap:14px; margin-top:9px; flex-wrap:wrap; }
+.axm-metric { display:flex; flex-direction:column; gap:1px; }
+.axm-metric .v { font-size:13px; font-weight:600; color:var(--text); font-family:Share Tech Mono,monospace; }
+.axm-metric .k { font-size:9px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; }
+.axm-card-actions { display:flex; justify-content:flex-end; margin-top:9px; }
+.axm-details-btn {
+  font-size:10.5px; font-family:Share Tech Mono,monospace; padding:3px 12px; cursor:pointer;
+  background:transparent; color:var(--cyan); border:1px solid rgba(80,180,220,0.4); border-radius:5px;
+}
+.axm-details-btn:hover { background:rgba(80,180,220,0.10); border-color:var(--cyan); }
+.axm-notice { font-size:11px; color:var(--text-dim); padding:8px 2px; line-height:1.4; }
+.axm-notice.err { color:var(--del-color); }
+/* Details modal */
+.axm-modal-veh { font-size:14px; font-weight:600; color:var(--text); }
+.axm-modal-veh small { display:block; font-size:10px; color:var(--text-dim); font-weight:400; font-family:Share Tech Mono,monospace; margin-top:2px; }
+.axm-sec { margin-top:14px; }
+.axm-sec-hd { font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:var(--gold); font-family:Share Tech Mono,monospace; margin-bottom:7px; border-bottom:1px solid var(--border); padding-bottom:4px; }
+.axm-kv-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px 14px; }
+.axm-kv .k { font-size:9px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; }
+.axm-kv .v { font-size:12.5px; color:var(--text); font-family:Share Tech Mono,monospace; }
+.axm-kv .v.dim { color:var(--text-dim); }
+.axm-loc-link { color:var(--cyan); text-decoration:none; font-size:11px; }
+.axm-loc-link:hover { text-decoration:underline; }
+@media (max-width:1024px){
+  .axm-gauge { min-width:100%; }
+}
+
+/* ============================================================
    WIDGET — Decision Helper
    ============================================================ */
 .decision-result {
@@ -6777,6 +6835,9 @@ body.edit-mode .gh-add-row { display: flex; }
         <button class="sec-type-card" id="swAbs"      onclick="selectWidgetType('abs')">
           🎧 Audiobookshelf<span>Self-hosted audiobook player</span>
         </button>
+        <button class="sec-type-card" id="swAximote"  onclick="selectWidgetType('aximote')">
+          🚗 Aximote<span>Car data &amp; trips — Aximote Pro API required</span>
+        </button>
       </div>
       <!-- Info & Media widgets -->
       <div class="widget-cat-panel" id="wcPanelInfo">
@@ -7663,7 +7724,7 @@ function cyclePhaseForEntry(entry,allStarts,cycleLength,periodLength){
 }
 const WIDGET_TYPES = ['search','note','countdown','dice','converter','clocks','reminders','todo','rss','otd','wiki','decision','sports','energy',
                       'bible','wotd','apod','drinks',
-                      'abs',
+                      'abs','aximote',
                       'ports','myip','rfc','cve','bgp','dns','subnet','otx','eisac','tap',
                       'github','regex','jsonformat','base64','hash','jwt',
                       'compose','met','artspot','unsplash','tasktracker','lastfm'];
@@ -8136,6 +8197,12 @@ function _ccLoad(){
     b: _ccDecrypt(localStorage.getItem('salty_render_mode') || ''),
   };
 }
+
+// Aximote PAT — per-instance, obfuscated, per-browser (keyed to salty_clientId),
+// never written to D/KV. Each widget instance gets its own key.
+function axmSavePat(secId, pat){ localStorage.setItem('salty_axm_'+secId, _ccEncrypt((pat||'').trim())); }
+function axmLoadPat(secId){ return _ccDecrypt(localStorage.getItem('salty_axm_'+secId) || ''); }
+function axmClearPat(secId){ localStorage.removeItem('salty_axm_'+secId); }
 
 /* ================================================================
    KV SYNC
@@ -8885,6 +8952,7 @@ function buildWidgetBody(sec, tabId){
     case 'jwt':        return buildJwtWidget(sec);
     case 'drinks':     return buildDrinksWidget(sec);
     case 'abs':        return buildAbsWidget(sec);
+    case 'aximote':    return buildAximoteWidget(sec);
     case 'poem':       return buildPoemWidget(sec);
     case 'tasktracker': return buildTaskTrackerWidget(sec);
     case 'lastfm':       return buildLastfmWidget(sec);
@@ -14893,6 +14961,327 @@ function buildSportsWidget(sec){
   fetchScores();
   const timer=setInterval(()=>fetchScores(),(cfg.refreshMins||10)*60*1000);
   const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ clearInterval(timer); obs.disconnect(); obsClean.disconnect(); } });
+  obsClean.observe(document.body,{childList:true,subtree:true});
+  return wrap;
+}
+
+/* ---- AXIMOTE (car data) ---- */
+function buildAximoteWidget(sec){
+  const cfg = sec.widgetConfig || (sec.widgetConfig = {});
+  if(!cfg.axmWorker)   cfg.axmWorker   = '';
+  if(!cfg.units)       cfg.units       = 'imperial';
+  if(!cfg.refreshMins) cfg.refreshMins = 3;                 // matches Aximote's 180s state cadence
+  if(!Array.isArray(cfg.vehicleOrder)) cfg.vehicleOrder = [];
+
+  let _pat = axmLoadPat(sec.id);
+
+  // Local live data — never written to D (naturally excluded from KV sync)
+  let vehicles = [];
+  const stateById = {};
+  let lastUpdated = null, lastCached = false;
+
+  const wrap = el('div');
+
+  // ── unit helpers (API is SI) ─────────────────────────────
+  const imp   = ()=> cfg.units !== 'metric';
+  const r1    = n => (n==null||n===''||isNaN(+n)) ? null : Math.round(+n*10)/10;
+  const num   = v => (v==null||v==='')?null:(isNaN(+v)?null:+v);
+  const dist  = km => km==null ? null : (imp()? r1(+km*0.621371) : r1(km));
+  const distU = ()=> imp()?'mi':'km';
+  const vol   = l  => l==null ? null : (imp()? r1(+l*0.264172) : r1(l));
+  const volU  = ()=> imp()?'gal':'L';
+  const spd   = kmh=> kmh==null ? null : (imp()? r1(+kmh*0.621371) : r1(kmh));
+  const spdU  = ()=> imp()?'mph':'km/h';
+  const temp  = c  => c==null ? null : (imp()? Math.round(+c*9/5+32) : r1(c));
+  const tempU = ()=> imp()?'°F':'°C';
+  const fmt   = (v,u)=> v==null?'—':(v+(u?(' '+u):''));
+
+  function relTime(iso){
+    if(!iso) return '';
+    const d=Date.now()-new Date(iso).getTime();
+    if(isNaN(d)) return '';
+    const m=Math.floor(d/60000);
+    if(m<1) return 'just now'; if(m<60) return m+'m ago';
+    const h=Math.floor(m/60); if(h<24) return h+'h ago';
+    return Math.floor(h/24)+'d ago';
+  }
+  function absTime(iso){ if(!iso) return '—'; const t=new Date(iso); return isNaN(t)?'—':t.toLocaleString(); }
+  function dur(s){ s=num(s); if(s==null) return '—'; const h=Math.floor(s/3600),m=Math.round((s%3600)/60); return h?`${h}h ${m}m`:`${m}m`; }
+  function titleOf(v){ return [v.year, v.make, v.model].filter(Boolean).join(' ') || ('Vehicle '+(v.id||'')); }
+  function orderedVehicles(){
+    if(!cfg.vehicleOrder.length) return vehicles.slice();
+    const idx = id => { const i=cfg.vehicleOrder.indexOf(String(id)); return i<0?9999:i; };
+    return vehicles.slice().sort((a,b)=> idx(a.id)-idx(b.id));
+  }
+
+  // ── worker call ──────────────────────────────────────────
+  async function axmCall(resource, extra){
+    const workerUrl=getWorkerUrl(cfg.axmWorker);
+    if(!workerUrl) return { error:'no_worker' };
+    if(!_pat)      return { error:'no_pat' };
+    try {
+      const r=await fetch(workerUrl.replace(/\/+$/,'')+'/aximote',{
+        method:'POST',
+        headers:{'Content-Type':'application/json',...getWorkerAuthHeaders()},
+        body:JSON.stringify({ pat:_pat, resource, ...(extra||{}) }),
+      });
+      return await r.json().catch(()=>({error:'invalid_response',message:'Bad response'}));
+    } catch(e){ return { error:'network_error', message:e.message }; }
+  }
+  function friendlyError(j){
+    switch(j.error){
+      case 'no_worker':    return 'Worker URL required. Set it via the \u26A1 toolbar button or in widget settings.';
+      case 'no_pat':       return 'Aximote token required. Add your Personal Access Token in edit mode (\u2699).';
+      case 'unauthorized': return 'Token invalid or revoked — update it in edit mode.';
+      case 'pro_required': return 'Aximote Pro subscription required for API access.';
+      case 'rate_limited': return 'Rate limited by Aximote — will retry on next refresh.';
+      default:             return 'Failed: ' + (j.message || j.error || 'unknown error');
+    }
+  }
+
+  // ── UI scaffold ──────────────────────────────────────────
+  const toolbar=el('div','axm-toolbar');
+  const rfBtn=el('button','monitor-check-btn'); rfBtn.textContent='\u21ba'; rfBtn.title='Refresh';
+  rfBtn.onclick=()=>fetchGarage(true);
+  const spacer=el('div'); spacer.style.flex='1';
+  toolbar.append(rfBtn, spacer);
+  wrap.appendChild(toolbar);
+
+  const garage=el('div','axm-garage'); wrap.appendChild(garage);
+  const tsEl=el('div','axm-ts'); wrap.appendChild(tsEl);
+
+  // ── edit section ─────────────────────────────────────────
+  const editSection=el('div'); editSection.style.cssText='display:none;padding-top:8px;border-top:1px solid var(--border);margin-top:10px;';
+  const patLbl=el('div','sports-edit-section-lbl'); patLbl.textContent='Aximote Personal Access Token (Pro)';
+  const patInp=el('input','cve-interval-inp'); patInp.type='password';
+  patInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-bottom:2px;';
+  patInp.placeholder='axm_pat_\u2026  (stored encrypted on this device only)'; patInp.value=_pat||'';
+  const patHint=el('div'); patHint.style.cssText='font-size:9.5px;color:var(--text-dim);margin-bottom:6px;line-height:1.35;';
+  patHint.textContent='Create in the Aximote app \u2192 Profile \u2192 API access. Kept per-browser; never synced or stored in the cloud.';
+  const workerInp=el('input','cve-interval-inp'); workerInp.type='text';
+  workerInp.style.cssText='width:100%;font-family:Share Tech Mono,monospace;font-size:11px;padding:3px 6px;box-sizing:border-box;margin-bottom:6px;';
+  workerInp.placeholder='Override global Worker URL for Aximote only (optional)'; workerInp.value=cfg.axmWorker||'';
+  const optRow=el('div'); optRow.style.cssText='display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;';
+  const unitBtn=el('button','clock-style-btn'); unitBtn.style.cssText='font-size:10px;padding:2px 10px;';
+  const updUnitBtn=()=>{ unitBtn.textContent = imp()?'Units: Imperial':'Units: Metric'; };
+  updUnitBtn();
+  unitBtn.onclick=()=>{ cfg.units = imp()?'metric':'imperial'; persistConfig(); updUnitBtn(); renderGarage(); };
+  const rlbl=el('label'); rlbl.style.cssText='display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);font-family:Share Tech Mono,monospace;';
+  const rInp=el('input'); rInp.type='number'; rInp.min='1'; rInp.max='60'; rInp.value=cfg.refreshMins;
+  rInp.style.cssText='width:44px;font-size:10px;padding:1px 4px;background:var(--inp-bg);border:1px solid var(--inp-border);border-radius:3px;color:var(--text);outline:none;text-align:center;';
+  rInp.onchange=()=>{ cfg.refreshMins=Math.max(1,Math.min(60,parseInt(rInp.value)||3)); rInp.value=cfg.refreshMins; persistConfig(); restartTimer(); };
+  rlbl.append(rInp, document.createTextNode(' min refresh'));
+  optRow.append(unitBtn, rlbl);
+  const saveRow=el('div'); saveRow.style.cssText='display:flex;align-items:center;gap:6px;';
+  const saveBtn=el('button','todo-add-btn'); saveBtn.textContent='Save';
+  const saveStatus=el('span'); saveStatus.style.cssText='font-size:10px;color:var(--cyan);';
+  saveBtn.onclick=()=>{
+    const newPat=patInp.value.trim();
+    if(newPat) axmSavePat(sec.id,newPat); else axmClearPat(sec.id);
+    _pat=newPat;
+    cfg.axmWorker=workerInp.value.trim(); persistConfig();
+    saveStatus.textContent='\u2713 Saved'; setTimeout(()=>saveStatus.textContent='',2000);
+    fetchGarage(true);
+  };
+  saveRow.append(saveBtn,saveStatus);
+  editSection.append(patLbl,patInp,patHint,workerInp,optRow,saveRow);
+  wrap.appendChild(editSection);
+
+  const applyEdit=()=>{ editSection.style.display=document.body.classList.contains('edit-mode')?'':'none'; };
+  const obs=new MutationObserver(applyEdit);
+  obs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  applyEdit();
+
+  // ── rendering ────────────────────────────────────────────
+  function notice(msg, isErr){ garage.innerHTML=''; const n=el('div','axm-notice'+(isErr?' err':'')); n.textContent=msg; garage.appendChild(n); }
+
+  function gauge(label, pct, kind){
+    const g=el('div','axm-gauge');
+    const l=el('div','axm-gauge-lbl'); const ls=el('span'); ls.textContent=label; const rv=el('b'); rv.textContent=(pct==null?'—':r1(pct)+'%'); l.append(ls,rv);
+    const bar=el('div','axm-bar '+kind+(pct!=null&&pct<=15?' low':''));
+    const span=el('span'); span.style.width=(pct==null?0:Math.max(0,Math.min(100,pct)))+'%'; bar.appendChild(span);
+    g.append(l,bar); return g;
+  }
+
+  function renderGarage(){
+    const list=orderedVehicles();
+    if(!list.length){ notice('No vehicles found on this Aximote account.'); return; }
+    garage.innerHTML='';
+    list.forEach(v=>{
+      const st=stateById[v.id]||{};
+      const card=el('div','axm-card');
+
+      const top=el('div','axm-card-top');
+      const nm=el('div','axm-veh-name');
+      const t=el('div','axm-veh-title'); t.textContent=titleOf(v);
+      const sub=el('div','axm-veh-sub');
+      const ft=Array.isArray(v.fuelType)?v.fuelType.join(', '):'';
+      sub.textContent=[ft, st.capturedAt?('\u00b7 '+relTime(st.capturedAt)):''].filter(Boolean).join(' ');
+      nm.append(t,sub);
+      const pill=el('span','axm-pill');
+      if(st.onTrip){ pill.textContent='DRIVING'; pill.classList.add('driving'); }
+      else if(st.ignitionOn){ pill.textContent='IGNITION ON'; pill.classList.add('off'); }
+      else { pill.textContent='PARKED'; pill.classList.add('parked'); }
+      top.append(nm,pill);
+      card.appendChild(top);
+
+      const gr=el('div','axm-gauge-row');
+      const batt=num(st.batteryLevelPct), fuel=num(st.fuelLevelPct);
+      if(batt!=null) gr.appendChild(gauge('Battery',batt,'batt'));
+      if(fuel!=null) gr.appendChild(gauge('Fuel',fuel,'fuel'));
+      if(gr.children.length) card.appendChild(gr);
+
+      const mr=el('div','axm-meta-row');
+      const addMetric=(k,val)=>{ if(val==null||val==='—') return; const m=el('div','axm-metric'); const vv=el('div','v'); vv.textContent=val; const kk=el('div','k'); kk.textContent=k; m.append(vv,kk); mr.appendChild(m); };
+      addMetric('Range', st.rangeKm!=null?fmt(dist(st.rangeKm),distU()):null);
+      addMetric('Odometer', st.odometerKm!=null?fmt(dist(st.odometerKm),distU()):null);
+      const loc=st.location||{}; const mps=num(loc.speedMps);
+      if(st.onTrip && mps!=null) addMetric('Speed', fmt(spd(mps*3.6),spdU()));
+      if(mr.children.length) card.appendChild(mr);
+
+      const act=el('div','axm-card-actions');
+      const db=el('button','axm-details-btn'); db.textContent='Details \u25b8';
+      db.onclick=()=>openDetails(v);
+      act.appendChild(db); card.appendChild(act);
+
+      garage.appendChild(card);
+    });
+  }
+
+  // ── details modal (full suite) ───────────────────────────
+  async function openDetails(v){
+    let overlay=document.getElementById('axmDetailOverlay');
+    if(!overlay){
+      overlay=el('div','overlay'); overlay.id='axmDetailOverlay';
+      const modal=el('div','modal'); modal.style.cssText='width:600px;max-width:94vw;max-height:88vh;display:flex;flex-direction:column;';
+      const mhdr=el('div'); mhdr.style.cssText='display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;';
+      const mtitle=el('div','axm-modal-veh'); mtitle.id='axmModalTitle'; mtitle.style.flex='1';
+      mhdr.appendChild(mtitle);
+      const bodyEl=el('div'); bodyEl.id='axmModalBody'; bodyEl.style.cssText='flex:1;overflow-y:auto;';
+      const actions=el('div','modal-actions');
+      const closeBtn=el('button','mbtn mbtn-cancel'); closeBtn.textContent='Close'; closeBtn.onclick=()=>closeOverlay('axmDetailOverlay');
+      actions.appendChild(closeBtn); modal.append(mhdr,bodyEl,actions); overlay.appendChild(modal); document.body.appendChild(overlay);
+      overlay.addEventListener('click',e=>{ if(e.target===overlay) closeOverlay('axmDetailOverlay'); });
+    }
+    const titleEl=document.getElementById('axmModalTitle');
+    titleEl.innerHTML='';
+    const ts=el('small');
+    ts.textContent=[Array.isArray(v.fuelType)?v.fuelType.join(', '):'', v.updatedAt?('updated '+relTime(v.updatedAt)):''].filter(Boolean).join(' \u00b7 ');
+    titleEl.append(document.createTextNode(titleOf(v)), ts);
+    const body=document.getElementById('axmModalBody');
+    body.innerHTML='<div class="axm-notice">Loading\u2026</div>';
+    openOverlay('axmDetailOverlay');
+
+    const st=stateById[v.id]||{};
+    const [tripR, refuelR]=await Promise.all([
+      axmCall('trips',{vehicleId:v.id,limit:1}),
+      axmCall('refuels',{vehicleId:v.id,limit:1}),
+    ]);
+    const trip=(tripR&&tripR.data&&Array.isArray(tripR.data.items))?tripR.data.items[0]:null;
+    const ref =(refuelR&&refuelR.data&&Array.isArray(refuelR.data.items))?refuelR.data.items[0]:null;
+
+    body.innerHTML='';
+    const section=(title, pairs)=>{
+      const rows=pairs.filter(p=>p[1]!=null && p[1]!=='—');
+      if(!rows.length) return;
+      const s=el('div','axm-sec'); const hd=el('div','axm-sec-hd'); hd.textContent=title; s.appendChild(hd);
+      const grid=el('div','axm-kv-grid');
+      rows.forEach(([k,val,dim])=>{ const kv=el('div','axm-kv'); const kk=el('div','k'); kk.textContent=k; const vv=el('div','v'+(dim?' dim':'')); vv.textContent=val; kv.append(kk,vv); grid.appendChild(kv); });
+      s.appendChild(grid); body.appendChild(s);
+    };
+
+    const loc=st.location||{}; const mps=num(loc.speedMps);
+    section('Live State',[
+      ['Battery', st.batteryLevelPct!=null?r1(st.batteryLevelPct)+'%':null],
+      ['Fuel', st.fuelLevelPct!=null?r1(st.fuelLevelPct)+'%':null],
+      ['Range', st.rangeKm!=null?fmt(dist(st.rangeKm),distU()):null],
+      ['Odometer', st.odometerKm!=null?fmt(dist(st.odometerKm),distU()):null],
+      ['Speed', mps!=null?fmt(spd(mps*3.6),spdU()):null],
+      ['Heading', loc.bearingDeg!=null?r1(loc.bearingDeg)+'\u00b0':null],
+      ['Ignition', st.ignitionOn==null?null:(st.ignitionOn?'On':'Off')],
+      ['On Trip', st.onTrip==null?null:(st.onTrip?'Yes':'No')],
+      ['Captured', st.capturedAt?absTime(st.capturedAt):null, true],
+    ]);
+
+    const lat=num(loc.latitude!=null?loc.latitude:loc.lat);
+    const lng=num(loc.longitude!=null?loc.longitude:(loc.lng!=null?loc.lng:loc.lon));
+    if(lat!=null && lng!=null){
+      const s=el('div','axm-sec'); const hd=el('div','axm-sec-hd'); hd.textContent='Last Known Location'; s.appendChild(hd);
+      const a=el('a','axm-loc-link'); a.href='https://www.google.com/maps?q='+lat+','+lng; a.target='_blank'; a.rel='noopener';
+      a.textContent=r1(lat)+', '+r1(lng)+' \u2014 open in Maps \u25b8'; s.appendChild(a); body.appendChild(s);
+    }
+
+    section('Vehicle',[
+      ['Make', v.make||null],
+      ['Model', v.model||null],
+      ['Year', v.year!=null?String(v.year):null],
+      ['Fuel Type', Array.isArray(v.fuelType)?v.fuelType.join(', '):null],
+      ['Tank Capacity', v.fuelCapacityL!=null?fmt(vol(v.fuelCapacityL),volU()):null],
+      ['Battery Capacity', v.batteryCapacityKwh!=null?fmt(r1(v.batteryCapacityKwh),'kWh'):null],
+    ]);
+
+    if(trip){
+      section('Last Trip',[
+        ['Distance', trip.distanceKm!=null?fmt(dist(trip.distanceKm),distU()):null],
+        ['Duration', trip.durationSec!=null?dur(trip.durationSec):null],
+        ['Avg Speed', trip.avgSpeedKmh!=null?fmt(spd(trip.avgSpeedKmh),spdU()):null],
+        ['Fuel Used', trip.fuelConsumedL!=null?fmt(vol(trip.fuelConsumedL),volU()):null],
+        ['Energy Used', trip.energyConsumedKwh!=null?fmt(r1(trip.energyConsumedKwh),'kWh'):null],
+        ['CO\u2082', trip.co2Kg!=null?fmt(r1(trip.co2Kg),'kg'):null],
+        ['Eco Score', trip.ecoScore!=null?r1(trip.ecoScore):null],
+        ['Speed Score', trip.speedScore!=null?r1(trip.speedScore):null],
+        ['Consistency', trip.consistencyScore!=null?r1(trip.consistencyScore):null],
+        ['Started', trip.startTime?absTime(trip.startTime):null, true],
+        ['Ended', trip.endTime?absTime(trip.endTime):null, true],
+      ]);
+    }
+
+    if(ref){
+      const isCharge=(ref.type||'').toLowerCase().includes('charg')||ref.energyChargedKwh!=null;
+      section(isCharge?'Last Charge':'Last Refuel',[
+        ['Type', ref.type?String(ref.type):null],
+        ['Amount', ref.fuelAmountL!=null?fmt(vol(ref.fuelAmountL),volU()):null],
+        ['Energy', ref.energyChargedKwh!=null?fmt(r1(ref.energyChargedKwh),'kWh'):null],
+        ['Avg Power', ref.avgChargingKw!=null?fmt(r1(ref.avgChargingKw),'kW'):null],
+        ['Cost', ref.costAmount!=null?(r1(ref.costAmount)+(ref.costCurrency?(' '+ref.costCurrency):'')):null],
+        ['Duration', ref.durationSec!=null?dur(ref.durationSec):null],
+        ['Outside Temp', ref.outsideTemperature!=null?fmt(temp(ref.outsideTemperature),tempU()):null],
+        ['Started', ref.startTime?absTime(ref.startTime):null, true],
+        ['Ended', ref.endTime?absTime(ref.endTime):null, true],
+      ]);
+    }
+
+    if(!body.children.length){ body.innerHTML='<div class="axm-notice">No detail data available for this vehicle yet.</div>'; }
+    [tripR,refuelR].forEach(rr=>{ if(rr&&rr.error&&rr.error!=='no_worker'&&rr.error!=='no_pat'){ const n=el('div','axm-notice'); n.style.marginTop='10px'; n.textContent='Note: '+friendlyError(rr); body.appendChild(n); } });
+  }
+
+  // ── fetch flow ───────────────────────────────────────────
+  let fetching=false;
+  async function fetchGarage(force){
+    if(fetching) return; fetching=true;
+    if(!getWorkerUrl(cfg.axmWorker)){ notice(friendlyError({error:'no_worker'}), true); fetching=false; return; }
+    if(!_pat){ notice(friendlyError({error:'no_pat'})); fetching=false; return; }
+    if(!vehicles.length || force) notice('Loading\u2026');
+    const vr=await axmCall('vehicles');
+    if(vr.error){ notice(friendlyError(vr), vr.error!=='no_pat'); fetching=false; return; }
+    vehicles=Array.isArray(vr.data)?vr.data:[];
+    lastCached=!!vr._cached; lastUpdated=vr.generatedAt||new Date().toISOString();
+    const states=await Promise.all(vehicles.map(v=>axmCall('state',{vehicleId:v.id})));
+    vehicles.forEach((v,i)=>{ const s=states[i]; stateById[v.id]=(s&&!s.error&&s.data)?s.data:{}; if(s&&s._cached) lastCached=true; });
+    renderGarage();
+    tsEl.textContent='Updated '+new Date(lastUpdated).toLocaleTimeString()+(lastCached?' (cached)':'');
+    fetching=false;
+  }
+
+  // ── timer + lifecycle ────────────────────────────────────
+  let timer=null;
+  function restartTimer(){ if(timer) clearInterval(timer); timer=setInterval(()=>{ if(!document.hidden) fetchGarage(); }, (cfg.refreshMins||3)*60*1000); }
+  const onVis=()=>{ if(!document.hidden) fetchGarage(); };
+  document.addEventListener('visibilitychange', onVis);
+
+  fetchGarage();
+  restartTimer();
+  const obsClean=new MutationObserver(()=>{ if(!document.contains(wrap)){ if(timer) clearInterval(timer); document.removeEventListener('visibilitychange',onVis); obs.disconnect(); obsClean.disconnect(); } });
   obsClean.observe(document.body,{childList:true,subtree:true});
   return wrap;
 }
@@ -21052,7 +21441,7 @@ function initWidgetPickerLocks(){
   const hasProxy  = !!(D.localProxyUrl || '').trim();
   const workerTip = 'Requires Cloudflare Worker URL — set it in ⚡ Worker Settings';
   const proxyTip  = 'Requires Local Proxy URL — set it in ⚡ Worker Settings';
-  const workerWidgets = ['rss','sports','wotd','lastfm','cve','otx','tap','unsplash'];
+  const workerWidgets = ['rss','sports','wotd','lastfm','cve','otx','tap','unsplash','aximote'];
   const proxyWidgets  = ['eisac'];
   workerWidgets.forEach(t => {
     const btn = document.getElementById('sw' + t.charAt(0).toUpperCase() + t.slice(1));
