@@ -7,6 +7,7 @@
  *   POST /rss     — Fetch & normalize any RSS/Atom feed (returns raw XML)
  *   POST /nvd     — Proxy NVD CVE API (adds apiKey header server-side)
  *   POST /sports  — Fetch & normalize sports scores from TheSportsDB
+ *   POST /aximote — Proxy Aximote read-only car-data API (per-user Bearer PAT)
  *   POST /bible   — Proxy API.Bible (adds api-key header server-side, aggressive caching)
  *   POST /topics  — Fetch & parse OpenBible.info topical verse search (no key required)
  *   POST /unsplash — Proxy Unsplash random photo API (adds Authorization header server-side)
@@ -1172,6 +1173,91 @@ async function handleTap(body, ctx) {
   return json(data);
 }
 
+// ── Aximote handler (/aximote) ────────────────────────────────────────────────
+//
+// Read-only proxy for the Aximote public API (https://api.aximote.com).
+// The browser cannot call Aximote directly (CORS) and the PAT is per-user, so
+// it is forwarded per-request as a Bearer token and NEVER stored server-side.
+//
+// Body: { pat, resource, vehicleId?, limit? }
+//   resource:  "me" | "vehicles" | "state" | "trips" | "refuels"
+//   vehicleId: required for state / trips / refuels
+//   limit:     optional for trips / refuels (default 1)
+//
+// Returns: { resource, generatedAt, data }  (data = raw Aximote payload)
+// Cache (keyed by hash(pat)+resource+vehicleId): state 180s, trips/refuels 300s,
+//   vehicles/me 600s — mirroring the cadence Aximote's own integration uses.
+// Upstream 401 / 402 / 429 are passed through so the widget can react.
+
+const AXIMOTE_BASE = 'https://api.aximote.com';
+const AXIMOTE_TTL  = { me: 600, vehicles: 600, state: 180, trips: 300, refuels: 300 };
+
+async function handleAximote(body, ctx) {
+  const token = (body && body.pat ? String(body.pat) : '').trim();
+  if(!token) return json({ error: 'bad_request', message: 'Required field: pat' }, 400);
+
+  const res = (body.resource || '').toString().toLowerCase();
+  const valid = ['me','vehicles','state','trips','refuels'];
+  if(!valid.includes(res))
+    return json({ error: 'bad_request', message: `Unknown resource: ${body.resource}. Valid: ${valid.join(', ')}` }, 400);
+
+  const needsVehicle = (res === 'state' || res === 'trips' || res === 'refuels');
+  const vehicleId    = body.vehicleId != null ? String(body.vehicleId) : '';
+  if(needsVehicle && !vehicleId)
+    return json({ error: 'bad_request', message: `Resource '${res}' requires vehicleId` }, 400);
+
+  const limit = Math.max(1, Math.min(50, parseInt(body.limit, 10) || 1));
+
+  let path;
+  if(res === 'me')            path = '/api/public/v1/me';
+  else if(res === 'vehicles') path = '/api/public/v1/vehicles';
+  else if(res === 'state')    path = `/api/public/v1/vehicles/${encodeURIComponent(vehicleId)}/state`;
+  else if(res === 'trips')    path = `/api/public/v1/trips?vehicleId=${encodeURIComponent(vehicleId)}&limit=${limit}`;
+  else if(res === 'refuels')  path = `/api/public/v1/refuels?vehicleId=${encodeURIComponent(vehicleId)}&limit=${limit}`;
+
+  const ttl    = AXIMOTE_TTL[res] || 180;
+  const tokTag = (hashStr(token) >>> 0).toString(36);
+  const vTag   = needsVehicle ? '_' + encodeURIComponent(vehicleId) : '';
+  const lTag   = (res === 'trips' || res === 'refuels') ? '_l' + limit : '';
+  const cacheKey = `https://aximote-cache.internal/${tokTag}/${res}${vTag}${lTag}`;
+  const cache    = caches.default;
+  const cached   = await cache.match(cacheKey);
+  if(cached) return json({ ...(await cached.json()), _cached: true });
+
+  let upstream;
+  try {
+    upstream = await fetch(`${AXIMOTE_BASE}${path}`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+    });
+  } catch(e) {
+    return json({ error: 'network_error', message: 'Failed to reach Aximote' }, 502);
+  }
+
+  // Pass through the meaningful upstream statuses so the widget can react
+  if(upstream.status === 401) return json({ error: 'unauthorized', message: 'Aximote token invalid or revoked' }, 401);
+  if(upstream.status === 402) return json({ error: 'pro_required', message: 'Aximote Pro subscription required' }, 402);
+  if(upstream.status === 429) return json({ error: 'rate_limited', message: 'Aximote rate limit reached' }, 429);
+
+  const text = await upstream.text();
+  let data;
+  try { data = text ? JSON.parse(text) : null; }
+  catch(e) { return json({ error: 'invalid_response', message: 'Non-JSON response from Aximote' }, 502); }
+
+  if(upstream.status >= 400) {
+    const code    = (data && data.code)    ? String(data.code)    : 'http_error';
+    const message = (data && data.message) ? String(data.message) : `HTTP ${upstream.status}`;
+    return json({ error: code, message }, upstream.status);
+  }
+
+  const result = { resource: res, generatedAt: new Date().toISOString(), data };
+
+  ctx.waitUntil(cache.put(cacheKey, new Response(JSON.stringify(result), {
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${ttl}` },
+  })));
+
+  return json(result);
+}
+
 // ── KV Sync handler (/kv) ─────────────────────────────────────────────────────
 
 async function handleKvGet(request, env) {
@@ -1237,6 +1323,7 @@ export default {
     if(path === '/nvd')    return handleNvd(body, ctx);
     if(path === '/tap')    return handleTap(body, ctx);
     if(path === '/sports') return handleSports(body, ctx);
+    if(path === '/aximote') return handleAximote(body, ctx);
     if(path === '/otx')    return handleOtx(body, ctx);
     if(path === '/bible')  return handleBible(body, ctx);
     if(path === '/topics') return handleTopics(body, ctx);
