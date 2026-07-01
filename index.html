@@ -7958,6 +7958,7 @@ var _kvBootComplete = false;
   if(!Array.isArray(D.appLinks)) D.appLinks = [];
   if(!Array.isArray(D.favLinks)) D.favLinks = [];
   if(!Array.isArray(D.favDeletedIds)) D.favDeletedIds = [];
+  if(!Array.isArray(D.appDeletedIds)) D.appDeletedIds = [];
   if(!Array.isArray(D.tapSeenClickGuids)) D.tapSeenClickGuids = [];
   if(!Array.isArray(D.tapKnownVapEmails)) D.tapKnownVapEmails = [];
   if(D.tapLastFetchTime === undefined)    D.tapLastFetchTime   = 0;
@@ -8172,6 +8173,8 @@ const KV_MERGE_KEYS = {
   favLinks:           e => e.id,
   // tombstone for unfavorited links (prevents additive merge from resurrecting them)
   favDeletedIds:      e => e,
+  // tombstone for removed applications (prevents additive merge from resurrecting them)
+  appDeletedIds:      e => e,
 };
 
 // Keys that are per-browser diagnostics — never overwrite from remote payload
@@ -8328,6 +8331,11 @@ function kvMergeD(remote) {
     if(key === 'favLinks') {
       const deleted = new Set(D.favDeletedIds || []);
       if(deleted.size) D[key] = D[key].filter(f => !deleted.has(f.id));
+    }
+    // After merging appLinks, remove any that have been tombstoned on any browser
+    if(key === 'appLinks') {
+      const deleted = new Set(D.appDeletedIds || []);
+      if(deleted.size) D[key] = D[key].filter(a => !deleted.has(a.id));
     }
     // Keep energyEntries sorted newest-first so [0] is always the most recent
     if(key === 'energyEntries') D[key].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -22448,6 +22456,9 @@ function buildTrayContent(){
         e.preventDefault(); e.stopPropagation();
         if(!confirm('Remove "'+app.name+'" from the tray?')) return;
         D.appLinks=D.appLinks.filter(a=>a.id!==app.id);
+        // Tombstone so the deletion propagates through additive KV merge
+        if(!Array.isArray(D.appDeletedIds)) D.appDeletedIds=[];
+        if(!D.appDeletedIds.includes(app.id)) D.appDeletedIds.push(app.id);
         persist(); buildTrayContent();
       };
       card.appendChild(delBtn);
@@ -22572,13 +22583,18 @@ function openAddAppDialog(existing){
     if(!name||!url) return;
     if(!/^https?:\/\//i.test(url)) url='https://'+url;
     if(!Array.isArray(D.appLinks)) D.appLinks=[];
+    if(!Array.isArray(D.appDeletedIds)) D.appDeletedIds=[];
     const now = new Date().toISOString();
     if(existing){
       const idx=D.appLinks.findIndex(a=>a.id===existing.id);
       if(idx>=0) D.appLinks[idx]={...D.appLinks[idx], name, url, desc, icon, modifiedAt: now};
+      // Un-tombstone in case this id was previously removed
+      D.appDeletedIds=D.appDeletedIds.filter(id=>id!==existing.id);
     } else {
+      const newId=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+      D.appDeletedIds=D.appDeletedIds.filter(id=>id!==newId);
       D.appLinks.push({
-        id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+        id:newId,
         name, url, desc, icon, modifiedAt: now
       });
     }
